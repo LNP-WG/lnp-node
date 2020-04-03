@@ -14,4 +14,13 @@ Cargo.lock
 
 /target
 
+# Compiled files
+*.o
+*.so
+*.rlib
+*.dll
+
 .idea
+
+# Rust code coverage-specific
+/kcov-build/

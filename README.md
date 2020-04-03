@@ -1,7 +1,6 @@
 # lnpd: Generalized Lightning Network node
 
-[![TravisCI](https://api.travis-ci.com/LNP-BP/lnpd.svg?branch=master)](https
-://api.travis-ci.com/LNP-BP/lnpd)
+[![TravisCI](https://api.travis-ci.com/LNP-BP/lnpd.svg?branch=master)](https://api.travis-ci.com/LNP-BP/lnpd)
 
 `lnpd` is a new Lightning Network node written in Rust. Actually, it's a suite of daemons able to run generalized Lightning Network protocol.
 
@@ -37,3 +36,27 @@ The node must maintain simple/modular upgradability for:
 * Schnorr's/Taproot
 * Pay-to-elliptic curve point replacement for HTLCs
 * eltoo
+
+
+## Previous work & docs
+
+* `rust-lightning` architecture explanation: <https://github.com/rust-bitcoin/rust-lightning/blob/master/ARCH.md>
+* Antoine Riard's explanation on possible LN daemon architecture: <https://github.com/ariard/hacking-rust-lightning>
+* PR in rust-lightning removing storage of private keys from the memory: <https://github.com/rust-bitcoin/rust-lightning/pull/562/files>
+* Matt Corallo's sample implementation of rust-lightning based daemon, showcasing its API: <https://github.com/TheBlueMatt/rust-lightning-bitcoinrpc>
+* Antoine Riard's set of separate lightning daemons based on standard Rust multithreading/async (no tokio): <https://github.com/ariard/orage>
+* Forks of Matt Corallo's daemon developed much further towards full-flegged Lightning daemoin:
+    * by @YaaMe: <https://github.com/YaaMe/rust-lightning-bitcoinrpc>
+    * further development by @knarfytrebil: <https://github.com/knarfytrebil/rust-lightning-bitcoinrpc>
+* Sample of Rust multithreaded server architecture: <https://github.com/LNP-BP/txserv>
+
+
+## Ways of communication
+
+* Lightning Hackdays Mattermost channel: <https://mm.fulmo.org/fulmo/channels/x-rust-ln-node>
+* IRC channels on Freenode
+    * \#rust-bitcoin: here you can get general support on rust-lightning
+    * \#lightning-dev: here better to ask generic lightning-network questions
+    * \#lnp-bp: discussions on this and other LNP/BP projects
+    * dr_orlovsky: my account on IRC
+* Slack channel of SquareCrypto devoted to the development of Lightning Development Kit based on `rust-lightning` library: <http://lightningdevkit.org/>
