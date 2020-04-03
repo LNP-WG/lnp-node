@@ -13,7 +13,7 @@ addons:
       - cmake
       - gcc
       - libiberty-dev
-
+      - libzmq3-dev
 
 matrix:
   include:

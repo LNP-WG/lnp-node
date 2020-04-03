@@ -1,5 +1,8 @@
 # lnpd: Generalized Lightning Network node
 
+[![TravisCI](https://api.travis-ci.com/LNP-BP/lnpd.svg?branch=master)](https
+://api.travis-ci.com/LNP-BP/lnpd)
+
 `lnpd` is a new Lightning Network node written in Rust. Actually, it's a suite of daemons able to run generalized Lightning Network protocol.
 
 One may ask: another LN node? Why we need it? And what is "generalized Lightning Network"?
