@@ -1,0 +1,23 @@
+language: rust
+cache: cargo
+
+addons:
+  apt:
+    update: true
+    packages:
+      - binutils-dev
+      - libunwind8-dev
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - libiberty-dev
+
+
+matrix:
+  include:
+    - rust: nightly
+
+script:
+  - ./contrib/test.sh

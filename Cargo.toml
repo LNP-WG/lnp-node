@@ -1,0 +1,25 @@
+[package]
+name = "lnpd"
+description = "Generalized Lightning Network node"
+version = "0.1.0"
+authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+dotenv = "~0.15"
+clap = "~2.33"
+chrono = "~0.4"
+derive_wrapper = "~0.1"
+async-trait = "~0.1"
+log = { version = "~0.4", features = ["max_level_trace", "release_max_level_debug"] }
+env_logger = "~0.7"
+diesel = { version = "~1.4", features = ["sqlite", "numeric", "chrono"] }
+tokio = { version = "~0.2", features = ["full"] }
+futures = "~0.3"
+zmq = "~0.9"
+tiny_http = "~0.6"
+prometheus = "~0.8"
+bitcoin = "~0.23"
+lightning = "0.0.10"
+lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "feat-lnpbp5" }
