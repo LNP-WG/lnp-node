@@ -60,3 +60,8 @@ The node must maintain simple/modular upgradability for:
     * \#lnp-bp: discussions on this and other LNP/BP projects
     * dr_orlovsky: my account on IRC
 * Slack channel of SquareCrypto devoted to the development of Lightning Development Kit based on `rust-lightning` library: <http://lightningdevkit.org/>
+
+
+## Architecture
+
+![Architecture](doc/architecture.jpeg)
