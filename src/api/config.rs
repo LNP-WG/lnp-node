@@ -18,13 +18,15 @@ use crate::constants::*;
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
-    pub socket: String
+    pub responder_socket: String,
+    pub publisher_socket: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
-            socket: MONITOR_ADDR.to_string()
+            responder_socket: RES_ADDR.to_string(),
+            publisher_socket: PUB_ADDR.to_string(),
         }
     }
 }
@@ -32,7 +34,8 @@ impl Default for Config {
 impl From<MainConfig> for Config {
     fn from(config: MainConfig) -> Self {
         Config {
-            socket: config.monitor_socket
+            responder_socket: config.responder_socket,
+            publisher_socket: config.publisher_socket,
         }
     }
 }

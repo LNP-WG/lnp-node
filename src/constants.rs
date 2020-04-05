@@ -13,3 +13,8 @@
 
 pub const STATE_DB_PATH: &str = "state.sqlite";
 pub const MONITOR_ADDR: &str = "0.0.0.0:9666";
+pub const RES_ADDR: &str = "0.0.0.0:9667";
+pub const PUB_ADDR: &str = "0.0.0.0:9668";
+
+pub const INPUT_PARSER_SOCKET: &str = "inproc://input-parser";
+pub const PARSER_PUB_SOCKET: &str = "inproc://parser-input";
