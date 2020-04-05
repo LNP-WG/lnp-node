@@ -24,7 +24,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            socket: MONITOR_ADDR.to_string()
+            socket: LN_ADDR.to_string()
         }
     }
 }
@@ -32,7 +32,7 @@ impl Default for Config {
 impl From<MainConfig> for Config {
     fn from(config: MainConfig) -> Self {
         Config {
-            socket: config.monitor_socket
+            socket: config.peer_socket
         }
     }
 }

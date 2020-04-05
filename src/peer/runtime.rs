@@ -13,7 +13,10 @@
 
 
 use tiny_http;
-use tokio::task::JoinHandle;
+use tokio::{
+    task::JoinHandle,
+    net::TcpListener,
+};
 use prometheus::Encoder;
 
 use crate::{
@@ -26,30 +29,30 @@ pub fn run(config: Config, context: &mut zmq::Context)
            -> Result<Vec<JoinHandle<!>>, BootstrapError>
 {
     let socket_addr = config.socket.clone();
-    let http_server = tiny_http::Server::http(
-        socket_addr.clone()
-    ).map_err(|err| BootstrapError::MonitorSocketError(err))?;
+    let socket = TcpListener::bind(socket_addr.clone()).await?;
 
-    let monitor_service = MonitorService::init(
+    let peer_service = PeerService::init(
         config,
-        http_server,
+        socket,
     );
 
     Ok(vec![
         tokio::spawn(async move {
-            info!("Monitoring service is listening on {}", socket_addr);
-            monitor_service.run_loop().await
+            info!("Peer service is listening on {}", socket_addr);
+            peer_service.run_loop().await
         }),
     ])
 }
 
-struct MonitorService {
+struct PeerService {
     config: Config,
-    http_server: tiny_http::Server,
+    listener: TcpListener,
+    nodes: Vec<Node>,
+    peers: HashMap<Node, Peer>,
 }
 
 #[async_trait]
-impl Service for MonitorService {
+impl Service for PeerService {
     async fn run_loop(mut self) -> ! {
         loop {
             match self.run().await {
@@ -62,26 +65,29 @@ impl Service for MonitorService {
     }
 }
 
-impl MonitorService {
+impl PeerService {
     pub fn init(config: Config,
-                http_server: tiny_http::Server) -> Self {
+                listener: TcpListener) -> Self {
         Self {
             config,
-            http_server,
+            listener,
+            peers: vec![]
         }
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        let request = self.http_server
-            .recv()
-            .map_err(|err| Error::APIRequestError(err))?;
+        let (socket, stream) = self.listener.accept().await?;
 
-        let mut buffer = vec![];
-        prometheus::TextEncoder::new()
-            .encode(&prometheus::gather(), &mut buffer)?;
+        // TODO: Do we need to join handle here? Seems like no: the PeerService
+        //       runs endlessly until being terminated as a part of the daemon,
+        //       so all per-peer connections will persist w/o the need to
+        //       join them
+        tokio::spawn(async move {
+            let peer = ConnectedPeer::from_incoming(socket, stream)?;
+            self.peers.push(peer);
 
-        let response = tiny_http::Response::from_data(buffer);
-        request.respond(response)
-            .map_err(|err| Error::APIResponseError(err))
+        })?;
+
+        Ok(())
     }
 }

@@ -14,6 +14,7 @@
 pub mod config;
 pub mod runtime;
 pub mod error;
+mod connected_peer;
 
 pub use config::*;
 pub use runtime::*;

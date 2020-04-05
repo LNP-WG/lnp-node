@@ -53,6 +53,7 @@ mod monitor;
 mod constants;
 mod service;
 mod config;
+mod peer;
 
 mod api;
 
