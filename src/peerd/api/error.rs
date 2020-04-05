@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon suit
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,6 +11,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub const MSGBUS_PEER_API: &str = "ipc:///tmp/lnp/peer/";
-pub const MSGBUS_PEER_P2P_NOTIFY: &str = "ipc:///tmp/lnp/peer/notify";
-pub const LNP2P_ADDR: &str = "0.0.0.0:9735";
+
+use std::io;
+
+#[derive(Debug, Display)]
+#[display_from(Debug)]
+pub enum Error {
+    APIError(io::Error),
+}
+
+impl std::error::Error for Error {}

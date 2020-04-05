@@ -11,11 +11,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod config;
-pub mod runtime;
-pub mod error;
-mod connected_peer;
-
-pub use config::*;
-pub use runtime::*;
-pub use error::*;
+pub const STATE_DB_PATH: &str = "state.sqlite";
+pub const LN_ADDR: &str = "0.0.0.0:9735";
+pub const MONITOR_ADDR: &str = "0.0.0.0:9666";

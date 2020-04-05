@@ -11,12 +11,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use crate::{peer, monitor, constants::*};
+use crate::{lnpwire, monitor, constants::*};
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
-    pub peer_socket: String,
+    pub lnpwire_socket: String,
     pub monitor_socket: String,
     pub responder_socket: String,
     pub publisher_socket: String,
@@ -26,11 +26,11 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let peer_config = peer::Config::default();
+        let lnpwire_config = lnpwire::Config::default();
         let monitor_config = monitor::Config::default();
         let api_config = api::Config::default();
         Self {
-            peer_socket: peer_config.socket,
+            lnpwire_socket: lnpwire_config.socket,
             monitor_socket: monitor_config.socket,
             responder_socket: api_config.responder_socket,
             publisher_socket: api_config.publisher_socket,

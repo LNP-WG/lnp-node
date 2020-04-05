@@ -11,6 +11,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub const MSGBUS_PEER_API: &str = "ipc:///tmp/lnp/peer/";
-pub const MSGBUS_PEER_P2P_NOTIFY: &str = "ipc:///tmp/lnp/peer/notify";
-pub const LNP2P_ADDR: &str = "0.0.0.0:9735";
+mod config;
+mod error;
+
+mod p2p;
+mod api;
+
+pub use config::Config;
+pub use error::BootstrapError;
+pub use p2p::service::*;
+pub use api::service::*;
