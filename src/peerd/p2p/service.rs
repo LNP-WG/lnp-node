@@ -12,18 +12,23 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::{
     time::delay_for,
-    task::JoinHandle
+    task::JoinHandle,
+    net::TcpStream
 };
 
 use crate::TryService;
+use crate::peerd::BootstrapError;
 use super::*;
 
 pub struct WireService {
     config: Config,
     context: zmq::Context,
+    publisher: zmq::Socket,
+    stream: Arc<TcpStream>,
 }
 
 #[async_trait]
@@ -44,15 +49,27 @@ impl TryService for WireService {
 
 impl WireService {
     pub fn init(config: Config,
-                context: zmq::Context) -> Self {
-        Self {
+                context: zmq::Context,
+                stream: Arc<TcpStream>) -> Result<Self, BootstrapError> {
+        let publisher = context.socket(zmq::PUB)
+            .map_err(|e| BootstrapError::PublishingError(e))?;
+        publisher.bind(config.msgbus_addr.as_str())
+            .map_err(|e| BootstrapError::PublishingError(e))?;
+
+        Ok(Self {
             config,
             context,
-        }
+            publisher,
+            stream,
+        })
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        delay_for(Duration::from_secs(1)).await;
-        Ok(())
+        let reply = "OK";
+
+        trace!("Sending `{}` notification to clients", reply);
+        self.publisher
+            .send(zmq::Message::from(reply), 0)
+            .map_err(|err| Error::PubError(err))
     }
 }

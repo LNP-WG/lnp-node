@@ -17,7 +17,11 @@ use std::io;
 #[derive(Debug, Display)]
 #[display_from(Debug)]
 pub enum Error {
-    APIError(io::Error),
+    MessageBusError(zmq::Error),
+    MalformedRequest,
+    MalformedCommand,
+    UnknownCommand,
+    WrongNumberOfArguments
 }
 
 impl std::error::Error for Error {}

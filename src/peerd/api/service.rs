@@ -12,18 +12,26 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::time::Duration;
+use std::{
+    str,
+    sync::Arc,
+    time::Duration
+};
 use tokio::{
     time::delay_for,
-    task::JoinHandle
+    task::JoinHandle,
+    net::TcpStream,
 };
 
 use crate::Service;
+use crate::peerd::BootstrapError;
 use super::*;
 
 pub struct BusService {
     config: Config,
     context: zmq::Context,
+    subscriber: zmq::Socket,
+    stream: Arc<TcpStream>,
 }
 
 #[async_trait]
@@ -42,15 +50,51 @@ impl Service for BusService {
 
 impl BusService {
     pub fn init(config: Config,
-                context: zmq::Context) -> Self {
-        Self {
+                context: zmq::Context,
+                stream: Arc<TcpStream>) -> Result<Self, BootstrapError> {
+
+        trace!("Subscribing on message bus requests on {} ...", config.socket_addr);
+        let subscriber = context.socket(zmq::SUB)
+            .map_err(|e| BootstrapError::SubscriptionError(e))?;
+        subscriber.connect(config.socket_addr.as_str())
+            .map_err(|e| BootstrapError::SubscriptionError(e))?;
+        subscriber.set_subscribe("".as_bytes())
+            .map_err(|e| BootstrapError::SubscriptionError(e))?;
+        debug!("Subscribed to the message bus requests");
+
+        Ok(Self {
             config,
             context,
-        }
+            subscriber,
+            stream,
+        })
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        delay_for(Duration::from_secs(1)).await;
+        let req = self.subscriber
+            .recv_multipart(0)
+            .map_err(|err| Error::MessageBusError(err))?;
+        trace!("New API request");
+
+        let (cmd, args) = req.split_first()
+            .ok_or(Error::MalformedRequest)
+            .and_then(|(cmd_data, args)| {
+                Ok((
+                    str::from_utf8(&cmd_data[..])
+                        .map_err(|_| Error::MalformedCommand)?,
+                    args
+                ))
+            })
+            .map_err(|_| Error::MalformedCommand)?;
+
+        trace!("Received AIP command {}, processing ... ", cmd);
+        match cmd {
+            "SEND" => self.cmd_send(args),
+            _ => Err(Error::UnknownCommand)
+        }
+    }
+
+    fn cmd_send(&self, args: &[Vec<u8>]) -> Result<(), Error> {
         Ok(())
     }
 }

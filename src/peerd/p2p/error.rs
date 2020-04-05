@@ -17,7 +17,7 @@ use std::io;
 #[derive(Debug, Display)]
 #[display_from(Debug)]
 pub enum Error {
-    APIError(io::Error),
+    PubError(zmq::Error)
 }
 
 impl std::error::Error for Error {}

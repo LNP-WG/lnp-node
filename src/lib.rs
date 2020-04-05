@@ -49,5 +49,6 @@ extern crate lnpbp;
 pub mod service;
 pub mod peerd;
 pub mod constants;
+pub mod conv;
 
 pub use service::*;

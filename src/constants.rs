@@ -14,3 +14,4 @@
 pub const MSGBUS_PEER_API: &str = "ipc:///tmp/lnp/peer/";
 pub const MSGBUS_PEER_P2P_NOTIFY: &str = "ipc:///tmp/lnp/peer/notify";
 pub const LNP2P_ADDR: &str = "0.0.0.0:9735";
+pub const LNP2P_PORT: u16 = 9735;
