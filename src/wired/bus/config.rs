@@ -13,7 +13,6 @@
 
 
 use crate::wired::config::Config as MainConfig;
-use crate::constants::*;
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
@@ -21,18 +20,10 @@ pub struct Config {
     pub socket_addr: String
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            socket_addr: String::from(MSGBUS_PEER_API)
-        }
-    }
-}
-
 impl From<MainConfig> for Config {
     fn from(config: MainConfig) -> Self {
         Config {
-            socket_addr: config.subscribe_addr
+            socket_addr: config.msgbus_peer_api_addr
         }
     }
 }

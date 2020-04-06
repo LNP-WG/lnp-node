@@ -15,21 +15,11 @@
 use lnpbp::common::internet::InetSocketAddr;
 
 use crate::wired::config::Config as MainConfig;
-use crate::constants::*;
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
     pub lnp2p_addr: InetSocketAddr,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            lnp2p_addr: LNP2P_ADDR.parse()
-                .expect("Parsing of constant value `LNP2P_ADDR` failed"),
-        }
-    }
 }
 
 impl From<MainConfig> for Config {

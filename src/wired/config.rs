@@ -18,7 +18,11 @@ use clap::Clap;
 use lnpbp::common::internet::{InetSocketAddr, InetAddr};
 
 use super::{wire, bus};
-use lnpbp::miniscript::bitcoin::hashes::core::fmt::{Formatter, Error};
+
+
+const MSGBUS_PEER_API_ADDR: &str = "ipc:///tmp/lnp/peer/{}";
+const MSGBUS_PEER_PUSH_ADDR: &str = "ipc:///tmp/lnp/peer/notify";
+
 
 #[derive(Clap)]
 #[clap(
@@ -51,12 +55,16 @@ pub struct Opts {
     */
 
 
+// We need config structure since not all of the parameters can be specified
+// via environment and command-line argumets. Thus we need a config file and
+// default set of configuration
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
     pub verbose: u8,
     pub lnp2p_addr: InetSocketAddr,
-    pub subscribe_addr: String,
+    pub msgbus_peer_api_addr: String,
+    pub msgbus_peer_push_addr: String,
 }
 
 impl From<Opts> for Config {
@@ -64,7 +72,18 @@ impl From<Opts> for Config {
         Self {
             verbose: opts.verbose as u8,
             lnp2p_addr: InetSocketAddr::tcp(opts.address, opts.port),
-            subscribe_addr: "".to_string(),
+            ..Config::default()
+        }
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            verbose: 0,
+            lnp2p_addr: InetSocketAddr::default(),
+            msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
+            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
         }
     }
 }

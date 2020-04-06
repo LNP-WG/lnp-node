@@ -63,7 +63,7 @@ async fn main() -> Result<(), BootstrapError> {
     let bus_service = BusService::init(config.clone().into(), context.clone())?;
 
     let wire_addr = config.lnp2p_addr.clone();
-    let bus_addr = config.subscribe_addr.clone();
+    let bus_addr = config.msgbus_peer_api_addr.clone();
 
     try_join!(
         tokio::spawn(async move {
