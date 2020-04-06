@@ -13,13 +13,13 @@
 
 
 use std::io;
-use std::error::Error;
 use tokio::task::JoinError;
 
 
 #[derive(Debug, Display)]
 #[display_from(Debug)]
 pub enum BootstrapError {
+    TorNotYetSupported,
     IoError(io::Error),
     ArgParseError(String),
     SubscriptionError(zmq::Error),

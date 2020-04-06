@@ -12,8 +12,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::io;
-
 #[derive(Debug, Display)]
 #[display_from(Debug)]
 pub enum Error {

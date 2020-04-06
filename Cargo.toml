@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 dotenv = "~0.15"
-clap = "~2.33"
+clap = { git = "https://github.com/clap-rs/clap.git" }
 chrono = "~0.4"
 derive_wrapper = "~0.1"
 async-trait = "~0.1"

@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon suit
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,24 +11,28 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use super::{p2p, api};
+
+use crate::wired::config::Config as MainConfig;
+use crate::constants::*;
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
-    pub lnp2p_addr: String,
-    pub publish_addr: String,
-    pub subscribe_addr: String,
+    pub socket_addr: String
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let p2p_config = p2p::Config::default();
-        let api_config = api::Config::default();
         Self {
-            lnp2p_addr: p2p_config.lnp2p_addr,
-            publish_addr: p2p_config.msgbus_addr,
-            subscribe_addr: api_config.socket_addr,
+            socket_addr: String::from(MSGBUS_PEER_API)
+        }
+    }
+}
+
+impl From<MainConfig> for Config {
+    fn from(config: MainConfig) -> Self {
+        Config {
+            socket_addr: config.subscribe_addr
         }
     }
 }

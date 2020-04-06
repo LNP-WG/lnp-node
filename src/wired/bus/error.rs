@@ -12,27 +12,14 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use crate::peerd::config::Config as MainConfig;
-use crate::constants::*;
-
-#[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[derive(Debug, Display)]
 #[display_from(Debug)]
-pub struct Config {
-    pub socket_addr: String
+pub enum Error {
+    MessageBusError(zmq::Error),
+    MalformedRequest,
+    MalformedCommand,
+    UnknownCommand,
+    WrongNumberOfArguments
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            socket_addr: String::from(MSGBUS_PEER_API)
-        }
-    }
-}
-
-impl From<MainConfig> for Config {
-    fn from(config: MainConfig) -> Self {
-        Config {
-            socket_addr: config.subscribe_addr
-        }
-    }
-}
+impl std::error::Error for Error {}

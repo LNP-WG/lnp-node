@@ -47,8 +47,7 @@ extern crate lightning;
 extern crate lnpbp;
 
 pub mod service;
-pub mod peerd;
+pub mod wired;
 pub mod constants;
-pub mod conv;
 
 pub use service::*;

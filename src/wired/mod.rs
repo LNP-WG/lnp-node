@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon suite
+// Lightning network protocol (LNP) daemon suit
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,17 +11,15 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+mod config;
+mod error;
 
-use std::io;
+mod wire;
+mod peer;
+mod bus;
 
-#[derive(Debug, Display)]
-#[display_from(Debug)]
-pub enum Error {
-    MessageBusError(zmq::Error),
-    MalformedRequest,
-    MalformedCommand,
-    UnknownCommand,
-    WrongNumberOfArguments
-}
-
-impl std::error::Error for Error {}
+pub use config::*;
+pub use error::BootstrapError;
+pub use wire::service::*;
+pub use peer::service::*;
+pub use bus::service::*;

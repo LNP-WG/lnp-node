@@ -14,24 +14,18 @@
 
 use std::{
     str,
-    sync::Arc,
-    time::Duration
+    sync::Arc
 };
-use tokio::{
-    time::delay_for,
-    task::JoinHandle,
-    net::TcpStream,
-};
+use tokio::net::TcpStream;
 
 use crate::Service;
-use crate::peerd::BootstrapError;
+use crate::wired::BootstrapError;
 use super::*;
 
 pub struct BusService {
     config: Config,
     context: zmq::Context,
     subscriber: zmq::Socket,
-    stream: Arc<TcpStream>,
 }
 
 #[async_trait]
@@ -50,8 +44,7 @@ impl Service for BusService {
 
 impl BusService {
     pub fn init(config: Config,
-                context: zmq::Context,
-                stream: Arc<TcpStream>) -> Result<Self, BootstrapError> {
+                context: zmq::Context) -> Result<Self, BootstrapError> {
 
         trace!("Subscribing on message bus requests on {} ...", config.socket_addr);
         let subscriber = context.socket(zmq::SUB)
@@ -66,7 +59,6 @@ impl BusService {
             config,
             context,
             subscriber,
-            stream,
         })
     }
 

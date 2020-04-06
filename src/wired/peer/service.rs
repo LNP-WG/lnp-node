@@ -13,26 +13,24 @@
 
 
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::{
-    time::delay_for,
-    task::JoinHandle,
+    sync::Mutex,
     net::TcpStream
 };
 
 use crate::TryService;
-use crate::peerd::BootstrapError;
+use crate::wired::BootstrapError;
 use super::*;
 
-pub struct WireService {
+pub struct PeerService {
     config: Config,
     context: zmq::Context,
-    publisher: zmq::Socket,
+    publisher: Mutex<zmq::Socket>,
     stream: Arc<TcpStream>,
 }
 
 #[async_trait]
-impl TryService for WireService {
+impl TryService for PeerService {
     type ErrorType = Error;
 
     async fn try_run_loop(mut self) -> Result<!, Error> {
@@ -47,14 +45,15 @@ impl TryService for WireService {
     }
 }
 
-impl WireService {
+impl PeerService {
     pub fn init(config: Config,
                 context: zmq::Context,
                 stream: Arc<TcpStream>) -> Result<Self, BootstrapError> {
         let publisher = context.socket(zmq::PUB)
             .map_err(|e| BootstrapError::PublishingError(e))?;
-        publisher.bind(config.msgbus_addr.as_str())
-            .map_err(|e| BootstrapError::PublishingError(e))?;
+        //publisher.bind(config.msgbus_addr.as_str())
+        //    .map_err(|e| BootstrapError::PublishingError(e))?;
+        let publisher = Mutex::new(publisher);
 
         Ok(Self {
             config,
@@ -69,6 +68,7 @@ impl WireService {
 
         trace!("Sending `{}` notification to clients", reply);
         self.publisher
+            .lock().await
             .send(zmq::Message::from(reply), 0)
             .map_err(|err| Error::PubError(err))
     }

@@ -11,13 +11,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod error;
+pub mod config;
+pub mod service;
+pub mod error;
 
-mod p2p;
-mod api;
-
-pub use config::Config;
-pub use error::BootstrapError;
-pub use p2p::service::*;
-pub use api::service::*;
+pub use config::*;
+pub use service::*;
+pub use error::*;
