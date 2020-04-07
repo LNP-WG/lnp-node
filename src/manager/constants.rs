@@ -11,28 +11,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-use crate::config::Config as MainConfig;
-use crate::constants::*;
-
-#[derive(Clone, PartialEq, Eq, Debug, Display)]
-#[display_from(Debug)]
-pub struct Config {
-    pub socket: String
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            socket: MONITOR_ADDR.to_string()
-        }
-    }
-}
-
-impl From<MainConfig> for Config {
-    fn from(config: MainConfig) -> Self {
-        Config {
-            socket: config.monitor_socket
-        }
-    }
-}
+pub const STATE_DB_PATH: &str = "state.sqlite";
+pub const LN_ADDR: &str = "0.0.0.0:9735";
+pub const MONITOR_ADDR: &str = "0.0.0.0:9666";

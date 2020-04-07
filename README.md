@@ -65,3 +65,4 @@ The node must maintain simple/modular upgradability for:
 ## Architecture
 
 ![Architecture](doc/architecture.jpeg)
+![Architecture](doc/architecture-wired.jpeg)

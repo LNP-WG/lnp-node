@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,10 +11,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod config;
-pub mod runtime;
-pub mod error;
 
-pub use config::*;
-pub use runtime::*;
-pub use error::*;
+#[derive(Debug, Display)]
+#[display_from(Debug)]
+pub enum Error {
+    PubError(zmq::Error)
+}
+
+impl std::error::Error for Error {}

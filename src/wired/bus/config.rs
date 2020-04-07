@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,10 +11,19 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub const STATE_DB_PATH: &str = "state.sqlite";
-pub const MONITOR_ADDR: &str = "0.0.0.0:9666";
-pub const RES_ADDR: &str = "0.0.0.0:9667";
-pub const PUB_ADDR: &str = "0.0.0.0:9668";
 
-pub const INPUT_PARSER_SOCKET: &str = "inproc://input-parser";
-pub const PARSER_PUB_SOCKET: &str = "inproc://parser-input";
+use crate::wired::config::Config as MainConfig;
+
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[display_from(Debug)]
+pub struct Config {
+    pub socket_addr: String
+}
+
+impl From<MainConfig> for Config {
+    fn from(config: MainConfig) -> Self {
+        Config {
+            socket_addr: config.msgbus_peer_api_addr
+        }
+    }
+}
