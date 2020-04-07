@@ -58,8 +58,7 @@ impl WireService {
         context: zmq::Context,
         sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>,
         threads: Arc<Mutex<Vec<JoinHandle<!>>>>
-    ) -> Result<Self, BootstrapError>
-    {
+    ) -> Result<Self, BootstrapError> {
         debug!("Opening LN P2P socket at {}", config.lnp2p_addr);
 
         /*

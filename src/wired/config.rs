@@ -12,12 +12,10 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::{fmt, str::FromStr};
+use std::str::FromStr;
 use clap::Clap;
 
 use lnpbp::common::internet::{InetSocketAddr, InetAddr};
-
-use super::{wire, bus};
 
 
 const MSGBUS_PEER_API_ADDR: &str = "ipc:///tmp/lnp/peer/{}";
@@ -71,7 +69,7 @@ impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Self {
             verbose: opts.verbose as u8,
-            lnp2p_addr: InetSocketAddr::tcp(opts.address, opts.port),
+            lnp2p_addr: InetSocketAddr::new(opts.address, opts.port),
             ..Config::default()
         }
     }

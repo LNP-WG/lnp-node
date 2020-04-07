@@ -16,7 +16,10 @@ use std::{
     str,
     sync::Arc
 };
-use tokio::net::TcpStream;
+use tokio::{
+    sync::Mutex,
+    net::TcpStream
+};
 
 use crate::Service;
 use crate::wired::BootstrapError;
@@ -26,6 +29,7 @@ pub struct BusService {
     config: Config,
     context: zmq::Context,
     subscriber: zmq::Socket,
+    sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>,
 }
 
 #[async_trait]
@@ -44,8 +48,9 @@ impl Service for BusService {
 
 impl BusService {
     pub fn init(config: Config,
-                context: zmq::Context) -> Result<Self, BootstrapError> {
-
+                context: zmq::Context,
+                sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>
+    ) -> Result<Self, BootstrapError> {
         trace!("Subscribing on message bus requests on {} ...", config.socket_addr);
         let subscriber = context.socket(zmq::SUB)
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
@@ -59,6 +64,7 @@ impl BusService {
             config,
             context,
             subscriber,
+            sockets,
         })
     }
 
@@ -81,7 +87,7 @@ impl BusService {
 
         trace!("Received AIP command {}, processing ... ", cmd);
         match cmd {
-            "SEND" => self.cmd_send(args),
+            "CONNECT" => self.cmd_send(args),
             _ => Err(Error::UnknownCommand)
         }
     }

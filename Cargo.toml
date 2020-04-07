@@ -20,8 +20,7 @@ futures = "~0.3"
 zmq = "~0.9"
 tiny_http = "~0.6"
 prometheus = "~0.8"
-lightning = "0.0.10"
-lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "feat-lnp" }
+lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "feat-lnp", features = ["all"] }
 
 # lnpbp requires custom version of bitcoin, so to maintain type compatibility
 # we have to use library through lnpbp::bitcoin handle and not via direct

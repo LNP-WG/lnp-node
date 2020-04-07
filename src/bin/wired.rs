@@ -60,7 +60,11 @@ async fn main() -> Result<(), BootstrapError> {
         wire_sockets.clone(),
         wire_threads.clone()
     ).await?;
-    let bus_service = BusService::init(config.clone().into(), context.clone())?;
+    let bus_service = BusService::init(
+        config.clone().into(),
+        context.clone(),
+        wire_sockets.clone()
+    )?;
 
     let wire_addr = config.lnp2p_addr.clone();
     let bus_addr = config.msgbus_peer_api_addr.clone();

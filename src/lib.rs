@@ -43,9 +43,9 @@ extern crate dotenv;
 extern crate chrono;
 extern crate tiny_http;
 extern crate prometheus;
-extern crate lightning;
 extern crate lnpbp;
 
+pub mod msgbus;
 pub mod service;
 pub mod wired;
 
