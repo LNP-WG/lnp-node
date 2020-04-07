@@ -11,24 +11,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-pub mod constants;
-mod error;
-mod command;
-mod proc;
-
-pub use error::*;
-pub use command::*;
-pub use proc::*;
+mod connect;
+pub use connect::*;
+pub(self) use super::*;
 
 
-use std::convert::{TryFrom, TryInto};
-
-use lnpbp::lightning::bitcoin;
-use lnpbp::lightning::bitcoin::secp256k1;
-use lnpbp::lnp::NodeAddr;
-use lnpbp::internet::InetSocketAddr;
+pub(self) const MSGID_CONNECT: u16 = 0x0001;
 
 
-type Multipart = Vec<zmq::Message>;
-
+pub trait Procedure { }

@@ -19,7 +19,7 @@ use tokio::{
 };
 
 use crate::TryService;
-use crate::wired::BootstrapError;
+use crate::BootstrapError;
 use super::*;
 
 pub struct PeerService {
@@ -51,8 +51,8 @@ impl PeerService {
                 stream: Arc<TcpStream>) -> Result<Self, BootstrapError> {
         let publisher = context.socket(zmq::PUB)
             .map_err(|e| BootstrapError::PublishingError(e))?;
-        //publisher.bind(config.msgbus_addr.as_str())
-        //    .map_err(|e| BootstrapError::PublishingError(e))?;
+        publisher.bind(config.lnp2p_addr.to_string().as_str())
+            .map_err(|e| BootstrapError::PublishingError(e))?;
         let publisher = Mutex::new(publisher);
 
         Ok(Self {

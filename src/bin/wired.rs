@@ -17,6 +17,7 @@ use std::env;
 use log::*;
 use clap::derive::Clap;
 
+use lnpd::BootstrapError;
 use lnpd::service::*;
 use lnpd::wired::*;
 

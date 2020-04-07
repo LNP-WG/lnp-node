@@ -18,7 +18,7 @@ use std::convert::TryFrom;
 use tokio::net::TcpListener;
 
 use crate::TryService;
-use crate::wired::BootstrapError;
+use crate::BootstrapError;
 use crate::wired::peer::{self, PeerService};
 use crate::wired::{ConnDirection, PeerConnection, PeerConnectionList};
 use super::*;

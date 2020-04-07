@@ -13,7 +13,7 @@
 
 
 use std::io;
-use crate::wired::BootstrapError;
+use crate::BootstrapError;
 
 #[derive(Debug, Display)]
 #[display_from(Debug)]

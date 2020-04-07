@@ -14,8 +14,8 @@
 
 use std::str;
 
-use crate::Service;
-use crate::wired::{BootstrapError, PeerConnectionList};
+use crate::{Service, BootstrapError};
+use crate::wired::PeerConnectionList;
 use super::*;
 
 pub struct BusService {

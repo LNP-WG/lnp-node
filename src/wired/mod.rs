@@ -12,7 +12,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 mod config;
-mod error;
 mod runtime;
 
 mod wire;
@@ -21,7 +20,6 @@ mod bus;
 
 pub use config::*;
 pub use runtime::*;
-pub use error::BootstrapError;
 pub use wire::service::*;
 pub use peer::service::*;
 pub use bus::service::*;

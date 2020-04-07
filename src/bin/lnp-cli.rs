@@ -17,12 +17,18 @@ use std::{io, env};
 use log::*;
 use clap::derive::Clap;
 
-use lnpd::cli::*;
+use lnpbp::lnp::NodeAddr;
 
-fn main() -> Result<(), io::Error> {
+use lnpd::cli::*;
+use lnpd::BootstrapError;
+use lnpd::msgbus;
+
+
+#[tokio::main]
+async fn main() -> Result<(), String> {
     // TODO: Parse config file as well
     let opts: Opts = Opts::parse();
-    let config: Config = opts.into();
+    let config: Config = opts.clone().into();
 
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", match config.verbose {
@@ -36,6 +42,14 @@ fn main() -> Result<(), io::Error> {
     }
     env_logger::init();
     log::set_max_level(LevelFilter::Trace);
+
+    let runtime = Runtime::init(config).await?;
+
+    // Non-interactive command processing:
+    match opts.command {
+        Command::Connect { addr } => runtime.command_connect(addr).await?,
+        _ => unimplemented!()
+    }
 
     Ok(())
 }

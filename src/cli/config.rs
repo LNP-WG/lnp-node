@@ -20,7 +20,8 @@ use lnpbp::lnp::NodeAddr;
 use crate::msgbus::constants::*;
 
 
-#[derive(Clap)]
+#[derive(Clap, Clone, Debug, Display)]
+#[display_from(Debug)]
 #[clap(
     name = "lnp-cli",
     version = "0.0.1",
@@ -38,17 +39,18 @@ pub struct Opts {
 
     /// IPC connection string for wired daemon API
     #[clap(global = true, short = "w", long = "wired-api", default_value = MSGBUS_PEER_API_ADDR, env="LNP_CLI_WIRED_API_ADDR")]
-    wired_api_socket_str: String,
+    pub wired_api_socket_str: String,
 
     /// IPC connection string for wired daemon push notifications on perr status updates
     #[clap(global = true, short = "W", long = "wired-push", default_value = MSGBUS_PEER_PUSH_ADDR, env="LNP_CLI_WIRED_PUSH_ADDR")]
-    wired_push_socket_str: String,
+    pub wired_push_socket_str: String,
 
     #[clap(subcommand)]
-    command: Command
+    pub command: Command
 }
 
-#[derive(Clap)]
+#[derive(Clap, Clone, Debug, Display)]
+#[display_from(Debug)]
 pub enum Command {
     /// Sends command to a wired daemon to connect to the new peer
     Connect {

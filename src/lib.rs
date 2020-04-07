@@ -48,7 +48,9 @@ extern crate lnpbp;
 pub mod msgbus;
 pub mod service;
 pub mod wired;
+pub mod error;
 
 pub use service::*;
+pub use error::*;
 
 pub mod cli;

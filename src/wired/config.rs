@@ -16,6 +16,7 @@ use std::str::FromStr;
 use clap::Clap;
 
 use lnpbp::internet::{InetSocketAddr, InetAddr};
+use lnpbp::lnp::NodeAddr;
 
 use crate::msgbus::constants::*;
 
@@ -44,14 +45,14 @@ pub struct Opts {
     /// Use custom port to listen for incoming connections from LN peers
     #[clap(short = "p", long = "port", default_value = "9735", env="LNP_WIRED_PORT")]
     port: u16,
-}
 
-// TODO: Unlock this feature (specifying connection points at start) lately
-/*
-(@arg connect: -c --connect ... "Nodes to connect at after the launch \
-    (in form of <node_id>@<inet_addr>[:<port>], \
-    where <inet_addr> can be IPv4, IPv6 or TORv3 internet address)")
-    */
+    // TODO: Use connect argument for connecting to the nodes after the launch
+    /// Nodes to connect at after the launch
+    /// (in form of `<node_id>@<inet_addr>[:<port>]`,
+    /// where <inet_addr> can be IPv4, IPv6 or TORv3 internet address)
+    #[clap(short = "C", long = "connect", min_values=0, env="LNP_WIRED_CONNECT")]
+    connect: Vec<NodeAddr>,
+}
 
 
 // We need config structure since not all of the parameters can be specified
