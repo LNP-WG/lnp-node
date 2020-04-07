@@ -11,20 +11,26 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use crate::{monitor, constants::*};
+use crate::{monitor, api, constants::*};
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
     pub monitor_socket: String,
+    pub responder_socket: String,
+    pub publisher_socket: String,
     pub db_state_url: String,
+
 }
 
 impl Default for Config {
     fn default() -> Self {
         let monitor_config = monitor::Config::default();
+        let api_config = api::Config::default();
         Self {
             monitor_socket: monitor_config.socket,
+            responder_socket: api_config.responder_socket,
+            publisher_socket: api_config.publisher_socket,
             db_state_url: STATE_DB_PATH.to_string(),
         }
     }

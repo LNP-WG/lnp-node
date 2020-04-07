@@ -1,4 +1,5 @@
 // Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -53,6 +54,8 @@ mod constants;
 mod service;
 mod config;
 
+mod api;
+
 use std::env;
 use log::*;
 use futures::future;
@@ -82,8 +85,11 @@ async fn main() -> Result<(), BootstrapError> {
 
     let monitor_task = monitor::run(config.clone().into(), &mut context)?;
 
+    let api_task = api::run(config.clone().into(), &mut context)?;
+
     let tasks: Vec<JoinHandle<!>> = vec![
-        monitor_task
+        monitor_task,
+        api_task
     ].into_iter().flatten().collect();
     future::try_join_all(tasks).await?;
 
