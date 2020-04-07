@@ -50,3 +50,5 @@ pub mod service;
 pub mod wired;
 
 pub use service::*;
+
+pub mod cli;

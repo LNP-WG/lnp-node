@@ -15,43 +15,52 @@
 use std::str::FromStr;
 use clap::Clap;
 
-use lnpbp::internet::{InetSocketAddr, InetAddr};
+use lnpbp::lnp::NodeAddr;
 
 use crate::msgbus::constants::*;
 
 
 #[derive(Clap)]
 #[clap(
-    name = "wired",
+    name = "lnp-cli",
     version = "0.0.1",
     author = "Dr Maxim Orlovsky <orlovsky@pandoracore.com>",
-    about =  "LNP wired: Lightning wire P2P daemon; part of Lightning network protocol suite"
+    about =  "LNP node command-line interface; part of Lightning network protocol suite"
 )]
 pub struct Opts {
     /// Path and name of the configuration file
-    #[clap(short = "c", long = "config", default_value = "wired.toml")]
+    #[clap(global = true, short = "c", long = "config", default_value = "./cli.toml")]
     pub config: String,
 
     /// Sets verbosity level
-    #[clap(short = "v", long = "verbose", min_values=0, max_values=4, parse(from_occurrences))]
+    #[clap(global = true, short = "v", long = "verbose", min_values=0, max_values=4, parse(from_occurrences))]
     pub verbose: i32,
 
-    /// IPv4, IPv6 or Tor address to listen for incoming connections from LN peers
-    #[clap(short = "i", long = "inet-addr", default_value = "0.0.0.0", env="LNP_WIRED_INET_ADDR",
-           parse(try_from_str))]
-    address: InetAddr,
+    /// IPC connection string for wired daemon API
+    #[clap(global = true, short = "w", long = "wired-api", default_value = MSGBUS_PEER_API_ADDR, env="LNP_CLI_WIRED_API_ADDR")]
+    wired_api_socket_str: String,
 
-    /// Use custom port to listen for incoming connections from LN peers
-    #[clap(short = "p", long = "port", default_value = "9735", env="LNP_WIRED_PORT")]
-    port: u16,
+    /// IPC connection string for wired daemon push notifications on perr status updates
+    #[clap(global = true, short = "W", long = "wired-push", default_value = MSGBUS_PEER_PUSH_ADDR, env="LNP_CLI_WIRED_PUSH_ADDR")]
+    wired_push_socket_str: String,
+
+    #[clap(subcommand)]
+    command: Command
 }
 
-// TODO: Unlock this feature (specifying connection points at start) lately
-/*
-(@arg connect: -c --connect ... "Nodes to connect at after the launch \
-    (in form of <node_id>@<inet_addr>[:<port>], \
-    where <inet_addr> can be IPv4, IPv6 or TORv3 internet address)")
-    */
+#[derive(Clap)]
+pub enum Command {
+    /// Sends command to a wired daemon to connect to the new peer
+    Connect {
+        /// Peer address string, in format `<node_id>@<node_inet_addr>[:<port>]`,
+        /// where <node_inet_addr> may be IPv4, IPv6 or TORv3 address
+        #[clap(parse(try_from_str))]
+        addr: NodeAddr
+    },
+
+    /// Lists all connected peers
+    ListConnections,
+}
 
 
 // We need config structure since not all of the parameters can be specified
@@ -61,16 +70,16 @@ pub struct Opts {
 #[display_from(Debug)]
 pub struct Config {
     pub verbose: u8,
-    pub lnp2p_addr: InetSocketAddr,
     pub msgbus_peer_api_addr: String,
-    pub msgbus_peer_push_addr: String,
+    pub msgbus_peer_sub_addr: String,
 }
 
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Self {
             verbose: opts.verbose as u8,
-            lnp2p_addr: InetSocketAddr::new(opts.address, opts.port),
+            msgbus_peer_api_addr: opts.wired_api_socket_str,
+            msgbus_peer_sub_addr: opts.wired_push_socket_str,
             ..Config::default()
         }
     }
@@ -80,9 +89,8 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             verbose: 0,
-            lnp2p_addr: InetSocketAddr::default(),
             msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
-            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
+            msgbus_peer_sub_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
         }
     }
 }

@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,10 +11,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod config;
-pub mod runtime;
-pub mod error;
 
-pub use config::*;
-pub use runtime::*;
-pub use error::*;
+pub const MSGBUS_PEER_API_ADDR: &str = "ipc:///tmp/lnp/wired/api";
+pub const MSGBUS_PEER_PUSH_ADDR: &str = "ipc:///tmp/lnp/wired/push";

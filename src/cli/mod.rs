@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,6 +11,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub const STATE_DB_PATH: &str = "state.sqlite";
-pub const LN_ADDR: &str = "0.0.0.0:9735";
-pub const MONITOR_ADDR: &str = "0.0.0.0:9666";
+
+pub mod config;
+
+pub use config::*;

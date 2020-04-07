@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,21 +11,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+pub mod config;
+pub mod runtime;
+pub mod error;
 
-use std::io;
-
-#[derive(Debug, Display)]
-#[display_from(Debug)]
-pub(super) enum Error {
-    APIRequestError(io::Error),
-    APIResponseError(io::Error),
-    PrometheusError(prometheus::Error),
-}
-
-impl std::error::Error for Error {}
-
-impl From<prometheus::Error> for Error {
-    fn from(err: prometheus::Error) -> Self {
-        Error::PrometheusError(err)
-    }
-}
+pub use config::*;
+pub use runtime::*;
+pub use error::*;

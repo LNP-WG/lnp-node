@@ -12,6 +12,9 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
+pub mod constants;
+
+
 use std::convert::{TryFrom, TryInto};
 
 use lnpbp::lightning::bitcoin;
@@ -64,12 +67,12 @@ impl TryFrom<&[zmq::Message]> for Connect {
     fn try_from(args: &[zmq::Message]) -> Result<Self, Self::Error> {
         if args.len() != 3 { Err(Error::WrongNumberOfArguments)? }
 
-        let pk = secp256k1::PublicKey::from_slice(&args[0][..])?;
-        let socket_addr = InetSocketAddr::from_uniform_encoding(&args[1])
+        let node_id = secp256k1::PublicKey::from_slice(&args[0][..])?;
+        let inet_addr = InetSocketAddr::from_uniform_encoding(&args[1])
             .ok_or(Error::MalformedArgument)?;
 
         Ok(Self {
-            node_addr: NodeAddr { id: pk, socket_address: socket_addr }
+            node_addr: NodeAddr { node_id, inet_addr }
         })
     }
 }
@@ -78,8 +81,8 @@ impl From<Connect> for Multipart {
     fn from(proc: Connect) -> Self {
         vec![
             zmq::Message::from(&MSGID_CONNECT.to_be_bytes()[..]),
-            zmq::Message::from(&proc.node_addr.id.serialize()[..]),
-            zmq::Message::from(&proc.node_addr.socket_address.to_uniform_encoding()[..])
+            zmq::Message::from(&proc.node_addr.node_id.serialize()[..]),
+            zmq::Message::from(&proc.node_addr.inet_addr.to_uniform_encoding()[..])
         ]
     }
 }

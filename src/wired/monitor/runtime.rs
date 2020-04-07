@@ -1,4 +1,4 @@
-// Lightning network protocol (LNP) daemon
+// Lightning network protocol (LNP) daemon suite
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
