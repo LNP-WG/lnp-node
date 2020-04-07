@@ -15,24 +15,20 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::convert::TryFrom;
-use tokio::{
-    sync::Mutex,
-    task::JoinHandle,
-    net::{TcpListener, TcpStream}
-};
+use tokio::net::TcpListener;
 
 use crate::TryService;
 use crate::wired::BootstrapError;
 use crate::wired::peer::{self, PeerService};
+use crate::wired::{ConnDirection, PeerConnection, PeerConnectionList};
 use super::*;
 
 pub struct WireService {
     config: Config,
-    peer_config: peer::Config,
     context: zmq::Context,
     listener: TcpListener,
-    sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>,
-    threads: Arc<Mutex<Vec<JoinHandle<!>>>>,
+    peer_config: peer::Config,
+    peer_connections: PeerConnectionList,
 }
 
 #[async_trait]
@@ -56,16 +52,13 @@ impl WireService {
         config: Config,
         peer_config: peer::Config,
         context: zmq::Context,
-        sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>,
-        threads: Arc<Mutex<Vec<JoinHandle<!>>>>
+        peer_connections: PeerConnectionList
     ) -> Result<Self, BootstrapError> {
         debug!("Opening LN P2P socket at {}", config.lnp2p_addr);
 
-        /*
         if config.lnp2p_addr.is_tor() {
             Err(BootstrapError::TorNotYetSupported)?;
         }
-        */
 
         let addr = SocketAddr::try_from(config.lnp2p_addr)
             .expect("Non-Tor address failed to convert into an IP address");
@@ -75,29 +68,34 @@ impl WireService {
 
         Ok(Self {
             config,
-            peer_config,
             context,
             listener,
-            sockets,
-            threads
+            peer_config,
+            peer_connections
         })
     }
 
     async fn run(&mut self) -> Result<(), Error> {
         let (stream, addr) = self.listener.accept().await?;
-        info!("New LN peer connected: {}", addr);
+        let address =  addr.into();
+        info!("New LN peer connected: {}", address);
 
-        debug!("Instantiating new peer service for {}", addr);
+        debug!("Instantiating new peer service for {}", address);
         let stream = Arc::new(stream);
-        self.sockets.lock().await.push(stream.clone());
 
-        let service = PeerService::init(self.peer_config.clone(), self.context.clone(), stream)?;
+        let service = PeerService::init(self.peer_config.clone(), self.context.clone(), stream.clone())?;
 
-        let handle = tokio::spawn(async move {
-            trace!("Running peer service for {}", addr);
-            service.run_or_panic(&format!("Peer service for {}", addr)).await
+        let thread = tokio::spawn(async move {
+            trace!("Running peer service for {}", address);
+            service.run_or_panic(&format!("Peer service for {}", address)).await
         });
-        self.threads.lock().await.push(handle);
+
+        self.peer_connections.lock().await.push(PeerConnection {
+            stream,
+            address,
+            direction: ConnDirection::In,
+            thread
+        });
 
         Ok(())
     }

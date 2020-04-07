@@ -14,17 +14,8 @@
 #![feature(never_type)]
 
 use std::env;
-use std::sync::Arc;
-use std::str::FromStr;
 use log::*;
-use clap::Clap;
-#[macro_use]
-use tokio::try_join;
-use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
-use tokio::net::TcpStream;
-#[macro_use]
-use lnpbp::common::internet::{InetAddr, InetSocketAddr};
+use clap::derive::Clap;
 
 use lnpd::service::*;
 use lnpd::wired::*;
@@ -48,37 +39,6 @@ async fn main() -> Result<(), BootstrapError> {
     env_logger::init();
     log::set_max_level(LevelFilter::Trace);
 
-    let mut context = zmq::Context::new();
-
-    let wire_sockets = Arc::new(Mutex::new(Vec::<Arc<TcpStream>>::new()));
-    let wire_threads = Arc::new(Mutex::new(Vec::<JoinHandle<!>>::new()));
-
-    let wire_service = WireService::init(
-        config.clone().into(),
-        config.clone().into(),
-        context.clone(),
-        wire_sockets.clone(),
-        wire_threads.clone()
-    ).await?;
-    let bus_service = BusService::init(
-        config.clone().into(),
-        context.clone(),
-        wire_sockets.clone()
-    )?;
-
-    let wire_addr = config.lnp2p_addr.clone();
-    let bus_addr = config.msgbus_peer_api_addr.clone();
-
-    try_join!(
-        tokio::spawn(async move {
-            info!("LN P2P wire service is running on {}", wire_addr);
-            wire_service.run_or_panic("LN P2P service").await
-        }),
-        tokio::spawn(async move {
-            info!("Message bus service is listening on {}", bus_addr);
-            bus_service.run_loop().await
-        })
-    )?;
-
-    Ok(())
+    let runtime = Runtime::init(config).await?;
+    runtime.run_or_panic("Wired runtime").await
 }

@@ -12,24 +12,17 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::{
-    str,
-    sync::Arc
-};
-use tokio::{
-    sync::Mutex,
-    net::TcpStream
-};
+use std::str;
 
 use crate::Service;
-use crate::wired::BootstrapError;
+use crate::wired::{BootstrapError, PeerConnectionList};
 use super::*;
 
 pub struct BusService {
     config: Config,
     context: zmq::Context,
     subscriber: zmq::Socket,
-    sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>,
+    peer_connections: PeerConnectionList,
 }
 
 #[async_trait]
@@ -49,7 +42,7 @@ impl Service for BusService {
 impl BusService {
     pub fn init(config: Config,
                 context: zmq::Context,
-                sockets: Arc<Mutex<Vec<Arc<TcpStream>>>>
+                peer_connections: PeerConnectionList
     ) -> Result<Self, BootstrapError> {
         trace!("Subscribing on message bus requests on {} ...", config.socket_addr);
         let subscriber = context.socket(zmq::SUB)
@@ -64,7 +57,7 @@ impl BusService {
             config,
             context,
             subscriber,
-            sockets,
+            peer_connections,
         })
     }
 

@@ -13,7 +13,6 @@
 
 
 use std::convert::{TryFrom, TryInto};
-use zmq::Message;
 
 use lnpbp::lightning::bitcoin;
 use lnpbp::lightning::bitcoin::secp256k1;

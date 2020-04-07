@@ -13,12 +13,14 @@
 
 mod config;
 mod error;
+mod runtime;
 
 mod wire;
 mod peer;
 mod bus;
 
 pub use config::*;
+pub use runtime::*;
 pub use error::BootstrapError;
 pub use wire::service::*;
 pub use peer::service::*;
