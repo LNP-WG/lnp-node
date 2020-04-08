@@ -17,6 +17,7 @@ use super::*;
 
 #[derive(Clone, Copy, Debug, Display)]
 #[display_from(Debug)]
+#[non_exhaustive]
 pub enum Command {
     Okay,
     Ack,
@@ -68,7 +69,6 @@ impl From<Command> for Multipart {
             ].into_iter()
                 .chain(Multipart::from(connect))
                 .collect::<Multipart>(),
-            _ => unimplemented!()
         }
     }
 }

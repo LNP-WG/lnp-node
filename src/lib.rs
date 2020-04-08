@@ -28,9 +28,7 @@
 extern crate tokio;
 extern crate futures;
 extern crate zmq;
-#[macro_use]
 extern crate diesel;
-#[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate derive_wrapper;

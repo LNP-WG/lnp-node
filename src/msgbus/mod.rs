@@ -24,10 +24,7 @@ pub use proc::*;
 
 use std::convert::{TryFrom, TryInto};
 
-use lnpbp::lightning::bitcoin;
 use lnpbp::lightning::bitcoin::secp256k1;
-use lnpbp::lnp::NodeAddr;
-use lnpbp::internet::InetSocketAddr;
 
 
 pub type Multipart = Vec<zmq::Message>;

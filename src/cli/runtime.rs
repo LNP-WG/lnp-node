@@ -13,7 +13,6 @@
 
 
 use std::convert::TryFrom;
-use tokio::task::JoinHandle;
 
 use lnpbp::lnp::NodeAddr;
 

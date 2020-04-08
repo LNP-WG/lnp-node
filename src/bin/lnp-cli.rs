@@ -13,15 +13,11 @@
 
 #![feature(never_type)]
 
-use std::{io, env};
+use std::env;
 use log::*;
 use clap::derive::Clap;
 
-use lnpbp::lnp::NodeAddr;
-
 use lnpd::cli::*;
-use lnpd::BootstrapError;
-use lnpd::msgbus;
 
 
 #[tokio::main]

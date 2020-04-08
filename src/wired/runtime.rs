@@ -21,7 +21,7 @@ use tokio::{
 
 use lnpbp::internet::InetSocketAddr;
 
-use crate::{Service, TryService, BootstrapError};
+use crate::{TryService, BootstrapError};
 use super::*;
 
 

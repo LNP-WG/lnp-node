@@ -12,7 +12,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::str;
 use std::convert::TryFrom;
 use futures::TryFutureExt;
 

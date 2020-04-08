@@ -12,7 +12,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use std::str::FromStr;
 use clap::Clap;
 
 use lnpbp::lnp::NodeAddr;
