@@ -32,9 +32,9 @@ pub struct Opts {
     #[clap(short = "c", long = "config", default_value = "wired.toml")]
     pub config: String,
 
-    /// Sets verbosity level
-    #[clap(short = "v", long = "verbose", min_values=0, max_values=4, parse(from_occurrences))]
-    pub verbose: i32,
+    /// Sets verbosity level; can be used multiple times to increase verbosity
+    #[clap(global = true, short = "v", long = "verbose", min_values = 0, max_values = 4, parse(from_occurrences))]
+    pub verbose: u8,
 
     /// IPv4, IPv6 or Tor address to listen for incoming connections from LN peers
     #[clap(short = "i", long = "inet-addr", default_value = "0.0.0.0", env="LNP_WIRED_INET_ADDR",
@@ -69,7 +69,7 @@ pub struct Config {
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Self {
-            verbose: opts.verbose as u8,
+            verbose: opts.verbose,
             lnp2p_addr: InetSocketAddr::new(opts.address, opts.port),
             ..Config::default()
         }

@@ -35,13 +35,13 @@ impl Runtime {
         debug!("Opening API socket to wired on {} ...", config.msgbus_peer_api_addr);
         let api_socket = context.socket(zmq::REQ)
             .map_err(|e| BootstrapError::PublishingError(e))?;
-        api_socket.bind(config.msgbus_peer_api_addr.as_str())
+        api_socket.bind(&config.msgbus_peer_api_addr)
             .map_err(|e| BootstrapError::PublishingError(e))?;
 
         debug!("Opening push notification socket to wired on {} ...", config.msgbus_peer_sub_addr);
         let sub_socket = context.socket(zmq::SUB)
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
-        sub_socket.connect(config.msgbus_peer_sub_addr.as_str())
+        sub_socket.connect(&config.msgbus_peer_sub_addr)
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
         sub_socket.set_subscribe("".as_bytes())
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
@@ -56,7 +56,7 @@ impl Runtime {
     }
 
     pub async fn command_connect(&self, node_addr: NodeAddr) -> Result<(), msgbus::Error> {
-        debug!("Performing CONNECT command to {} ...", node_addr);
+        info!("Performing CONNECT command to {} ...", node_addr);
         let multipart: msgbus::Multipart = msgbus::Command::Connect(msgbus::Connect { node_addr }).into();
         self.api_socket.send_multipart(multipart, 0)?;
         trace!("Request sent, awaiting response ...");
@@ -77,5 +77,15 @@ impl TryService for Runtime {
         loop {
 
         }
+    }
+}
+
+impl Drop for Runtime {
+    fn drop(&mut self) {
+        trace!("Shutting down sockets");
+        self.api_socket.disconnect(&self.config.msgbus_peer_api_addr)
+            .unwrap_or_else(|err| error!("Error disconnecting message bus API socket: {}", err));
+        self.sub_socket.disconnect(&self.config.msgbus_peer_sub_addr)
+            .unwrap_or_else(|err| error!("Error disconnecting message bus push socket: {}", err));
     }
 }

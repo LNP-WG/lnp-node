@@ -32,9 +32,9 @@ pub struct Opts {
     #[clap(global = true, short = "c", long = "config", default_value = "./cli.toml")]
     pub config: String,
 
-    /// Sets verbosity level
-    #[clap(global = true, short = "v", long = "verbose", min_values=0, max_values=4, parse(from_occurrences))]
-    pub verbose: i32,
+    /// Sets verbosity level; can be used multiple times to increase verbosity
+    #[clap(global = true, short = "v", long = "verbose", min_values = 0, max_values = 4, parse(from_occurrences))]
+    pub verbose: u8,
 
     /// IPC connection string for wired daemon API
     #[clap(global = true, short = "w", long = "wired-api", default_value = MSGBUS_PEER_API_ADDR, env="LNP_CLI_WIRED_API_ADDR")]
@@ -78,7 +78,7 @@ pub struct Config {
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Self {
-            verbose: opts.verbose as u8,
+            verbose: opts.verbose,
             msgbus_peer_api_addr: opts.wired_api_socket_str,
             msgbus_peer_sub_addr: opts.wired_push_socket_str,
             ..Config::default()
