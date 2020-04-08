@@ -18,12 +18,14 @@ use tokio::{
     net::TcpStream,
     task::JoinHandle,
 };
+
 use lnpbp::internet::InetSocketAddr;
 
 use crate::{Service, TryService, BootstrapError};
 use super::*;
 
 
+// TODO: Move to lnpbp::lnp::transport
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub enum ConnDirection {
@@ -37,6 +39,7 @@ pub enum ConnDirection {
 pub struct PeerConnection {
     pub stream: Arc<TcpStream>,
     pub address: InetSocketAddr,
+    // TODO: We don't need it here, it's part of `peer.connection`
     pub direction: ConnDirection,
     pub thread: JoinHandle<!>,
 }
@@ -98,7 +101,7 @@ impl TryService for Runtime {
             }),
             tokio::spawn(async move {
                 info!("Message bus service is listening on {}", bus_addr);
-                bus_service.run_loop().await
+                bus_service.run_or_panic("API service").await
             })
         )?;
 

@@ -16,6 +16,7 @@ use std::convert::{TryFrom, TryInto};
 
 use lnpbp::lightning::bitcoin;
 use lnpbp::lightning::bitcoin::secp256k1;
+use lnpbp::lnp;
 use lnpbp::lnp::NodeAddr;
 use lnpbp::internet::InetSocketAddr;
 
@@ -24,6 +25,7 @@ use lnpbp::internet::InetSocketAddr;
 #[display_from(Debug)]
 pub enum Error {
     MessageBusError(zmq::Error),
+    ConnectionError(lnp::ConnectionError),
     MalformedRequest,
     MalformedCommand,
     MalformedArgument,
@@ -52,5 +54,11 @@ impl From<bitcoin::consensus::encode::Error> for Error {
 impl From<secp256k1::Error> for Error {
     fn from(_: secp256k1::Error) -> Self {
         Error::MalformedArgument
+    }
+}
+
+impl From<lnp::ConnectionError> for Error {
+    fn from(err: lnp::ConnectionError) -> Self {
+        Error::ConnectionError(err)
     }
 }

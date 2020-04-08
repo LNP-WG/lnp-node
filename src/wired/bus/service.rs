@@ -14,11 +14,17 @@
 
 use std::str;
 use std::convert::TryFrom;
+use futures::TryFutureExt;
 
-use crate::{Service, BootstrapError};
+use lnpbp::lnp::Peer;
+use lnpbp::lightning::bitcoin::hashes::{Hash, sha256};
+use lnpbp::lightning::secp256k1;
+
+use crate::{TryService, BootstrapError};
 use crate::wired::PeerConnectionList;
 use super::*;
 use crate::msgbus::*;
+
 
 pub struct BusService {
     config: Config,
@@ -28,13 +34,16 @@ pub struct BusService {
 }
 
 #[async_trait]
-impl Service for BusService {
-    async fn run_loop(mut self) -> ! {
+impl TryService for BusService {
+    type ErrorType = Error;
+
+    async fn try_run_loop(mut self) -> Result<!, Error> {
         loop {
             match self.run().await {
                 Ok(_) => debug!("Message bus request processing complete"),
                 Err(err) => {
-                    panic!("Error processing incoming bus message: {}", err)
+                    error!("Error processing incoming bus message: {}", err);
+                    Err(err)?;
                 },
             }
         }
@@ -64,8 +73,6 @@ impl BusService {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        use Command::*;
-
         let req: Multipart = self.subscriber
             .recv_multipart(0)
             .map_err(|err| Error::MessageBusError(err))?
@@ -75,18 +82,46 @@ impl BusService {
         trace!("New API request");
 
         trace!("Received API command {:x?}, processing ... ", req[0]);
+        let resp = self.proc_command(req)
+            .inspect_err(|err| error!("Error processing command: {}", err))
+            .await
+            .unwrap_or(Command::Failure);
+
+        trace!("Received response from command processor: `{}`; replying to client", resp);
+        self.subscriber.send_multipart(Multipart::from(Command::Success), 0)?;
+        debug!("Sent reply {}", Command::Success);
+
+        Ok(())
+    }
+
+    async fn proc_command(&mut self, req: Multipart) -> Result<Command, Error> {
+        use Command::*;
+
         let command = Command::try_from(req)?;
 
         match command {
-            Connect(connect) => self.command_connect(connect),
+            Connect(connect) => self.command_connect(connect).await,
             _ => Err(Error::UnknownCommand)
         }
     }
 
-    fn command_connect(&self, connect: Connect) -> Result<(), Error> {
+    async fn command_connect(&mut self, connect: Connect) -> Result<Command, Error> {
         debug!("Got CONNECT {}", connect);
-        self.subscriber.send_multipart(Multipart::from(Command::Success), 0)?;
-        debug!("Sent reply {}", Command::Success);
-        Ok(())
+
+        let node_secret = sha256::Hash::hash("node_secret".as_bytes());
+        let ephemeral_secret = sha256::Hash::hash("ephemeral_secret".as_bytes());
+
+        let node_secret = secp256k1::SecretKey::from_slice(&node_secret[..])?;
+        let ephemeral_secret = secp256k1::SecretKey::from_slice(&ephemeral_secret[..])?;
+
+        debug!("Connecting to peer {}", connect.node_addr);
+        let peer = Peer::new_outbound(
+            connect.node_addr,
+            &node_secret,
+            &ephemeral_secret,
+        ).await?;
+        trace!("Connection to peer {} completed successfully", connect.node_addr);
+
+        Ok(Command::Success)
     }
 }
