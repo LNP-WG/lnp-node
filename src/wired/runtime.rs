@@ -21,8 +21,9 @@ use tokio::{
 
 use lnpbp::internet::InetSocketAddr;
 
-use crate::{TryService, BootstrapError};
+use crate::{Service, TryService, BootstrapError};
 use super::*;
+use crate::wired::MonitorService;
 
 
 // TODO: Move to lnpbp::lnp::transport
@@ -53,6 +54,7 @@ pub struct Runtime {
     peer_connections: PeerConnectionList,
     wire_service: WireService,
     bus_service: BusService,
+    monitor_service: MonitorService,
 }
 
 impl Runtime {
@@ -72,13 +74,18 @@ impl Runtime {
             context.clone(),
             peer_connections.clone()
         )?;
+        let monitor_service = MonitorService::init(
+            config.clone().into(),
+            context.clone()
+        )?;
 
         Ok(Self {
             config,
             context,
             peer_connections,
             wire_service,
-            bus_service
+            bus_service,
+            monitor_service,
         })
     }
 }
@@ -90,9 +97,11 @@ impl TryService for Runtime {
     async fn try_run_loop(self) -> Result<!, Self::ErrorType> {
         let wire_addr = self.config.lnp2p_addr.clone();
         let bus_addr = self.config.msgbus_peer_api_addr.clone();
+        let monitor_addr = self.config.monitor_addr.clone();
 
         let wire_service = self.wire_service;
         let bus_service = self.bus_service;
+        let monitor_service = self.monitor_service;
 
         try_join!(
             tokio::spawn(async move {
@@ -102,6 +111,10 @@ impl TryService for Runtime {
             tokio::spawn(async move {
                 info!("Message bus service is listening on {}", bus_addr);
                 bus_service.run_or_panic("API service").await
+            }),
+            tokio::spawn(async move {
+                info!("Minitoring (Prometheus) exporter service is listening on {}", monitor_addr);
+                monitor_service.run_loop().await
             })
         )?;
 

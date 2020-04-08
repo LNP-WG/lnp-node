@@ -17,9 +17,11 @@ mod runtime;
 mod wire;
 mod peer;
 mod bus;
+mod monitor;
 
 pub use config::*;
 pub use runtime::*;
 pub use wire::service::*;
 pub use peer::service::*;
 pub use bus::service::*;
+pub use monitor::service::*;

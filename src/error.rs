@@ -24,8 +24,11 @@ pub enum BootstrapError {
     ArgParseError(String),
     SubscriptionError(zmq::Error),
     PublishingError(zmq::Error),
-    MultithreadError(JoinError)
+    MultithreadError(JoinError),
+    MonitorSocketError(Box<dyn std::error::Error>),
 }
+
+impl std::error::Error for BootstrapError { }
 
 impl From<BootstrapError> for String {
     fn from(err: BootstrapError) -> Self { format!("{}", err) }

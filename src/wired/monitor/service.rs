@@ -13,38 +13,18 @@
 
 
 use tiny_http;
-use tokio::task::JoinHandle;
 use prometheus::Encoder;
 
 use crate::{
     error::*,
     Service
 };
-use super::*;
+use super::{*, error::Error};
 
-pub fn run(config: Config, context: &mut zmq::Context)
-           -> Result<Vec<JoinHandle<!>>, BootstrapError>
-{
-    let socket_addr = config.socket.clone();
-    let http_server = tiny_http::Server::http(
-        socket_addr.clone()
-    ).map_err(|err| BootstrapError::MonitorSocketError(err))?;
 
-    let monitor_service = MonitorService::init(
-        config,
-        http_server,
-    );
-
-    Ok(vec![
-        tokio::spawn(async move {
-            info!("Monitoring service is listening on {}", socket_addr);
-            monitor_service.run_loop().await
-        }),
-    ])
-}
-
-struct MonitorService {
+pub struct MonitorService {
     config: Config,
+    context: zmq::Context,
     http_server: tiny_http::Server,
 }
 
@@ -64,11 +44,17 @@ impl Service for MonitorService {
 
 impl MonitorService {
     pub fn init(config: Config,
-                http_server: tiny_http::Server) -> Self {
-        Self {
+                context: zmq::Context) -> Result<Self, BootstrapError> {
+        let socket_addr = config.socket_addr.clone();
+        let http_server = tiny_http::Server::http(
+            socket_addr.clone()
+        ).map_err(|err| BootstrapError::MonitorSocketError(err))?;
+
+        Ok(Self {
             config,
+            context,
             http_server,
-        }
+        })
     }
 
     async fn run(&mut self) -> Result<(), Error> {

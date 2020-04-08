@@ -12,27 +12,21 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-use crate::config::Config as MainConfig;
-use crate::constants::*;
+use std::net::SocketAddr;
+
+use crate::wired::config::Config as MainConfig;
+
 
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
-    pub socket: String
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            socket: MONITOR_ADDR.to_string()
-        }
-    }
+    pub socket_addr: SocketAddr
 }
 
 impl From<MainConfig> for Config {
     fn from(config: MainConfig) -> Self {
         Config {
-            socket: config.monitor_socket
+            socket_addr: config.monitor_addr
         }
     }
 }

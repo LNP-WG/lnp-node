@@ -12,6 +12,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
+use std::net::SocketAddr;
 use clap::Clap;
 
 use lnpbp::internet::{InetSocketAddr, InetAddr};
@@ -19,6 +20,7 @@ use lnpbp::lnp::NodeAddr;
 
 use crate::msgbus::constants::*;
 
+const MONITOR_ADDR_DEFAULT: &str = "0.0.0.0:9666";
 
 #[derive(Clap)]
 #[clap(
@@ -45,6 +47,11 @@ pub struct Opts {
     #[clap(short = "p", long = "port", default_value = "9735", env="LNP_WIRED_PORT")]
     port: u16,
 
+    /// Address for Prometheus monitoring information exporter
+    #[clap(short = "m", long = "monitor", default_value = MONITOR_ADDR_DEFAULT, env="LNP_WIRED_MONITOR",
+           parse(try_from_str))]
+    monitor: SocketAddr,
+
     // TODO: Use connect argument for connecting to the nodes after the launch
     /// Nodes to connect at after the launch
     /// (in form of `<node_id>@<inet_addr>[:<port>]`,
@@ -62,6 +69,7 @@ pub struct Opts {
 pub struct Config {
     pub verbose: u8,
     pub lnp2p_addr: InetSocketAddr,
+    pub monitor_addr: SocketAddr,
     pub msgbus_peer_api_addr: String,
     pub msgbus_peer_push_addr: String,
 }
@@ -71,6 +79,7 @@ impl From<Opts> for Config {
         Self {
             verbose: opts.verbose,
             lnp2p_addr: InetSocketAddr::new(opts.address, opts.port),
+            monitor_addr: opts.monitor,
             ..Config::default()
         }
     }
@@ -81,6 +90,7 @@ impl Default for Config {
         Self {
             verbose: 0,
             lnp2p_addr: InetSocketAddr::default(),
+            monitor_addr: MONITOR_ADDR_DEFAULT.parse().expect("Constant default value parse fail"),
             msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
             msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
         }

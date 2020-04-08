@@ -12,9 +12,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 pub mod config;
-pub mod runtime;
+pub mod service;
 pub mod error;
 
 pub use config::*;
-pub use runtime::*;
-pub use error::*;
+pub use service::*;
