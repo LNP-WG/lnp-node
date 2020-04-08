@@ -17,9 +17,9 @@ use std::env;
 use log::*;
 use clap::derive::Clap;
 
-use lnpd::BootstrapError;
-use lnpd::service::*;
-use lnpd::wired::*;
+use lnp_node::BootstrapError;
+use lnp_node::service::*;
+use lnp_node::wired::*;
 
 #[tokio::main]
 async fn main() -> Result<(), BootstrapError> {

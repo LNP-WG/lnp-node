@@ -1,5 +1,5 @@
 [package]
-name = "lnpd"
+name = "lnp_node"
 description = "Generalized Lightning Network node"
 version = "0.1.0"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
@@ -21,7 +21,7 @@ zmq = "~0.9"
 tiny_http = "~0.6"
 prometheus = "~0.8"
 
-lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "feat-lnp", features = ["all"] }
+lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", features = ["all"] }
 
 # lnpbp requires custom version of bitcoin, so to maintain type compatibility
 # we have to use library through lnpbp::bitcoin handle and not via direct
