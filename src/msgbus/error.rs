@@ -37,6 +37,12 @@ impl From<Error> for String {
     fn from(err: Error) -> Self { format!("{}", err) }
 }
 
+impl From<zmq::Error> for Error {
+    fn from(err: zmq::Error) -> Self {
+        Error::MessageBusError(err)
+    }
+}
+
 impl From<bitcoin::consensus::encode::Error> for Error {
     fn from(_: bitcoin::consensus::encode::Error) -> Self {
         Error::MalformedArgument

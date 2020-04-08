@@ -16,7 +16,7 @@ pub use connect::*;
 pub(self) use super::*;
 
 
-pub(self) const MSGID_CONNECT: u16 = 0x0001;
+pub(super) const MSGID_CONNECT: u16 = 0x0001;
 
 
 pub trait Procedure { }

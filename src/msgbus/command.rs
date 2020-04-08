@@ -40,3 +40,18 @@ impl TryFrom<Multipart> for Command {
         })
     }
 }
+
+impl From<Command> for Multipart {
+    fn from(command: Command) -> Self {
+        use Command::*;
+
+        match command {
+            Connect(connect) => vec![
+                zmq::Message::from(&MSGID_CONNECT.to_be_bytes()[..]),
+            ].into_iter()
+                .chain(Multipart::from(connect))
+                .collect::<Multipart>(),
+            _ => unimplemented!()
+        }
+    }
+}

@@ -46,6 +46,7 @@ async fn main() -> Result<(), String> {
     let runtime = Runtime::init(config).await?;
 
     // Non-interactive command processing:
+    debug!("Parsing and processing a command");
     match opts.command {
         Command::Connect { addr } => runtime.command_connect(addr).await?,
         _ => unimplemented!()

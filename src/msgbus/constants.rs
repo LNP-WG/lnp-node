@@ -12,5 +12,5 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
-pub const MSGBUS_PEER_API_ADDR: &str = "ipc:///tmp/lnp/wired/api";
-pub const MSGBUS_PEER_PUSH_ADDR: &str = "ipc:///tmp/lnp/wired/push";
+pub const MSGBUS_PEER_API_ADDR: &str = "ipc://lnp.wired.api";
+pub const MSGBUS_PEER_PUSH_ADDR: &str = "ipc://lnp.wired.push";

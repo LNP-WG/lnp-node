@@ -30,5 +30,5 @@ use lnpbp::lnp::NodeAddr;
 use lnpbp::internet::InetSocketAddr;
 
 
-type Multipart = Vec<zmq::Message>;
+pub type Multipart = Vec<zmq::Message>;
 
