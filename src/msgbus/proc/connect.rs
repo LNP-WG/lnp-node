@@ -19,17 +19,19 @@ use lnpbp::internet::InetSocketAddr;
 use super::*;
 
 
+#[derive(Clone, Copy, Debug, Display)]
+#[display_from(Debug)]
 pub struct Connect {
     pub node_addr: NodeAddr,
 }
 
-impl Procedure for Connect { }
+impl Procedure<'_> for Connect { }
 
 impl TryFrom<&[zmq::Message]> for Connect {
     type Error = Error;
 
     fn try_from(args: &[zmq::Message]) -> Result<Self, Self::Error> {
-        if args.len() != 3 { Err(Error::WrongNumberOfArguments)? }
+        if args.len() != 2 { Err(Error::WrongNumberOfArguments)? }
 
         let node_id = secp256k1::PublicKey::from_slice(&args[0][..])?;
         let inet_addr = InetSocketAddr::from_uniform_encoding(&args[1])
@@ -44,7 +46,6 @@ impl TryFrom<&[zmq::Message]> for Connect {
 impl From<Connect> for Multipart {
     fn from(proc: Connect) -> Self {
         vec![
-            zmq::Message::from(&MSGID_CONNECT.to_be_bytes()[..]),
             zmq::Message::from(&proc.node_addr.node_id.serialize()[..]),
             zmq::Message::from(&proc.node_addr.inet_addr.to_uniform_encoding()[..])
         ]

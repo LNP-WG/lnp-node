@@ -15,7 +15,7 @@
 pub mod constants;
 mod error;
 mod command;
-mod proc;
+pub mod proc;
 
 pub use error::*;
 pub use command::*;

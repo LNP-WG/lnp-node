@@ -12,6 +12,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 
+use std::convert::TryFrom;
 use tokio::task::JoinHandle;
 
 use lnpbp::lnp::NodeAddr;
@@ -33,7 +34,7 @@ impl Runtime {
         let context = zmq::Context::new();
 
         debug!("Opening API socket to wired on {} ...", config.msgbus_peer_api_addr);
-        let api_socket = context.socket(zmq::PUB)
+        let api_socket = context.socket(zmq::REQ)
             .map_err(|e| BootstrapError::PublishingError(e))?;
         api_socket.bind(config.msgbus_peer_api_addr.as_str())
             .map_err(|e| BootstrapError::PublishingError(e))?;
@@ -64,7 +65,7 @@ impl Runtime {
             .iter()
             .map(|vec| zmq::Message::from(vec))
             .collect();
-        println!("{:#?}", rep);
+        println!("{}", msgbus::Command::try_from(rep)?);
         Ok(())
     }
 }

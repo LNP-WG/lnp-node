@@ -13,10 +13,12 @@
 
 
 use std::str;
+use std::convert::TryFrom;
 
 use crate::{Service, BootstrapError};
 use crate::wired::PeerConnectionList;
 use super::*;
+use crate::msgbus::*;
 
 pub struct BusService {
     config: Config,
@@ -32,7 +34,7 @@ impl Service for BusService {
             match self.run().await {
                 Ok(_) => debug!("Message bus request processing complete"),
                 Err(err) => {
-                    error!("Error processing incoming bus message: {}", err)
+                    panic!("Error processing incoming bus message: {}", err)
                 },
             }
         }
@@ -45,12 +47,12 @@ impl BusService {
                 peer_connections: PeerConnectionList
     ) -> Result<Self, BootstrapError> {
         trace!("Subscribing on message bus requests on {} ...", config.socket_addr);
-        let subscriber = context.socket(zmq::SUB)
+        let subscriber = context.socket(zmq::REP)
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
         subscriber.connect(config.socket_addr.as_str())
             .map_err(|e| BootstrapError::SubscriptionError(e))?;
-        subscriber.set_subscribe("".as_bytes())
-            .map_err(|e| BootstrapError::SubscriptionError(e))?;
+        //subscriber.set_subscribe("".as_bytes())
+        //    .map_err(|e| BootstrapError::SubscriptionError(e))?;
         debug!("Subscribed to the message bus requests");
 
         Ok(Self {
@@ -62,30 +64,29 @@ impl BusService {
     }
 
     async fn run(&mut self) -> Result<(), Error> {
-        let req = self.subscriber
+        use Command::*;
+
+        let req: Multipart = self.subscriber
             .recv_multipart(0)
-            .map_err(|err| Error::MessageBusError(err))?;
+            .map_err(|err| Error::MessageBusError(err))?
+            .into_iter()
+            .map(zmq::Message::from)
+            .collect();
         trace!("New API request");
 
-        let (cmd, args) = req.split_first()
-            .ok_or(Error::MalformedRequest)
-            .and_then(|(cmd_data, args)| {
-                Ok((
-                    str::from_utf8(&cmd_data[..])
-                        .map_err(|_| Error::MalformedCommand)?,
-                    args
-                ))
-            })
-            .map_err(|_| Error::MalformedCommand)?;
+        trace!("Received API command {:x?}, processing ... ", req[0]);
+        let command = Command::try_from(req)?;
 
-        trace!("Received AIP command {}, processing ... ", cmd);
-        match cmd {
-            "CONNECT" => self.cmd_send(args),
+        match command {
+            Connect(connect) => self.command_connect(connect),
             _ => Err(Error::UnknownCommand)
         }
     }
 
-    fn cmd_send(&self, args: &[Vec<u8>]) -> Result<(), Error> {
+    fn command_connect(&self, connect: Connect) -> Result<(), Error> {
+        debug!("Got CONNECT {}", connect);
+        self.subscriber.send_multipart(Multipart::from(Command::Success), 0)?;
+        debug!("Sent reply {}", Command::Success);
         Ok(())
     }
 }
