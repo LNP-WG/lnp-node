@@ -33,3 +33,11 @@ type = "std::net::SocketAddr"
 abbr = "m"
 doc = "Address for Prometheus monitoring information exporter"
 default = "crate::wired::config::monitor_addr_default()"
+
+[[param]]
+name = "connect"
+type = "crate::wired::config::Connect"
+abbr = "C"
+doc = "Nodes to connect to after launch (argument can be repeated)"
+merge_fn = "crate::wired::config::Connect::merge"
+default = "Default::default()"

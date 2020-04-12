@@ -24,6 +24,7 @@ zmq = "~0.9"
 tiny_http = "~0.6"
 prometheus = "~0.8"
 configure_me = "0.3.3"
+serde = "1"
 serde_derive = "1"
 
 lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", features = ["all"] }

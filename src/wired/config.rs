@@ -14,14 +14,41 @@
 
 use std::net::SocketAddr;
 use std::convert::TryInto;
+use std::str::FromStr;
+use std::fmt;
 
 use lnpbp::internet::InetSocketAddr;
+use lnpbp::lnp::NodeAddr;
 
 use crate::msgbus::constants::*;
+use configure_me::parse_arg::ParseArgFromStr;
 
 mod internal {
     #![allow(unused)]
     include!(concat!(env!("OUT_DIR"), "/configure_me_config.rs"));
+}
+
+#[derive(Default, Deserialize)]
+pub struct Connect(Vec<NodeAddr>);
+
+impl Connect {
+    fn merge(&mut self, other: Self) {
+        self.0.extend(other.0);
+    }
+}
+
+impl FromStr for Connect {
+    type Err = <NodeAddr as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        NodeAddr::from_str(s).map(|conn| Connect(vec![conn]))
+    }
+}
+
+impl ParseArgFromStr for Connect {
+    fn describe_type<W: fmt::Write>(mut writer: W) -> fmt::Result {
+        write!(writer, "node address in form of <node_id>@<inet_addr>[:<port>] where <inet_addr> can be IPv4, IPv6 or TORv3 internet address")
+    }
 }
 
 // Needs to be fn instead of const due to SocketAddr::new() not being const
