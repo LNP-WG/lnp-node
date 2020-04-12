@@ -1,0 +1,35 @@
+[general]
+env_prefix = "LNP_WIRED"
+conf_file_param = "config"
+conf_dir_param = "conf_dir"
+doc = """
+LNP wired is a new Lightning Network node written in Rust. Actually, it's a suite of daemons able to run generalized Lightning Network protocol.
+
+The main advantage of wired over its competitors is the ability to implement future upgrades more easily and support for layer 3 protocols."""
+
+[[switch]]
+name = "verbose"
+abbr = "v"
+doc = "Sets verbosity level; can be used multiple times to increase verbosity"
+count = true
+
+[[param]]
+name = "inet_addr"
+type = "lnpbp::internet::InetAddr"
+abbr = "i"
+doc = "IPv4, IPv6 or Tor address to listen for incoming connections from LN peers"
+default = "[0, 0, 0, 0].into()"
+
+[[param]]
+name = "port"
+type = "u16"
+abbr = "p"
+doc = "Use custom port to listen for incoming connections from LN peers"
+default = "9735"
+
+[[param]]
+name = "monitor"
+type = "std::net::SocketAddr"
+abbr = "m"
+doc = "Address for Prometheus monitoring information exporter"
+default = "crate::wired::config::monitor_addr_default()"

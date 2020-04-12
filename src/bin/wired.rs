@@ -15,7 +15,6 @@
 
 use std::env;
 use log::*;
-use clap::derive::Clap;
 
 use lnp_node::BootstrapError;
 use lnp_node::service::*;
@@ -23,9 +22,8 @@ use lnp_node::wired::*;
 
 #[tokio::main]
 async fn main() -> Result<(), BootstrapError> {
-    // TODO: Parse config file as well
-    let opts: Opts = Opts::parse();
-    let config: Config = opts.into();
+    let config = Config::gather_or_exit();
+
 
     if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", match config.verbose {

@@ -42,6 +42,9 @@ extern crate chrono;
 extern crate tiny_http;
 extern crate prometheus;
 extern crate lnpbp;
+#[macro_use]
+extern crate serde_derive;
+extern crate configure_me;
 
 pub mod msgbus;
 pub mod service;
