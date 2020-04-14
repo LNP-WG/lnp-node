@@ -32,7 +32,7 @@ name = "monitor"
 type = "std::net::SocketAddr"
 abbr = "m"
 doc = "Address for Prometheus monitoring information exporter"
-default = "crate::wired::config::monitor_addr_default()"
+default = "crate::wired::config::MONITOR_ADDR_DEFAULT.parse().expect(\"Failed to parse constant MONITOR_ADDR_DEFAULT\")"
 
 [[param]]
 name = "connect"

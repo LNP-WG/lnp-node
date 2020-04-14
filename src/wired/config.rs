@@ -23,6 +23,8 @@ use lnpbp::lnp::NodeAddr;
 use crate::msgbus::constants::*;
 use configure_me::parse_arg::ParseArgFromStr;
 
+const MONITOR_ADDR_DEFAULT: &str = "0.0.0.0:9666";
+
 mod internal {
     #![allow(unused)]
     include!(concat!(env!("OUT_DIR"), "/configure_me_config.rs"));
@@ -49,11 +51,6 @@ impl ParseArgFromStr for Connect {
     fn describe_type<W: fmt::Write>(mut writer: W) -> fmt::Result {
         write!(writer, "node address in form of <node_id>@<inet_addr>[:<port>] where <inet_addr> can be IPv4, IPv6 or TORv3 internet address")
     }
-}
-
-// Needs to be fn instead of const due to SocketAddr::new() not being const
-fn monitor_addr_default() -> SocketAddr {
-    SocketAddr::new([0, 0, 0, 0].into(), 9666)
 }
 
 // We need config structure since not all of the parameters can be specified
@@ -92,7 +89,7 @@ impl Default for Config {
         Self {
             verbose: 0,
             lnp2p_addr: InetSocketAddr::default(),
-            monitor_addr: monitor_addr_default(),
+            monitor_addr: MONITOR_ADDR_DEFAULT.parse().expect("Failed to parse constant MONITOR_ADDR_DEFAULT"),
             msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
             msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
         }
