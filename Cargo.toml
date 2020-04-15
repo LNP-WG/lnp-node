@@ -6,6 +6,9 @@ authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 edition = "2018"
 
+[package.metadata.configure_me]
+spec = "config_spec.toml"
+
 [dependencies]
 dotenv = "~0.15"
 clap = { git = "https://github.com/clap-rs/clap.git" }
@@ -20,8 +23,14 @@ futures = "~0.3"
 zmq = "~0.9"
 tiny_http = "~0.6"
 prometheus = "~0.8"
+configure_me = "0.3.3"
+serde = "1"
+serde_derive = "1"
 
 lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", features = ["all"] }
+
+[build-dependencies]
+configure_me_codegen = "0.3.12"
 
 # lnpbp requires custom version of bitcoin, so to maintain type compatibility
 # we have to use library through lnpbp::bitcoin handle and not via direct
