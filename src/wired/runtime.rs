@@ -11,20 +11,14 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
 use std::sync::Arc;
-use tokio::{
-    sync::Mutex,
-    net::TcpStream,
-    task::JoinHandle,
-};
+use tokio::{net::TcpStream, sync::Mutex, task::JoinHandle};
 
 use lnpbp::internet::InetSocketAddr;
 
-use crate::{Service, TryService, BootstrapError};
 use super::*;
 use crate::wired::MonitorService;
-
+use crate::{BootstrapError, Service, TryService};
 
 // TODO: Move to lnpbp::lnp::transport
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Display)]
@@ -34,11 +28,9 @@ pub enum ConnDirection {
     Out,
 }
 
-
 #[derive(Debug, Display)]
 #[display_from(Debug)]
 pub struct PeerConnection {
-    pub stream: Arc<TcpStream>,
     pub address: InetSocketAddr,
     // TODO: We don't need it here, it's part of `peer.connection`
     pub direction: ConnDirection,
@@ -46,7 +38,6 @@ pub struct PeerConnection {
 }
 
 pub type PeerConnectionList = Arc<Mutex<Vec<PeerConnection>>>;
-
 
 pub struct Runtime {
     config: Config,
@@ -68,16 +59,14 @@ impl Runtime {
             config.clone().into(),
             context.clone(),
             peer_connections.clone(),
-        ).await?;
+        )
+        .await?;
         let bus_service = BusService::init(
             config.clone().into(),
             context.clone(),
-            peer_connections.clone()
+            peer_connections.clone(),
         )?;
-        let monitor_service = MonitorService::init(
-            config.clone().into(),
-            context.clone()
-        )?;
+        let monitor_service = MonitorService::init(config.clone().into(), context.clone())?;
 
         Ok(Self {
             config,
@@ -113,11 +102,14 @@ impl TryService for Runtime {
                 bus_service.run_or_panic("API service").await
             }),
             tokio::spawn(async move {
-                info!("Minitoring (Prometheus) exporter service is listening on {}", monitor_addr);
+                info!(
+                    "Monitoring (Prometheus) exporter service is listening on {}",
+                    monitor_addr
+                );
                 monitor_service.run_loop().await
             })
         )?;
 
-        loop { }
+        unreachable!()
     }
 }

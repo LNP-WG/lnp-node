@@ -12,9 +12,11 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 pub mod config;
-pub mod service;
+pub mod peer;
 pub mod error;
+mod api;
 
 pub use config::*;
-pub use service::*;
+pub use peer::*;
 pub use error::*;
+pub use api::ApiService;

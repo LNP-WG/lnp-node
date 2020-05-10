@@ -11,21 +11,17 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
+mod command;
 pub mod constants;
 mod error;
-mod command;
 pub mod proc;
 
-pub use error::*;
 pub use command::*;
+pub use error::*;
 pub use proc::*;
-
 
 use std::convert::{TryFrom, TryInto};
 
-use lnpbp::lightning::bitcoin::secp256k1;
-
+use lnpbp::bitcoin::secp256k1;
 
 pub type Multipart = Vec<zmq::Message>;
-

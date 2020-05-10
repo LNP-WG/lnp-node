@@ -11,11 +11,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-use lnpbp::lightning::bitcoin;
-use lnpbp::lightning::bitcoin::secp256k1;
+use lnpbp::bitcoin;
+use lnpbp::bitcoin::secp256k1;
 use lnpbp::lnp;
-
 
 #[derive(Debug, Display)]
 #[display_from(Debug)]
@@ -26,13 +24,15 @@ pub enum Error {
     MalformedCommand,
     MalformedArgument,
     UnknownCommand,
-    WrongNumberOfArguments
+    WrongNumberOfArguments,
 }
 
 impl std::error::Error for Error {}
 
 impl From<Error> for String {
-    fn from(err: Error) -> Self { format!("{}", err) }
+    fn from(err: Error) -> Self {
+        format!("{}", err)
+    }
 }
 
 impl From<zmq::Error> for Error {

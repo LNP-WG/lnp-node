@@ -16,8 +16,8 @@ use std::convert::TryFrom;
 use futures::TryFutureExt;
 
 use lnpbp::lnp::Peer;
-use lnpbp::lightning::bitcoin::hashes::{Hash, sha256};
-use lnpbp::lightning::secp256k1;
+use lnpbp::bitcoin::hashes::{Hash, sha256};
+use lnpbp::bitcoin::secp256k1;
 
 use crate::{TryService, BootstrapError};
 use crate::wired::PeerConnectionList;

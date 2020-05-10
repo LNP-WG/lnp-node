@@ -11,22 +11,22 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
 use lnpbp::internet::InetSocketAddr;
 
 use crate::wired::config::Config as MainConfig;
 
-
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display_from(Debug)]
 pub struct Config {
-    pub lnp2p_addr: InetSocketAddr,
+    pub msgbus_push_addr: String,
+    pub msgbus_api_addr: String,
 }
 
 impl From<MainConfig> for Config {
     fn from(config: MainConfig) -> Self {
         Config {
-            lnp2p_addr: config.lnp2p_addr,
+            msgbus_push_addr: config.msgbus_peer_push_addr.clone(),
+            msgbus_api_addr: config.msgbus_peer_api_addr.clone(),
         }
     }
 }

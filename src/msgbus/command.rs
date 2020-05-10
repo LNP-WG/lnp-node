@@ -24,7 +24,8 @@ pub enum Command {
     Success,
     Done,
     Failure,
-    Connect(Connect)
+    Connect(Connect),
+    //SendMsg(),
 }
 
 impl TryFrom<Multipart> for Command {

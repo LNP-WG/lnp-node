@@ -22,6 +22,6 @@ mod monitor;
 pub use config::*;
 pub use runtime::*;
 pub use wire::service::*;
-pub use peer::service::*;
+pub use peer::peer::*;
 pub use bus::service::*;
 pub use monitor::service::*;

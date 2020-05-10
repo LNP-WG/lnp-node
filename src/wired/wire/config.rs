@@ -11,8 +11,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-use lnpbp::common::internet::InetSocketAddr;
+use lnpbp::internet::InetSocketAddr;
 
 use crate::wired::config::Config as MainConfig;
 

@@ -11,17 +11,16 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
+use std::convert::TryFrom;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::convert::TryFrom;
 use tokio::net::TcpListener;
 
-use crate::TryService;
-use crate::BootstrapError;
+use super::*;
 use crate::wired::peer::{self, PeerService};
 use crate::wired::{ConnDirection, PeerConnection, PeerConnectionList};
-use super::*;
+use crate::BootstrapError;
+use crate::TryService;
 
 pub struct WireService {
     config: Config,
@@ -39,9 +38,7 @@ impl TryService for WireService {
         loop {
             match self.run().await {
                 Ok(_) => debug!("New LN peer was successfully connected"),
-                Err(err) => {
-                    error!("Error connecting new LN peer: {}", err)
-                },
+                Err(err) => error!("Error connecting new LN peer: {}", err),
             }
         }
     }
@@ -52,7 +49,7 @@ impl WireService {
         config: Config,
         peer_config: peer::Config,
         context: zmq::Context,
-        peer_connections: PeerConnectionList
+        peer_connections: PeerConnectionList,
     ) -> Result<Self, BootstrapError> {
         debug!("Opening LN P2P socket at {}", config.lnp2p_addr);
 
@@ -64,37 +61,40 @@ impl WireService {
             .expect("Non-Tor address failed to convert into an IP address");
         let listener = TcpListener::bind(addr).await?;
 
-        info!("Listening for incoming LN P2P connections at {}", config.lnp2p_addr);
+        info!(
+            "Listening for incoming LN P2P connections at {}",
+            config.lnp2p_addr
+        );
 
         Ok(Self {
             config,
             context,
             listener,
             peer_config,
-            peer_connections
+            peer_connections,
         })
     }
 
     async fn run(&mut self) -> Result<(), Error> {
         let (stream, addr) = self.listener.accept().await?;
-        let address =  addr.into();
+        let address = addr.into();
         info!("New LN peer connected: {}", address);
 
         debug!("Instantiating new peer service for {}", address);
-        let stream = Arc::new(stream);
 
-        let service = PeerService::init(self.peer_config.clone(), self.context.clone(), stream.clone())?;
+        let service = PeerService::init(self.peer_config.clone(), self.context.clone(), stream)?;
 
         let thread = tokio::spawn(async move {
             trace!("Running peer service for {}", address);
-            service.run_or_panic(&format!("Peer service for {}", address)).await
+            service
+                .run_or_panic(&format!("Peer service for {}", address))
+                .await
         });
 
         self.peer_connections.lock().await.push(PeerConnection {
-            stream,
             address,
             direction: ConnDirection::In,
-            thread
+            thread,
         });
 
         Ok(())
