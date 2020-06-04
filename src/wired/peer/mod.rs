@@ -11,12 +11,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod config;
-pub mod peer;
-pub mod error;
 mod api;
+pub mod config;
+pub mod error;
+pub mod peer;
 
-pub use config::*;
-pub use peer::*;
-pub use error::*;
 pub use api::ApiService;
+pub use config::Config;
+pub use error::Error;
+pub use peer::PeerService;

@@ -11,10 +11,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::api::Multipart;
 use tokio::{net::tcp, net::TcpStream};
 
-use super::*;
+use lnpbp::rpc::Multipart;
+
+use super::Error;
 use crate::msgbus::Command;
 use crate::BootstrapError;
 use crate::TryService;
