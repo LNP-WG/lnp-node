@@ -27,7 +27,7 @@ configure_me = "0.3.3"
 serde = "1"
 serde_derive = "1"
 
-lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "master", features = ["all"] }
+lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", tag = "v0.1.0-alpha.3", features = ["all"] }
 
 [build-dependencies]
 configure_me_codegen = "0.3.12"
