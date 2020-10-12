@@ -10,6 +10,8 @@ edition = "2018"
 spec = "config_spec.toml"
 
 [dependencies]
+amplify = "~1.2.0"
+dotenv = "~0.15.0"
 dotenv = "~0.15"
 clap = "=3.0.0-beta.1"
 chrono = "~0.4"
@@ -27,12 +29,15 @@ configure_me = "0.3.3"
 serde = "1"
 serde_derive = "1"
 
-lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", tag = "v0.1.0-alpha.3", features = ["all"] }
+lnpbp = { git = "https://github.com/lnp-bp/rust-lnpbp", branch = "master", features = ["all"] }
 
 [build-dependencies]
 configure_me_codegen = "0.3.12"
 
-# lnpbp requires custom version of bitcoin, so to maintain type compatibility
-# we have to use library through lnpbp::bitcoin handle and not via direct
-# dependency
-#bitcoin = "~0.23"
+[patch.crates-io]
+# We need this b/c of breaking change in tagged hash type generation
+bitcoin_hashes = { git = "https://github.com/LNP-BP/bitcoin_hashes", tag = "lnpbp-v0.1.0-rc1" }
+bitcoin = { git = "https://github.com/LNP-BP/rust-bitcoin", tag = "lnpbp-v0.1.0-rc1" }
+# We need custom branches here just to depend on the same bitcoin master and do
+# not have secp256k1 version conflict
+miniscript = { git = "https://github.com/LNP-BP/rust-miniscript", tag = "lnpbp-v0.1.0-rc1" }

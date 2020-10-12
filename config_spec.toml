@@ -15,7 +15,7 @@ count = true
 
 [[param]]
 name = "inet_addr"
-type = "lnpbp::internet::InetAddr"
+type = "amplify::internet::InetAddr"
 abbr = "i"
 doc = "IPv4, IPv6 or Tor address to listen for incoming connections from LN peers"
 default = "[0, 0, 0, 0].into()"

@@ -14,7 +14,7 @@
 use std::sync::Arc;
 use tokio::{net::TcpStream, sync::Mutex, task::JoinHandle};
 
-use lnpbp::internet::InetSocketAddr;
+use amplify::internet::InetSocketAddr;
 
 use super::*;
 use crate::wired::MonitorService;

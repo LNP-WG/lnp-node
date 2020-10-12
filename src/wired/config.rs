@@ -11,13 +11,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-use std::net::SocketAddr;
 use std::convert::TryInto;
-use std::str::FromStr;
 use std::fmt;
+use std::net::SocketAddr;
+use std::str::FromStr;
 
-use lnpbp::internet::InetSocketAddr;
+use amplify::internet::InetSocketAddr;
 use lnpbp::lnp::NodeAddr;
 
 use crate::msgbus::constants::*;
@@ -71,15 +70,16 @@ impl Config {
     pub fn gather_or_exit() -> Self {
         use self::internal::ResultExt;
 
-        let (config, _) = internal::Config::including_optional_config_files(std::iter::empty::<&str>())
-            .unwrap_or_exit();
+        let (config, _) =
+            internal::Config::including_optional_config_files(std::iter::empty::<&str>())
+                .unwrap_or_exit();
 
         Config {
             verbose: config.verbose.try_into().unwrap_or_else(|_| 4),
             lnp2p_addr: InetSocketAddr::new(config.inet_addr, config.port),
             monitor_addr: config.monitor,
             msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
-            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
+            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string(),
         }
     }
 }
@@ -89,9 +89,11 @@ impl Default for Config {
         Self {
             verbose: 0,
             lnp2p_addr: InetSocketAddr::default(),
-            monitor_addr: MONITOR_ADDR_DEFAULT.parse().expect("Failed to parse constant MONITOR_ADDR_DEFAULT"),
+            monitor_addr: MONITOR_ADDR_DEFAULT
+                .parse()
+                .expect("Failed to parse constant MONITOR_ADDR_DEFAULT"),
             msgbus_peer_api_addr: MSGBUS_PEER_API_ADDR.to_string(),
-            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string()
+            msgbus_peer_push_addr: MSGBUS_PEER_PUSH_ADDR.to_string(),
         }
     }
 }
