@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,105 +12,85 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::sync::Arc;
-use tokio::{net::TcpStream, sync::Mutex, task::JoinHandle};
+use amplify::TryService;
+use std::any::Any;
 
-use lnpbp::internet::InetSocketAddr;
+use lnpbp::lnp::presentation::Encode;
+use lnpbp::lnp::zmq::ApiType;
+use lnpbp::lnp::{transport, NoEncryption, Session, Unmarshall, Unmarshaller};
 
-use super::*;
-use crate::wired::MonitorService;
-use crate::{BootstrapError, Service, TryService};
-
-// TODO: Move to lnpbp::lnp::transport
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Display)]
-#[display_from(Debug)]
-pub enum ConnDirection {
-    In,
-    Out,
-}
-
-#[derive(Debug, Display)]
-#[display_from(Debug)]
-pub struct PeerConnection {
-    pub address: InetSocketAddr,
-    // TODO: We don't need it here, it's part of `peer.connection`
-    pub direction: ConnDirection,
-    pub thread: JoinHandle<!>,
-}
-
-pub type PeerConnectionList = Arc<Mutex<Vec<PeerConnection>>>;
+use super::Config;
+use crate::api::{Reply, Request};
+use crate::error::{BootstrapError, RuntimeError};
 
 pub struct Runtime {
+    /// Original configuration object
     config: Config,
-    context: zmq::Context,
-    peer_connections: PeerConnectionList,
-    wire_service: WireService,
-    bus_service: BusService,
-    monitor_service: MonitorService,
+
+    /// Stored sessions
+    session_rpc: Session<NoEncryption, transport::zmq::Connection>,
+
+    /// Unmarshaller instance used for parsing RPC request
+    unmarshaller: Unmarshaller<Request>,
 }
 
 impl Runtime {
     pub async fn init(config: Config) -> Result<Self, BootstrapError> {
-        let context = zmq::Context::new();
-
-        let peer_connections = Arc::new(Mutex::new(vec![]));
-
-        let wire_service = WireService::init(
-            config.clone().into(),
-            config.clone().into(),
-            context.clone(),
-            peer_connections.clone(),
-        )
-        .await?;
-        let bus_service = BusService::init(
-            config.clone().into(),
-            context.clone(),
-            peer_connections.clone(),
+        debug!("Opening ZMQ socket {}", config.zmq_endpoint);
+        let mut context = zmq::Context::new();
+        let session_rpc = Session::new_zmq_unencrypted(
+            ApiType::Server,
+            &mut context,
+            config.zmq_endpoint.clone(),
+            None,
         )?;
-        let monitor_service = MonitorService::init(config.clone().into(), context.clone())?;
 
         Ok(Self {
             config,
-            context,
-            peer_connections,
-            wire_service,
-            bus_service,
-            monitor_service,
+            session_rpc,
+            unmarshaller: Request::create_unmarshaller(),
         })
     }
 }
 
 #[async_trait]
 impl TryService for Runtime {
-    type ErrorType = tokio::task::JoinError;
+    type ErrorType = RuntimeError;
 
-    async fn try_run_loop(self) -> Result<!, Self::ErrorType> {
-        let wire_addr = self.config.lnp2p_addr.clone();
-        let bus_addr = self.config.msgbus_peer_api_addr.clone();
-        let monitor_addr = self.config.monitor_addr.clone();
+    async fn try_run_loop(mut self) -> Result<(), Self::ErrorType> {
+        loop {
+            match self.run().await {
+                Ok(_) => debug!("API request processing complete"),
+                Err(err) => {
+                    error!("Error processing API request: {}", err);
+                    Err(err)?;
+                }
+            }
+        }
+    }
+}
 
-        let wire_service = self.wire_service;
-        let bus_service = self.bus_service;
-        let monitor_service = self.monitor_service;
+impl Runtime {
+    async fn run(&mut self) -> Result<(), RuntimeError> {
+        trace!("Awaiting for ZMQ RPC requests...");
+        let raw = self.session_rpc.recv_raw_message()?;
+        let reply = self.rpc_process(raw).await.unwrap_or_else(|err| err);
+        trace!("Preparing ZMQ RPC reply: {:?}", reply);
+        let data = reply.encode()?;
+        trace!(
+            "Sending {} bytes back to the client over ZMQ RPC",
+            data.len()
+        );
+        self.session_rpc.send_raw_message(data)?;
+        Ok(())
+    }
 
-        try_join!(
-            tokio::spawn(async move {
-                info!("LN P2P wire service is running on {}", wire_addr);
-                wire_service.run_or_panic("LN P2P service").await
-            }),
-            tokio::spawn(async move {
-                info!("Message bus service is listening on {}", bus_addr);
-                bus_service.run_or_panic("API service").await
-            }),
-            tokio::spawn(async move {
-                info!(
-                    "Monitoring (Prometheus) exporter service is listening on {}",
-                    monitor_addr
-                );
-                monitor_service.run_loop().await
-            })
-        )?;
-
-        unreachable!()
+    async fn rpc_process(&mut self, raw: Vec<u8>) -> Result<Reply, Reply> {
+        trace!("Got {} bytes over ZMQ RPC", raw.len());
+        let message = (&*self.unmarshaller.unmarshall(&raw)?).clone();
+        debug!("Received ZMQ RPC request: {:?}", message.type_id());
+        match message {
+            _ => unimplemented!(),
+        }
     }
 }

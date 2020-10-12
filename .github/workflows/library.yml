@@ -1,0 +1,88 @@
+name: Features & Rust ver
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  features:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature: [ daemon, integration, "daemon,integration" ]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get install -y libzmq3-dev libpcre3-dev libpq-dev libssl-dev
+      - name: Install rust nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Feature ${{matrix.feature}}
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --lib --features=${{matrix.feature}} --verbose
+  no-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get install -y libzmq3-dev libpcre3-dev libpq-dev libssl-dev
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: No features
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --lib --no-default-features --verbose
+  default-features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get install -y libzmq3-dev libpcre3-dev libpq-dev libssl-dev
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Default features
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --lib --verbose
+  dependency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt-get install -y libzmq3-dev libpcre3-dev libpq-dev libssl-dev
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: Create dependency
+        run: |
+          cargo new dep_test
+          cd dep_test
+          printf 'keyring = { path = "..", default-features = false, features = ["integration"] }\n\n[workspace]' >> Cargo.toml
+      - name: Build dependency
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --verbose
+      - name: Clean up
+        run: |
+          cd ..
+          rm -rf dep_test

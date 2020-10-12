@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnpbp::lnp::presentation::Encode;
-use lnpbp::lnp::transport::zmq::ApiType;
+use lnpbp::lnp::zmq::ApiType;
 use lnpbp::lnp::{transport, NoEncryption, Session, Unmarshall, Unmarshaller};
 
 use super::Config;
@@ -21,16 +21,14 @@ use crate::api::{self, Reply, Request};
 use crate::error::BootstrapError;
 
 pub struct Runtime {
-    config: Config,
-    context: zmq::Context,
-    session_rpc: Session<NoEncryption, transport::zmq::Connection>,
-    unmarshaller: Unmarshaller<Reply>,
+    pub(super) config: Config,
+    pub(super) context: zmq::Context,
+    pub(super) session_rpc: Session<NoEncryption, transport::zmq::Connection>,
+    pub(super) unmarshaller: Unmarshaller<Reply>,
 }
 
 impl Runtime {
-    pub async fn init(config: Config) -> Result<Self, BootstrapError> {
-        debug!("Initializing runtime");
-        trace!("Connecting to LNP services at {}", config.endpoint);
+    pub fn init(config: Config) -> Result<Self, BootstrapError> {
         let mut context = zmq::Context::new();
         let session_rpc = Session::new_zmq_unencrypted(
             ApiType::Client,
@@ -47,15 +45,10 @@ impl Runtime {
     }
 
     pub fn request(&mut self, request: Request) -> Result<Reply, api::Error> {
-        trace!("Sending request to the server: {:?}", request);
         let data = request.encode()?;
-        trace!("Raw request data ({} bytes): {:?}", data.len(), data);
         self.session_rpc.send_raw_message(data)?;
-        trace!("Awaiting reply");
         let raw = self.session_rpc.recv_raw_message()?;
-        trace!("Got reply ({} bytes), parsing", raw.len());
         let reply = self.unmarshaller.unmarshall(&raw)?;
-        trace!("Reply: {:?}", reply);
         Ok((&*reply).clone())
     }
 }

@@ -12,8 +12,20 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+use crate::api::message::Failure;
+use lnpbp::lnp;
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+#[derive(Clone, Debug, Display, Error, From)]
+#[display(Debug)]
+pub enum Error {
+    UnexpectedServerResponse,
+
+    #[from]
+    ServerFailure(Failure),
+
+    #[from]
+    PresentationError(lnp::presentation::Error),
+
+    #[from]
+    TransportError(lnp::transport::Error),
+}

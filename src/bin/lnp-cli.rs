@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,42 +12,36 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+//! Command-line interface to LNP node
+
 #![feature(never_type)]
 
-use std::env;
-use log::*;
-use clap::derive::Clap;
+#[macro_use]
+extern crate log;
 
-use lnp_node::cli::*;
+use amplify::Exec;
+use clap::Clap;
+use log::LevelFilter;
+use std::convert::TryInto;
 
+use lnp_node::cli::{Config, Opts, Runtime};
+use lnp_node::error::BootstrapError;
 
 #[tokio::main]
-async fn main() -> Result<(), String> {
-    // TODO: Parse config file as well
-    let opts: Opts = Opts::parse();
-    let config: Config = opts.clone().into();
-
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", match config.verbose {
-            0 => "error",
-            1 => "warn",
-            2 => "info",
-            3 => "debug",
-            4 => "trace",
-            _ => "trace",
-        });
-    }
-    env_logger::init();
+async fn main() -> Result<(), BootstrapError> {
     log::set_max_level(LevelFilter::Trace);
+    debug!("Command-line interface to LNP node");
 
-    let runtime = Runtime::init(config).await?;
+    let opts: Opts = Opts::parse();
+    let config: Config = opts.clone().try_into()?;
+    config.apply();
 
-    // Non-interactive command processing:
-    debug!("Parsing and processing a command");
-    match opts.command {
-        Command::Connect { addr } => runtime.command_connect(addr).await?,
-        _ => unimplemented!()
-    }
+    let mut runtime = Runtime::init(config).await?;
+
+    trace!("Executing command: {:?}", opts.command);
+    opts.command
+        .exec(&mut runtime)
+        .unwrap_or_else(|err| error!("{}", err));
 
     Ok(())
 }

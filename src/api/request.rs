@@ -12,8 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
-
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+#[derive(Clone, Debug, Display, LnpApi)]
+#[lnp_api(encoding = "strict")]
+#[display(Debug)]
+#[non_exhaustive]
+pub enum Request {
+    #[lnp_api(type = 1000)]
+    NoOp,
+}

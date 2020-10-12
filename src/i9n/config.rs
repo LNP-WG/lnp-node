@@ -12,8 +12,22 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+use lnpbp::lnp::transport::zmq::SocketLocator;
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+use crate::constants::LNP_ZMQ_ENDPOINT;
+
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[display(Debug)]
+pub struct Config {
+    pub endpoint: SocketLocator,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            endpoint: LNP_ZMQ_ENDPOINT
+                .parse()
+                .expect("Error in LNP_ZMQ_ENDPOINT constant value"),
+        }
+    }
+}

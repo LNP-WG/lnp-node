@@ -15,5 +15,5 @@
 mod config;
 mod runtime;
 
-pub use config::{Config, Opts};
+pub use config::Config;
 pub use runtime::Runtime;

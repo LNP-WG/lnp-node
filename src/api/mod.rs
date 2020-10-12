@@ -12,8 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+mod error;
+pub mod message;
+mod reply;
+mod request;
+pub mod types;
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+pub use error::Error;
+pub use reply::Reply;
+pub use request::Request;

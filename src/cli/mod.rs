@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,9 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+mod command;
+mod config;
+pub mod format;
+mod runtime;
 
-pub mod config;
-pub mod runtime;
-
-pub use config::*;
-pub use runtime::*;
+pub use command::Command;
+pub use config::{Config, Opts};
+pub use runtime::Runtime;

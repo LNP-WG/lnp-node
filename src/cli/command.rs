@@ -12,8 +12,21 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+use amplify::Exec;
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+use super::Runtime;
+use crate::error::BootstrapError;
+
+/// Command-line commands:
+#[derive(Clap, Clone, Debug, Display)]
+#[display(Debug)]
+pub enum Command {}
+
+impl Exec for Command {
+    type Runtime = Runtime;
+    type Error = BootstrapError;
+
+    fn exec(&self, _runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}

@@ -12,8 +12,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+#[cfg(feature = "daemon")]
+pub const LNP_CONFIG: &'static str = "{data_dir}/lnpd.toml";
+#[cfg(feature = "cli")]
+pub const LNP_CLI_CONFIG: &'static str = "{data_dir}/lnp-cli.toml";
+pub const LNP_DATA_DIR: &'static str = "/var/lib/lnp";
+pub const LNP_ZMQ_ENDPOINT: &'static str = "tcp://0.0.0.0:20202"; //"ipc:{data_dir}/zmq.rpc";
+#[cfg(feature = "daemon")]
+pub const LNP_TCP_ENDPOINT: &'static str = "0.0.0.0:20202";
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+pub use lnpbp::bitcoin::secp256k1::{self, Secp256k1};

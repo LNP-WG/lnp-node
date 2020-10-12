@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,33 +12,32 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+//! Main executable for wired: lightning network protocol peer wire service
+
 #![feature(never_type)]
 
-use std::env;
-use log::*;
+#[macro_use]
+extern crate log;
 
-use lnp_node::BootstrapError;
-use lnp_node::service::*;
-use lnp_node::wired::*;
+use amplify::TryService;
+use clap::Clap;
+use core::convert::TryInto;
+use log::LevelFilter;
+
+use lnp_node::error::BootstrapError;
+use lnp_node::wired::{Config, Opts, Runtime};
 
 #[tokio::main]
-async fn main() -> Result<(), BootstrapError> {
-    let config = Config::gather_or_exit();
-
-
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", match config.verbose {
-            0 => "error",
-            1 => "warn",
-            2 => "info",
-            3 => "debug",
-            4 => "trace",
-            _ => "trace",
-        });
-    }
-    env_logger::init();
+async fn main() -> Result<!, BootstrapError> {
     log::set_max_level(LevelFilter::Trace);
+    info!("wired: lightning network protocol peer wire service");
+
+    let opts: Opts = Opts::parse();
+    let config: Config = opts.clone().try_into()?;
+    config.apply();
 
     let runtime = Runtime::init(config).await?;
-    runtime.run_or_panic("Wired runtime").await
+    runtime.run_or_panic("wired runtime").await;
+
+    unreachable!()
 }

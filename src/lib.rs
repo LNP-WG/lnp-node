@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,47 +12,103 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-// We need this since code is not completed and a lot of it is written
-// for future functionality
-// Remove this once the first version will be complete
-#![allow(dead_code)]
-#![allow(unused_variables)]
-// In mutithread environments it's critical to capture all failures
-#![deny(unused_must_use)]
-
-#![feature(never_type)]
-#![feature(unwrap_infallible)]
-#![feature(in_band_lifetimes)]
+#![feature(never_type, try_trait, with_options)]
 
 #[macro_use]
-extern crate tokio;
-extern crate futures;
-extern crate zmq;
-extern crate diesel;
 extern crate clap;
 #[macro_use]
-extern crate derive_wrapper;
+extern crate amplify;
+#[macro_use]
+extern crate amplify_derive;
 #[macro_use]
 extern crate async_trait;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-extern crate dotenv;
-extern crate chrono;
-extern crate tiny_http;
-extern crate prometheus;
-extern crate lnpbp;
 #[macro_use]
-extern crate serde_derive;
-extern crate configure_me;
+extern crate num_derive;
+#[macro_use]
+pub extern crate serde_with;
 
-pub mod msgbus;
-pub mod service;
-pub mod wired;
-pub mod error;
+#[macro_use]
+pub extern crate lnpbp;
+#[macro_use]
+pub extern crate lnpbp_derive;
 
-pub use service::*;
-pub use error::*;
-
+pub mod api;
 pub mod cli;
+pub mod constants;
+pub mod error;
+pub mod i9n;
+pub mod wired;
+
+use std::str::FromStr;
+
+#[derive(
+    Clap,
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    Debug,
+    Display,
+    FromPrimitive,
+    ToPrimitive,
+)]
+pub enum DataFormat {
+    /// JSON
+    #[display("json")]
+    Json,
+
+    /// YAML
+    #[display("yaml")]
+    Yaml,
+
+    /// TOML
+    #[display("toml")]
+    Toml,
+
+    /// Strict encoding
+    #[display("strict-encode")]
+    StrictEncode,
+}
+impl_enum_strict_encoding!(DataFormat);
+
+impl DataFormat {
+    pub fn extension(&self) -> &'static str {
+        match self {
+            DataFormat::Yaml => "yaml",
+            DataFormat::Json => "json",
+            DataFormat::Toml => "toml",
+            DataFormat::StrictEncode => "se",
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Display, Error, From)]
+#[display(doc_comments)]
+pub enum FileFormatParseError {
+    /// Unknown file format
+    UnknownFormat,
+}
+
+impl FromStr for DataFormat {
+    type Err = FileFormatParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match &s.to_lowercase() {
+            s if s.starts_with("yaml") || s.starts_with("yml") => Self::Yaml,
+            s if s.starts_with("json") => Self::Json,
+            s if s.starts_with("toml") => Self::Toml,
+            s if s.starts_with("se")
+                || s.starts_with("dat")
+                || s.starts_with("strictencode")
+                || s.starts_with("strict-encode")
+                || s.starts_with("strict_encode") =>
+            {
+                Self::StrictEncode
+            }
+            _ => Err(FileFormatParseError::UnknownFormat)?,
+        })
+    }
+}
