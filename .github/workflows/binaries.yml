@@ -25,14 +25,14 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin keyringd --features server
+          args: --bin wired --features server
       - name: Build daemon with monitoring
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin keyringd --features server,monitoring
+          args: --bin wired --features server,monitoring
       - name: Build CLI
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin keyring-cli --features integration,cli
+          args: --bin lnp-cli keyring-cli --features integration,cli

@@ -76,7 +76,7 @@ jobs:
         run: |
           cargo new dep_test
           cd dep_test
-          printf 'keyring = { path = "..", default-features = false, features = ["integration"] }\n\n[workspace]' >> Cargo.toml
+          printf 'lnp_node = { path = "..", default-features = false, features = ["integration"] }\n\n[workspace]' >> Cargo.toml
       - name: Build dependency
         uses: actions-rs/cargo@v1
         with:
