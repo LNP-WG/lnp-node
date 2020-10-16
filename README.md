@@ -122,10 +122,10 @@ Other third parties provide their own nodes:
 ## Project organization & architecture
 
 * [`src/api/`](src/api/) – LNP messages for all daemons used for message bus
-* [`src/bin/`](src/api/) – binaries for daemons & CLI launching main process
-* [`src/cli/`](src/api/) – CLAP-based command line API talking to message bus
-* [`src/i8n/`](src/api/) – functions exposed to FFI talking to message bus
-* [`src/<name>d/`](src/api/) – service/daemon-specific code:
+* [`src/bin/`](src/bin/) – binaries for daemons & CLI launching main process
+* [`src/cli/`](src/cli/) – CLAP-based command line API talking to message bus
+* [`src/i8n/`](src/i8n/) – functions exposed to FFI talking to message bus
+* `src/<name>/` – service/daemon-specific code:
   - [`src/wired/`](src/wired) – daemon managing peer connections within
     Lightning peer network using LNP (Lightning network protocol). Specific
     supported message types are defined as a part of 
@@ -141,12 +141,14 @@ Other third parties provide their own nodes:
 Each daemon (more correctly "microservice", as it can run as a thread, not 
 necessary a process) or other binary (like CLI tool) follows the same  
 organization concept for module/file names:
-* `error.rs` – daemon-specific error types
-* `config.rs` – CLAP arguments & daemon configuration data
-* `runtime.rs` – singleton managing main daemon thread and keeping all ZMQ/P2P connections and sockets; receiving and processing messages through them
-* `processor.rs` – business logic functions & internal state management which does not depend on external communications/RPC
-* `index/`, `storage/`, `cache/` – storage interfaces and engines
-* `db/` – SQL-specific schema and code, if needed
+* `error.rs` – daemon-specific error types;
+* `config.rs` – CLAP arguments & daemon configuration data;
+* `runtime.rs` – singleton managing main daemon thread and keeping all ZMQ/P2P 
+  connections and sockets; receiving and processing messages through them;
+* `processor.rs` – business logic functions & internal state management which 
+  does not depend on external communications/RPC;
+* `index/`, `storage/`, `cache/` – storage interfaces and engines;
+* `db/` – SQL-specific schema and code, if needed.
 
 ## Ways of communication
 

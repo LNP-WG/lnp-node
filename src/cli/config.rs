@@ -208,22 +208,6 @@ impl Default for Config {
     }
 }
 
-fn setup_verbose(verbose: LogLevel) {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var(
-            "RUST_LOG",
-            match verbose {
-                LogLevel::Error => "error",
-                LogLevel::Warn => "warn",
-                LogLevel::Info => "info",
-                LogLevel::Debug => "debug",
-                LogLevel::Trace => "trace",
-            },
-        );
-    }
-    env_logger::init();
-}
-
 fn init_config(conf_file: &str, config: Config) -> Result<(), ConfigInitError> {
     info!("Initializing config file at {}", conf_file);
 

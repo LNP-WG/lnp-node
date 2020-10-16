@@ -9,12 +9,12 @@ edition = "2018"
 readme = "README.md"
 
 [[bin]]
-name = "wired"
-required-features = ["server"]
+name = "connectiond"
+required-features = []
 
 [[bin]]
 name = "lnp-cli"
-required-features = ["integration", "cli"]
+required-features = []
 
 [dependencies]
 # Rust language
@@ -38,25 +38,23 @@ dotenv = { version = "~0.15.0", optional = true }
 clap = { version = "=3.0.0-beta.2", optional = true }
 # Logging
 log = { version = "~0.4.8", optional = true, features = ["max_level_trace", "release_max_level_debug"] }
-env_logger = { version = "~0.7.1", optional = true }
-tiny_http = { version = "~0.7.0", optional = true }
-prometheus = { version = "~0.9.0", optional = true }
 # Processes & IPC
 async-trait = "~0.1.35"
 tokio = { version = "~0.2.21", features = ["full"] }
 zmq = "~0.9.2"
-# Utilitary
-num-traits = "~0.2.11"
-num-derive = "~0.3.0"
 
 [dependencies.lnpbp]
 git = "https://github.com/LNP-BP/rust-lnpbp"
-tag = "v0.1.0-rc.2"
+branch = "v0.2"
 features = ["lnp", "keygen", "tokio", "serde", "tor", "url", "websockets"]
 
 [dependencies.lnpbp_derive]
 git = "https://github.com/LNP-BP/rust-lnpbp"
-tag = "v0.1.0-rc.2"
+branch = "v0.2"
+
+[dependencies.lnpbp_services]
+git = "https://github.com/LNP-BP/rust-lnpbp"
+branch = "v0.2"
 
 [patch.crates-io]
 # We need this b/c of breaking change in tagged hash type generation
@@ -69,16 +67,4 @@ miniscript = { git = "https://github.com/LNP-BP/rust-miniscript", tag = "lnpbp-v
 zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
 
 [features]
-default = []
-all = ["daemon", "integration", "monitoring"]
-server = ["daemon"] # Server is a standalone application that runs daemon
-                    # Besides server daemon can be run as a part of mobile app
-                    # and other types of clients; thus `server` != `daemon`
-daemon = ["shell"]  # This feature results in building with secure Vault and
-                    # other features, not required for CLI
-integration = []    # Integration is require to any applications that talk to
-                    # daemon processes
-cli = ["shell", "base64"]
-shell = ["dotenv", "clap", "settings", "serde_json", "serde_yaml", "toml",
-         "bech32", "log", "regex", "env_logger", "amplify/parse_arg"]
-monitoring = ["prometheus", "tiny_http"]
+default = ["log"]

@@ -12,8 +12,17 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+//! Main executable for connectiond: lightning peer network connection
+//! microservice
 
-pub use config::Config;
-pub use runtime::Runtime;
+#![feature(never_type)]
+
+#[macro_use]
+extern crate log;
+
+use log::LevelFilter;
+
+fn main() {
+    log::set_max_level(LevelFilter::Trace);
+    info!("connectiond: lightning peer network connection microservice");
+}

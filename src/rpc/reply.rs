@@ -12,8 +12,17 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod config;
-mod runtime;
+use lnpbp::lnp;
+use lnpbp_services::rpc;
 
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+#[derive(Clone, Debug, Display, From, LnpApi)]
+#[display(Debug)]
+#[non_exhaustive]
+pub enum Reply {
+    #[lnp_api(type = 0x0000)]
+    Success,
+
+    #[lnp_api(type = 0x0001)]
+    #[from]
+    Failure(rpc::Failure),
+}

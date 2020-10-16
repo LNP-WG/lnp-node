@@ -16,32 +16,21 @@
 
 #![feature(never_type)]
 
-#[macro_use]
-extern crate log;
+fn main() {
+    //-> Result<(), BootstrapError> {
+    /*
+        log::set_max_level(LevelFilter::Trace);
+        debug!("Command-line interface to LNP node");
 
-use amplify::Exec;
-use clap::Clap;
-use log::LevelFilter;
-use std::convert::TryInto;
+        let opts: Opts = Opts::parse();
+        let config: Config = opts.clone().try_into()?;
+        config.apply();
 
-use lnp_node::cli::{Config, Opts, Runtime};
-use lnp_node::error::BootstrapError;
+        let mut runtime = Runtime::init(config).await?;
 
-#[tokio::main]
-async fn main() -> Result<(), BootstrapError> {
-    log::set_max_level(LevelFilter::Trace);
-    debug!("Command-line interface to LNP node");
-
-    let opts: Opts = Opts::parse();
-    let config: Config = opts.clone().try_into()?;
-    config.apply();
-
-    let mut runtime = Runtime::init(config).await?;
-
-    trace!("Executing command: {:?}", opts.command);
-    opts.command
-        .exec(&mut runtime)
-        .unwrap_or_else(|err| error!("{}", err));
-
-    Ok(())
+        trace!("Executing command: {:?}", opts.command);
+        opts.command
+            .exec(&mut runtime)
+            .unwrap_or_else(|err| error!("{}", err));
+    */
 }

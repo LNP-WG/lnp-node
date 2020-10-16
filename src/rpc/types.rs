@@ -11,21 +11,3 @@
 // You should have received a copy of the MIT License
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
-
-use crate::api::message::Failure;
-use lnpbp::lnp;
-
-#[derive(Clone, Debug, Display, Error, From)]
-#[display(Debug)]
-pub enum Error {
-    UnexpectedServerResponse,
-
-    #[from]
-    ServerFailure(Failure),
-
-    #[from]
-    PresentationError(lnp::presentation::Error),
-
-    #[from]
-    TransportError(lnp::transport::Error),
-}

@@ -20,5 +20,3 @@ pub const LNP_DATA_DIR: &'static str = "/var/lib/lnp";
 pub const LNP_ZMQ_ENDPOINT: &'static str = "tcp://0.0.0.0:20202"; //"ipc:{data_dir}/zmq.rpc";
 #[cfg(feature = "daemon")]
 pub const LNP_TCP_ENDPOINT: &'static str = "0.0.0.0:20202";
-
-pub use lnpbp::bitcoin::secp256k1::{self, Secp256k1};

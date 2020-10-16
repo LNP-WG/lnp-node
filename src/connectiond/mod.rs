@@ -12,9 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[derive(Clone, Debug, Display, StrictEncode, StrictDecode)]
-#[display(Debug)]
-pub struct Failure {
-    pub code: u16,
-    pub info: String,
-}
+mod runtime;
+
+pub use runtime::Runtime;

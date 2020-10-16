@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod error;
 pub mod message;
 mod reply;
 mod request;
