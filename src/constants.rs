@@ -12,11 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "daemon")]
-pub const LNP_CONFIG: &'static str = "{data_dir}/lnpd.toml";
-#[cfg(feature = "cli")]
-pub const LNP_CLI_CONFIG: &'static str = "{data_dir}/lnp-cli.toml";
-pub const LNP_DATA_DIR: &'static str = "/var/lib/lnp";
-pub const LNP_ZMQ_ENDPOINT: &'static str = "tcp://0.0.0.0:20202"; //"ipc:{data_dir}/zmq.rpc";
-#[cfg(feature = "daemon")]
-pub const LNP_TCP_ENDPOINT: &'static str = "0.0.0.0:20202";
+pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
+pub const LNP_NODE_DATA_DIR: &'static str = "/var/lib/lnp";
+
+pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "msg.rpc";
+pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "ctl.rpc";
+
+pub const LNP_NODE_BIND: &'static str = "0.0.0.0:20202";
+pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
