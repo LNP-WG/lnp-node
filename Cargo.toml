@@ -7,6 +7,7 @@ license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rgb"]
 edition = "2018"
 readme = "README.md"
+build = "build.rs"
 
 [[bin]]
 name = "connectiond"
@@ -55,6 +56,12 @@ branch = "v0.2"
 [dependencies.lnpbp_services]
 git = "https://github.com/LNP-BP/rust-lnpbp"
 branch = "v0.2"
+
+[build-dependencies]
+clap = "=3.0.0-beta.2"
+clap_generate = "=3.0.0-beta.2"
+amplify = "~1.2.0"
+lnpbp = { git = "https://github.com/LNP-BP/rust-lnpbp", branch = "v0.2", features = ["lnp", "keygen", "tokio", "serde", "tor", "url", "websockets"] }
 
 [patch.crates-io]
 # We need this b/c of breaking change in tagged hash type generation

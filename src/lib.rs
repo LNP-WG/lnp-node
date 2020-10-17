@@ -45,10 +45,11 @@ extern crate log;
 pub extern crate serde_with;
 */
 
-pub mod constants;
+pub mod connectiond;
+pub mod opts;
+
 /*
 pub mod cli;
-pub mod connectiond;
 //pub mod i9n;
 pub mod rpc;
 */

@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+mod opts;
 mod runtime;
 
-pub use runtime::Runtime;
+pub use opts::Opts;
