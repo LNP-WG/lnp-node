@@ -19,7 +19,19 @@ use std::path::PathBuf;
 use lnpbp::lnp::transport::zmq::SocketLocator;
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
-pub const LNP_NODE_DATA_DIR: &'static str = "/var/lib/lnp";
+#[cfg(any(target_os = "linux"))]
+pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/";
+#[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/";
+#[cfg(target_os = "macos")]
+pub const LNP_NODE_DATA_DIR: &'static str =
+    "~/Library/Application Support/LNP Node/";
+#[cfg(target_os = "windows")]
+pub const LNP_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\LNP Node\\";
+#[cfg(target_os = "ios")]
+pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/";
+#[cfg(target_os = "android")]
+pub const LNP_NODE_DATA_DIR: &'static str = ".";
 
 pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "msg.rpc";
 pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "ctl.rpc";
@@ -62,24 +74,10 @@ pub struct Opts {
     #[clap(short, long, global = true, parse(from_occurrences))]
     pub verbose: u8,
 
-    /// Node key file
-    ///
-    /// Location for the file containing node private Secp256k1 key
-    /// (unencrypted)
-    #[clap(
-        short,
-        long,
-        global = true,
-        env = "LNP_NODE_KEY_FILE",
-        value_hint = ValueHint::FilePath
-    )]
-    pub key_file: Option<PathBuf>,
-
     /// Use Tor
     ///
     /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs
     /// all network traffic through Tor network.
-    /// Required if `connect` is provided with an Onion address.
     /// If the argument is provided in form of flag, without value, uses
     /// `127.0.0.1:9050` as default Tor proxy address.
     #[clap(

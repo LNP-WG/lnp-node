@@ -23,12 +23,12 @@ _connectiond() {
 '--port=[Customize port used by lightning peer network]' \
 '(-C --connect)-t+[Spawn threads instead of forking new processes for incoming connections]' \
 '(-C --connect)--use-threads=[Spawn threads instead of forking new processes for incoming connections]' \
+'-k+[Node key file]: :_files' \
+'--key-file=[Node key file]: :_files' \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'-k+[Node key file]: :_files' \
-'--key-file=[Node key file]: :_files' \
 '*-T+[Use Tor]: :_hosts' \
 '*--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \

@@ -103,6 +103,13 @@ use std::net::SocketAddr;
 use lnp_node::connectiond::Opts;
 use lnpbp::lnp::transport::zmq::SocketLocator;
 
+/*
+mod internal {
+    #![allow(unused)]
+    include!(concat!(env!("OUT_DIR"), "/configure_me_config.rs"));
+}
+ */
+
 /// Choses type of service runtime (see `--listen` and `--connect` option
 /// details in [`Opts`] structure.
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Display)]
@@ -147,5 +154,14 @@ fn main() {
     log::set_max_level(LevelFilter::Trace);
     info!("connectiond: lightning peer network connection microservice");
 
-    Opts::parse();
+    let opts = Opts::parse();
+
+    /*
+    use self::internal::ResultExt;
+    let (config_from_file, _) =
+        internal::Config::custom_args_and_optional_files(std::iter::empty::<
+            &str,
+        >())
+        .unwrap_or_exit();
+     */
 }

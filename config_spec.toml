@@ -1,0 +1,35 @@
+[general]
+env_prefix = "LNP_NODE"
+conf_file_param = "config"
+doc = """
+LNP wired is a new Lightning Network node written in Rust. Actually, it's a suite of daemons able to run generalized Lightning Network protocol.
+The main advantage of wired over its competitors is the ability to implement future upgrades more easily and support for layer 3 protocols.
+"""
+
+[[param]]
+name = "data_dir"
+type = "std::path::PathBuf"
+abbr = "d"
+doc = "Path to the directory that contains LNP Node data, and where ZMQ RPC socket files are located"
+
+[[param]]
+name = "tor_proxy"
+type = "std::net::SocketAddr"
+abbr = "T"
+doc = """
+SOCKS5 proxy used for Tor connectivity and directs all network traffic through Tor network.
+If the argument is provided in form of flag, without value, uses `127.0.0.1:9050` as default Tor proxy address.
+"""
+default = "std::net::SocketAddr::from_str(\"127.0.0.1:9050\").unwrap()"
+
+[[param]]
+name = "msg_socket"
+type = "lnpbp::lnp::transport::zmq::SocketLocator"
+abbr = "m"
+doc = "ZMQ socket name/address to forward all incoming lightning messages"
+
+[[param]]
+name = "ctl_socket"
+type = "lnpbp::lnp::transport::zmq::SocketLocator"
+abbr = "l"
+doc = "ZMQ socket name/address for RPC control protocol"

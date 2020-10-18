@@ -15,6 +15,7 @@
 use amplify::internet::InetAddr;
 use clap::{AppSettings, ArgGroup, Clap, ValueHint};
 use std::net::IpAddr;
+use std::path::PathBuf;
 
 /// Lightning peer network connection daemon; part of LNP Node
 ///
@@ -77,6 +78,18 @@ pub struct Opts {
         conflicts_with = "connect"
     )]
     pub use_threads: bool,
+
+    /// Node key file
+    ///
+    /// Location for the file containing node private Secp256k1 key
+    /// (unencrypted)
+    #[clap(
+        short,
+        long,
+        env = "LNP_NODE_KEY_FILE",
+        value_hint = ValueHint::FilePath
+    )]
+    pub key_file: Option<PathBuf>,
 
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables

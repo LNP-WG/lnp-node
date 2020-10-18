@@ -20,7 +20,7 @@ _connectiond() {
 
     case "${cmd}" in
         connectiond)
-            opts=" -L -C -p -t -d -c -v -k -T -m -x -h -V  --listen --connect --port --use-threads --data-dir --config --verbose --key-file --tor-proxy --msg-socket --ctl-socket --help --version  "
+            opts=" -L -C -p -t -k -d -c -v -T -m -x -h -V  --listen --connect --port --use-threads --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -59,6 +59,14 @@ _connectiond() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --key-file)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -k)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --data-dir)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -72,14 +80,6 @@ _connectiond() {
                     return 0
                     ;;
                     -c)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                --key-file)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                    -k)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

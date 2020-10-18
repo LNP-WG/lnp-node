@@ -7,7 +7,7 @@ pub mod opts {
 
 include!("src/connectiond/opts.rs");
 
-fn main() {
+fn main() -> Result<(), configure_me_codegen::Error> {
     let outdir = "./shell";
 
     let mut app = Opts::into_app();
@@ -15,4 +15,6 @@ fn main() {
     generate_to::<Bash, _, _>(&mut app, &name, &outdir);
     generate_to::<PowerShell, _, _>(&mut app, &name, &outdir);
     generate_to::<Zsh, _, _>(&mut app, &name, &outdir);
+
+    configure_me_codegen::build_script_auto()
 }
