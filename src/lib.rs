@@ -20,13 +20,12 @@
     non_camel_case_types,
     non_snake_case,
     unused_mut,
-    unused_imports,
     dead_code
 )]
+// unused_imports,
 // TODO: when we will be ready for the release #![deny(missing_docs)]
 // #![warn(missing_docs)]
 
-/*
 #[macro_use]
 extern crate amplify;
 #[macro_use]
@@ -36,20 +35,18 @@ pub extern crate lnpbp;
 #[macro_use]
 pub extern crate lnpbp_derive;
 
+#[cfg(feature = "shell")]
 #[macro_use]
 extern crate clap;
+#[cfg(feature = "shell")]
 #[macro_use]
 extern crate log;
 
+#[cfg(feature = "serde")]
 #[macro_use]
 pub extern crate serde_with;
-*/
 
+#[cfg(feature = "node")]
 pub mod connectiond;
+#[cfg(feature = "shell")]
 pub mod opts;
-
-/*
-pub mod cli;
-//pub mod i9n;
-pub mod rpc;
-*/

@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: sudo apt-get install -y libzmq3-dev libpcre3-dev libpq-dev libssl-dev
+        run: sudo apt-get install -y libzmq3-dev
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
@@ -25,14 +25,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin wired --features server
-      - name: Build daemon with monitoring
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --bin wired --features server,monitoring
+          args: --bin connectiond --features server
       - name: Build CLI
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin lnp-cli keyring-cli --features integration,cli
+          args: --bin lnp-cli --features cli
