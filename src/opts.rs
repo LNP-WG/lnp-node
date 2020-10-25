@@ -16,7 +16,7 @@ use clap::{Clap, ValueHint};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use lnpbp::lnp::transport::zmq::SocketLocator;
+use lnpbp::lnp::zmqsocket::SocketLocator;
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
 #[cfg(any(target_os = "linux"))]

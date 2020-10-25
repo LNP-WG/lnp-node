@@ -97,11 +97,15 @@ extern crate amplify_derive;
 
 use amplify::internet::InetSocketAddr;
 use clap::Clap;
+use core::convert::TryFrom;
 use log::LevelFilter;
-use std::net::SocketAddr;
+use nix::unistd::{fork, ForkResult};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use lnp_node::connectiond::Opts;
-use lnpbp::lnp::transport::zmq::SocketLocator;
+use lnpbp::lnp::transport::FramingProtocol;
+use lnpbp::lnp::zmqsocket::SocketLocator;
+use lnpbp::lnp::{session, LocalNode, NodeAddr, PeerConnection, RemoteAddr};
 
 /*
 mod internal {
@@ -112,13 +116,13 @@ mod internal {
 
 /// Choses type of service runtime (see `--listen` and `--connect` option
 /// details in [`Opts`] structure.
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Display)]
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
 pub enum P2pSocket {
     /// The service should listen for incoming connections on a certain
     /// TCP socket, which may be IPv4- or IPv6-based. For Tor hidden services
     /// use IPv4 TCP port proxied as a Tor hidden service in `torrc`.
     #[display("--listen={_0}")]
-    Listen(SocketAddr),
+    Listen(RemoteAddr),
 
     /// The service should connect to the remote peer residing on the provided
     /// address, which may be either IPv4/v6 or Onion V2/v3 address (using
@@ -127,7 +131,32 @@ pub enum P2pSocket {
     /// leaking any information about th elocal node to DNS resolvers, are not
     /// supported.
     #[display("--connect={_0}")]
-    Connect(InetSocketAddr),
+    Connect(NodeAddr),
+}
+
+impl From<Opts> for P2pSocket {
+    fn from(opts: Opts) -> Self {
+        if let Some(peer_addr) = opts.connect {
+            Self::Connect(peer_addr)
+        } else if let Some(bind_addr) = opts.listen {
+            Self::Listen(match opts.overlay {
+                FramingProtocol::FramedRaw => {
+                    RemoteAddr::Ftcp(InetSocketAddr {
+                        address: bind_addr
+                            .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED))
+                            .into(),
+                        port: opts.port,
+                    })
+                }
+                // TODO: (v2) implement overlay protocols
+                _ => unimplemented!(),
+            })
+        } else {
+            unreachable!(
+                "Either `connect` or `listen` must be present due to Clap configuration"
+            )
+        }
+    }
 }
 
 /// Final configuration resulting from data contained in config file environment
@@ -136,9 +165,6 @@ pub enum P2pSocket {
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display(Debug)]
 pub struct SocketConfig {
-    /// Socket to use for connecting Lightning peer network
-    pub p2p_socket: P2pSocket,
-
     /// ZMQ RPC socket for transmitting lightning peer network messages
     pub msg_socket: SocketLocator,
 
@@ -155,6 +181,43 @@ fn main() {
     info!("connectiond: lightning peer network connection microservice");
 
     let opts = Opts::parse();
+
+    let local_node = LocalNode::new();
+
+    let connection = match P2pSocket::from(opts) {
+        P2pSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
+            use std::net::TcpListener;
+            let listener = TcpListener::bind(
+                SocketAddr::try_from(inet_addr)
+                    .expect("Tor is not yet supported"),
+            )
+            .expect("Unable to bind to Lightning network peer socket");
+            loop {
+                let (stream, remote_addr) = listener
+                    .accept()
+                    .expect("Error accepting incpming peer connection");
+                if let ForkResult::Child =
+                    unsafe { fork().expect("Unable to fork child process") }
+                {
+                    continue;
+                }
+                let session =
+                    session::Raw::with_ftcp_unencrypted(stream, inet_addr)
+                        .expect(
+                            "Unable to establish session with the remote peer",
+                        );
+                break PeerConnection::with(session);
+            }
+        }
+        P2pSocket::Connect(node_addr) => {
+            PeerConnection::connect(node_addr, &local_node)
+                .expect("Unable to connect to the remote peer")
+        }
+        _ => unimplemented!(),
+    };
+
+    // let runtime = connectiond::Runtime::new(connection, socket_config);
+    // runtime.run_loop();
 
     /*
     use self::internal::ResultExt;

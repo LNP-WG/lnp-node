@@ -26,6 +26,8 @@ Register-ArgumentCompleter -Native -CommandName 'connectiond' -ScriptBlock {
             [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'Connect to a remote peer with the provided address after start')
             [CompletionResult]::new('-p', 'p', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
             [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
+            [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterName, 'Overlay peer communications through different transport protocol')
+            [CompletionResult]::new('--overlay', 'overlay', [CompletionResultType]::ParameterName, 'Overlay peer communications through different transport protocol')
             [CompletionResult]::new('-t', 't', [CompletionResultType]::ParameterName, 'Spawn threads instead of forking new processes for incoming connections')
             [CompletionResult]::new('--use-threads', 'use-threads', [CompletionResultType]::ParameterName, 'Spawn threads instead of forking new processes for incoming connections')
             [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')

@@ -12,10 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::internet::InetAddr;
 use clap::{AppSettings, ArgGroup, Clap, ValueHint};
 use std::net::IpAddr;
 use std::path::PathBuf;
+
+use lnpbp::lnp::{transport::FramingProtocol, NodeAddr};
 
 /// Lightning peer network connection daemon; part of LNP Node
 ///
@@ -57,8 +58,8 @@ pub struct Opts {
     /// Connects to the specified remote peer. Peer address should be given as
     /// either IPv4, IPv6 or Onion address (v2 or v3); in the former case you
     /// will be also required to provide `--tor` argument.
-    #[clap(short = 'C', long, group = "action", value_hint = ValueHint::Hostname)]
-    pub connect: Option<InetAddr>,
+    #[clap(short = 'C', long, group = "action")]
+    pub connect: Option<NodeAddr>,
 
     /// Customize port used by lightning peer network
     ///
@@ -66,6 +67,15 @@ pub struct Opts {
     /// address given to `--listen` or `--connect` argument.
     #[clap(short, long, default_value = "9735")]
     pub port: u16,
+
+    /// Overlay peer communications through different transport protocol.
+    #[clap(
+        short,
+        long,
+        default_value = "tcp",
+        possible_values = &["tcp", "zmq", "http", "websocket", "smtp"]
+    )]
+    pub overlay: FramingProtocol,
 
     /// Spawn threads instead of forking new processes for incoming connections
     ///

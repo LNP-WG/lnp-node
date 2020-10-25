@@ -17,10 +17,12 @@ _connectiond() {
     _arguments "${_arguments_options[@]}" \
 '*-L+[Start daemon in listening mode binding the provided local address]: :_hosts' \
 '*--listen=[Start daemon in listening mode binding the provided local address]: :_hosts' \
-'-C+[Connect to a remote peer with the provided address after start]: :_hosts' \
-'--connect=[Connect to a remote peer with the provided address after start]: :_hosts' \
+'-C+[Connect to a remote peer with the provided address after start]' \
+'--connect=[Connect to a remote peer with the provided address after start]' \
 '-p+[Customize port used by lightning peer network]' \
 '--port=[Customize port used by lightning peer network]' \
+'-o+[Overlay peer communications through different transport protocol]: :(tcp zmq http websocket smtp)' \
+'--overlay=[Overlay peer communications through different transport protocol]: :(tcp zmq http websocket smtp)' \
 '(-C --connect)-t+[Spawn threads instead of forking new processes for incoming connections]' \
 '(-C --connect)--use-threads=[Spawn threads instead of forking new processes for incoming connections]' \
 '-k+[Node key file]: :_files' \

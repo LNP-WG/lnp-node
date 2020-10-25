@@ -20,7 +20,7 @@ _connectiond() {
 
     case "${cmd}" in
         connectiond)
-            opts=" -L -C -p -t -k -d -c -v -T -m -x -h -V  --listen --connect --port --use-threads --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  "
+            opts=" -L -C -p -o -t -k -d -c -v -T -m -x -h -V  --listen --connect --port --overlay --use-threads --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -49,6 +49,14 @@ _connectiond() {
                     ;;
                     -p)
                     COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --overlay)
+                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
+                    return 0
+                    ;;
+                    -o)
+                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
                     return 0
                     ;;
                 --use-threads)
