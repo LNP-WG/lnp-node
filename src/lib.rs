@@ -1,4 +1,5 @@
-// Lightning network protocol (LNP) daemon suite
+// LNP Node: node running lightning network protocol and generalized lightning
+// channels.
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -11,47 +12,41 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-
-// We need this since code is not completed and a lot of it is written
-// for future functionality
-// Remove this once the first version will be complete
-#![allow(dead_code)]
-#![allow(unused_variables)]
-// In mutithread environments it's critical to capture all failures
-#![deny(unused_must_use)]
-
 #![feature(never_type)]
-#![feature(unwrap_infallible)]
-#![feature(in_band_lifetimes)]
+#![recursion_limit = "256"]
+// Coding conventions
+#![deny(
+    non_upper_case_globals,
+    non_camel_case_types,
+    non_snake_case,
+    unused_mut,
+    dead_code
+)]
+// unused_imports,
+// TODO: when we will be ready for the release #![deny(missing_docs)]
+// #![warn(missing_docs)]
 
 #[macro_use]
-extern crate tokio;
-extern crate futures;
-extern crate zmq;
-extern crate diesel;
+extern crate amplify;
+#[macro_use]
+extern crate amplify_derive;
+#[macro_use]
+pub extern crate lnpbp;
+#[macro_use]
+pub extern crate lnpbp_derive;
+
+#[cfg(feature = "shell")]
+#[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate derive_wrapper;
-#[macro_use]
-extern crate async_trait;
+#[cfg(feature = "shell")]
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-extern crate dotenv;
-extern crate chrono;
-extern crate tiny_http;
-extern crate prometheus;
-extern crate lnpbp;
+
+#[cfg(feature = "serde")]
 #[macro_use]
-extern crate serde_derive;
-extern crate configure_me;
+pub extern crate serde_with;
 
-pub mod msgbus;
-pub mod service;
-pub mod wired;
-pub mod error;
-
-pub use service::*;
-pub use error::*;
-
-pub mod cli;
+#[cfg(feature = "node")]
+pub mod connectiond;
+#[cfg(feature = "shell")]
+pub mod opts;

@@ -1,43 +1,35 @@
 [general]
-env_prefix = "LNP_WIRED"
+env_prefix = "LNP_NODE"
 conf_file_param = "config"
-conf_dir_param = "conf_dir"
 doc = """
 LNP wired is a new Lightning Network node written in Rust. Actually, it's a suite of daemons able to run generalized Lightning Network protocol.
-
-The main advantage of wired over its competitors is the ability to implement future upgrades more easily and support for layer 3 protocols."""
-
-[[switch]]
-name = "verbose"
-abbr = "v"
-doc = "Sets verbosity level; can be used multiple times to increase verbosity"
-count = true
+The main advantage of wired over its competitors is the ability to implement future upgrades more easily and support for layer 3 protocols.
+"""
 
 [[param]]
-name = "inet_addr"
-type = "lnpbp::internet::InetAddr"
-abbr = "i"
-doc = "IPv4, IPv6 or Tor address to listen for incoming connections from LN peers"
-default = "[0, 0, 0, 0].into()"
+name = "data_dir"
+type = "std::path::PathBuf"
+abbr = "d"
+doc = "Path to the directory that contains LNP Node data, and where ZMQ RPC socket files are located"
 
 [[param]]
-name = "port"
-type = "u16"
-abbr = "p"
-doc = "Use custom port to listen for incoming connections from LN peers"
-default = "9735"
-
-[[param]]
-name = "monitor"
+name = "tor_proxy"
 type = "std::net::SocketAddr"
-abbr = "m"
-doc = "Address for Prometheus monitoring information exporter"
-default = "crate::wired::config::MONITOR_ADDR_DEFAULT.parse().expect(\"Failed to parse constant MONITOR_ADDR_DEFAULT\")"
+abbr = "T"
+doc = """
+SOCKS5 proxy used for Tor connectivity and directs all network traffic through Tor network.
+If the argument is provided in form of flag, without value, uses `127.0.0.1:9050` as default Tor proxy address.
+"""
+default = "std::net::SocketAddr::from_str(\"127.0.0.1:9050\").unwrap()"
 
 [[param]]
-name = "connect"
-type = "crate::wired::config::Connect"
-abbr = "C"
-doc = "Nodes to connect to after launch (argument can be repeated)"
-merge_fn = "crate::wired::config::Connect::merge"
-default = "Default::default()"
+name = "msg_socket"
+type = "lnpbp::lnp::transport::zmq::SocketLocator"
+abbr = "m"
+doc = "ZMQ socket name/address to forward all incoming lightning messages"
+
+[[param]]
+name = "ctl_socket"
+type = "lnpbp::lnp::transport::zmq::SocketLocator"
+abbr = "l"
+doc = "ZMQ socket name/address for RPC control protocol"

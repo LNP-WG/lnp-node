@@ -12,11 +12,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod command;
-mod config;
-pub mod format;
+#[cfg(feature = "shell")]
+mod opts;
 mod runtime;
 
-pub use command::Command;
-pub use config::{Config, Opts};
-pub use runtime::Runtime;
+#[cfg(feature = "shell")]
+pub use opts::Opts;
