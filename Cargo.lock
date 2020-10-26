@@ -149,9 +149,9 @@ checksum = "cdcf67bb7ba7797a081cd19009948ab533af7c355d5caf1d08c777582d351e9c"
 
 [[package]]
 name = "bitcoin"
-version = "0.25.1"
+version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "302fba01c5210a0321cc459dbe7f6b4fc21dffe77241c1690bce129814fa11fc"
+checksum = "aefc9be9f17185f4ebccae6575d342063f775924d57df0000edb1880c0fb7095"
 dependencies = [
  "bech32",
  "bitcoin_hashes",
@@ -877,7 +877,7 @@ checksum = "8dd5a6d5999d9907cda8ed67bbd137d3af8085216c2ac62de5be860bd41f304a"
 
 [[package]]
 name = "lnp_node"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.1"
 dependencies = [
  "amplify 1.2.1",
  "amplify 2.0.6",
@@ -913,7 +913,8 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#8b4a5e6dc20c882698ee2c7399847cfb8f6db6f9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c558071a3fd4013c729c3e25f5cedf3b9cfc63d3d34c8a5040746c7d12d5f59e"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -942,7 +943,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#8b4a5e6dc20c882698ee2c7399847cfb8f6db6f9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "558da02dc8c744401e868358062a2e33e33e74e8d71396c1f47dbd1d8de683df"
 dependencies = [
  "amplify 2.0.6",
  "quote 1.0.7",
@@ -952,7 +954,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#8b4a5e6dc20c882698ee2c7399847cfb8f6db6f9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f02cd14fd66366016023f7f66ba6def04a8aefad46a49d3396ebb15d9dcdd4cc"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",

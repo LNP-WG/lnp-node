@@ -14,7 +14,6 @@
 
 #[cfg(feature = "shell")]
 mod opts;
-mod peer;
 mod runtime;
 
 #[cfg(feature = "shell")]

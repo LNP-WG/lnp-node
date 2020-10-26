@@ -89,6 +89,8 @@ The node must maintain simple/modular upgradability for:
 
 ## Design
 
+### Approach
+
 The node (as other nodes maitained by LNP/BP Standards Association and Pandora
 Core company subsidiaries) consists of multiple microservices, communicating
 with each other via LNP ZMQ RPC interface.
@@ -119,21 +121,27 @@ Other third parties provide their own nodes:
 * [MyCitadel](https://github.com/mycitadel/mycitadel-node) Bitcoin, LN & RGB
   enabled wallet service with support for other LNP/BP protocols
 
+### LNP Node Architecture Specifics
+
+The overall architecture of LNP Node is the following:
+
+![Node architacture](doc/lnp_node_arch.jpeg)
+
 ## Project organization & architecture
 
-* [`src/api/`](src/api/) – LNP messages for all daemons used for message bus
 * [`src/bin/`](src/bin/) – binaries for daemons & CLI launching main process
 * [`src/cli/`](src/cli/) – CLAP-based command line API talking to message bus
+* [`src/rpc/`](src/rpc/) – RPC commands for all daemons used for message bus
 * [`src/i8n/`](src/i8n/) – functions exposed to FFI talking to message bus
 * `src/<name>/` – service/daemon-specific code:
-  - [`src/wired/`](src/wired) – daemon managing peer connections within
-    Lightning peer network using LNP (Lightning network protocol). Specific
-    supported message types are defined as a part of 
+  - [`src/connectiond/`](src/connectiond) – daemon managing peer connections 
+    within Lightning peer network using LNP (Lightning network protocol). 
+    Specific supported message types are defined as a part of 
     [LNP/BP Core Library](https://github.com/LNP-BP/rust-lnpbp)
   - [`src/channeld`](src/channeld) – daemon managing generalized Lightning
     channels with their extensions
-  - [`src/lightningd`](src/lightningd) – daemon initializing creation of new
-    channels
+  - [`src/lnpd`](src/lnpd) – daemon initializing creation of new channels and
+    connections    
   - [`src/routed`](src/routed) – daemon managing routing information
   - [`src/gossip`](src/gossip) – daemon managing gossip data
   - [`src/keyd`](src/keyd) - key managing daemon
@@ -142,11 +150,9 @@ Each daemon (more correctly "microservice", as it can run as a thread, not
 necessary a process) or other binary (like CLI tool) follows the same  
 organization concept for module/file names:
 * `error.rs` – daemon-specific error types;
-* `config.rs` – CLAP arguments & daemon configuration data;
+* `opts.rs` – CLAP arguments & daemon configuration data;
 * `runtime.rs` – singleton managing main daemon thread and keeping all ZMQ/P2P 
   connections and sockets; receiving and processing messages through them;
-* `processor.rs` – business logic functions & internal state management which 
-  does not depend on external communications/RPC;
 * `index/`, `storage/`, `cache/` – storage interfaces and engines;
 * `db/` – SQL-specific schema and code, if needed.
 
