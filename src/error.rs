@@ -14,13 +14,16 @@
 
 #[derive(Clone, Debug, Display, From, Error)]
 #[display(doc_comments)]
+#[non_exhaustive]
 pub enum Error {
     /// ZeroMQ error: {_0}
     #[from]
+    #[cfg(feature = "zmq")]
     Zmq(zmq::Error),
 
     /// This error can't happen
     #[from]
+    #[cfg(feature = "node")]
     Server(lnpbp_services::rpc::Error),
 
     /// LNP transport-level error: {_0}
