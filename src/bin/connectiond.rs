@@ -98,8 +98,8 @@ extern crate amplify_derive;
 use amplify::internet::InetSocketAddr;
 use clap::Clap;
 use core::convert::TryFrom;
-use log::LevelFilter;
 use nix::unistd::{fork, ForkResult};
+use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use lnp_node::connectiond::{self, Opts};
@@ -159,47 +159,15 @@ impl From<Opts> for P2pSocket {
 }
 
 fn main() {
-    log::set_max_level(LevelFilter::Trace);
-    info!("connectiond: lightning peer network connection microservice");
+    println!("connectiond: lightning peer network connection microservice");
 
     let mut opts = Opts::parse();
+    trace!("Command-line arguments: {:?}", &opts);
     opts.process();
+    trace!("Processed arguments: {:?}", &opts);
 
-    let local_node = LocalNode::new();
-
-    let connection = match P2pSocket::from(opts.clone()) {
-        P2pSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
-            use std::net::TcpListener;
-            let listener = TcpListener::bind(
-                SocketAddr::try_from(inet_addr)
-                    .expect("Tor is not yet supported"),
-            )
-            .expect("Unable to bind to Lightning network peer socket");
-            loop {
-                let (stream, remote_addr) = listener
-                    .accept()
-                    .expect("Error accepting incpming peer connection");
-                if let ForkResult::Child =
-                    unsafe { fork().expect("Unable to fork child process") }
-                {
-                    continue;
-                }
-                let session =
-                    session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                        .expect(
-                            "Unable to establish session with the remote peer",
-                        );
-                break PeerConnection::with(session);
-            }
-        }
-        P2pSocket::Connect(node_addr) => {
-            PeerConnection::connect(node_addr, &local_node)
-                .expect("Unable to connect to the remote peer")
-        }
-        _ => unimplemented!(),
-    };
-
-    let runtime = connectiond::run(connection, opts.into());
+    let config = opts.clone().into();
+    trace!("Daemon configuration: {:?}", &config);
 
     /*
     use self::internal::ResultExt;
@@ -209,4 +177,64 @@ fn main() {
         >())
         .unwrap_or_exit();
      */
+
+    let local_node = LocalNode::new();
+    debug!("Local node data: {}", local_node);
+
+    let connection = match P2pSocket::from(opts) {
+        P2pSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
+            debug!("Running in LISTEN mode");
+
+            debug!("Binding TCP socket {}", inet_addr);
+            let listener = TcpListener::bind(
+                SocketAddr::try_from(inet_addr)
+                    .expect("Tor is not yet supported"),
+            )
+            .expect("Unable to bind to Lightning network peer socket");
+
+            debug!("Running TCP listener event loop");
+            loop {
+                debug!("Awaiting for incoming connections...");
+                let (stream, remote_addr) = listener
+                    .accept()
+                    .expect("Error accepting incpming peer connection");
+                debug!("New connection from {}", remote_addr);
+
+                // TODO: Support multithread mode
+                debug!("Forking child process");
+                if let ForkResult::Child =
+                    unsafe { fork().expect("Unable to fork child process") }
+                {
+                    trace!(
+                        "Child forked; returning into main listener event loop"
+                    );
+                    continue;
+                }
+
+                debug!("Establishing session with the remote");
+                let session =
+                    session::Raw::with_ftcp_unencrypted(stream, inet_addr)
+                        .expect(
+                            "Unable to establish session with the remote peer",
+                        );
+
+                debug!("Session successfully established");
+                break PeerConnection::with(session);
+            }
+        }
+        P2pSocket::Connect(node_addr) => {
+            debug!("Running in CONNECT mode");
+
+            info!("Connecting to {}", &node_addr);
+            PeerConnection::connect(node_addr, &local_node)
+                .expect("Unable to connect to the remote peer")
+        }
+        _ => unimplemented!(),
+    };
+
+    debug!("Starting runtime ...");
+    connectiond::run(connection, config)
+        .expect("Error running connectiond runtime");
+
+    unreachable!()
 }

@@ -60,10 +60,12 @@ git = "https://github.com/LNP-BP/rust-lnpbp"
 branch = "master"
 
 [build-dependencies]
-clap = "=3.0.0-beta.2"
-clap_generate = "=3.0.0-beta.2"
 amplify = "~1.2.0"
 lnpbp = { git = "https://github.com/LNP-BP/rust-lnpbp", branch = "master", features = ["lnp", "keygen", "tokio", "serde", "tor", "url", "websockets"] }
+lnpbp_services = { git = "https://github.com/LNP-BP/rust-lnpbp", branch = "master", features = ["shell"] }
+clap = "=3.0.0-beta.2"
+clap_generate = "=3.0.0-beta.2"
+log = { version = "~0.4.8", features = ["max_level_trace", "release_max_level_debug"] }
 configure_me_codegen = "0.3.14"
 
 [patch.crates-io]

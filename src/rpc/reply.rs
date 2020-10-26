@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp;
 use lnpbp::lnp::rpc_connection;
 use lnpbp_services::rpc;
 

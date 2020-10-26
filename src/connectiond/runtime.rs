@@ -17,15 +17,13 @@ use core::convert::TryInto;
 use std::collections::HashMap;
 use std::thread::spawn;
 
-use lnpbp::lnp::transport::zmqsocket::SocketLocator;
 use lnpbp::lnp::ZMQ_CONTEXT;
-use lnpbp::lnp::{PeerConnection, PeerReceiver, PeerSender, Session};
-use lnpbp_services::error::BootstrapError;
+use lnpbp::lnp::{PeerConnection, PeerReceiver, PeerSender};
 use lnpbp_services::node::TryService;
 use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
 
 use super::Config;
-use crate::rpc::{Endpoints, Rpc};
+use crate::rpc::Endpoints;
 use crate::Error;
 
 pub struct MessageFilter {}
@@ -33,19 +31,25 @@ pub struct MessageFilter {}
 pub struct ServiceId {}
 
 pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
+    debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
+    debug!("Opening bridge between runtime sender/receiver threads");
     let tx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
     let rx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
+    debug!("Starting thread listening for messages from the remote peer");
     let thread = Thread {
         receiver,
         bridge: tx,
     };
-    spawn(move || thread.run_or_panic("connectiond-thread")).join();
+    spawn(move || thread.run_or_panic("connectiond-thread"))
+        .join()
+        .expect("Error joining receiver thread");
 
+    debug!("Staring service sending messages to the remote peer");
     let runtime = Runtime {
         routing: none!(),
         sender,
@@ -54,11 +58,11 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
         map! {
             Endpoints::Msg => EndpointCarrier::Address(
                 config.msg_endpoint.try_into()
-                    .expect("Only ZMQ RPC is supported now")
+                    .expect("Only ZMQ RPC is currently supported")
             ),
             Endpoints::Ctl => EndpointCarrier::Address(
                 config.ctl_endpoint.try_into()
-                    .expect("Only ZMQ RPC is supported now"))
+                    .expect("Only ZMQ RPC is currently supported"))
             ,
             Endpoints::Bridge => EndpointCarrier::Socket(rx)
         },
@@ -82,7 +86,11 @@ impl TryService for Thread {
     type ErrorType = Error;
 
     fn try_run_loop(self) -> Result<(), Self::ErrorType> {
+        debug!("Entering event loop of the sender service");
         loop {
+            debug!(
+                "Awaiting for incoming MSG, CTL and BRIDGE interface messages"
+            );
             // let msg = self.receiver.recv_message()?;
             // TODO: Convert message into RPC format
             // self.bridge.send(&msg.as_bytes(), 0)?;

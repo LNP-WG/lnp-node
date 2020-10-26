@@ -13,10 +13,12 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use clap::{Clap, ValueHint};
+use log::LevelFilter;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use lnpbp::lnp::NodeLocator;
+use lnpbp_services::shell::LogLevel;
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
 #[cfg(any(target_os = "linux"))]
@@ -33,8 +35,10 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = ".";
 
-pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "lnpz:{data_dir}/msg.rpc";
-pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "lnpz:{data_dir}/ctl.rpc";
+pub const LNP_NODE_MSG_SOCKET_NAME: &'static str =
+    "lnpz:{data_dir}/msg.rpc?api=rpc";
+pub const LNP_NODE_CTL_SOCKET_NAME: &'static str =
+    "lnpz:{data_dir}/ctl.rpc?api=rpc";
 
 pub const LNP_NODE_BIND: &'static str = "0.0.0.0:20202";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
@@ -125,6 +129,9 @@ pub struct Opts {
 
 impl Opts {
     pub fn process(&mut self) {
+        log::set_max_level(LevelFilter::Trace);
+        LogLevel::from_verbosity_flag_count(self.verbose).apply();
+
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
                 NodeLocator::ZmqIpc(path, ..) | NodeLocator::Posix(path) => {
