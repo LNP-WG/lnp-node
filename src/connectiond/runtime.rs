@@ -50,11 +50,11 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
     debug!("Starting listening thread for messages from the remote peer");
     let processor = Processor { bridge: tx };
     let listener = peer::Listener::with(receiver, processor);
-    spawn(move || listener.run_or_panic("connectiond-listener"))
-        .join()
-        .expect("Error joining receiver thread");
+    spawn(move || listener.run_or_panic("connectiond-listener"));
+    //.join()
+    //.expect("Error joining receiver thread");
 
-    debug!("Staring service sending messages to the remote peer");
+    debug!("Staring RPC service runtime");
     let runtime = Runtime {
         routing: none!(),
         sender,

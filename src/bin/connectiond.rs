@@ -101,6 +101,7 @@ use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use lnp_node::connectiond::{self, Opts};
+use lnp_node::Config;
 use lnpbp::lnp::transport::FramingProtocol;
 use lnpbp::lnp::{session, LocalNode, NodeAddr, PeerConnection, RemoteAddr};
 
@@ -164,8 +165,10 @@ fn main() {
     opts.process();
     trace!("Processed arguments: {:?}", &opts);
 
-    let config = opts.shared.clone().into();
+    let config: Config = opts.shared.clone().into();
     trace!("Daemon configuration: {:?}", &config);
+    debug!("MSG RPC socket {}", &config.msg_endpoint);
+    debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
     /*
     use self::internal::ResultExt;

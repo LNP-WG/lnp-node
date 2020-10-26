@@ -31,8 +31,10 @@ fn main() {
     opts.process();
     trace!("Processed arguments: {:?}", &opts);
 
-    let config = opts.shared.clone().into();
+    let config: Config = opts.shared.clone().into();
     trace!("Tool configuration: {:?}", &config);
+    debug!("MSG RPC socket {}", &config.msg_endpoint);
+    debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
     let mut runtime =
         Runtime::with(config).expect("Error initializing runtime");

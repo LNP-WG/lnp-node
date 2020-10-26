@@ -41,6 +41,7 @@ dotenv = { version = "~0.15.0", optional = true }
 clap = { version = "=3.0.0-beta.2", optional = true }
 log = { version = "~0.4.8", optional = true, features = ["max_level_trace", "release_max_level_debug"] }
 env_logger = { version = "~0.7.1", optional = true }
+shellexpand = { version = "~2.0.0", optional = true }
 # Processes & IPC
 async-trait = { version = "~0.1.35", optional = true }
 tokio = { version = "~0.2.21", features = ["full"], optional = true }
@@ -66,7 +67,8 @@ lnpbp_services = { git = "https://github.com/LNP-BP/rust-lnpbp", branch = "maste
 clap = "=3.0.0-beta.2"
 clap_generate = "=3.0.0-beta.2"
 log = { version = "~0.4.8", features = ["max_level_trace", "release_max_level_debug"] }
-configure_me_codegen = "0.3.14"
+shellexpand = "~2.0.0"
+configure_me_codegen = "~0.3.14"
 
 [patch.crates-io]
 # Remove this once https://github.com/jean-airoldie/zeromq-src-rs/pull/15 got merged
@@ -92,8 +94,8 @@ cli = ["shell", "client", "lnpbp_services/cli"]
 # Required for all apps that can be launched from command-line shell as binaries
 # (i.e. both servers and cli)
 shell = [
-    "dotenv", "clap", "settings", "configure_me", "log", "env_logger",
-    "amplify/parse_arg", "serde", "lnpbp_services/shell"
+    "dotenv", "clap", "settings", "configure_me", "log", "env_logger", "serde",
+    "amplify/parse_arg", "lnpbp_services/shell", "shellexpand"
 ]
 # Besides server node can be run as a part of mobile app
 # and other types of clients; thus `server` != `node`.
