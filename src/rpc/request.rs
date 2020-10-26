@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use lnpbp::lnp::rpc_connection;
+
 #[derive(Clone, Debug, Display, LnpApi)]
 #[lnp_api(encoding = "strict")]
 #[display(Debug)]
@@ -20,3 +22,5 @@ pub enum Request {
     #[lnp_api(type = 1000)]
     NoOp,
 }
+
+impl rpc_connection::Request for Request {}

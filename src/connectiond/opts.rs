@@ -106,3 +106,9 @@ pub struct Opts {
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
 }
+
+impl Opts {
+    pub fn process(&mut self) {
+        self.shared.process()
+    }
+}

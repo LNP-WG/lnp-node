@@ -12,33 +12,20 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod message;
-mod reply;
-mod request;
-pub mod types;
+#[derive(Clone, Debug, Display, From, Error)]
+#[display(doc_comments)]
+pub enum Error {
+    /// ZeroMQ error: {_0}
+    #[from]
+    Zmq(zmq::Error),
 
-pub use reply::Reply;
-pub use request::Request;
+    /// This error can't happen
+    #[from]
+    Server(lnpbp_services::rpc::Error),
 
-use lnpbp_services::rpc::EndpointTypes;
-
-use crate::lnpbp::lnp::rpc_connection::Api;
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
-pub enum Endpoints {
-    #[display("msg")]
-    Msg,
-    #[display("ctl")]
-    Ctl,
-    #[display("bridge")]
-    Bridge,
+    /// LNP transport-level error: {_0}
+    #[from]
+    Transport(lnpbp::lnp::transport::Error),
 }
 
-impl EndpointTypes for Endpoints {}
-
-pub struct Rpc {}
-
-impl Api for Rpc {
-    type Request = Request;
-    type Reply = Reply;
-}
+impl lnpbp_services::error::Error for Error {}

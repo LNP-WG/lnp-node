@@ -16,7 +16,7 @@ use clap::{Clap, ValueHint};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-use lnpbp::lnp::zmqsocket::SocketLocator;
+use lnpbp::lnp::NodeLocator;
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
 #[cfg(any(target_os = "linux"))]
@@ -33,8 +33,8 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = ".";
 
-pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "msg.rpc";
-pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "ctl.rpc";
+pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "lnpz:{data_dir}/msg.rpc";
+pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "lnpz:{data_dir}/ctl.rpc";
 
 pub const LNP_NODE_BIND: &'static str = "0.0.0.0:20202";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
@@ -101,9 +101,10 @@ pub struct Opts {
         long,
         global = true,
         env = "LNP_NODE_MSG_SOCKET",
-        value_hint = ValueHint::FilePath
+        value_hint = ValueHint::FilePath,
+        default_value = LNP_NODE_MSG_SOCKET_NAME
     )]
-    pub msg_socket: Option<SocketLocator>,
+    pub msg_socket: NodeLocator,
 
     /// ZMQ socket name/address for daemon control interface
     ///
@@ -116,7 +117,22 @@ pub struct Opts {
         long,
         global = true,
         env = "LNP_NODE_CTL_SOCKET",
-        value_hint = ValueHint::FilePath
+        value_hint = ValueHint::FilePath,
+        default_value = LNP_NODE_CTL_SOCKET_NAME
     )]
-    pub ctl_socket: Option<SocketLocator>,
+    pub ctl_socket: NodeLocator,
+}
+
+impl Opts {
+    pub fn process(&mut self) {
+        for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
+            match s {
+                NodeLocator::ZmqIpc(path, ..) | NodeLocator::Posix(path) => {
+                    *path = path
+                        .replace("{data_dir}", &self.data_dir.to_string_lossy())
+                }
+                _ => unimplemented!(),
+            }
+        }
+    }
 }

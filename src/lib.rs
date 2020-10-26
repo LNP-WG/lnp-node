@@ -19,10 +19,10 @@
     non_upper_case_globals,
     non_camel_case_types,
     non_snake_case,
-    unused_mut,
-    dead_code
+    unused_mut
 )]
 // unused_imports,
+// dead_code
 // TODO: when we will be ready for the release #![deny(missing_docs)]
 // #![warn(missing_docs)]
 
@@ -48,5 +48,9 @@ pub extern crate serde_with;
 
 #[cfg(feature = "node")]
 pub mod connectiond;
+mod error;
 #[cfg(feature = "shell")]
 pub mod opts;
+pub mod rpc;
+
+pub use error::Error;

@@ -102,9 +102,8 @@ use log::LevelFilter;
 use nix::unistd::{fork, ForkResult};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-use lnp_node::connectiond::Opts;
+use lnp_node::connectiond::{self, Opts};
 use lnpbp::lnp::transport::FramingProtocol;
-use lnpbp::lnp::zmqsocket::SocketLocator;
 use lnpbp::lnp::{session, LocalNode, NodeAddr, PeerConnection, RemoteAddr};
 
 /*
@@ -159,32 +158,16 @@ impl From<Opts> for P2pSocket {
     }
 }
 
-/// Final configuration resulting from data contained in config file environment
-/// variables and command-line options. For security reasons node key is kept
-/// separately.
-#[derive(Clone, PartialEq, Eq, Debug, Display)]
-#[display(Debug)]
-pub struct SocketConfig {
-    /// ZMQ RPC socket for transmitting lightning peer network messages
-    pub msg_socket: SocketLocator,
-
-    /// ZMQ RPC socket for internal daemon control bus
-    pub ctl_socket: SocketLocator,
-
-    /// If set, specifies SOCKS5 proxy used for Tor connectivity. Required if
-    /// `p2p_socket` is set to `P2pSocket::Connect` with onion address.
-    pub tor_socks5: SocketAddr,
-}
-
 fn main() {
     log::set_max_level(LevelFilter::Trace);
     info!("connectiond: lightning peer network connection microservice");
 
-    let opts = Opts::parse();
+    let mut opts = Opts::parse();
+    opts.process();
 
     let local_node = LocalNode::new();
 
-    let connection = match P2pSocket::from(opts) {
+    let connection = match P2pSocket::from(opts.clone()) {
         P2pSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
             use std::net::TcpListener;
             let listener = TcpListener::bind(
@@ -216,8 +199,7 @@ fn main() {
         _ => unimplemented!(),
     };
 
-    // let runtime = connectiond::Runtime::new(connection, socket_config);
-    // runtime.run_loop();
+    let runtime = connectiond::run(connection, opts.into());
 
     /*
     use self::internal::ResultExt;

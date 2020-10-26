@@ -13,9 +13,13 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnpbp::lnp;
+use lnpbp::lnp::rpc_connection;
 use lnpbp_services::rpc;
 
+use crate::Error;
+
 #[derive(Clone, Debug, Display, From, LnpApi)]
+#[lnp_api(encoding = "strict")]
 #[display(Debug)]
 #[non_exhaustive]
 pub enum Reply {
@@ -25,4 +29,15 @@ pub enum Reply {
     #[lnp_api(type = 0x0001)]
     #[from]
     Failure(rpc::Failure),
+}
+
+impl rpc_connection::Reply for Reply {}
+
+impl From<Error> for rpc::Failure {
+    fn from(err: Error) -> Self {
+        rpc::Failure {
+            code: 0,
+            info: err.to_string(),
+        }
+    }
 }

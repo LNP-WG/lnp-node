@@ -857,7 +857,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#0b44cd89030bc39a1e50760b5da377ca28af410f"
+source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#85c6fbc94cf3cb8a5552fae6830bcaa5afd51e86"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -897,7 +897,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#0b44cd89030bc39a1e50760b5da377ca28af410f"
+source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#85c6fbc94cf3cb8a5552fae6830bcaa5afd51e86"
 dependencies = [
  "amplify 2.0.6",
  "quote 1.0.7",
@@ -907,12 +907,22 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-alpha.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#0b44cd89030bc39a1e50760b5da377ca28af410f"
+source = "git+https://github.com/LNP-BP/rust-lnpbp?branch=master#85c6fbc94cf3cb8a5552fae6830bcaa5afd51e86"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
+ "clap",
+ "config",
+ "dotenv",
+ "env_logger",
  "lnpbp",
  "lnpbp_derive 0.2.0-alpha.1",
+ "log",
+ "serde 1.0.117",
+ "serde_with",
+ "tokio",
+ "toml 0.5.7",
+ "zmq",
 ]
 
 [[package]]

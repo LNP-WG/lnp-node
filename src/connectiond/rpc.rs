@@ -12,33 +12,21 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod message;
-mod reply;
-mod request;
-pub mod types;
+use lnpbp_services::rpc::{Failure, Handler};
 
-pub use reply::Reply;
-pub use request::Request;
+use super::Runtime;
+use crate::rpc::{Endpoints, Reply, Request, Rpc};
+use crate::Error;
 
-use lnpbp_services::rpc::EndpointTypes;
+impl Handler<Endpoints> for Runtime {
+    type Api = Rpc;
+    type Error = Error;
 
-use crate::lnpbp::lnp::rpc_connection::Api;
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
-pub enum Endpoints {
-    #[display("msg")]
-    Msg,
-    #[display("ctl")]
-    Ctl,
-    #[display("bridge")]
-    Bridge,
-}
-
-impl EndpointTypes for Endpoints {}
-
-pub struct Rpc {}
-
-impl Api for Rpc {
-    type Request = Request;
-    type Reply = Reply;
+    fn handle(
+        &mut self,
+        endpoint: Endpoints,
+        request: Request,
+    ) -> Result<Reply, Self::Error> {
+        unimplemented!()
+    }
 }
