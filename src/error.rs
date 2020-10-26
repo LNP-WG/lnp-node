@@ -27,11 +27,6 @@ pub enum Error {
     #[cfg(feature = "zmq")]
     Zmq(zmq::Error),
 
-    /// This error can't happen
-    #[from]
-    #[cfg(feature = "node")]
-    Server(lnpbp_services::rpc::Error),
-
     /// LNP transport-level error: {_0}
     #[from]
     Transport(lnpbp::lnp::transport::Error),
@@ -39,6 +34,11 @@ pub enum Error {
     /// LNP presentation-level error: {_0}
     #[from]
     Presentation(lnpbp::lnp::presentation::Error),
+
+    /// RPC error: {_0}
+    #[from]
+    #[cfg(any(feature = "node", feature = "client"))]
+    Rpc(lnpbp_services::rpc::Error),
 
     /// Provided RPC request is not supported for the used type of endpoint
     #[cfg(any(feature = "node", feature = "client"))]

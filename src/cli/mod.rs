@@ -12,11 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod command;
-mod config;
-pub mod format;
+mod opts;
 mod runtime;
 
-pub use command::Command;
-pub use config::{Config, Opts};
+pub use opts::Opts;
 pub use runtime::Runtime;

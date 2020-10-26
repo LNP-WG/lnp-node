@@ -46,6 +46,8 @@ extern crate log;
 #[macro_use]
 pub extern crate serde_with;
 
+#[cfg(feature = "cli")]
+pub mod cli;
 #[cfg(feature = "node")]
 pub mod connectiond;
 mod error;
@@ -54,4 +56,9 @@ pub mod opts;
 #[cfg(any(feature = "node", feature = "client"))]
 pub mod rpc;
 
+#[cfg(any(feature = "node", feature = "client"))]
+mod config;
+
+#[cfg(any(feature = "node", feature = "client"))]
+pub use config::Config;
 pub use error::Error;

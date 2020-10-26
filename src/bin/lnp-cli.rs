@@ -14,23 +14,31 @@
 
 //! Command-line interface to LNP node
 
-#![feature(never_type)]
+#[macro_use]
+extern crate log;
+
+use clap::Clap;
+
+use lnp_node::cli::{Opts, Runtime};
+use lnp_node::Config;
+use lnpbp_services::shell::Exec;
 
 fn main() {
-    //-> Result<(), BootstrapError> {
-    /*
-        log::set_max_level(LevelFilter::Trace);
-        debug!("Command-line interface to LNP node");
+    println!("lnp-cli: command-line tool for working with LNP node");
 
-        let opts: Opts = Opts::parse();
-        let config: Config = opts.clone().try_into()?;
-        config.apply();
+    let mut opts = Opts::parse();
+    trace!("Command-line arguments: {:?}", &opts);
+    opts.process();
+    trace!("Processed arguments: {:?}", &opts);
 
-        let mut runtime = Runtime::init(config).await?;
+    let config = opts.shared.clone().into();
+    trace!("Tool configuration: {:?}", &config);
 
-        trace!("Executing command: {:?}", opts.command);
-        opts.command
-            .exec(&mut runtime)
-            .unwrap_or_else(|err| error!("{}", err));
-    */
+    let mut runtime =
+        Runtime::with(config).expect("Error initializing runtime");
+
+    trace!("Executing command: {:?}", opts.command);
+    opts.command
+        .exec(&mut runtime)
+        .unwrap_or_else(|err| error!("{}", err));
 }

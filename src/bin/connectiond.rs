@@ -88,8 +88,6 @@
 //! keys, is read from the file specified in `--key-file` parameter, or (if the
 //! parameter is absent) from `LNP_NODE_KEY_FILE` environment variable.
 
-#![feature(never_type)]
-
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -166,7 +164,7 @@ fn main() {
     opts.process();
     trace!("Processed arguments: {:?}", &opts);
 
-    let config = opts.clone().into();
+    let config = opts.shared.clone().into();
     trace!("Daemon configuration: {:?}", &config);
 
     /*
