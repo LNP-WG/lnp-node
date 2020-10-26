@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use lnpbp::lnp::application::Messages;
 use lnpbp::lnp::rpc_connection;
 
 #[derive(Clone, Debug, Display, LnpApi)]
@@ -19,8 +20,14 @@ use lnpbp::lnp::rpc_connection;
 #[display(Debug)]
 #[non_exhaustive]
 pub enum Request {
-    #[lnp_api(type = 1000)]
-    NoOp,
+    #[lnp_api(type = 1)]
+    LnpwpMessage(Messages),
+
+    #[lnp_api(type = 2)]
+    InitConnection,
+
+    #[lnp_api(type = 3)]
+    PingPeer,
 }
 
 impl rpc_connection::Request for Request {}

@@ -17,13 +17,19 @@ use core::convert::TryInto;
 use std::collections::HashMap;
 use std::thread::spawn;
 
+use lnpbp::lnp::application::Messages;
+use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::ZMQ_CONTEXT;
-use lnpbp::lnp::{PeerConnection, PeerReceiver, PeerSender};
+use lnpbp::lnp::{
+    PeerConnection, PeerReceiver, PeerSender, RecvMessage, SendMessage,
+};
+use lnpbp::strict_encoding::StrictEncode;
 use lnpbp_services::node::TryService;
 use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
+use lnpbp_services::{peer, rpc};
 
 use super::Config;
-use crate::rpc::Endpoints;
+use crate::rpc::{Endpoints, Reply, Request};
 use crate::Error;
 
 pub struct MessageFilter {}
@@ -34,18 +40,16 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
-    debug!("Opening bridge between runtime sender/receiver threads");
+    debug!("Opening bridge between runtime and peer listener threads");
     let tx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
     let rx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    debug!("Starting thread listening for messages from the remote peer");
-    let thread = Thread {
-        receiver,
-        bridge: tx,
-    };
-    spawn(move || thread.run_or_panic("connectiond-thread"))
+    debug!("Starting listening thread for messages from the remote peer");
+    let processor = Processor { bridge: tx };
+    let listener = peer::Listener::with(receiver, processor);
+    spawn(move || listener.run_or_panic("connectiond-listener"))
         .join()
         .expect("Error joining receiver thread");
 
@@ -73,27 +77,29 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
 }
 
 pub struct Runtime {
-    pub(self) routing: HashMap<ServiceId, MessageFilter>,
-    pub(self) sender: PeerSender,
+    pub(super) routing: HashMap<ServiceId, MessageFilter>,
+    pub(super) sender: PeerSender,
 }
 
-pub struct Thread {
-    pub(self) receiver: PeerReceiver,
-    pub(self) bridge: zmq::Socket,
+pub struct Processor {
+    pub(super) bridge: zmq::Socket,
 }
 
-impl TryService for Thread {
-    type ErrorType = Error;
+impl peer::Handler for Processor {
+    type Error = crate::Error;
 
-    fn try_run_loop(self) -> Result<(), Self::ErrorType> {
-        debug!("Entering event loop of the sender service");
-        loop {
-            debug!(
-                "Awaiting for incoming MSG, CTL and BRIDGE interface messages"
-            );
-            // let msg = self.receiver.recv_message()?;
-            // TODO: Convert message into RPC format
-            // self.bridge.send(&msg.as_bytes(), 0)?;
+    fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
+        // Forwarding all received messages to the runtime
+        let req = Request::LnpwpMessage(message);
+        self.bridge.send(req.encode()?, 0)?;
+        Ok(())
+    }
+
+    fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
+        match err {
+            // for all other error types, indicating internal errors, we
+            // propagate error to the upper level
+            _ => Err(err),
         }
     }
 }

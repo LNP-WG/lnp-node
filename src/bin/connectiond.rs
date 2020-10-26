@@ -116,7 +116,7 @@ mod internal {
 /// Choses type of service runtime (see `--listen` and `--connect` option
 /// details in [`Opts`] structure.
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
-pub enum P2pSocket {
+pub enum PeerSocket {
     /// The service should listen for incoming connections on a certain
     /// TCP socket, which may be IPv4- or IPv6-based. For Tor hidden services
     /// use IPv4 TCP port proxied as a Tor hidden service in `torrc`.
@@ -133,7 +133,7 @@ pub enum P2pSocket {
     Connect(NodeAddr),
 }
 
-impl From<Opts> for P2pSocket {
+impl From<Opts> for PeerSocket {
     fn from(opts: Opts) -> Self {
         if let Some(peer_addr) = opts.connect {
             Self::Connect(peer_addr)
@@ -181,8 +181,11 @@ fn main() {
     let local_node = LocalNode::new();
     debug!("Local node data: {}", local_node);
 
-    let connection = match P2pSocket::from(opts) {
-        P2pSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
+    let peer_socket = PeerSocket::from(opts);
+    debug!("Peer socket parameter interpreted as {}", peer_socket);
+
+    let connection = match peer_socket {
+        PeerSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
 
             debug!("Binding TCP socket {}", inet_addr);
@@ -222,7 +225,7 @@ fn main() {
                 break PeerConnection::with(session);
             }
         }
-        P2pSocket::Connect(node_addr) => {
+        PeerSocket::Connect(node_addr) => {
             debug!("Running in CONNECT mode");
 
             info!("Connecting to {}", &node_addr);

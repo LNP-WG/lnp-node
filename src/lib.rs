@@ -51,7 +51,7 @@ pub mod connectiond;
 mod error;
 #[cfg(feature = "shell")]
 pub mod opts;
-#[cfg(feature = "node")]
+#[cfg(any(feature = "node", feature = "client"))]
 pub mod rpc;
 
 pub use error::Error;

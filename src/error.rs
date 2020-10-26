@@ -12,6 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#[cfg(any(feature = "node", feature = "client"))]
+use lnpbp::lnp::TypeId;
+
+#[cfg(any(feature = "node", feature = "client"))]
+use crate::rpc::Endpoints;
+
 #[derive(Clone, Debug, Display, From, Error)]
 #[display(doc_comments)]
 #[non_exhaustive]
@@ -29,6 +35,14 @@ pub enum Error {
     /// LNP transport-level error: {_0}
     #[from]
     Transport(lnpbp::lnp::transport::Error),
+
+    /// LNP presentation-level error: {_0}
+    #[from]
+    Presentation(lnpbp::lnp::presentation::Error),
+
+    /// Provided RPC request is not supported for the used type of endpoint
+    #[cfg(any(feature = "node", feature = "client"))]
+    NotSupported(Endpoints, TypeId),
 }
 
 impl lnpbp_services::error::Error for Error {}
