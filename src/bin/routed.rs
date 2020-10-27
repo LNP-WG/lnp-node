@@ -24,18 +24,19 @@
     missing_docs
 )]
 
-//! Main executable for channeld: lightning node channel operations microservice
+//! Main executable for routed: lightning peer network routing operations
+//! microservice.
 
 #[macro_use]
 extern crate log;
 
 use clap::Clap;
 
-use lnp_node::channeld::{self, Opts};
+use lnp_node::routed::{self, Opts};
 use lnp_node::Config;
 
 fn main() {
-    println!("channeld: lightning channel microservice");
+    println!("routed: lightning peer network routing microservice");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
@@ -57,7 +58,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config).expect("Error running channeld runtime");
+    routed::run(config).expect("Error running routed runtime");
 
     unreachable!()
 }

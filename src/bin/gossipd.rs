@@ -24,18 +24,19 @@
     missing_docs
 )]
 
-//! Main executable for channeld: lightning node channel operations microservice
+//! Main executable for gossipd: lightning peer network microservice operating
+//! gossip protocol.
 
 #[macro_use]
 extern crate log;
 
 use clap::Clap;
 
-use lnp_node::channeld::{self, Opts};
+use lnp_node::gossipd::{self, Opts};
 use lnp_node::Config;
 
 fn main() {
-    println!("channeld: lightning channel microservice");
+    println!("gossipd: lightning peer network gossip microservice");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
@@ -57,7 +58,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config).expect("Error running channeld runtime");
+    gossipd::run(config).expect("Error running gossipd runtime");
 
     unreachable!()
 }

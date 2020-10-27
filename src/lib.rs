@@ -52,6 +52,12 @@ pub mod rpc;
 pub mod channeld;
 #[cfg(feature = "node")]
 pub mod connectiond;
+#[cfg(feature = "node")]
+pub mod gossipd;
+#[cfg(feature = "node")]
+pub mod lnpd;
+#[cfg(feature = "node")]
+pub mod routed;
 
 #[cfg(any(feature = "node", feature = "client"))]
 pub use config::Config;

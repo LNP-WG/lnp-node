@@ -1,0 +1,46 @@
+#compdef gossipd
+
+autoload -U is-at-least
+
+_gossipd() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+&& ret=0
+    
+}
+
+(( $+functions[_gossipd_commands] )) ||
+_gossipd_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'gossipd commands' commands "$@"
+}
+
+_gossipd "$@"

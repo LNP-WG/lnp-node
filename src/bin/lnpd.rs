@@ -24,18 +24,18 @@
     missing_docs
 )]
 
-//! Main executable for channeld: lightning node channel operations microservice
+//! Main executable for lnpd: lightning node management microservice.
 
 #[macro_use]
 extern crate log;
 
 use clap::Clap;
 
-use lnp_node::channeld::{self, Opts};
+use lnp_node::lnpd::{self, Opts};
 use lnp_node::Config;
 
 fn main() {
-    println!("channeld: lightning channel microservice");
+    println!("lnpd: lightning node management microservice");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
@@ -57,7 +57,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config).expect("Error running channeld runtime");
+    lnpd::run(config).expect("Error running lnpd runtime");
 
     unreachable!()
 }

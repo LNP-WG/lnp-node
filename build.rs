@@ -25,19 +25,31 @@ pub mod opts {
 pub mod cli {
     include!("src/cli/opts.rs");
 }
+pub mod lnpd {
+    include!("src/lnpd/opts.rs");
+}
 pub mod connectiond {
     include!("src/connectiond/opts.rs");
 }
 pub mod channeld {
     include!("src/channeld/opts.rs");
 }
+pub mod gossipd {
+    include!("src/gossipd/opts.rs");
+}
+pub mod routed {
+    include!("src/routed/opts.rs");
+}
 
 fn main() -> Result<(), configure_me_codegen::Error> {
     let outdir = "./shell";
 
     for app in [
+        lnpd::Opts::into_app(),
         connectiond::Opts::into_app(),
         channeld::Opts::into_app(),
+        gossipd::Opts::into_app(),
+        routed::Opts::into_app(),
         cli::Opts::into_app(),
     ]
     .iter_mut()

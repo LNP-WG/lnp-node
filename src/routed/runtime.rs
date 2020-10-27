@@ -38,7 +38,7 @@ pub fn run(config: Config) -> Result<(), Error> {
         },
         runtime,
     )?;
-    rpc.run_or_panic("channeld");
+    rpc.run_or_panic("routed");
     unreachable!()
 }
 
