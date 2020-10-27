@@ -14,6 +14,7 @@
 
 use clap::{Clap, ValueHint};
 use log::LevelFilter;
+use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
@@ -131,6 +132,9 @@ impl Opts {
     pub fn process(&mut self) {
         log::set_max_level(LevelFilter::Trace);
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
+
+        fs::create_dir_all(&self.data_dir)
+            .expect("Unable to access data directory");
 
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {

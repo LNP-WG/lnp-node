@@ -96,6 +96,7 @@ extern crate amplify_derive;
 use amplify::internet::InetSocketAddr;
 use clap::Clap;
 use core::convert::TryFrom;
+use core::time::Duration;
 use nix::unistd::{fork, ForkResult};
 use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -214,6 +215,10 @@ fn main() {
                     );
                     continue;
                 }
+
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(30)))
+                    .expect("Unable to set up timeout for TCP connection");
 
                 debug!("Establishing session with the remote");
                 let session =

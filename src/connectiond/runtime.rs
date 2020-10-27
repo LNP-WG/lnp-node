@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::thread::spawn;
 
 use lnpbp::lnp::application::{message, Messages};
-use lnpbp::lnp::presentation::{self, Encode};
+use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::transport;
 use lnpbp::lnp::ZMQ_CONTEXT;
 use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};

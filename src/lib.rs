@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#![feature(never_type)]
 #![recursion_limit = "256"]
 // Coding conventions
 #![deny(
