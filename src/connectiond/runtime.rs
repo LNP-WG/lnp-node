@@ -19,8 +19,8 @@ use std::thread::spawn;
 
 use lnpbp::lnp::application::{message, Messages};
 use lnpbp::lnp::presentation::Encode;
-use lnpbp::lnp::transport;
 use lnpbp::lnp::ZMQ_CONTEXT;
+use lnpbp::lnp::{session, transport, Session};
 use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
 use lnpbp_services::node::TryService;
 use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
@@ -44,7 +44,9 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
     rx.bind("inproc://bridge")?;
 
     debug!("Starting listening thread for messages from the remote peer");
-    let processor = Processor { bridge: tx };
+    let processor = Processor {
+        bridge: session::Raw::from_pair_socket(tx),
+    };
     let listener = peer::Listener::with(receiver, processor);
     spawn(move || listener.run_or_panic("connectiond-listener"));
     //.join()
@@ -82,14 +84,15 @@ pub struct Runtime {
 }
 
 pub struct Processor {
-    bridge: zmq::Socket,
+    bridge:
+        session::Raw<session::NoEncryption, transport::zmqsocket::Connection>,
 }
 
 impl Processor {
     fn send_over_bridge(&mut self, message: Messages) -> Result<(), Error> {
         debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
         let req = Request::LnpwpMessage(message);
-        self.bridge.send(req.encode()?, 0)?;
+        self.bridge.send_raw_message(&req.encode()?)?;
         Ok(())
     }
 }
