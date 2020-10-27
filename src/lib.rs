@@ -31,20 +31,13 @@ extern crate amplify;
 #[macro_use]
 extern crate amplify_derive;
 #[macro_use]
-pub extern crate lnpbp;
-#[macro_use]
 pub extern crate lnpbp_derive;
 
 #[cfg(feature = "shell")]
-#[macro_use]
 extern crate clap;
 #[cfg(feature = "shell")]
 #[macro_use]
 extern crate log;
-
-#[cfg(feature = "serde")]
-#[macro_use]
-pub extern crate serde_with;
 
 #[cfg(feature = "cli")]
 pub mod cli;

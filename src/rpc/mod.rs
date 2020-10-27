@@ -20,9 +20,8 @@ pub mod types;
 pub use reply::Reply;
 pub use request::Request;
 
+use lnpbp::lnp::rpc_connection::Api;
 use lnpbp_services::rpc::EndpointTypes;
-
-use crate::lnpbp::lnp::rpc_connection::Api;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
 pub enum Endpoints {

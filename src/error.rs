@@ -14,6 +14,9 @@
 
 #[cfg(any(feature = "node", feature = "client"))]
 use lnpbp::lnp::TypeId;
+use lnpbp::lnp::{presentation, transport};
+#[cfg(any(feature = "node", feature = "client"))]
+use lnpbp_services::rpc;
 
 #[cfg(any(feature = "node", feature = "client"))]
 use crate::rpc::Endpoints;
@@ -29,20 +32,44 @@ pub enum Error {
 
     /// LNP transport-level error: {_0}
     #[from]
-    Transport(lnpbp::lnp::transport::Error),
+    Transport(transport::Error),
 
     /// LNP presentation-level error: {_0}
-    #[from]
-    Presentation(lnpbp::lnp::presentation::Error),
+    Presentation(presentation::Error),
 
     /// RPC error: {_0}
-    #[from]
     #[cfg(any(feature = "node", feature = "client"))]
-    Rpc(lnpbp_services::rpc::Error),
+    Rpc(rpc::Error),
 
     /// Provided RPC request is not supported for the used type of endpoint
     #[cfg(any(feature = "node", feature = "client"))]
     NotSupported(Endpoints, TypeId),
+
+    /// Peer does not respond to ping messages
+    NotResponding,
+
+    /// Peer has misbehaved LN peer protocol rules
+    Misbehaving,
 }
 
 impl lnpbp_services::error::Error for Error {}
+
+impl From<presentation::Error> for Error {
+    fn from(err: presentation::Error) -> Self {
+        match err {
+            presentation::Error::Transport(err) => Error::from(err),
+            err => Error::Presentation(err),
+        }
+    }
+}
+
+#[cfg(any(feature = "node", feature = "client"))]
+impl From<rpc::Error> for Error {
+    fn from(err: rpc::Error) -> Self {
+        match err {
+            rpc::Error::Transport(err) => Error::from(err),
+            rpc::Error::Presentation(err) => Error::from(err),
+            err => Error::Rpc(err),
+        }
+    }
+}

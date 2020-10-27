@@ -18,15 +18,11 @@ use std::collections::HashMap;
 use std::thread::spawn;
 
 use lnpbp::lnp::application::{message, Messages};
-use lnpbp::lnp::presentation::Encode;
+use lnpbp::lnp::presentation::{self, Encode};
+use lnpbp::lnp::transport;
 use lnpbp::lnp::ZMQ_CONTEXT;
-use lnpbp::lnp::{
-    PeerConnection, PeerReceiver, PeerSender, RecvMessage, SendMessage,
-    TypedEnum,
-};
-use lnpbp::strict_encoding::StrictEncode;
+use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
 use lnpbp_services::node::TryService;
-use lnpbp_services::rpc::{Failure, Handler};
 use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
 use lnpbp_services::{peer, rpc};
 
@@ -58,6 +54,7 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
     let runtime = Runtime {
         routing: none!(),
         sender,
+        awaited_pong: None,
     };
     let rpc = RpcZmqServer::init(
         map! {
@@ -78,12 +75,23 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
 }
 
 pub struct Runtime {
-    pub(super) routing: HashMap<ServiceId, MessageFilter>,
-    pub(super) sender: PeerSender,
+    #[allow(dead_code)]
+    routing: HashMap<ServiceId, MessageFilter>,
+    sender: PeerSender,
+    awaited_pong: Option<u16>,
 }
 
 pub struct Processor {
-    pub(super) bridge: zmq::Socket,
+    bridge: zmq::Socket,
+}
+
+impl Processor {
+    fn send_over_bridge(&mut self, message: Messages) -> Result<(), Error> {
+        debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
+        let req = Request::LnpwpMessage(message);
+        self.bridge.send(req.encode()?, 0)?;
+        Ok(())
+    }
 }
 
 impl peer::Handler for Processor {
@@ -91,21 +99,31 @@ impl peer::Handler for Processor {
 
     fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
-        let req = Request::LnpwpMessage(message);
-        self.bridge.send(req.encode()?, 0)?;
-        Ok(())
+        debug!("LNPWP message from peer: {}", message);
+        trace!("LNPWP message details: {:?}", message);
+        self.send_over_bridge(message)
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
+        debug!("Underlying peer interface requested to handle {:?}", err);
         match err {
+            Error::Transport(transport::Error::TimedOut) => {
+                trace!("Time to ping the remote peer");
+                // This means socket reading timeout and the fact that we need
+                // to send a ping message
+                self.send_over_bridge(Messages::Ping)
+            }
             // for all other error types, indicating internal errors, we
             // propagate error to the upper level
-            _ => Err(err),
+            _ => {
+                error!("Unrecoverable peer error {:?}, halting", err);
+                Err(err)
+            }
         }
     }
 }
 
-impl Handler<Endpoints> for Runtime {
+impl rpc::Handler<Endpoints> for Runtime {
     type Api = Rpc;
     type Error = Error;
 
@@ -124,20 +142,30 @@ impl Handler<Endpoints> for Runtime {
 
 impl Runtime {
     fn handle_rpc_msg(&mut self, request: Request) -> Result<Reply, Error> {
+        debug!("MSG RPC request: {}", request);
         match request {
             Request::LnpwpMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the remote peer
+                debug!("Forwarding LN peer message to the remote peer");
+                trace!("Message details: {:?}", message);
                 self.sender.send_message(message)?;
                 Ok(Reply::Success)
             }
-            _ => Err(Error::NotSupported(Endpoints::Msg, request.get_type())),
+            _ => {
+                error!(
+                    "MSG RPC can be only used for forwarding LNPWP messages"
+                );
+                Err(Error::NotSupported(Endpoints::Msg, request.get_type()))
+            }
         }
     }
 
     fn handle_rpc_ctl(&mut self, request: Request) -> Result<Reply, Error> {
+        debug!("CTL RPC request: {}", request);
         match request {
             Request::InitConnection => {
+                debug!("Initializing connection with the remote peer");
                 self.sender.send_message(Messages::Init(message::Init {
                     global_features: none!(),
                     local_features: none!(),
@@ -147,27 +175,47 @@ impl Runtime {
                 Ok(Reply::Success)
             }
             Request::PingPeer => {
-                self.sender.send_message(Messages::Ping)?;
+                debug!("Requested to ping remote peer");
+                self.ping()?;
                 Ok(Reply::Success)
             }
-            _ => Err(Error::NotSupported(Endpoints::Ctl, request.get_type())),
+            _ => {
+                error!("Request is not supported by the CTL interface");
+                Err(Error::NotSupported(Endpoints::Ctl, request.get_type()))
+            }
         }
     }
 
     fn handle_bridge(&mut self, request: Request) -> Result<Reply, Error> {
+        debug!("BRIDGE RPC request: {}", request);
         match request {
             Request::LnpwpMessage(Messages::Ping) => {
-                self.sender.send_message(Messages::Ping)?;
-                Ok(Reply::Success)
+                self.ping()?;
+            }
+            Request::LnpwpMessage(Messages::Pong) => {
+                trace!("Got pong reply, exiting pong await mode");
+                self.awaited_pong = None;
             }
             Request::LnpwpMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the corresponding daemon
-                Ok(Reply::Success)
+                debug!("Got peer LNPWP message {}", message);
             }
             _ => {
-                Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
+                error!("Request is not supported by the BRIDGE interface");
+                Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))?
             }
         }
+        Ok(Reply::Success)
+    }
+
+    fn ping(&mut self) -> Result<(), Error> {
+        trace!("Sending ping to the remote peer");
+        if self.awaited_pong.is_some() {
+            return Err(Error::NotResponding);
+        }
+        self.sender.send_message(Messages::Ping)?;
+        self.awaited_pong = Some(0);
+        Ok(())
     }
 }
