@@ -17,6 +17,7 @@ use core::convert::TryInto;
 use std::collections::HashMap;
 use std::thread::spawn;
 
+use lnpbp::bitcoin::secp256k1::rand;
 use lnpbp::lnp::application::{message, Messages};
 use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::ZMQ_CONTEXT;
@@ -28,6 +29,7 @@ use lnpbp_services::{peer, rpc};
 
 use crate::rpc::{Endpoints, Reply, Request, Rpc};
 use crate::{Config, Error};
+use lnpbp::secp256k1zkp::rand::Rng;
 
 pub struct MessageFilter {}
 
@@ -72,6 +74,8 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
         },
         runtime,
     )?;
+
+    info!("connectiond started");
     rpc.run_or_panic("connectiond-runtime");
     unreachable!()
 }
@@ -194,18 +198,31 @@ impl Runtime {
             Request::PingPeer => {
                 self.ping()?;
             }
-            Request::LnpwpMessage(Messages::Ping) => {
-                self.pong()?;
+
+            Request::LnpwpMessage(Messages::Ping(message::Ping {
+                pong_size,
+                ..
+            })) => {
+                self.pong(pong_size)?;
             }
-            Request::LnpwpMessage(Messages::Pong) => {
-                trace!("Got pong reply, exiting pong await mode");
+
+            Request::LnpwpMessage(Messages::Pong(noise)) => {
+                match self.awaited_pong {
+                    None => error!("Unexpected pong from the remote peer"),
+                    Some(len) if len as usize != noise.len() => warn!(
+                        "Pong data size does not match requested with ping"
+                    ),
+                    _ => trace!("Got pong reply, exiting pong await mode"),
+                }
                 self.awaited_pong = None;
             }
+
             Request::LnpwpMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the corresponding daemon
                 debug!("Got peer LNPWP message {}", message);
             }
+
             _ => {
                 error!("Request is not supported by the BRIDGE interface");
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))?
@@ -219,14 +236,29 @@ impl Runtime {
         if self.awaited_pong.is_some() {
             return Err(Error::NotResponding);
         }
-        self.sender.send_message(Messages::Ping)?;
-        self.awaited_pong = Some(0);
+        let mut rng = rand::thread_rng();
+        let len: u16 = rng.gen();
+        let mut noise = vec![0u8; len as usize];
+        for i in 0..noise.len() {
+            noise[i] = rng.gen();
+        }
+        let pong_size = rng.gen();
+        self.sender.send_message(Messages::Ping(message::Ping {
+            ignored: noise,
+            pong_size,
+        }))?;
+        self.awaited_pong = Some(pong_size);
         Ok(())
     }
 
-    fn pong(&mut self) -> Result<(), Error> {
+    fn pong(&mut self, pong_size: u16) -> Result<(), Error> {
         trace!("Replying with pong to the remote peer");
-        self.sender.send_message(Messages::Pong)?;
+        let mut noise = vec![0u8; pong_size as usize];
+        let mut rng = rand::thread_rng();
+        for i in 0..noise.len() {
+            noise[i] = rng.gen();
+        }
+        self.sender.send_message(Messages::Pong(noise))?;
         self.awaited_pong = None;
         Ok(())
     }

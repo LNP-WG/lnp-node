@@ -77,18 +77,6 @@ pub struct Opts {
     )]
     pub overlay: FramingProtocol,
 
-    /// Spawn threads instead of forking new processes for incoming connections
-    ///
-    /// Determines whether incoming connections `--listen` mode should be
-    /// forked into a child process or spawned as a threads
-    #[clap(
-        short = 't',
-        long,
-        env = "LNP_NODE_USE_THREADS",
-        conflicts_with = "connect"
-    )]
-    pub use_threads: bool,
-
     /// Node key file
     ///
     /// Location for the file containing node private Secp256k1 key

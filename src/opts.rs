@@ -18,10 +18,12 @@ use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
+use lnpbp::bp;
 use lnpbp::lnp::NodeLocator;
 use lnpbp_services::shell::LogLevel;
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
+
 #[cfg(any(target_os = "linux"))]
 pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
@@ -126,6 +128,16 @@ pub struct Opts {
         default_value = LNP_NODE_CTL_SOCKET_NAME
     )]
     pub ctl_socket: NodeLocator,
+
+    /// Blockchain to use
+    #[clap(
+        short = 'n',
+        long,
+        alias = "network",
+        default_value = "signet",
+        env = "LNP_NODE_NETWORK"
+    )]
+    pub chain: bp::Chain,
 }
 
 impl Opts {

@@ -38,6 +38,7 @@ pub fn run(config: Config) -> Result<(), Error> {
         },
         runtime,
     )?;
+    info!("routed started");
     rpc.run_or_panic("routed");
     unreachable!()
 }

@@ -23,8 +23,6 @@ _connectiond() {
 '--port=[Customize port used by lightning peer network]' \
 '-o+[Overlay peer communications through different transport protocol]: :(tcp zmq http websocket smtp)' \
 '--overlay=[Overlay peer communications through different transport protocol]: :(tcp zmq http websocket smtp)' \
-'(-C --connect)-t+[Spawn threads instead of forking new processes for incoming connections]' \
-'(-C --connect)--use-threads=[Spawn threads instead of forking new processes for incoming connections]' \
 '-k+[Node key file]: :_files' \
 '--key-file=[Node key file]: :_files' \
 '-d+[Data directory path]: :_files -/' \
@@ -37,6 +35,8 @@ _connectiond() {
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'-n+[Blockchain to use]' \
+'--chain=[Blockchain to use]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 '-h[Prints help information]' \

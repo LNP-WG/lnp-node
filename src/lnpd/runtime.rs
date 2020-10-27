@@ -13,8 +13,10 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use core::convert::TryInto;
+use std::io;
+use std::process;
 
-use lnpbp::lnp::TypedEnum;
+use lnpbp::lnp::{application::Messages, TypedEnum};
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
 use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
@@ -38,6 +40,7 @@ pub fn run(config: Config) -> Result<(), Error> {
         },
         runtime,
     )?;
+    info!("lnpd started");
     rpc.run_or_panic("lnpd");
     unreachable!()
 }
@@ -67,10 +70,29 @@ impl Runtime {
     fn handle_rpc_msg(&mut self, request: Request) -> Result<Reply, Error> {
         debug!("MSG RPC request: {}", request);
         match request {
-            Request::LnpwpMessage(_message) => {
-                // TODO: Process message
+            Request::LnpwpMessage(Messages::OpenChannel(_open_channel)) => {
+                info!("Opening channel");
+                // Start channeld
+                match launch("channeld") {
+                    Ok(child) => {
+                        debug!(
+                            "New instance of channeld launched with PID {}",
+                            child.id()
+                        );
+                    }
+                    Err(err) => {
+                        error!("Error launching channel daemon: {}", err);
+                    }
+                }
+                // TODO: Configure channeld via CTL interface
                 Ok(Reply::Success)
             }
+
+            Request::LnpwpMessage(_) => {
+                // Ignore the rest of LN peer messages
+                Ok(Reply::Success)
+            }
+
             _ => {
                 error!(
                     "MSG RPC can be only used for forwarding LNPWP messages"
@@ -89,4 +111,26 @@ impl Runtime {
             }
         }
     }
+}
+
+fn launch(name: &str) -> io::Result<process::Child> {
+    let mut bin_path = std::env::current_exe().map_err(|err| {
+        error!("Unable to detect binary directory: {}", err);
+        err
+    })?;
+    bin_path.pop();
+
+    let args = std::env::args();
+
+    let daemon = bin_path.clone();
+    bin_path.push(name);
+    #[cfg(target_os = "windows")]
+    bin_path.set_extension("exe");
+
+    let mut cmd = process::Command::new(daemon);
+    cmd.args(args);
+    cmd.spawn().map_err(|err| {
+        error!("Error launching daemon {}: {}", name, err);
+        err
+    })
 }
