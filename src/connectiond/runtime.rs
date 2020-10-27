@@ -89,9 +89,8 @@ pub struct Processor {
 }
 
 impl Processor {
-    fn send_over_bridge(&mut self, message: Messages) -> Result<(), Error> {
+    fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
         debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
-        let req = Request::LnpwpMessage(message);
         self.bridge.send_raw_message(&req.encode()?)?;
         Ok(())
     }
@@ -104,7 +103,7 @@ impl peer::Handler for Processor {
         // Forwarding all received messages to the runtime
         debug!("LNPWP message from peer: {}", message);
         trace!("LNPWP message details: {:?}", message);
-        self.send_over_bridge(message)
+        self.send_over_bridge(Request::LnpwpMessage(message))
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
@@ -114,7 +113,7 @@ impl peer::Handler for Processor {
                 trace!("Time to ping the remote peer");
                 // This means socket reading timeout and the fact that we need
                 // to send a ping message
-                self.send_over_bridge(Messages::Ping)
+                self.send_over_bridge(Request::PingPeer)
             }
             // for all other error types, indicating internal errors, we
             // propagate error to the upper level
@@ -192,8 +191,11 @@ impl Runtime {
     fn handle_bridge(&mut self, request: Request) -> Result<Reply, Error> {
         debug!("BRIDGE RPC request: {}", request);
         match request {
-            Request::LnpwpMessage(Messages::Ping) => {
+            Request::PingPeer => {
                 self.ping()?;
+            }
+            Request::LnpwpMessage(Messages::Ping) => {
+                self.pong()?;
             }
             Request::LnpwpMessage(Messages::Pong) => {
                 trace!("Got pong reply, exiting pong await mode");
@@ -219,6 +221,13 @@ impl Runtime {
         }
         self.sender.send_message(Messages::Ping)?;
         self.awaited_pong = Some(0);
+        Ok(())
+    }
+
+    fn pong(&mut self) -> Result<(), Error> {
+        trace!("Replying with pong to the remote peer");
+        self.sender.send_message(Messages::Pong)?;
+        self.awaited_pong = None;
         Ok(())
     }
 }
