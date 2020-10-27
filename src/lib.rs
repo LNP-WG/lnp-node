@@ -40,16 +40,18 @@ extern crate log;
 
 #[cfg(feature = "cli")]
 pub mod cli;
-#[cfg(feature = "node")]
-pub mod connectiond;
+#[cfg(any(feature = "node", feature = "client"))]
+mod config;
 mod error;
 #[cfg(feature = "shell")]
 pub mod opts;
 #[cfg(any(feature = "node", feature = "client"))]
 pub mod rpc;
 
-#[cfg(any(feature = "node", feature = "client"))]
-mod config;
+#[cfg(feature = "node")]
+pub mod channeld;
+#[cfg(feature = "node")]
+pub mod connectiond;
 
 #[cfg(any(feature = "node", feature = "client"))]
 pub use config::Config;

@@ -14,11 +14,14 @@
 
 use clap::{AppSettings, Clap};
 
-/// Command-line tool for working with LNP node
+/// Lightning peer network channel daemon; part of LNP Node
+///
+/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
+/// description)
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
 #[clap(
-    name = "lnp-cli",
-    bin_name = "lnp-cli",
+    name = "channeld",
+    bin_name = "channeld",
     author,
     version,
     setting = AppSettings::ColoredHelp
@@ -28,25 +31,10 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
-
-    /// Command to execute
-    #[clap(subcommand)]
-    pub command: Command,
 }
 
 impl Opts {
     pub fn process(&mut self) {
         self.shared.process()
     }
-}
-
-/// Command-line commands:
-#[derive(Clap, Clone, PartialEq, Eq, Debug, Display)]
-#[display(doc_comments)]
-pub enum Command {
-    /// Init connection with the remote peer
-    Init,
-
-    /// Ping remote peer
-    Ping,
 }
