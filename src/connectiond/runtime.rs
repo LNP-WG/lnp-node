@@ -190,6 +190,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         debug!("CTL RPC request: {}", request);
         match request {
+            /* TODO: Move to connection initialization
             Request::InitConnection => {
                 debug!("Initializing connection with the remote peer");
                 self.sender.send_message(Messages::Init(message::Init {
@@ -199,6 +200,7 @@ impl Runtime {
                     unknown_tlvs: none!(),
                 }))?;
             }
+             */
             Request::PingPeer => {
                 debug!("Requested to ping remote peer");
                 self.ping()?;

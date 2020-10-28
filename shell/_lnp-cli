@@ -42,7 +42,7 @@ _lnp-cli() {
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:lnp-cli-command-$line[1]:"
         case $line[1] in
-            (init)
+            (ping)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -62,7 +62,7 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(ping)
+(create-channel)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -80,6 +80,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
+':node-addr -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
 (help)
@@ -98,11 +99,18 @@ esac
 (( $+functions[_lnp-cli_commands] )) ||
 _lnp-cli_commands() {
     local commands; commands=(
-        "init:Init connection with the remote peer" \
-"ping:Ping remote peer" \
+        "ping:Ping remote peer" \
+"create-channel:Establishes new channel" \
 "help:Prints this message or the help of the given subcommand(s)" \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
+}
+(( $+functions[_lnp-cli__create-channel_commands] )) ||
+_lnp-cli__create-channel_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli create-channel commands' commands "$@"
 }
 (( $+functions[_lnp-cli__help_commands] )) ||
 _lnp-cli__help_commands() {
@@ -110,13 +118,6 @@ _lnp-cli__help_commands() {
         
     )
     _describe -t commands 'lnp-cli help commands' commands "$@"
-}
-(( $+functions[_lnp-cli__init_commands] )) ||
-_lnp-cli__init_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli init commands' commands "$@"
 }
 (( $+functions[_lnp-cli__ping_commands] )) ||
 _lnp-cli__ping_commands() {

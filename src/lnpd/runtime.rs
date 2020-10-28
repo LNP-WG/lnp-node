@@ -17,7 +17,7 @@ use core::convert::TryInto;
 use std::io;
 use std::process;
 
-use lnpbp::lnp::{ChannelId, Messages, TypedEnum};
+use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
@@ -81,29 +81,7 @@ impl Runtime {
         debug!("MSG RPC request: {}", request);
         match request {
             Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
-                info!("Opening channel");
-                // Start channeld
-                match launch("channeld") {
-                    Ok(child) => {
-                        debug!(
-                            "New instance of channeld launched with PID {}",
-                            child.id()
-                        );
-                    }
-                    Err(err) => {
-                        error!("Error launching channel daemon: {}", err);
-                    }
-                }
-                senders.send_to(
-                    Endpoints::Ctl,
-                    DaemonId::Channel(ChannelId::from_inner(
-                        open_channel.temporary_channel_id.into_inner(),
-                    )),
-                    Request::CreateChannel(request::CreateChannel {
-                        channel_req: open_channel,
-                        connectiond: source,
-                    }),
-                )?;
+                self.open_channel(senders, source, open_channel)?;
             }
 
             Request::LnpwpMessage(_) => {
@@ -125,12 +103,19 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
+        senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         debug!("CTL RPC request: {}", request);
         match request {
+            Request::CreateChannel(request::CreateChannel {
+                channel_req,
+                connectiond,
+            }) => {
+                self.open_channel(senders, connectiond, channel_req)?;
+            }
+
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
@@ -139,6 +124,44 @@ impl Runtime {
                 ));
             }
         }
+
+        Ok(())
+    }
+
+    fn open_channel(
+        &mut self,
+        senders: &mut esb::Senders<Endpoints>,
+        source: DaemonId,
+        open_channel: message::OpenChannel,
+    ) -> Result<(), Error> {
+        info!("Opening channel");
+
+        // Start channeld
+        match launch("channeld") {
+            Ok(child) => {
+                debug!(
+                    "New instance of channeld launched with PID {}",
+                    child.id()
+                );
+            }
+            Err(err) => {
+                error!("Error launching channel daemon: {}", err);
+            }
+        }
+
+        // Tell channeld channel options and link it with the connection daemon
+        senders.send_to(
+            Endpoints::Ctl,
+            DaemonId::Channel(ChannelId::from_inner(
+                open_channel.temporary_channel_id.into_inner(),
+            )),
+            Request::CreateChannel(request::CreateChannel {
+                channel_req: open_channel,
+                connectiond: source,
+            }),
+        )?;
+
+        Ok(())
     }
 }
 

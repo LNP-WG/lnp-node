@@ -26,12 +26,9 @@ pub enum Request {
     LnpwpMessage(Messages),
 
     #[lnp_api(type = 2)]
-    InitConnection,
-
-    #[lnp_api(type = 3)]
     PingPeer,
 
-    #[lnp_api(type = 4)]
+    #[lnp_api(type = 3)]
     CreateChannel(CreateChannel),
 }
 
