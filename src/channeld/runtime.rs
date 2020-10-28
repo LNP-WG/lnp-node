@@ -15,23 +15,23 @@
 use core::convert::TryInto;
 
 use lnpbp::lnp::TypedEnum;
+use lnpbp_services::esb::{self, EsbController};
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
-use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
 
-use crate::rpc::{Endpoints, Reply, Request, Rpc};
-use crate::{Config, Error};
+use crate::rpc::{Endpoints, Request};
+use crate::{Config, DaemonId, Error};
 
 pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
-    let rpc = RpcZmqServer::init(
+    let rpc = EsbController::init(
         map! {
-            Endpoints::Msg => EndpointCarrier::Address(
+            Endpoints::Msg => rpc::EndpointCarrier::Address(
                 config.msg_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Ctl => EndpointCarrier::Address(
+            Endpoints::Ctl => rpc::EndpointCarrier::Address(
                 config.ctl_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             )
@@ -45,18 +45,20 @@ pub fn run(config: Config) -> Result<(), Error> {
 
 pub struct Runtime {}
 
-impl rpc::Handler<Endpoints> for Runtime {
-    type Api = Rpc;
+impl esb::Handler<Endpoints> for Runtime {
+    type Request = Request;
+    type Address = DaemonId;
     type Error = Error;
 
     fn handle(
         &mut self,
         endpoint: Endpoints,
+        source: DaemonId,
         request: Request,
-    ) -> Result<Reply, Self::Error> {
+    ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(request),
-            Endpoints::Ctl => self.handle_rpc_ctl(request),
+            Endpoints::Msg => self.handle_rpc_msg(source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
             _ => {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
@@ -65,28 +67,42 @@ impl rpc::Handler<Endpoints> for Runtime {
 }
 
 impl Runtime {
-    fn handle_rpc_msg(&mut self, request: Request) -> Result<Reply, Error> {
+    fn handle_rpc_msg(
+        &mut self,
+        _source: DaemonId,
+        request: Request,
+    ) -> Result<(), Error> {
         debug!("MSG RPC request: {}", request);
         match request {
             Request::LnpwpMessage(_message) => {
                 // TODO: Process message
-                Ok(Reply::Success)
             }
             _ => {
                 error!(
                     "MSG RPC can be only used for forwarding LNPWP messages"
                 );
-                Err(Error::NotSupported(Endpoints::Msg, request.get_type()))
+                return Err(Error::NotSupported(
+                    Endpoints::Msg,
+                    request.get_type(),
+                ));
             }
         }
+        Ok(())
     }
 
-    fn handle_rpc_ctl(&mut self, request: Request) -> Result<Reply, Error> {
+    fn handle_rpc_ctl(
+        &mut self,
+        _source: DaemonId,
+        request: Request,
+    ) -> Result<(), Error> {
         debug!("CTL RPC request: {}", request);
         match request {
             _ => {
                 error!("Request is not supported by the CTL interface");
-                Err(Error::NotSupported(Endpoints::Ctl, request.get_type()))
+                return Err(Error::NotSupported(
+                    Endpoints::Ctl,
+                    request.get_type(),
+                ));
             }
         }
     }

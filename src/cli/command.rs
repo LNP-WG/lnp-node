@@ -16,7 +16,7 @@ use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
 use crate::rpc::Request;
-use crate::Error;
+use crate::{DaemonId, Error};
 
 impl Exec for Command {
     type Runtime = Runtime;
@@ -24,11 +24,11 @@ impl Exec for Command {
 
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
-        let info = match self {
-            Command::Init => runtime.request(Request::InitConnection)?,
-            Command::Ping => runtime.request(Request::PingPeer)?,
-        };
-        info!("{}", info);
-        Ok(())
+        match self {
+            Command::Init => {
+                runtime.request(DaemonId::Lnpd, Request::InitConnection)
+            }
+            Command::Ping => runtime.request(DaemonId::Lnpd, Request::PingPeer),
+        }
     }
 }

@@ -69,7 +69,24 @@ impl From<rpc::Error> for Error {
         match err {
             rpc::Error::Transport(err) => Error::from(err),
             rpc::Error::Presentation(err) => Error::from(err),
+            rpc::Error::Zmq(err) => Error::Zmq(err),
             err => Error::Rpc(err),
+        }
+    }
+}
+
+#[cfg(any(feature = "node", feature = "client"))]
+impl From<Error> for rpc::Error {
+    fn from(err: Error) -> Self {
+        match err {
+            Error::Zmq(err) => rpc::Error::Zmq(err),
+            Error::Transport(err) => rpc::Error::Transport(err),
+            Error::Presentation(err) => rpc::Error::Presentation(err),
+            Error::Rpc(err) => err,
+            err => rpc::Error::ServerFailure(rpc::Failure {
+                code: 2000,
+                info: err.to_string(),
+            }),
         }
     }
 }

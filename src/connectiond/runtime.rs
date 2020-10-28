@@ -17,19 +17,18 @@ use core::convert::TryInto;
 use std::collections::HashMap;
 use std::thread::spawn;
 
-use lnpbp::bitcoin::secp256k1::rand;
+use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
 use lnpbp::lnp::application::{message, Messages};
 use lnpbp::lnp::presentation::Encode;
-use lnpbp::lnp::ZMQ_CONTEXT;
+use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
 use lnpbp::lnp::{session, transport, Session};
 use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
+use lnpbp_services::esb::{self, EsbController};
 use lnpbp_services::node::TryService;
-use lnpbp_services::server::{EndpointCarrier, RpcZmqServer};
 use lnpbp_services::{peer, rpc};
 
-use crate::rpc::{Endpoints, Reply, Request, Rpc};
-use crate::{Config, Error};
-use lnpbp::secp256k1zkp::rand::Rng;
+use crate::rpc::{Endpoints, Request};
+use crate::{Config, DaemonId, Error};
 
 pub struct MessageFilter {}
 
@@ -47,7 +46,7 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
 
     debug!("Starting listening thread for messages from the remote peer");
     let processor = Processor {
-        bridge: session::Raw::from_pair_socket(tx),
+        bridge: session::Raw::from_pair_socket(zmqsocket::ApiType::Esb, tx),
     };
     let listener = peer::Listener::with(receiver, processor);
     spawn(move || listener.run_or_panic("connectiond-listener"));
@@ -60,17 +59,17 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
         sender,
         awaited_pong: None,
     };
-    let rpc = RpcZmqServer::init(
+    let rpc = EsbController::init(
         map! {
-            Endpoints::Msg => EndpointCarrier::Address(
+            Endpoints::Msg => rpc::EndpointCarrier::Address(
                 config.msg_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Ctl => EndpointCarrier::Address(
+            Endpoints::Ctl => rpc::EndpointCarrier::Address(
                 config.ctl_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Bridge => EndpointCarrier::Socket(rx)
+            Endpoints::Bridge => rpc::EndpointCarrier::Socket(rx)
         },
         runtime,
     )?;
@@ -129,25 +128,31 @@ impl peer::Handler for Processor {
     }
 }
 
-impl rpc::Handler<Endpoints> for Runtime {
-    type Api = Rpc;
+impl esb::Handler<Endpoints> for Runtime {
+    type Request = Request;
+    type Address = DaemonId;
     type Error = Error;
 
     fn handle(
         &mut self,
         endpoint: Endpoints,
+        source: DaemonId,
         request: Request,
-    ) -> Result<Reply, Self::Error> {
+    ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(request),
-            Endpoints::Ctl => self.handle_rpc_ctl(request),
-            Endpoints::Bridge => self.handle_bridge(request),
+            Endpoints::Msg => self.handle_rpc_msg(source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
+            Endpoints::Bridge => self.handle_bridge(source, request),
         }
     }
 }
 
 impl Runtime {
-    fn handle_rpc_msg(&mut self, request: Request) -> Result<Reply, Error> {
+    fn handle_rpc_msg(
+        &mut self,
+        _source: DaemonId,
+        request: Request,
+    ) -> Result<(), Error> {
         debug!("MSG RPC request: {}", request);
         match request {
             Request::LnpwpMessage(message) => {
@@ -156,18 +161,25 @@ impl Runtime {
                 debug!("Forwarding LN peer message to the remote peer");
                 trace!("Message details: {:?}", message);
                 self.sender.send_message(message)?;
-                Ok(Reply::Success)
             }
             _ => {
                 error!(
                     "MSG RPC can be only used for forwarding LNPWP messages"
                 );
-                Err(Error::NotSupported(Endpoints::Msg, request.get_type()))
+                return Err(Error::NotSupported(
+                    Endpoints::Msg,
+                    request.get_type(),
+                ));
             }
         }
+        Ok(())
     }
 
-    fn handle_rpc_ctl(&mut self, request: Request) -> Result<Reply, Error> {
+    fn handle_rpc_ctl(
+        &mut self,
+        _source: DaemonId,
+        request: Request,
+    ) -> Result<(), Error> {
         debug!("CTL RPC request: {}", request);
         match request {
             Request::InitConnection => {
@@ -178,21 +190,27 @@ impl Runtime {
                     assets: none!(),
                     unknown_tlvs: none!(),
                 }))?;
-                Ok(Reply::Success)
             }
             Request::PingPeer => {
                 debug!("Requested to ping remote peer");
                 self.ping()?;
-                Ok(Reply::Success)
             }
             _ => {
                 error!("Request is not supported by the CTL interface");
-                Err(Error::NotSupported(Endpoints::Ctl, request.get_type()))
+                return Err(Error::NotSupported(
+                    Endpoints::Ctl,
+                    request.get_type(),
+                ));
             }
         }
+        Ok(())
     }
 
-    fn handle_bridge(&mut self, request: Request) -> Result<Reply, Error> {
+    fn handle_bridge(
+        &mut self,
+        _source: DaemonId,
+        request: Request,
+    ) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
         match request {
             Request::PingPeer => {
@@ -225,10 +243,13 @@ impl Runtime {
 
             _ => {
                 error!("Request is not supported by the BRIDGE interface");
-                Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))?
+                return Err(Error::NotSupported(
+                    Endpoints::Bridge,
+                    request.get_type(),
+                ))?;
             }
         }
-        Ok(Reply::Success)
+        Ok(())
     }
 
     fn ping(&mut self) -> Result<(), Error> {

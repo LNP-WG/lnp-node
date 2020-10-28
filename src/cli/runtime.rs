@@ -14,32 +14,57 @@
 
 use core::convert::TryInto;
 
-use lnpbp_services::client::RpcClient;
+use lnpbp_services::esb::{self, EsbController};
+use lnpbp_services::rpc::EndpointCarrier;
 
-use crate::rpc::{Endpoints, Request, Rpc};
-use crate::{Config, Error};
+use crate::rpc::{Endpoints, Request};
+use crate::{Config, DaemonId, Error};
 
 pub struct Runtime {
-    client: RpcClient<Endpoints, Rpc>,
+    client: EsbController<Endpoints, Request, Handler>,
 }
 
 impl Runtime {
     pub fn with(config: Config) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
-        let client = RpcClient::init(map! {
-            Endpoints::Ctl =>
-                config.ctl_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
+        let client = EsbController::init(
+            map! {
+                Endpoints::Ctl =>
+                    EndpointCarrier::Address(config.ctl_endpoint.try_into()
+                        .expect("Only ZMQ RPC is currently supported"))
 
-        })?;
+            },
+            Handler,
+        )?;
 
         Ok(Self { client })
     }
 
-    pub fn request(&mut self, req: Request) -> Result<String, Error> {
+    pub fn request(
+        &mut self,
+        daemon: DaemonId,
+        req: Request,
+    ) -> Result<(), Error> {
         debug!("Executing {}", req);
-        let reply = self.client.request(Endpoints::Ctl, req)?;
-        trace!("Reply details: {:?}", reply);
-        Ok(reply.to_string())
+        self.client.send_to(Endpoints::Ctl, daemon, req)?;
+        Ok(())
+    }
+}
+
+pub struct Handler;
+
+impl esb::Handler<Endpoints> for Handler {
+    type Request = Request;
+    type Address = DaemonId;
+    type Error = Error;
+
+    fn handle(
+        &mut self,
+        _endpoint: Endpoints,
+        _addr: DaemonId,
+        _request: Request,
+    ) -> Result<(), Error> {
+        // Cli does not receive replies for now
+        Ok(())
     }
 }

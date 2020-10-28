@@ -52,6 +52,8 @@ pub mod rpc;
 pub mod channeld;
 #[cfg(feature = "node")]
 pub mod connectiond;
+#[cfg(any(feature = "node", feature = "client"))]
+mod daemon_id;
 #[cfg(feature = "node")]
 pub mod gossipd;
 #[cfg(feature = "node")]
@@ -61,4 +63,6 @@ pub mod routed;
 
 #[cfg(any(feature = "node", feature = "client"))]
 pub use config::Config;
+#[cfg(any(feature = "node", feature = "client"))]
+pub use daemon_id::DaemonId;
 pub use error::Error;
