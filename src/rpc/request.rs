@@ -19,16 +19,22 @@ use crate::DaemonId;
 
 #[derive(Clone, Debug, Display, LnpApi)]
 #[lnp_api(encoding = "strict")]
-#[display(Debug)]
 #[non_exhaustive]
 pub enum Request {
+    #[lnp_api(type = 0)]
+    #[display("connect()")]
+    Connect,
+
     #[lnp_api(type = 1)]
+    #[display("lnpwp({_0})")]
     LnpwpMessage(Messages),
 
     #[lnp_api(type = 2)]
+    #[display("ping_peer()")]
     PingPeer,
 
     #[lnp_api(type = 3)]
+    #[display("create_channel(...)")]
     CreateChannel(CreateChannel),
 }
 

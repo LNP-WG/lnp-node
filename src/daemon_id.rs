@@ -20,7 +20,7 @@ use lnpbp::lnp::NodeEndpoint;
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 
 /// Identifiers of daemons participating in LNP Node
-#[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Display)]
 pub enum DaemonId {
     #[display("lnpd")]
     Lnpd,
@@ -47,8 +47,8 @@ impl AsRef<[u8]> for DaemonId {
             DaemonId::Lnpd => "lnpd".as_bytes(),
             DaemonId::Gossip => "gossipd".as_bytes(),
             DaemonId::Routing => "routed".as_bytes(),
-            DaemonId::Connection(endpoint) => endpoint.as_ref(),
-            DaemonId::Channel(channel_id) => channel_id.as_ref(),
+            DaemonId::Connection(_endpoint) => "connection".as_bytes(), /* endpoint.as_ref(), */
+            DaemonId::Channel(_channel_id) => "channel".as_bytes(), /* channel_id.as_ref(), */
             DaemonId::Foreign(name) => name.as_bytes(),
         }
     }

@@ -14,9 +14,12 @@
 
 use amplify::Wrapper;
 use core::convert::TryInto;
+use std::collections::HashMap;
 use std::io;
 use std::process;
 
+use lnpbp::bitcoin::hashes::hex::ToHex;
+use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
@@ -27,7 +30,9 @@ use crate::{Config, DaemonId, Error};
 
 pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
-    let runtime = Runtime {};
+    let runtime = Runtime {
+        opening_channels: none!(),
+    };
     let rpc = esb::Controller::init(
         DaemonId::Lnpd,
         map! {
@@ -41,13 +46,16 @@ pub fn run(config: Config) -> Result<(), Error> {
             )
         },
         runtime,
+        zmqsocket::ApiType::EsbService,
     )?;
     info!("lnpd started");
     rpc.run_or_panic("lnpd");
     unreachable!()
 }
 
-pub struct Runtime {}
+pub struct Runtime {
+    opening_channels: HashMap<DaemonId, message::OpenChannel>,
+}
 
 impl esb::Handler<Endpoints> for Runtime {
     type Request = Request;
@@ -78,9 +86,10 @@ impl Runtime {
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request: {}", request);
+        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
+                info!("Creating channel by peer request from {}", source);
                 self.open_channel(senders, source, open_channel)?;
             }
 
@@ -104,16 +113,37 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request: {}", request);
+        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             Request::CreateChannel(request::CreateChannel {
                 channel_req,
                 connectiond,
             }) => {
+                info!("Creating channel by request from {}", source);
                 self.open_channel(senders, connectiond, channel_req)?;
+            }
+
+            Request::Connect => {
+                // Ignoring; this is used to set remote identity at ZMQ level
+
+                // Tell channeld channel options and link it with the connection
+                // daemon
+                debug!("Requesting channeld to open a channel");
+                let open_channel = self
+                    .opening_channels
+                    .get(&source)
+                    .ok_or(Error::Other(s!("Unknown channel")))?;
+                senders.send_to(
+                    Endpoints::Ctl,
+                    source.clone(),
+                    Request::CreateChannel(request::CreateChannel {
+                        channel_req: open_channel.clone(),
+                        connectiond: source,
+                    }),
+                )?;
             }
 
             _ => {
@@ -130,59 +160,61 @@ impl Runtime {
 
     fn open_channel(
         &mut self,
-        senders: &mut esb::Senders<Endpoints>,
-        source: DaemonId,
+        _senders: &mut esb::Senders<Endpoints>,
+        _source: DaemonId,
         open_channel: message::OpenChannel,
     ) -> Result<(), Error> {
-        info!("Opening channel");
+        debug!("Instantiating channeld...");
 
         // Start channeld
-        match launch("channeld") {
-            Ok(child) => {
+        launch("channeld", vec![open_channel.temporary_channel_id.to_hex()])
+            .and_then(|child| {
                 debug!(
                     "New instance of channeld launched with PID {}",
                     child.id()
                 );
-            }
-            Err(err) => {
-                error!("Error launching channel daemon: {}", err);
-            }
-        }
+                Ok(())
+            })?;
 
-        // Tell channeld channel options and link it with the connection daemon
-        senders.send_to(
-            Endpoints::Ctl,
+        self.opening_channels.insert(
             DaemonId::Channel(ChannelId::from_inner(
                 open_channel.temporary_channel_id.into_inner(),
             )),
-            Request::CreateChannel(request::CreateChannel {
-                channel_req: open_channel,
-                connectiond: source,
-            }),
-        )?;
+            open_channel,
+        );
 
         Ok(())
     }
 }
 
-fn launch(name: &str) -> io::Result<process::Child> {
+fn launch(name: &str, args: Vec<String>) -> io::Result<process::Child> {
     let mut bin_path = std::env::current_exe().map_err(|err| {
         error!("Unable to detect binary directory: {}", err);
         err
     })?;
     bin_path.pop();
 
-    let args = std::env::args();
+    let mut orig_args = std::env::args().collect::<Vec<String>>();
+    orig_args.extend(args);
 
-    let daemon = bin_path.clone();
     bin_path.push(name);
     #[cfg(target_os = "windows")]
     bin_path.set_extension("exe");
 
-    let mut cmd = process::Command::new(daemon);
-    cmd.args(args);
-    cmd.spawn().map_err(|err| {
-        error!("Error launching daemon {}: {}", name, err);
-        err
-    })
+    debug!(
+        "Launching {} as a separate process using `{}` as binary",
+        name,
+        bin_path.to_string_lossy()
+    );
+
+    process::Command::new("sh")
+        .arg("-C")
+        .arg(bin_path)
+        .arg("--")
+        .args(orig_args)
+        .spawn()
+        .map_err(|err| {
+            error!("Error launching {}: {}", name, err);
+            err
+        })
 }

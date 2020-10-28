@@ -25,11 +25,11 @@ use lnpbp_services::rpc::EndpointTypes;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
 pub enum Endpoints {
-    #[display("msg")]
+    #[display("MSG")]
     Msg,
-    #[display("ctl")]
+    #[display("CTL")]
     Ctl,
-    #[display("bridge")]
+    #[display("BRIDGE")]
     Bridge,
 }
 

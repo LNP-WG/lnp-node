@@ -50,7 +50,10 @@ pub fn run(
 
     debug!("Starting listening thread for messages from the remote peer");
     let processor = Processor {
-        bridge: session::Raw::from_pair_socket(zmqsocket::ApiType::Esb, tx),
+        bridge: session::Raw::from_pair_socket(
+            zmqsocket::ApiType::EsbService,
+            tx,
+        ),
     };
     let listener = peer::Listener::with(receiver, processor);
     spawn(move || listener.run_or_panic("connectiond-listener"));
@@ -77,6 +80,7 @@ pub fn run(
             Endpoints::Bridge => rpc::EndpointCarrier::Socket(rx)
         },
         runtime,
+        zmqsocket::ApiType::EsbService,
     )?;
 
     info!("connectiond started");
@@ -157,10 +161,10 @@ impl Runtime {
     fn handle_rpc_msg(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request: {}", request);
+        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(message) => {
                 // 1. Check permissions
@@ -185,10 +189,10 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request: {}", request);
+        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             /* TODO: Move to connection initialization
             Request::InitConnection => {

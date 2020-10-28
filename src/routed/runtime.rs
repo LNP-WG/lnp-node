@@ -14,6 +14,7 @@
 
 use core::convert::TryInto;
 
+use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::TypedEnum;
 use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
@@ -38,6 +39,7 @@ pub fn run(config: Config) -> Result<(), Error> {
             )
         },
         runtime,
+        zmqsocket::ApiType::EsbService,
     )?;
     info!("routed started");
     rpc.run_or_panic("routed");
@@ -72,10 +74,10 @@ impl Runtime {
     fn handle_rpc_msg(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request: {}", request);
+        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(_message) => {
                 // TODO: Process message
@@ -96,10 +98,10 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request: {}", request);
+        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             _ => {
                 error!("Request is not supported by the CTL interface");

@@ -67,8 +67,9 @@ shellexpand = "~2.0.0"
 configure_me_codegen = "~0.3.14"
 
 [patch.crates-io]
+# Use this for Android builds
 # Remove this once https://github.com/jean-airoldie/zeromq-src-rs/pull/15 got merged
-zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
+# zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
 
 # Recommended set of features:
 # 1. Standalone node: `server` (=`node`+`shell`)

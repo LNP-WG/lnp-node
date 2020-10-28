@@ -914,7 +914,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#2546c38ce921d8742c46199c78b04fbee2c74568"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#45ddc475d029dc5779ced9ea6b0194c388a96ae9"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#2546c38ce921d8742c46199c78b04fbee2c74568"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#45ddc475d029dc5779ced9ea6b0194c388a96ae9"
 dependencies = [
  "amplify 2.0.6",
  "quote 1.0.7",
@@ -953,7 +953,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#2546c38ce921d8742c46199c78b04fbee2c74568"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#45ddc475d029dc5779ced9ea6b0194c388a96ae9"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -2377,8 +2377,3 @@ dependencies = [
  "libc",
  "metadeps",
 ]
-
-[[patch.unused]]
-name = "zeromq-src"
-version = "0.1.10+4.3.2"
-source = "git+https://github.com/LNP-BP/zeromq-src-rs?branch=fix/cmake#e95a4e68136a6897d61c936622933bf259ebdd7f"

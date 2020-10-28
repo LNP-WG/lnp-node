@@ -15,6 +15,7 @@
 use core::convert::TryInto;
 
 use lnpbp::bitcoin::secp256k1;
+use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
@@ -26,7 +27,7 @@ use crate::{Config, DaemonId, Error};
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
-    let rpc = esb::Controller::init(
+    let mut rpc = esb::Controller::init(
         DaemonId::Channel(channel_id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -39,8 +40,10 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
             )
         },
         runtime,
+        zmqsocket::ApiType::EsbClient,
     )?;
     info!("channeld started");
+    rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Connect)?;
     rpc.run_or_panic("channeld");
     unreachable!()
 }
@@ -73,10 +76,10 @@ impl Runtime {
     fn handle_rpc_msg(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request: {}", request);
+        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(_) => {
                 // Ignore the rest of LN peer messages
@@ -98,10 +101,10 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request: {}", request);
+        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             Request::CreateChannel(request::CreateChannel {
                 channel_req,

@@ -15,6 +15,7 @@
 use core::convert::TryInto;
 use url::Url;
 
+use lnpbp::lnp::transport::zmqsocket;
 use lnpbp_services::esb;
 use lnpbp_services::rpc::EndpointCarrier;
 
@@ -41,6 +42,7 @@ impl Runtime {
 
             },
             Handler,
+            zmqsocket::ApiType::EsbClient,
         )?;
 
         Ok(Self { client })

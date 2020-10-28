@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::io;
+
 #[cfg(any(feature = "node", feature = "client"))]
 use lnpbp::lnp::TypeId;
 use lnpbp::lnp::{presentation, transport};
@@ -25,6 +27,10 @@ use crate::rpc::Endpoints;
 #[display(doc_comments)]
 #[non_exhaustive]
 pub enum Error {
+    /// I/O error: {_0:?}
+    #[from]
+    Io(io::ErrorKind),
+
     /// ZeroMQ error: {_0}
     #[from]
     #[cfg(feature = "zmq")]
@@ -50,9 +56,18 @@ pub enum Error {
 
     /// Peer has misbehaved LN peer protocol rules
     Misbehaving,
+
+    /// {_0}
+    Other(String),
 }
 
 impl lnpbp_services::error::Error for Error {}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::Io(err.kind())
+    }
+}
 
 impl From<presentation::Error> for Error {
     fn from(err: presentation::Error) -> Self {
