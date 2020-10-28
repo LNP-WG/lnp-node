@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v0.1.0-alpha.2
+--------------
+
+- Skeleton for lnpd, channeld, gossipd and routed services/daemons
+- Ping/pong interplay betweeen nodes
+- Completed implementatino of enterprise service buses (CTL, MSG, BRIDGE)
+- Basic channel creating workflow
+
 v0.1.0-alpha.1
 --------------
 
