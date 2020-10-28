@@ -30,7 +30,9 @@ extern crate amplify;
 #[macro_use]
 extern crate amplify_derive;
 #[macro_use]
-pub extern crate lnpbp_derive;
+pub extern crate lnpbp;
+#[macro_use]
+extern crate lnpbp_derive;
 
 #[cfg(feature = "shell")]
 extern crate clap;

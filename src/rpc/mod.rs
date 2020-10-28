@@ -14,7 +14,7 @@
 
 pub mod message;
 mod reply;
-mod request;
+pub mod request;
 pub mod types;
 
 pub use reply::Reply;

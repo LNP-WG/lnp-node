@@ -15,7 +15,7 @@
 use core::convert::TryInto;
 
 use lnpbp::lnp::TypedEnum;
-use lnpbp_services::esb::{self, EsbController};
+use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
 
@@ -25,7 +25,7 @@ use crate::{Config, DaemonId, Error};
 pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
-    let rpc = EsbController::init(
+    let rpc = esb::Controller::init(
         DaemonId::Gossip,
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -53,13 +53,14 @@ impl esb::Handler<Endpoints> for Runtime {
 
     fn handle(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         endpoint: Endpoints,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
+            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
             _ => {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
@@ -70,6 +71,7 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -93,6 +95,7 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {

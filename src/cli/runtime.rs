@@ -15,14 +15,14 @@
 use core::convert::TryInto;
 use url::Url;
 
-use lnpbp_services::esb::{self, EsbController};
+use lnpbp_services::esb;
 use lnpbp_services::rpc::EndpointCarrier;
 
 use crate::rpc::{Endpoints, Request};
 use crate::{Config, DaemonId, Error};
 
 pub struct Runtime {
-    client: EsbController<Endpoints, Request, Handler>,
+    client: esb::Controller<Endpoints, Request, Handler>,
 }
 
 impl Runtime {
@@ -32,7 +32,7 @@ impl Runtime {
             "Internal error: URL representation of the CTRL endpoint fails",
         );
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let client = EsbController::init(
+        let client = esb::Controller::init(
             DaemonId::Foreign(url.to_string()),
             map! {
                 Endpoints::Ctl =>
@@ -66,6 +66,7 @@ impl esb::Handler<Endpoints> for Handler {
 
     fn handle(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _endpoint: Endpoints,
         _addr: DaemonId,
         _request: Request,

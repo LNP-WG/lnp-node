@@ -12,8 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::application::Messages;
 use lnpbp::lnp::rpc_connection;
+use lnpbp::lnp::{message, Messages};
+
+use crate::DaemonId;
 
 #[derive(Clone, Debug, Display, LnpApi)]
 #[lnp_api(encoding = "strict")]
@@ -28,6 +30,16 @@ pub enum Request {
 
     #[lnp_api(type = 3)]
     PingPeer,
+
+    #[lnp_api(type = 4)]
+    CreateChannel(CreateChannel),
 }
 
 impl rpc_connection::Request for Request {}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display(Debug)]
+pub struct CreateChannel {
+    pub channel_req: message::OpenChannel,
+    pub connectiond: DaemonId,
+}

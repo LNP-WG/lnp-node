@@ -23,7 +23,7 @@ use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
 use lnpbp::lnp::{session, transport, Session};
 use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
-use lnpbp_services::esb::{self, EsbController};
+use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 use lnpbp_services::{peer, rpc};
 
@@ -63,7 +63,7 @@ pub fn run(
         sender,
         awaited_pong: None,
     };
-    let rpc = EsbController::init(
+    let rpc = esb::Controller::init(
         DaemonId::Connection(id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -140,14 +140,15 @@ impl esb::Handler<Endpoints> for Runtime {
 
     fn handle(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         endpoint: Endpoints,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
-            Endpoints::Bridge => self.handle_bridge(source, request),
+            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
+            Endpoints::Bridge => self.handle_bridge(senders, source, request),
         }
     }
 }
@@ -155,6 +156,7 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -182,6 +184,7 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -213,6 +216,7 @@ impl Runtime {
 
     fn handle_bridge(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -238,6 +242,10 @@ impl Runtime {
                     _ => trace!("Got pong reply, exiting pong await mode"),
                 }
                 self.awaited_pong = None;
+            }
+
+            Request::LnpwpMessage(Messages::OpenChannel(_)) => {
+                senders.send_to(Endpoints::Msg, DaemonId::Lnpd, request)?;
             }
 
             Request::LnpwpMessage(message) => {

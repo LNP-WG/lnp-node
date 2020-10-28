@@ -12,23 +12,23 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::Wrapper;
 use core::convert::TryInto;
 use std::io;
 use std::process;
 
-use lnpbp::lnp::application::Messages;
-use lnpbp::lnp::TypedEnum;
-use lnpbp_services::esb::{self, EsbController};
+use lnpbp::lnp::{ChannelId, Messages, TypedEnum};
+use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
 
-use crate::rpc::{Endpoints, Request};
+use crate::rpc::{request, Endpoints, Request};
 use crate::{Config, DaemonId, Error};
 
 pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
-    let rpc = EsbController::init(
+    let rpc = esb::Controller::init(
         DaemonId::Lnpd,
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -56,13 +56,14 @@ impl esb::Handler<Endpoints> for Runtime {
 
     fn handle(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         endpoint: Endpoints,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
+            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
             _ => {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
@@ -73,12 +74,13 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _source: DaemonId,
+        senders: &mut esb::Senders<Endpoints>,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         debug!("MSG RPC request: {}", request);
         match request {
-            Request::LnpwpMessage(Messages::OpenChannel(_open_channel)) => {
+            Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Opening channel");
                 // Start channeld
                 match launch("channeld") {
@@ -92,7 +94,16 @@ impl Runtime {
                         error!("Error launching channel daemon: {}", err);
                     }
                 }
-                // TODO: Configure channeld via CTL interface
+                senders.send_to(
+                    Endpoints::Ctl,
+                    DaemonId::Channel(ChannelId::from_inner(
+                        open_channel.temporary_channel_id.into_inner(),
+                    )),
+                    Request::CreateChannel(request::CreateChannel {
+                        channel_req: open_channel,
+                        connectiond: source,
+                    }),
+                )?;
             }
 
             Request::LnpwpMessage(_) => {
@@ -114,6 +125,7 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {

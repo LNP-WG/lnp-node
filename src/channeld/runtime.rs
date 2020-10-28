@@ -14,18 +14,19 @@
 
 use core::convert::TryInto;
 
-use lnpbp::lnp::{ChannelId, TypedEnum};
-use lnpbp_services::esb::{self, EsbController};
+use lnpbp::bitcoin::secp256k1;
+use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
+use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
 
-use crate::rpc::{Endpoints, Request};
+use crate::rpc::{request, Endpoints, Request};
 use crate::{Config, DaemonId, Error};
 
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
-    let rpc = EsbController::init(
+    let rpc = esb::Controller::init(
         DaemonId::Channel(channel_id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -53,13 +54,14 @@ impl esb::Handler<Endpoints> for Runtime {
 
     fn handle(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         endpoint: Endpoints,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(source, request),
+            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
+            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
             _ => {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
@@ -70,14 +72,16 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
+        _senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         debug!("MSG RPC request: {}", request);
         match request {
-            Request::LnpwpMessage(_message) => {
-                // TODO: Process message
+            Request::LnpwpMessage(_) => {
+                // Ignore the rest of LN peer messages
             }
+
             _ => {
                 error!(
                     "MSG RPC can be only used for forwarding LNPWP messages"
@@ -93,11 +97,50 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
+        senders: &mut esb::Senders<Endpoints>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         debug!("CTL RPC request: {}", request);
         match request {
+            Request::CreateChannel(request::CreateChannel {
+                channel_req,
+                connectiond,
+            }) => {
+                let dumb_key = secp256k1::PublicKey::from_secret_key(
+                    &lnpbp::SECP256K1,
+                    &secp256k1::key::ONE_KEY,
+                );
+                senders.send_to(
+                    Endpoints::Msg,
+                    connectiond,
+                    Request::LnpwpMessage(Messages::AcceptChannel(
+                        message::AcceptChannel {
+                            temporary_channel_id: channel_req
+                                .temporary_channel_id,
+                            dust_limit_satoshis: channel_req
+                                .dust_limit_satoshis,
+                            max_htlc_value_in_flight_msat: channel_req
+                                .max_htlc_value_in_flight_msat,
+                            channel_reserve_satoshis: channel_req
+                                .channel_reserve_satoshis,
+                            htlc_minimum_msat: channel_req.htlc_minimum_msat,
+                            minimum_depth: 3, // TODO: take from config options
+                            to_self_delay: channel_req.to_self_delay,
+                            max_accepted_htlcs: channel_req.max_accepted_htlcs,
+                            funding_pubkey: dumb_key,
+                            revocation_basepoint: dumb_key,
+                            payment_point: dumb_key,
+                            delayed_payment_basepoint: dumb_key,
+                            htlc_basepoint: dumb_key,
+                            first_per_commitment_point: dumb_key,
+                            shutdown_scriptpubkey: None,
+                            unknown_tlvs: none!(),
+                        },
+                    )),
+                )?;
+            }
+
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
@@ -106,5 +149,6 @@ impl Runtime {
                 ));
             }
         }
+        Ok(())
     }
 }

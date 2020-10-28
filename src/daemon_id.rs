@@ -12,18 +12,32 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::io;
 use std::str::FromStr;
 
 use lnpbp::lnp::application::ChannelId;
 use lnpbp::lnp::NodeEndpoint;
+use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 
 /// Identifiers of daemons participating in LNP Node
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
 pub enum DaemonId {
+    #[display("lnpd")]
     Lnpd,
+
+    #[display("gossipd")]
     Gossip,
+
+    #[display("routed")]
     Routing,
+
+    #[display("connectiond<{_0}>")]
     Connection(String),
+
+    #[display("channel<{_0}>")]
     Channel(ChannelId),
+
+    #[display("external<{_0}>")]
     Foreign(String),
 }
 
@@ -59,5 +73,47 @@ impl From<Vec<u8>> for DaemonId {
                 }
             }
         }
+    }
+}
+
+impl StrictEncode for DaemonId {
+    type Error = strict_encoding::Error;
+
+    fn strict_encode<E: io::Write>(
+        &self,
+        mut e: E,
+    ) -> Result<usize, Self::Error> {
+        Ok(match self {
+            DaemonId::Lnpd => 0u8.strict_encode(e)?,
+            DaemonId::Gossip => 1u8.strict_encode(e)?,
+            DaemonId::Routing => 2u8.strict_encode(e)?,
+            DaemonId::Connection(peer_id) => {
+                strict_encode_list!(e; 3u8, peer_id)
+            }
+            DaemonId::Channel(channel_id) => {
+                strict_encode_list!(e; 4u8, channel_id)
+            }
+            DaemonId::Foreign(id) => strict_encode_list!(e; 5u8, id),
+        })
+    }
+}
+
+impl StrictDecode for DaemonId {
+    type Error = strict_encoding::Error;
+
+    fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, Self::Error> {
+        let ty = u8::strict_decode(&mut d)?;
+        Ok(match ty {
+            0 => DaemonId::Lnpd,
+            1 => DaemonId::Gossip,
+            2 => DaemonId::Routing,
+            3 => DaemonId::Connection(StrictDecode::strict_decode(&mut d)?),
+            4 => DaemonId::Channel(StrictDecode::strict_decode(&mut d)?),
+            5 => DaemonId::Foreign(StrictDecode::strict_decode(&mut d)?),
+            _ => Err(strict_encoding::Error::EnumValueNotKnown(
+                s!("DaemonId"),
+                ty,
+            ))?,
+        })
     }
 }
