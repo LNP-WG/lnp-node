@@ -907,13 +907,14 @@ dependencies = [
  "shellexpand",
  "tokio",
  "toml 0.5.7",
+ "url",
  "zmq",
 ]
 
 [[package]]
 name = "lnpbp"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#6103b6e27cec7202001b2d071a35c4800ada121a"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#b36296ffb2db4e88c61653a48856fdda5d8cd6b6"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -942,7 +943,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#6103b6e27cec7202001b2d071a35c4800ada121a"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#b36296ffb2db4e88c61653a48856fdda5d8cd6b6"
 dependencies = [
  "amplify 2.0.6",
  "quote 1.0.7",
@@ -952,7 +953,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-alpha.2"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#6103b6e27cec7202001b2d071a35c4800ada121a"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#b36296ffb2db4e88c61653a48856fdda5d8cd6b6"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",

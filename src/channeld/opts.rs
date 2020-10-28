@@ -13,6 +13,9 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use clap::{AppSettings, Clap};
+use lnpbp::lnp::ChannelId;
+
+use lnpbp::bitcoin::hashes::hex::FromHex;
 
 /// Lightning peer network channel daemon; part of LNP Node
 ///
@@ -27,6 +30,10 @@ use clap::{AppSettings, Clap};
     setting = AppSettings::ColoredHelp
 )]
 pub struct Opts {
+    /// Channel id
+    #[clap(parse(try_from_str = ChannelId::from_hex))]
+    pub channel_id: ChannelId,
+
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
     #[clap(flatten)]

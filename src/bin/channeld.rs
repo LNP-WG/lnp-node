@@ -57,7 +57,8 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config).expect("Error running channeld runtime");
+    channeld::run(config, opts.channel_id)
+        .expect("Error running channeld runtime");
 
     unreachable!()
 }

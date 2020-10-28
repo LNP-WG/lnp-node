@@ -34,7 +34,11 @@ pub struct MessageFilter {}
 
 pub struct ServiceId {}
 
-pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
+pub fn run(
+    config: Config,
+    connection: PeerConnection,
+    id: String,
+) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
@@ -60,6 +64,7 @@ pub fn run(connection: PeerConnection, config: Config) -> Result<(), Error> {
         awaited_pong: None,
     };
     let rpc = EsbController::init(
+        DaemonId::Connection(id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
                 config.msg_endpoint.try_into()

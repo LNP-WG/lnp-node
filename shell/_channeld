@@ -33,6 +33,7 @@ _channeld() {
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
+':channel-id -- Channel id:' \
 && ret=0
     
 }

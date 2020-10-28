@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use core::convert::TryInto;
+use url::Url;
 
 use lnpbp_services::esb::{self, EsbController};
 use lnpbp_services::rpc::EndpointCarrier;
@@ -27,7 +28,12 @@ pub struct Runtime {
 impl Runtime {
     pub fn with(config: Config) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
+        let mut url = Url::parse(&config.ctl_endpoint.to_string()).expect(
+            "Internal error: URL representation of the CTRL endpoint fails",
+        );
+        url.set_fragment(Some(&format!("cli={}", std::process::id())));
         let client = EsbController::init(
+            DaemonId::Foreign(url.to_string()),
             map! {
                 Endpoints::Ctl =>
                     EndpointCarrier::Address(config.ctl_endpoint.try_into()

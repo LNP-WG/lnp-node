@@ -14,7 +14,7 @@
 
 use core::convert::TryInto;
 
-use lnpbp::lnp::TypedEnum;
+use lnpbp::lnp::{ChannelId, TypedEnum};
 use lnpbp_services::esb::{self, EsbController};
 use lnpbp_services::node::TryService;
 use lnpbp_services::rpc;
@@ -22,10 +22,11 @@ use lnpbp_services::rpc;
 use crate::rpc::{Endpoints, Request};
 use crate::{Config, DaemonId, Error};
 
-pub fn run(config: Config) -> Result<(), Error> {
+pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
     let rpc = EsbController::init(
+        DaemonId::Channel(channel_id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
                 config.msg_endpoint.try_into()

@@ -26,6 +26,7 @@ pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
     let runtime = Runtime {};
     let rpc = EsbController::init(
+        DaemonId::Gossip,
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
                 config.msg_endpoint.try_into()

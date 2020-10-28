@@ -186,9 +186,12 @@ fn main() {
     let peer_socket = PeerSocket::from(opts);
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
+    let id: String;
     let connection = match peer_socket {
         PeerSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
+
+            id = inet_addr.to_string();
 
             debug!("Binding TCP socket {}", inet_addr);
             let listener = TcpListener::bind(
@@ -234,6 +237,8 @@ fn main() {
         PeerSocket::Connect(node_addr) => {
             debug!("Running in CONNECT mode");
 
+            id = node_addr.to_string();
+
             info!("Connecting to {}", &node_addr);
             PeerConnection::connect(node_addr, &local_node)
                 .expect("Unable to connect to the remote peer")
@@ -242,7 +247,7 @@ fn main() {
     };
 
     debug!("Starting runtime ...");
-    connectiond::run(connection, config)
+    connectiond::run(config, connection, id)
         .expect("Error running connectiond runtime");
 
     unreachable!()
