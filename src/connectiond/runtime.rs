@@ -273,12 +273,12 @@ impl Runtime {
             return Err(Error::NotResponding);
         }
         let mut rng = rand::thread_rng();
-        let len: u16 = rng.gen();
+        let len: u16 = rng.gen_range(4, 32);
         let mut noise = vec![0u8; len as usize];
         for i in 0..noise.len() {
             noise[i] = rng.gen();
         }
-        let pong_size = rng.gen();
+        let pong_size = rng.gen_range(4, 32);
         self.sender.send_message(Messages::Ping(message::Ping {
             ignored: noise,
             pong_size,
@@ -295,7 +295,6 @@ impl Runtime {
             noise[i] = rng.gen();
         }
         self.sender.send_message(Messages::Pong(noise))?;
-        self.awaited_pong = None;
         Ok(())
     }
 }
