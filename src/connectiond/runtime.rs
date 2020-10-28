@@ -21,7 +21,7 @@ use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
 use lnpbp::lnp::application::{message, Messages};
 use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
-use lnpbp::lnp::{session, transport, Session};
+use lnpbp::lnp::{session, transport};
 use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
 use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
@@ -99,7 +99,7 @@ pub struct Processor {
 impl Processor {
     fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
         debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
-        self.bridge.send_raw_message(&req.encode()?)?;
+        self.bridge.send_addr_message(b"", &req.encode()?)?;
         Ok(())
     }
 }
