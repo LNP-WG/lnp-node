@@ -13,6 +13,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use core::convert::TryInto;
+use std::thread::sleep;
+use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::lnp::transport::zmqsocket;
@@ -42,6 +44,8 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
         runtime,
         zmqsocket::ApiType::EsbClient,
     )?;
+    // We have to sleep in order for ZMQ to bootstrap
+    sleep(Duration::from_secs(1));
     info!("channeld started");
     rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Connect)?;
     rpc.run_or_panic("channeld");
@@ -69,6 +73,16 @@ impl esb::Handler<Endpoints> for Runtime {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
         }
+    }
+
+    fn handle_err(
+        &mut self,
+        _: lnpbp_services::rpc::Error,
+    ) -> Result<(), Self::Error> {
+        // We do nothing and do not propagate error; it's already being reported
+        // with `error!` macro by the controller. If we propagate error here
+        // this will make whole daemon panic
+        Ok(())
     }
 }
 

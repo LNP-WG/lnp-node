@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::Wrapper;
 use std::io;
 use std::str::FromStr;
 
@@ -34,7 +35,7 @@ pub enum DaemonId {
     #[display("connectiond<{_0}>")]
     Connection(String),
 
-    #[display("channel<{_0}>")]
+    #[display("channel<{_0:#x}>")]
     Channel(ChannelId),
 
     #[display("external<{_0}>")]
@@ -47,8 +48,8 @@ impl AsRef<[u8]> for DaemonId {
             DaemonId::Lnpd => "lnpd".as_bytes(),
             DaemonId::Gossip => "gossipd".as_bytes(),
             DaemonId::Routing => "routed".as_bytes(),
-            DaemonId::Connection(_endpoint) => "connection".as_bytes(), /* endpoint.as_ref(), */
-            DaemonId::Channel(_channel_id) => "channel".as_bytes(), /* channel_id.as_ref(), */
+            DaemonId::Connection(endpoint) => endpoint.as_ref(),
+            DaemonId::Channel(channel_id) => channel_id.as_inner().as_ref(),
             DaemonId::Foreign(name) => name.as_bytes(),
         }
     }
@@ -67,7 +68,7 @@ impl From<Vec<u8>> for DaemonId {
                 } else if v.len() == 32 {
                     let mut hash = [0u8; 32];
                     hash.copy_from_slice(v);
-                    DaemonId::Channel(ChannelId::from(hash))
+                    DaemonId::Channel(ChannelId::from_inner(hash.into()))
                 } else {
                     DaemonId::Foreign(s)
                 }

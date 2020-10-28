@@ -13,6 +13,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use core::convert::TryInto;
+use std::thread::sleep;
+use std::time::Duration;
 use url::Url;
 
 use lnpbp::lnp::transport::zmqsocket;
@@ -45,6 +47,9 @@ impl Runtime {
             zmqsocket::ApiType::EsbClient,
         )?;
 
+        // We have to sleep in order for ZMQ to bootstrap
+        sleep(Duration::from_secs_f32(0.1));
+
         Ok(Self { client })
     }
 
@@ -75,5 +80,13 @@ impl esb::Handler<Endpoints> for Handler {
     ) -> Result<(), Error> {
         // Cli does not receive replies for now
         Ok(())
+    }
+
+    fn handle_err(
+        &mut self,
+        err: lnpbp_services::rpc::Error,
+    ) -> Result<(), Self::Error> {
+        // We simply propagate the error since it's already being reported
+        Err(err)?
     }
 }

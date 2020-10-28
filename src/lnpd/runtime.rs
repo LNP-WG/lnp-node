@@ -15,6 +15,7 @@
 use amplify::Wrapper;
 use core::convert::TryInto;
 use std::collections::HashMap;
+use std::ffi::OsStr;
 use std::io;
 use std::process;
 
@@ -76,6 +77,16 @@ impl esb::Handler<Endpoints> for Runtime {
                 Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
             }
         }
+    }
+
+    fn handle_err(
+        &mut self,
+        _: lnpbp_services::rpc::Error,
+    ) -> Result<(), Self::Error> {
+        // We do nothing and do not propagate error; it's already being reported
+        // with `error!` macro by the controller. If we propagate error here
+        // this will make whole daemon panic
+        Ok(())
     }
 }
 
@@ -167,7 +178,7 @@ impl Runtime {
         debug!("Instantiating channeld...");
 
         // Start channeld
-        launch("channeld", vec![open_channel.temporary_channel_id.to_hex()])
+        launch("channeld", &[open_channel.temporary_channel_id.to_hex()])
             .and_then(|child| {
                 debug!(
                     "New instance of channeld launched with PID {}",
@@ -182,20 +193,21 @@ impl Runtime {
             )),
             open_channel,
         );
+        debug!("Awaiting for channeld to connect...");
 
         Ok(())
     }
 }
 
-fn launch(name: &str, args: Vec<String>) -> io::Result<process::Child> {
+fn launch(
+    name: &str,
+    args: impl IntoIterator<Item = impl AsRef<OsStr>>,
+) -> io::Result<process::Child> {
     let mut bin_path = std::env::current_exe().map_err(|err| {
         error!("Unable to detect binary directory: {}", err);
         err
     })?;
     bin_path.pop();
-
-    let mut orig_args = std::env::args().collect::<Vec<String>>();
-    orig_args.extend(args);
 
     bin_path.push(name);
     #[cfg(target_os = "windows")]
@@ -207,14 +219,11 @@ fn launch(name: &str, args: Vec<String>) -> io::Result<process::Child> {
         bin_path.to_string_lossy()
     );
 
-    process::Command::new("sh")
-        .arg("-C")
-        .arg(bin_path)
-        .arg("--")
-        .args(orig_args)
-        .spawn()
-        .map_err(|err| {
-            error!("Error launching {}: {}", name, err);
-            err
-        })
+    let mut cmd = process::Command::new(bin_path);
+    cmd.args(std::env::args().skip(1)).args(args);
+    trace!("Executing `{:?}`", cmd);
+    cmd.spawn().map_err(|err| {
+        error!("Error launching {}: {}", name, err);
+        err
+    })
 }

@@ -155,6 +155,16 @@ impl esb::Handler<Endpoints> for Runtime {
             Endpoints::Bridge => self.handle_bridge(senders, source, request),
         }
     }
+
+    fn handle_err(
+        &mut self,
+        _: lnpbp_services::rpc::Error,
+    ) -> Result<(), Self::Error> {
+        // We do nothing and do not propagate error; it's already being reported
+        // with `error!` macro by the controller. If we propagate error here
+        // this will make whole daemon panic
+        Ok(())
+    }
 }
 
 impl Runtime {

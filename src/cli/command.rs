@@ -40,7 +40,7 @@ impl Exec for Command {
                         channel_req: message::OpenChannel {
                             chain_hash: none!(),
                             temporary_channel_id: TempChannelId::from_inner(
-                                [0u8; 32],
+                                [0u8; 32].into(),
                             ),
                             funding_satoshis: 0,
                             push_msat: 0,
