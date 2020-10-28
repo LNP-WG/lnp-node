@@ -108,7 +108,7 @@ The set of microservices representing node can run as either:
 
 Other nodes, designed an maintained by LNP/BP Standards Association with the 
 same architecture include:
-* [RGB Node](https://github.com/LNP-BP/bp-node) for running RGB smart contracts
+* [RGB Node](https://github.com/LNP-BP/rgb-node) for running RGB smart contracts
   over bitcoin and lightning network
 * [BP Node](https://github.com/LNP-BP/bp-node) for indexing bitcoin blockchain
   (you may think of it as a more efficient Electrum server alternative)
