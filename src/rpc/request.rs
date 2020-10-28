@@ -22,8 +22,8 @@ use crate::DaemonId;
 #[non_exhaustive]
 pub enum Request {
     #[lnp_api(type = 0)]
-    #[display("connect()")]
-    Connect,
+    #[display("hello()")]
+    Hello,
 
     #[lnp_api(type = 1)]
     #[display("lnpwp({_0})")]

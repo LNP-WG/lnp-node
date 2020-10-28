@@ -14,9 +14,10 @@
 
 use clap::{AppSettings, ArgGroup, Clap, ValueHint};
 use std::net::IpAddr;
-use std::path::PathBuf;
 
 use lnpbp::lnp::{transport::FramingProtocol, NodeAddr};
+
+use crate::opts::LNP_NODE_KEY_FILE;
 
 /// Lightning peer network connection daemon; part of LNP Node
 ///
@@ -85,9 +86,10 @@ pub struct Opts {
         short,
         long,
         env = "LNP_NODE_KEY_FILE",
+        default_value = LNP_NODE_KEY_FILE,
         value_hint = ValueHint::FilePath
     )]
-    pub key_file: Option<PathBuf>,
+    pub key_file: String,
 
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
@@ -97,6 +99,7 @@ pub struct Opts {
 
 impl Opts {
     pub fn process(&mut self) {
-        self.shared.process()
+        self.shared.process();
+        self.shared.process_dir(&mut self.key_file);
     }
 }

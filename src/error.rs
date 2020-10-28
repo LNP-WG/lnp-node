@@ -84,7 +84,7 @@ impl From<rpc::Error> for Error {
         match err {
             rpc::Error::Transport(err) => Error::from(err),
             rpc::Error::Presentation(err) => Error::from(err),
-            rpc::Error::Zmq(err) => Error::Zmq(err),
+            rpc::Error::Zmq(err) => Error::Zmq(zmq::Error::from_raw(err)),
             err => Error::Rpc(err),
         }
     }
@@ -94,7 +94,7 @@ impl From<rpc::Error> for Error {
 impl From<Error> for rpc::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::Zmq(err) => rpc::Error::Zmq(err),
+            Error::Zmq(err) => rpc::Error::Zmq(err.to_raw()),
             Error::Transport(err) => rpc::Error::Transport(err),
             Error::Presentation(err) => rpc::Error::Presentation(err),
             Error::Rpc(err) => err,

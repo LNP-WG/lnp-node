@@ -22,8 +22,6 @@ use lnpbp::bp;
 use lnpbp::lnp::NodeLocator;
 use lnpbp_services::shell::LogLevel;
 
-pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnpd.toml";
-
 #[cfg(any(target_os = "linux"))]
 pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
@@ -39,12 +37,13 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents";
 pub const LNP_NODE_DATA_DIR: &'static str = ".";
 
 pub const LNP_NODE_MSG_SOCKET_NAME: &'static str =
-    "lnpz:{data_dir}/msg.rpc?api=rpc";
+    "lnpz:{data_dir}/msg.rpc?api=esb";
 pub const LNP_NODE_CTL_SOCKET_NAME: &'static str =
-    "lnpz:{data_dir}/ctl.rpc?api=rpc";
+    "lnpz:{data_dir}/ctl.rpc?api=esb";
 
-pub const LNP_NODE_BIND: &'static str = "0.0.0.0:20202";
+pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp.toml";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
+pub const LNP_NODE_KEY_FILE: &'static str = "{data_dir}/key.dat";
 
 /// Shared options used by different binaries
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -148,17 +147,19 @@ impl Opts {
         fs::create_dir_all(&self.data_dir)
             .expect("Unable to access data directory");
 
+        let me = self.clone();
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
                 NodeLocator::ZmqIpc(path, ..) | NodeLocator::Posix(path) => {
-                    *path = path.replace(
-                        "{data_dir}",
-                        &self.data_dir.to_string_lossy(),
-                    );
-                    *path = shellexpand::tilde(path).to_string();
+                    me.process_dir(path);
                 }
                 _ => unimplemented!(),
             }
         }
+    }
+
+    pub fn process_dir(&self, path: &mut String) {
+        *path = path.replace("{data_dir}", &self.data_dir.to_string_lossy());
+        *path = shellexpand::tilde(path).to_string();
     }
 }

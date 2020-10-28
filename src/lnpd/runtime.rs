@@ -55,7 +55,7 @@ pub fn run(config: Config) -> Result<(), Error> {
 }
 
 pub struct Runtime {
-    opening_channels: HashMap<DaemonId, message::OpenChannel>,
+    opening_channels: HashMap<DaemonId, (DaemonId, message::OpenChannel)>,
 }
 
 impl esb::Handler<Endpoints> for Runtime {
@@ -137,24 +137,28 @@ impl Runtime {
                 self.open_channel(senders, connectiond, channel_req)?;
             }
 
-            Request::Connect => {
+            Request::Hello => {
                 // Ignoring; this is used to set remote identity at ZMQ level
+                debug!("{} says hello", source);
 
-                // Tell channeld channel options and link it with the connection
-                // daemon
-                debug!("Requesting channeld to open a channel");
-                let open_channel = self
-                    .opening_channels
-                    .get(&source)
-                    .ok_or(Error::Other(s!("Unknown channel")))?;
-                senders.send_to(
-                    Endpoints::Ctl,
-                    source.clone(),
-                    Request::CreateChannel(request::CreateChannel {
-                        channel_req: open_channel.clone(),
-                        connectiond: source,
-                    }),
-                )?;
+                if let Some((connectiond, open_channel)) =
+                    self.opening_channels.get(&source)
+                {
+                    // Tell channeld channel options and link it with the
+                    // connection daemon
+                    debug!(
+                        "Daemon {} is known: we spawned it to create a channel. \
+                         Ordering channel creation", source
+                    );
+                    senders.send_to(
+                        Endpoints::Ctl,
+                        source.clone(),
+                        Request::CreateChannel(request::CreateChannel {
+                            channel_req: open_channel.clone(),
+                            connectiond: connectiond.clone(),
+                        }),
+                    )?;
+                }
             }
 
             _ => {
@@ -172,7 +176,7 @@ impl Runtime {
     fn open_channel(
         &mut self,
         _senders: &mut esb::Senders<Endpoints>,
-        _source: DaemonId,
+        source: DaemonId,
         open_channel: message::OpenChannel,
     ) -> Result<(), Error> {
         debug!("Instantiating channeld...");
@@ -191,7 +195,7 @@ impl Runtime {
             DaemonId::Channel(ChannelId::from_inner(
                 open_channel.temporary_channel_id.into_inner(),
             )),
-            open_channel,
+            (source, open_channel),
         );
         debug!("Awaiting for channeld to connect...");
 

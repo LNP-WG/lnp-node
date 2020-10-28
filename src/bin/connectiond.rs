@@ -98,13 +98,16 @@ use clap::Clap;
 use core::convert::TryFrom;
 use core::time::Duration;
 use nix::unistd::{fork, ForkResult};
+use std::fs;
 use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::path::PathBuf;
 
 use lnp_node::connectiond::{self, Opts};
 use lnp_node::Config;
 use lnpbp::lnp::transport::FramingProtocol;
 use lnpbp::lnp::{session, LocalNode, NodeAddr, PeerConnection, RemoteAddr};
+use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 
 /*
 mod internal {
@@ -180,7 +183,26 @@ fn main() {
         .unwrap_or_exit();
      */
 
-    let local_node = LocalNode::new();
+    let local_node = if PathBuf::from(opts.key_file.clone()).exists() {
+        LocalNode::strict_decode(fs::File::open(&opts.key_file).expect(
+            &format!(
+                "Unable to open key file {}; please check \
+                that the user which runs the daemon has necessary permissions",
+                opts.key_file
+            ),
+        ))
+        .expect("Unable to read node code file format")
+    } else {
+        let local_node = LocalNode::new();
+        let key_file = fs::File::create(&opts.key_file).expect(&format!(
+            "Unable to create key file '{}'; please check that the path exists",
+            opts.key_file
+        ));
+        local_node
+            .strict_encode(key_file)
+            .expect("Unable to save generated node kay");
+        local_node
+    };
     debug!("Local node data: {}", local_node);
 
     let peer_socket = PeerSocket::from(opts);

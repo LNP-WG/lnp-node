@@ -15,7 +15,8 @@
 use amplify::Bipolar;
 use core::convert::TryInto;
 use std::collections::HashMap;
-use std::thread::spawn;
+use std::thread::{sleep, spawn};
+use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
 use lnpbp::lnp::application::{message, Messages};
@@ -51,7 +52,7 @@ pub fn run(
     debug!("Starting listening thread for messages from the remote peer");
     let processor = Processor {
         bridge: session::Raw::from_pair_socket(
-            zmqsocket::ApiType::EsbService,
+            zmqsocket::ApiType::EsbClient,
             tx,
         ),
     };
@@ -66,7 +67,7 @@ pub fn run(
         sender,
         awaited_pong: None,
     };
-    let rpc = esb::Controller::init(
+    let mut rpc = esb::Controller::init(
         DaemonId::Connection(id),
         map! {
             Endpoints::Msg => rpc::EndpointCarrier::Address(
@@ -80,10 +81,13 @@ pub fn run(
             Endpoints::Bridge => rpc::EndpointCarrier::Socket(rx)
         },
         runtime,
-        zmqsocket::ApiType::EsbService,
+        zmqsocket::ApiType::EsbClient,
     )?;
 
+    // We have to sleep in order for ZMQ to bootstrap
+    sleep(Duration::from_secs(1));
     info!("connectiond started");
+    rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Hello)?;
     rpc.run_or_panic("connectiond-runtime");
     unreachable!()
 }

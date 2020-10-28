@@ -44,10 +44,11 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
         runtime,
         zmqsocket::ApiType::EsbClient,
     )?;
+
     // We have to sleep in order for ZMQ to bootstrap
     sleep(Duration::from_secs(1));
     info!("channeld started");
-    rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Connect)?;
+    rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Hello)?;
     rpc.run_or_panic("channeld");
     unreachable!()
 }
