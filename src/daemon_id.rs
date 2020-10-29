@@ -19,6 +19,7 @@ use std::str::FromStr;
 use lnpbp::lnp::application::ChannelId;
 use lnpbp::lnp::NodeEndpoint;
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
+use lnpbp_services::esb::ServiceAddress;
 
 /// Identifiers of daemons participating in LNP Node
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Display)]
@@ -42,6 +43,14 @@ pub enum DaemonId {
     Foreign(String),
 }
 
+impl DaemonId {
+    pub fn router() -> DaemonId {
+        DaemonId::Lnpd
+    }
+}
+
+impl ServiceAddress for DaemonId {}
+
 impl AsRef<[u8]> for DaemonId {
     fn as_ref(&self) -> &[u8] {
         match self {
@@ -52,6 +61,12 @@ impl AsRef<[u8]> for DaemonId {
             DaemonId::Channel(channel_id) => channel_id.as_inner().as_ref(),
             DaemonId::Foreign(name) => name.as_bytes(),
         }
+    }
+}
+
+impl From<DaemonId> for Vec<u8> {
+    fn from(daemon_id: DaemonId) -> Self {
+        daemon_id.as_ref().to_vec()
     }
 }
 

@@ -18,12 +18,11 @@
     non_upper_case_globals,
     non_camel_case_types,
     non_snake_case,
-    unused_mut
-)]
+    unused_mut,
 // unused_imports,
 // dead_code
-// TODO: when we will be ready for the release #![deny(missing_docs)]
-// #![warn(missing_docs)]
+// missing_docs,
+)]
 
 #[macro_use]
 extern crate amplify;

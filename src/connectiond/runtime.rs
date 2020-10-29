@@ -19,16 +19,18 @@ use std::thread::{sleep, spawn};
 use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
-use lnpbp::lnp::application::{message, Messages};
 use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
-use lnpbp::lnp::{session, transport};
-use lnpbp::lnp::{PeerConnection, PeerSender, SendMessage, TypedEnum};
-use lnpbp_services::esb;
+use lnpbp::lnp::{
+    message, Messages, PeerConnection, PeerSender, SendMessage, Session,
+    TypedEnum,
+};
+use lnpbp::lnp::{presentation, session, transport};
+use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
-use lnpbp_services::{peer, rpc};
+use lnpbp_services::peer;
 
-use crate::rpc::{Endpoints, Request};
+use crate::rpc::{Request, ServiceBus};
 use crate::{Config, DaemonId, Error};
 
 pub struct MessageFilter {}
@@ -51,7 +53,7 @@ pub fn run(
 
     debug!("Starting listening thread for messages from the remote peer");
     let processor = Processor {
-        bridge: session::Raw::from_pair_socket(
+        bridge: session::Raw::from_zmq_socket_unencrypted(
             zmqsocket::ApiType::EsbClient,
             tx,
         ),
@@ -63,23 +65,24 @@ pub fn run(
 
     debug!("Staring RPC service runtime");
     let runtime = Runtime {
+        identity: DaemonId::Connection(id),
         routing: none!(),
         sender,
         awaited_pong: None,
     };
-    let mut rpc = esb::Controller::init(
-        DaemonId::Connection(id),
+    let mut esb = esb::Controller::init(
         map! {
-            Endpoints::Msg => rpc::EndpointCarrier::Address(
+            ServiceBus::Msg => zmqsocket::Carrier::Locator(
                 config.msg_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Ctl => rpc::EndpointCarrier::Address(
+            ServiceBus::Ctl => zmqsocket::Carrier::Locator(
                 config.ctl_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Bridge => rpc::EndpointCarrier::Socket(rx)
+            ServiceBus::Bridge => zmqsocket::Carrier::Socket(rx)
         },
+        DaemonId::router(),
         runtime,
         zmqsocket::ApiType::EsbClient,
     )?;
@@ -87,12 +90,13 @@ pub fn run(
     // We have to sleep in order for ZMQ to bootstrap
     sleep(Duration::from_secs(1));
     info!("connectiond started");
-    rpc.send_to(Endpoints::Ctl, DaemonId::Lnpd, Request::Hello)?;
-    rpc.run_or_panic("connectiond-runtime");
+    esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
+    esb.run_or_panic("connectiond-runtime");
     unreachable!()
 }
 
 pub struct Runtime {
+    identity: DaemonId,
     #[allow(dead_code)]
     routing: HashMap<ServiceId, MessageFilter>,
     sender: PeerSender,
@@ -107,7 +111,7 @@ pub struct Processor {
 impl Processor {
     fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
         debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
-        self.bridge.send_addr_message(b"", &req.encode()?)?;
+        self.bridge.send_raw_message(&req.encode()?)?;
         Ok(())
     }
 }
@@ -125,7 +129,9 @@ impl peer::Handler for Processor {
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
         debug!("Underlying peer interface requested to handle {:?}", err);
         match err {
-            Error::Transport(transport::Error::TimedOut) => {
+            Error::Peer(presentation::Error::Transport(
+                transport::Error::TimedOut,
+            )) => {
                 trace!("Time to ping the remote peer");
                 // This means socket reading timeout and the fact that we need
                 // to send a ping message
@@ -141,29 +147,30 @@ impl peer::Handler for Processor {
     }
 }
 
-impl esb::Handler<Endpoints> for Runtime {
+impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
     type Address = DaemonId;
     type Error = Error;
 
+    fn identity(&self) -> DaemonId {
+        self.identity.clone()
+    }
+
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<Endpoints>,
-        endpoint: Endpoints,
+        senders: &mut esb::Senders<ServiceBus>,
+        bus: ServiceBus,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
-        match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
-            Endpoints::Bridge => self.handle_bridge(senders, source, request),
+        match bus {
+            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
+            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
+            ServiceBus::Bridge => self.handle_bridge(senders, source, request),
         }
     }
 
-    fn handle_err(
-        &mut self,
-        _: lnpbp_services::rpc::Error,
-    ) -> Result<(), Self::Error> {
+    fn handle_err(&mut self, _: esb::Error) -> Result<(), esb::Error> {
         // We do nothing and do not propagate error; it's already being reported
         // with `error!` macro by the controller. If we propagate error here
         // this will make whole daemon panic
@@ -174,11 +181,10 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
+        _senders: &mut esb::Senders<ServiceBus>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(message) => {
                 // 1. Check permissions
@@ -192,7 +198,7 @@ impl Runtime {
                     "MSG RPC can be only used for forwarding LNPWP messages"
                 );
                 return Err(Error::NotSupported(
-                    Endpoints::Msg,
+                    ServiceBus::Msg,
                     request.get_type(),
                 ));
             }
@@ -202,11 +208,10 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
+        _senders: &mut esb::Senders<ServiceBus>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             /* TODO: Move to connection initialization
             Request::InitConnection => {
@@ -226,7 +231,7 @@ impl Runtime {
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
-                    Endpoints::Ctl,
+                    ServiceBus::Ctl,
                     request.get_type(),
                 ));
             }
@@ -236,7 +241,7 @@ impl Runtime {
 
     fn handle_bridge(
         &mut self,
-        senders: &mut esb::Senders<Endpoints>,
+        senders: &mut esb::Senders<ServiceBus>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -265,7 +270,12 @@ impl Runtime {
             }
 
             Request::LnpwpMessage(Messages::OpenChannel(_)) => {
-                senders.send_to(Endpoints::Msg, DaemonId::Lnpd, request)?;
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    DaemonId::Lnpd,
+                    request,
+                )?;
             }
 
             Request::LnpwpMessage(message) => {
@@ -277,7 +287,7 @@ impl Runtime {
             _ => {
                 error!("Request is not supported by the BRIDGE interface");
                 return Err(Error::NotSupported(
-                    Endpoints::Bridge,
+                    ServiceBus::Bridge,
                     request.get_type(),
                 ))?;
             }

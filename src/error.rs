@@ -18,10 +18,10 @@ use std::io;
 use lnpbp::lnp::TypeId;
 use lnpbp::lnp::{presentation, transport};
 #[cfg(any(feature = "node", feature = "client"))]
-use lnpbp_services::rpc;
+use lnpbp_services::{esb, rpc};
 
 #[cfg(any(feature = "node", feature = "client"))]
-use crate::rpc::Endpoints;
+use crate::rpc::ServiceBus;
 
 #[derive(Clone, Debug, Display, From, Error)]
 #[display(doc_comments)]
@@ -31,25 +31,29 @@ pub enum Error {
     #[from]
     Io(io::ErrorKind),
 
-    /// ZeroMQ error: {_0}
+    /// ESB error: {_0}
+    #[cfg(any(feature = "node", feature = "client"))]
     #[from]
-    #[cfg(feature = "zmq")]
-    Zmq(zmq::Error),
-
-    /// LNP transport-level error: {_0}
-    #[from]
-    Transport(transport::Error),
-
-    /// LNP presentation-level error: {_0}
-    Presentation(presentation::Error),
+    Esb(esb::Error),
 
     /// RPC error: {_0}
     #[cfg(any(feature = "node", feature = "client"))]
+    #[from]
     Rpc(rpc::Error),
+
+    /// Peer interface error: {_0}
+    #[from]
+    Peer(presentation::Error),
+
+    /// Bridge inerface error: {_0}
+    #[cfg(any(feature = "node", feature = "client"))]
+    #[from(zmq::Error)]
+    #[from]
+    Bridge(transport::Error),
 
     /// Provided RPC request is not supported for the used type of endpoint
     #[cfg(any(feature = "node", feature = "client"))]
-    NotSupported(Endpoints, TypeId),
+    NotSupported(ServiceBus, TypeId),
 
     /// Peer does not respond to ping messages
     NotResponding,
@@ -69,23 +73,12 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<presentation::Error> for Error {
-    fn from(err: presentation::Error) -> Self {
-        match err {
-            presentation::Error::Transport(err) => Error::from(err),
-            err => Error::Presentation(err),
-        }
-    }
-}
-
 #[cfg(any(feature = "node", feature = "client"))]
-impl From<rpc::Error> for Error {
-    fn from(err: rpc::Error) -> Self {
+impl From<Error> for esb::Error {
+    fn from(err: Error) -> Self {
         match err {
-            rpc::Error::Transport(err) => Error::from(err),
-            rpc::Error::Presentation(err) => Error::from(err),
-            rpc::Error::Zmq(err) => Error::Zmq(zmq::Error::from_raw(err)),
-            err => Error::Rpc(err),
+            Error::Esb(err) => err,
+            err => esb::Error::ServiceError(err.to_string()),
         }
     }
 }
@@ -94,9 +87,6 @@ impl From<rpc::Error> for Error {
 impl From<Error> for rpc::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::Zmq(err) => rpc::Error::Zmq(err.to_raw()),
-            Error::Transport(err) => rpc::Error::Transport(err),
-            Error::Presentation(err) => rpc::Error::Presentation(err),
             Error::Rpc(err) => err,
             err => rpc::Error::ServerFailure(rpc::Failure {
                 code: 2000,

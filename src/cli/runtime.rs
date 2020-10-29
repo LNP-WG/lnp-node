@@ -19,13 +19,12 @@ use url::Url;
 
 use lnpbp::lnp::transport::zmqsocket;
 use lnpbp_services::esb;
-use lnpbp_services::rpc::EndpointCarrier;
 
-use crate::rpc::{Endpoints, Request};
+use crate::rpc::{Request, ServiceBus};
 use crate::{Config, DaemonId, Error};
 
 pub struct Runtime {
-    client: esb::Controller<Endpoints, Request, Handler>,
+    client: esb::Controller<ServiceBus, Request, Handler>,
 }
 
 impl Runtime {
@@ -35,22 +34,23 @@ impl Runtime {
             "Internal error: URL representation of the CTRL endpoint fails",
         );
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let client = esb::Controller::init(
-            DaemonId::Foreign(url.to_string()),
+        let identity = DaemonId::Foreign(url.to_string());
+        let esb = esb::Controller::init(
             map! {
-                Endpoints::Ctl =>
-                    EndpointCarrier::Address(config.ctl_endpoint.try_into()
+                ServiceBus::Ctl =>
+                    zmqsocket::Carrier::Locator(config.ctl_endpoint.try_into()
                         .expect("Only ZMQ RPC is currently supported"))
 
             },
-            Handler,
+            DaemonId::router(),
+            Handler { identity },
             zmqsocket::ApiType::EsbClient,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self { client })
+        Ok(Self { client: esb })
     }
 
     pub fn request(
@@ -59,22 +59,28 @@ impl Runtime {
         req: Request,
     ) -> Result<(), Error> {
         debug!("Executing {}", req);
-        self.client.send_to(Endpoints::Ctl, daemon, req)?;
+        self.client.send_to(ServiceBus::Ctl, daemon, req)?;
         Ok(())
     }
 }
 
-pub struct Handler;
+pub struct Handler {
+    identity: DaemonId,
+}
 
-impl esb::Handler<Endpoints> for Handler {
+impl esb::Handler<ServiceBus> for Handler {
     type Request = Request;
     type Address = DaemonId;
     type Error = Error;
 
+    fn identity(&self) -> DaemonId {
+        self.identity.clone()
+    }
+
     fn handle(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
-        _endpoint: Endpoints,
+        _senders: &mut esb::Senders<ServiceBus>,
+        _bus: ServiceBus,
         _addr: DaemonId,
         _request: Request,
     ) -> Result<(), Error> {
@@ -82,10 +88,7 @@ impl esb::Handler<Endpoints> for Handler {
         Ok(())
     }
 
-    fn handle_err(
-        &mut self,
-        err: lnpbp_services::rpc::Error,
-    ) -> Result<(), Self::Error> {
+    fn handle_err(&mut self, err: esb::Error) -> Result<(), esb::Error> {
         // We simply propagate the error since it's already being reported
         Err(err)?
     }

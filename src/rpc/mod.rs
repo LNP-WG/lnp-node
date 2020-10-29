@@ -21,10 +21,10 @@ pub use reply::Reply;
 pub use request::Request;
 
 use lnpbp::lnp::rpc_connection::Api;
-use lnpbp_services::rpc::EndpointTypes;
+use lnpbp_services::esb::BusId;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
-pub enum Endpoints {
+pub enum ServiceBus {
     #[display("MSG")]
     Msg,
     #[display("CTL")]
@@ -33,7 +33,7 @@ pub enum Endpoints {
     Bridge,
 }
 
-impl EndpointTypes for Endpoints {}
+impl BusId for ServiceBus {}
 
 pub struct Rpc {}
 

@@ -13,66 +13,75 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use core::convert::TryInto;
+use core::time::Duration;
+use std::thread::sleep;
 
 use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::TypedEnum;
-use lnpbp_services::esb;
+use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
-use lnpbp_services::rpc;
 
-use crate::rpc::{Endpoints, Request};
+use crate::rpc::{Request, ServiceBus};
 use crate::{Config, DaemonId, Error};
 
 pub fn run(config: Config) -> Result<(), Error> {
     debug!("Staring RPC service runtime");
-    let runtime = Runtime {};
-    let rpc = esb::Controller::init(
-        DaemonId::Routing,
+    let runtime = Runtime {
+        identity: DaemonId::Routing,
+    };
+    let mut esb = esb::Controller::init(
         map! {
-            Endpoints::Msg => rpc::EndpointCarrier::Address(
+            ServiceBus::Msg => zmqsocket::Carrier::Locator(
                 config.msg_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             ),
-            Endpoints::Ctl => rpc::EndpointCarrier::Address(
+            ServiceBus::Ctl => zmqsocket::Carrier::Locator(
                 config.ctl_endpoint.try_into()
                     .expect("Only ZMQ RPC is currently supported")
             )
         },
+        DaemonId::router(),
         runtime,
-        zmqsocket::ApiType::EsbService,
+        zmqsocket::ApiType::EsbClient,
     )?;
+
+    sleep(Duration::from_secs(1));
     info!("routed started");
-    rpc.run_or_panic("routed");
+    esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
+    esb.run_or_panic("routed");
     unreachable!()
 }
 
-pub struct Runtime {}
+pub struct Runtime {
+    identity: DaemonId,
+}
 
-impl esb::Handler<Endpoints> for Runtime {
+impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
     type Address = DaemonId;
     type Error = Error;
 
+    fn identity(&self) -> DaemonId {
+        self.identity.clone()
+    }
+
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<Endpoints>,
-        endpoint: Endpoints,
+        senders: &mut esb::Senders<ServiceBus>,
+        bus: ServiceBus,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Self::Error> {
-        match endpoint {
-            Endpoints::Msg => self.handle_rpc_msg(senders, source, request),
-            Endpoints::Ctl => self.handle_rpc_ctl(senders, source, request),
+        match bus {
+            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
+            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
             _ => {
-                Err(Error::NotSupported(Endpoints::Bridge, request.get_type()))
+                Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))
             }
         }
     }
 
-    fn handle_err(
-        &mut self,
-        _: lnpbp_services::rpc::Error,
-    ) -> Result<(), Self::Error> {
+    fn handle_err(&mut self, _: esb::Error) -> Result<(), esb::Error> {
         // We do nothing and do not propagate error; it's already being reported
         // with `error!` macro by the controller. If we propagate error here
         // this will make whole daemon panic
@@ -83,11 +92,10 @@ impl esb::Handler<Endpoints> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
+        _senders: &mut esb::Senders<ServiceBus>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("MSG RPC request from {}: {}", source, request);
         match request {
             Request::LnpwpMessage(_message) => {
                 // TODO: Process message
@@ -97,7 +105,7 @@ impl Runtime {
                     "MSG RPC can be only used for forwarding LNPWP messages"
                 );
                 return Err(Error::NotSupported(
-                    Endpoints::Msg,
+                    ServiceBus::Msg,
                     request.get_type(),
                 ));
             }
@@ -107,16 +115,15 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<Endpoints>,
+        _senders: &mut esb::Senders<ServiceBus>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
-        debug!("CTL RPC request from {}: {}", source, request);
         match request {
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
-                    Endpoints::Ctl,
+                    ServiceBus::Ctl,
                     request.get_type(),
                 ));
             }
