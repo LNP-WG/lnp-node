@@ -20,10 +20,13 @@ use std::str::FromStr;
 use lnpbp::lnp::{zmqsocket, ChannelId, NodeEndpoint, TempChannelId};
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::esb;
+#[cfg(feature = "node")]
 use lnpbp_services::node::TryService;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error};
+use crate::Config;
+#[cfg(feature = "node")]
+use crate::Error;
 
 /// Identifiers of daemons participating in LNP Node
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From)]
@@ -161,6 +164,7 @@ where
     H: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
     esb::Error: From<H::Error>,
 {
+    #[cfg(feature = "node")]
     pub fn run(config: Config, handler: H, broker: bool) -> Result<(), Error> {
         let service = Self::with(config, handler, broker)?;
         service.run_loop()?;
@@ -172,7 +176,7 @@ where
         handler: H,
         broker: bool,
     ) -> Result<Self, esb::Error> {
-        let router = if broker {
+        let router = if !broker {
             Some(ServiceId::router())
         } else {
             None
@@ -226,6 +230,7 @@ where
         )
     }
 
+    #[cfg(feature = "node")]
     pub fn run_loop(mut self) -> Result<(), Error> {
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));

@@ -115,6 +115,15 @@ impl Runtime {
                 channel_req,
                 connectiond,
             }) => {
+                debug!(
+                    "Requesting remote peer to {} with temp id {}",
+                    "open a channel".green(),
+                    channel_req
+                        .temporary_channel_id
+                        .to_string()
+                        .as_str()
+                        .bold()
+                );
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),

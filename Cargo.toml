@@ -83,7 +83,7 @@ default = ["client"]
 # Server is a standalone application that runs daemon
 server = ["node", "shell", "nix", "lnpbp_services/server"]
 # Feature is required for any applications that talks to daemon processes
-client = ["zmq", "lnpbp_services/client"]
+client = ["zmq", "lnpbp_services/client", "lnpbp/keygen"]
 # Embedded is an app that contains ndoe in itself and that talks to it through
 # integration layer
 embedded = ["client", "node", "lnpbp_services/embedded"]

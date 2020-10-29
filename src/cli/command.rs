@@ -12,9 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::Wrapper;
 use lnpbp::bitcoin::secp256k1;
-use lnpbp::lnp::{application::TempChannelId, message};
+use lnpbp::lnp::{message, TempChannelId};
 use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
@@ -36,14 +35,13 @@ impl Exec for Command {
                     &lnpbp::SECP256K1,
                     &secp256k1::key::ONE_KEY,
                 );
+
                 runtime.request(
                     ServiceId::Lnpd,
                     Request::OpenChannelWith(request::ChannelParams {
                         channel_req: message::OpenChannel {
                             chain_hash: none!(),
-                            temporary_channel_id: TempChannelId::from_inner(
-                                [0u8; 32].into(),
-                            ),
+                            temporary_channel_id: TempChannelId::random(),
                             funding_satoshis: 0,
                             push_msat: 0,
                             dust_limit_satoshis: 0,
