@@ -34,7 +34,7 @@ pub fn run(config: Config) -> Result<(), Error> {
         identity: DaemonId::Lnpd,
         opening_channels: none!(),
     };
-    let esb = esb::Controller::init(
+    let esb = esb::Controller::with(
         map! {
             ServiceBus::Msg => zmqsocket::Carrier::Locator(
                 config.msg_endpoint.try_into()
@@ -70,7 +70,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         bus: ServiceBus,
         source: DaemonId,
         request: Request,
@@ -95,7 +95,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -124,7 +124,7 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
@@ -176,7 +176,7 @@ impl Runtime {
 
     fn open_channel(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
         source: DaemonId,
         open_channel: message::OpenChannel,
     ) -> Result<(), Error> {

@@ -35,7 +35,7 @@ impl Runtime {
         );
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
         let identity = DaemonId::Foreign(url.to_string());
-        let esb = esb::Controller::init(
+        let esb = esb::Controller::with(
             map! {
                 ServiceBus::Ctl =>
                     zmqsocket::Carrier::Locator(config.ctl_endpoint.try_into()
@@ -79,7 +79,7 @@ impl esb::Handler<ServiceBus> for Handler {
 
     fn handle(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
         _bus: ServiceBus,
         _addr: DaemonId,
         _request: Request,

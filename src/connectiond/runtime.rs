@@ -19,13 +19,11 @@ use std::thread::{sleep, spawn};
 use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
-use lnpbp::lnp::presentation::Encode;
 use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
 use lnpbp::lnp::{
-    message, Messages, PeerConnection, PeerSender, SendMessage, Session,
-    TypedEnum,
+    message, Messages, PeerConnection, PeerSender, SendMessage, TypedEnum,
 };
-use lnpbp::lnp::{presentation, session, transport};
+use lnpbp::lnp::{presentation, transport};
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
@@ -51,26 +49,32 @@ pub fn run(
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    debug!("Starting listening thread for messages from the remote peer");
-    let processor = Processor {
-        bridge: session::Raw::from_zmq_socket_unencrypted(
-            zmqsocket::ApiType::EsbClient,
-            tx,
-        ),
-    };
-    let listener = peer::Listener::with(receiver, processor);
-    spawn(move || listener.run_or_panic("connectiond-listener"));
-    //.join()
-    //.expect("Error joining receiver thread");
+    let identity = DaemonId::Connection(id);
 
-    debug!("Staring RPC service runtime");
+    debug!("Starting thread listening for messages from the remote peer");
+    let bridge_handler = ListenerRuntime {
+        identity: identity.clone(),
+        bridge: esb::Controller::with(
+            map! {
+                ServiceBus::Bridge => zmqsocket::Carrier::Socket(tx)
+            },
+            identity.clone(),
+            BridgeHandler,
+            zmqsocket::ApiType::EsbClient,
+        )?,
+    };
+    let listener = peer::Listener::with(receiver, bridge_handler);
+    spawn(move || listener.run_or_panic("connectiond-listener"));
+    // TODO: Use the handle returned by spawn to track the child process
+
+    debug!("Staring main service runtime");
     let runtime = Runtime {
-        identity: DaemonId::Connection(id),
+        identity,
         routing: none!(),
         sender,
         awaited_pong: None,
     };
-    let mut esb = esb::Controller::init(
+    let mut esb = esb::Controller::with(
         map! {
             ServiceBus::Msg => zmqsocket::Carrier::Locator(
                 config.msg_endpoint.try_into()
@@ -95,28 +99,49 @@ pub fn run(
     unreachable!()
 }
 
-pub struct Runtime {
+pub struct BridgeHandler;
+
+impl esb::Handler<ServiceBus> for BridgeHandler {
+    type Request = Request;
+    type Address = DaemonId;
+    type Error = Error;
+
+    fn identity(&self) -> DaemonId {
+        DaemonId::Loopback
+    }
+
+    fn handle(
+        &mut self,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _bus: ServiceBus,
+        _addr: DaemonId,
+        _request: Request,
+    ) -> Result<(), Error> {
+        // Bridge does not receive replies for now
+        Ok(())
+    }
+
+    fn handle_err(&mut self, err: esb::Error) -> Result<(), esb::Error> {
+        // We simply propagate the error since it's already being reported
+        Err(err)?
+    }
+}
+
+pub struct ListenerRuntime {
     identity: DaemonId,
-    #[allow(dead_code)]
-    routing: HashMap<ServiceId, MessageFilter>,
-    sender: PeerSender,
-    awaited_pong: Option<u16>,
+    bridge: esb::Controller<ServiceBus, Request, BridgeHandler>,
 }
 
-pub struct Processor {
-    bridge:
-        session::Raw<session::NoEncryption, transport::zmqsocket::Connection>,
-}
-
-impl Processor {
+impl ListenerRuntime {
     fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
         debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
-        self.bridge.send_raw_message(&req.encode()?)?;
+        self.bridge
+            .send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
         Ok(())
     }
 }
 
-impl peer::Handler for Processor {
+impl peer::Handler for ListenerRuntime {
     type Error = crate::Error;
 
     fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
@@ -147,6 +172,14 @@ impl peer::Handler for Processor {
     }
 }
 
+pub struct Runtime {
+    identity: DaemonId,
+    #[allow(dead_code)]
+    routing: HashMap<ServiceId, MessageFilter>,
+    sender: PeerSender,
+    awaited_pong: Option<u16>,
+}
+
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
     type Address = DaemonId;
@@ -158,7 +191,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         bus: ServiceBus,
         source: DaemonId,
         request: Request,
@@ -181,8 +214,8 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
-        source: DaemonId,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -208,8 +241,8 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
-        source: DaemonId,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -241,7 +274,7 @@ impl Runtime {
 
     fn handle_bridge(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {

@@ -24,6 +24,9 @@ use lnpbp_services::esb::ServiceAddress;
 /// Identifiers of daemons participating in LNP Node
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Display)]
 pub enum DaemonId {
+    #[display("loopback")]
+    Loopback,
+
     #[display("lnpd")]
     Lnpd,
 
@@ -54,6 +57,7 @@ impl ServiceAddress for DaemonId {}
 impl AsRef<[u8]> for DaemonId {
     fn as_ref(&self) -> &[u8] {
         match self {
+            DaemonId::Loopback => "loopback".as_bytes(),
             DaemonId::Lnpd => "lnpd".as_bytes(),
             DaemonId::Gossip => "gossipd".as_bytes(),
             DaemonId::Routing => "routed".as_bytes(),
@@ -73,6 +77,7 @@ impl From<DaemonId> for Vec<u8> {
 impl From<Vec<u8>> for DaemonId {
     fn from(vec: Vec<u8>) -> Self {
         match vec.as_slice() {
+            v if v == "loopback".as_bytes() => DaemonId::Loopback,
             v if v == "lnpd".as_bytes() => DaemonId::Lnpd,
             v if v == "gossipd".as_bytes() => DaemonId::Gossip,
             v if v == "routed".as_bytes() => DaemonId::Routing,
@@ -100,16 +105,17 @@ impl StrictEncode for DaemonId {
         mut e: E,
     ) -> Result<usize, Self::Error> {
         Ok(match self {
-            DaemonId::Lnpd => 0u8.strict_encode(e)?,
-            DaemonId::Gossip => 1u8.strict_encode(e)?,
-            DaemonId::Routing => 2u8.strict_encode(e)?,
+            DaemonId::Loopback => 0u8.strict_encode(e)?,
+            DaemonId::Lnpd => 1u8.strict_encode(e)?,
+            DaemonId::Gossip => 2u8.strict_encode(e)?,
+            DaemonId::Routing => 3u8.strict_encode(e)?,
             DaemonId::Connection(peer_id) => {
-                strict_encode_list!(e; 3u8, peer_id)
+                strict_encode_list!(e; 4u8, peer_id)
             }
             DaemonId::Channel(channel_id) => {
-                strict_encode_list!(e; 4u8, channel_id)
+                strict_encode_list!(e; 5u8, channel_id)
             }
-            DaemonId::Foreign(id) => strict_encode_list!(e; 5u8, id),
+            DaemonId::Foreign(id) => strict_encode_list!(e; 6u8, id),
         })
     }
 }
@@ -120,12 +126,13 @@ impl StrictDecode for DaemonId {
     fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, Self::Error> {
         let ty = u8::strict_decode(&mut d)?;
         Ok(match ty {
-            0 => DaemonId::Lnpd,
-            1 => DaemonId::Gossip,
-            2 => DaemonId::Routing,
-            3 => DaemonId::Connection(StrictDecode::strict_decode(&mut d)?),
-            4 => DaemonId::Channel(StrictDecode::strict_decode(&mut d)?),
-            5 => DaemonId::Foreign(StrictDecode::strict_decode(&mut d)?),
+            0 => DaemonId::Loopback,
+            1 => DaemonId::Lnpd,
+            2 => DaemonId::Gossip,
+            3 => DaemonId::Routing,
+            4 => DaemonId::Connection(StrictDecode::strict_decode(&mut d)?),
+            5 => DaemonId::Channel(StrictDecode::strict_decode(&mut d)?),
+            6 => DaemonId::Foreign(StrictDecode::strict_decode(&mut d)?),
             _ => Err(strict_encoding::Error::EnumValueNotKnown(
                 s!("DaemonId"),
                 ty,

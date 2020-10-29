@@ -18,7 +18,7 @@ use std::thread::sleep;
 
 use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::TypedEnum;
-use lnpbp_services::esb::{self, Handler};
+use lnpbp_services::esb;
 use lnpbp_services::node::TryService;
 
 use crate::rpc::{Request, ServiceBus};
@@ -29,7 +29,7 @@ pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime {
         identity: DaemonId::Routing,
     };
-    let mut esb = esb::Controller::init(
+    let mut esb = esb::Controller::with(
         map! {
             ServiceBus::Msg => zmqsocket::Carrier::Locator(
                 config.msg_endpoint.try_into()
@@ -67,7 +67,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus>,
+        senders: &mut esb::Senders<ServiceBus, DaemonId>,
         bus: ServiceBus,
         source: DaemonId,
         request: Request,
@@ -92,8 +92,8 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
-        source: DaemonId,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -115,8 +115,8 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus>,
-        source: DaemonId,
+        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
