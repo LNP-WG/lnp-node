@@ -33,6 +33,7 @@ pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime {
         identity: DaemonId::Lnpd,
         opening_channels: none!(),
+        accepting_channels: none!(),
     };
     let esb = esb::Controller::with(
         map! {
@@ -56,7 +57,8 @@ pub fn run(config: Config) -> Result<(), Error> {
 
 pub struct Runtime {
     identity: DaemonId,
-    opening_channels: HashMap<DaemonId, (DaemonId, message::OpenChannel)>,
+    opening_channels: HashMap<DaemonId, request::ChannelParams>,
+    accepting_channels: HashMap<DaemonId, request::ChannelParams>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -100,9 +102,13 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
+            Request::Hello => {
+                // Ignoring; this is used to set remote identity at ZMQ level
+            }
+
             Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Creating channel by peer request from {}", source);
-                self.open_channel(senders, source, open_channel)?;
+                self.create_channel(senders, source, open_channel, true)?;
             }
 
             Request::LnpwpMessage(_) => {
@@ -129,35 +135,46 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::CreateChannel(request::CreateChannel {
+            Request::OpenChannelWith(request::ChannelParams {
                 channel_req,
                 connectiond,
             }) => {
                 info!("Creating channel by request from {}", source);
-                self.open_channel(senders, connectiond, channel_req)?;
+                self.create_channel(senders, connectiond, channel_req, false)?;
             }
 
             Request::Hello => {
                 // Ignoring; this is used to set remote identity at ZMQ level
                 trace!("{} says hello", source);
 
-                if let Some((connectiond, open_channel)) =
-                    self.opening_channels.get(&source)
+                if let Some(channel_params) = self.opening_channels.get(&source)
                 {
                     // Tell channeld channel options and link it with the
                     // connection daemon
                     debug!(
                         "Daemon {} is known: we spawned it to create a channel. \
-                         Ordering channel creation", source
+                         Ordering channel opening", source
                     );
                     senders.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
                         source.clone(),
-                        Request::CreateChannel(request::CreateChannel {
-                            channel_req: open_channel.clone(),
-                            connectiond: connectiond.clone(),
-                        }),
+                        Request::OpenChannelWith(channel_params.clone()),
+                    )?;
+                } else if let Some(channel_params) =
+                    self.accepting_channels.get(&source)
+                {
+                    // Tell channeld channel options and link it with the
+                    // connection daemon
+                    debug!(
+                        "Daemon {} is known: we spawned it to create a channel. \
+                         Ordering channel acceptance", source
+                    );
+                    senders.send_to(
+                        ServiceBus::Ctl,
+                        self.identity(),
+                        source.clone(),
+                        Request::AcceptChannelFrom(channel_params.clone()),
                     )?;
                 }
             }
@@ -174,11 +191,12 @@ impl Runtime {
         Ok(())
     }
 
-    fn open_channel(
+    fn create_channel(
         &mut self,
         _senders: &mut esb::Senders<ServiceBus, DaemonId>,
         source: DaemonId,
         open_channel: message::OpenChannel,
+        accept: bool,
     ) -> Result<(), Error> {
         debug!("Instantiating channeld...");
 
@@ -192,11 +210,19 @@ impl Runtime {
                 Ok(())
             })?;
 
-        self.opening_channels.insert(
+        let list = if accept {
+            &mut self.accepting_channels
+        } else {
+            &mut self.opening_channels
+        };
+        list.insert(
             DaemonId::Channel(ChannelId::from_inner(
                 open_channel.temporary_channel_id.into_inner(),
             )),
-            (source, open_channel),
+            request::ChannelParams {
+                channel_req: open_channel,
+                connectiond: source,
+            },
         );
         debug!("Awaiting for channeld to connect...");
 

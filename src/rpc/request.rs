@@ -34,15 +34,19 @@ pub enum Request {
     PingPeer,
 
     #[lnp_api(type = 3)]
-    #[display("create_channel(...)")]
-    CreateChannel(CreateChannel),
+    #[display("create_channel_with(...)")]
+    OpenChannelWith(ChannelParams),
+
+    #[lnp_api(type = 4)]
+    #[display("accept_channel_from(...)")]
+    AcceptChannelFrom(ChannelParams),
 }
 
 impl rpc_connection::Request for Request {}
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[display(Debug)]
-pub struct CreateChannel {
+pub struct ChannelParams {
     pub channel_req: message::OpenChannel,
     pub connectiond: DaemonId,
 }

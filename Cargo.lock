@@ -345,6 +345,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "colored"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
+dependencies = [
+ "atty",
+ "lazy_static",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "config"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -887,6 +898,7 @@ dependencies = [
  "bech32",
  "clap",
  "clap_generate",
+ "colored",
  "config",
  "configure_me",
  "configure_me_codegen",
@@ -914,7 +926,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#a6e566c471d72ade339e2f36aefbbcbfab76a6c8"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#8b743a497eca075073e23b5b7e8f28e951147648"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",
@@ -954,7 +966,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#a6e566c471d72ade339e2f36aefbbcbfab76a6c8"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#8b743a497eca075073e23b5b7e8f28e951147648"
 dependencies = [
  "amplify 2.0.6",
  "quote 1.0.7",
@@ -964,7 +976,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.1"
-source = "git+https://github.com/LNP-BP/rust-lnpbp#a6e566c471d72ade339e2f36aefbbcbfab76a6c8"
+source = "git+https://github.com/LNP-BP/rust-lnpbp#8b743a497eca075073e23b5b7e8f28e951147648"
 dependencies = [
  "amplify 2.0.6",
  "amplify_derive",

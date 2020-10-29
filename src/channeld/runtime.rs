@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use colored::Colorize;
 use core::convert::TryInto;
 use std::thread::sleep;
 use std::time::Duration;
@@ -50,6 +51,7 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     sleep(Duration::from_secs(1));
     info!("channeld started");
     esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
+    esb.send_to(ServiceBus::Msg, DaemonId::Lnpd, Request::Hello)?;
     esb.run_or_panic("channeld");
     unreachable!()
 }
@@ -95,10 +97,23 @@ impl Runtime {
     fn handle_rpc_msg(
         &mut self,
         _senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        _source: DaemonId,
+        source: DaemonId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
+            Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
+                info!(
+                    "{} from the remote peer {} with temporary id {}",
+                    "Accepting channel".bold(),
+                    source.to_string().as_str().italic(),
+                    accept_channel
+                        .temporary_channel_id
+                        .to_string()
+                        .as_str()
+                        .italic()
+                );
+            }
+
             Request::LnpwpMessage(_) => {
                 // Ignore the rest of LN peer messages
             }
@@ -123,7 +138,18 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::CreateChannel(request::CreateChannel {
+            Request::OpenChannelWith(request::ChannelParams {
+                channel_req,
+                connectiond,
+            }) => {
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    connectiond,
+                    Request::LnpwpMessage(Messages::OpenChannel(channel_req)),
+                )?;
+            }
+            Request::AcceptChannelFrom(request::ChannelParams {
                 channel_req,
                 connectiond,
             }) => {
@@ -131,33 +157,32 @@ impl Runtime {
                     &lnpbp::SECP256K1,
                     &secp256k1::key::ONE_KEY,
                 );
+                let accept_channel = message::AcceptChannel {
+                    temporary_channel_id: channel_req.temporary_channel_id,
+                    dust_limit_satoshis: channel_req.dust_limit_satoshis,
+                    max_htlc_value_in_flight_msat: channel_req
+                        .max_htlc_value_in_flight_msat,
+                    channel_reserve_satoshis: channel_req
+                        .channel_reserve_satoshis,
+                    htlc_minimum_msat: channel_req.htlc_minimum_msat,
+                    minimum_depth: 3, // TODO: take from config options
+                    to_self_delay: channel_req.to_self_delay,
+                    max_accepted_htlcs: channel_req.max_accepted_htlcs,
+                    funding_pubkey: dumb_key,
+                    revocation_basepoint: dumb_key,
+                    payment_point: dumb_key,
+                    delayed_payment_basepoint: dumb_key,
+                    htlc_basepoint: dumb_key,
+                    first_per_commitment_point: dumb_key,
+                    shutdown_scriptpubkey: None,
+                    unknown_tlvs: none!(),
+                };
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     connectiond,
                     Request::LnpwpMessage(Messages::AcceptChannel(
-                        message::AcceptChannel {
-                            temporary_channel_id: channel_req
-                                .temporary_channel_id,
-                            dust_limit_satoshis: channel_req
-                                .dust_limit_satoshis,
-                            max_htlc_value_in_flight_msat: channel_req
-                                .max_htlc_value_in_flight_msat,
-                            channel_reserve_satoshis: channel_req
-                                .channel_reserve_satoshis,
-                            htlc_minimum_msat: channel_req.htlc_minimum_msat,
-                            minimum_depth: 3, // TODO: take from config options
-                            to_self_delay: channel_req.to_self_delay,
-                            max_accepted_htlcs: channel_req.max_accepted_htlcs,
-                            funding_pubkey: dumb_key,
-                            revocation_basepoint: dumb_key,
-                            payment_point: dumb_key,
-                            delayed_payment_basepoint: dumb_key,
-                            htlc_basepoint: dumb_key,
-                            first_per_commitment_point: dumb_key,
-                            shutdown_scriptpubkey: None,
-                            unknown_tlvs: none!(),
-                        },
+                        accept_channel,
                     )),
                 )?;
             }

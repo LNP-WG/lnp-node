@@ -36,7 +36,7 @@ impl Exec for Command {
                 );
                 runtime.request(
                     DaemonId::Lnpd,
-                    Request::CreateChannel(request::CreateChannel {
+                    Request::OpenChannelWith(request::ChannelParams {
                         channel_req: message::OpenChannel {
                             chain_hash: none!(),
                             temporary_channel_id: TempChannelId::from_inner(

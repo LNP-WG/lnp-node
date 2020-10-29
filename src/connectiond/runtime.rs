@@ -95,6 +95,7 @@ pub fn run(
     sleep(Duration::from_secs(1));
     info!("connectiond started");
     esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
+    esb.send_to(ServiceBus::Msg, DaemonId::Lnpd, Request::Hello)?;
     esb.run_or_panic("connectiond-runtime");
     unreachable!()
 }
@@ -146,7 +147,6 @@ impl peer::Handler for ListenerRuntime {
 
     fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
-        debug!("LNPWP message from peer: {}", message);
         trace!("LNPWP message details: {:?}", message);
         self.send_over_bridge(Request::LnpwpMessage(message))
     }
@@ -308,6 +308,17 @@ impl Runtime {
                     self.identity(),
                     DaemonId::Lnpd,
                     request,
+                )?;
+            }
+
+            Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    accept_channel.temporary_channel_id.into(),
+                    Request::LnpwpMessage(Messages::AcceptChannel(
+                        accept_channel,
+                    )),
                 )?;
             }
 

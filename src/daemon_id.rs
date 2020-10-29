@@ -16,13 +16,13 @@ use amplify::Wrapper;
 use std::io;
 use std::str::FromStr;
 
-use lnpbp::lnp::application::ChannelId;
+use lnpbp::lnp::application::{ChannelId, TempChannelId};
 use lnpbp::lnp::NodeEndpoint;
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::esb::ServiceAddress;
 
 /// Identifiers of daemons participating in LNP Node
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Display)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From)]
 pub enum DaemonId {
     #[display("loopback")]
     Loopback,
@@ -40,6 +40,8 @@ pub enum DaemonId {
     Connection(String),
 
     #[display("channel<{_0:#x}>")]
+    #[from]
+    #[from(TempChannelId)]
     Channel(ChannelId),
 
     #[display("external<{_0}>")]
