@@ -12,13 +12,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::Wrapper;
 use std::convert::TryInto;
 use std::io;
-use std::str::FromStr;
 
-use lnpbp::lnp::{zmqsocket, ChannelId, NodeEndpoint, TempChannelId};
-use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
+use lnpbp::lnp::{zmqsocket, ChannelId, TempChannelId};
+use lnpbp::strict_encoding::{
+    self, strict_decode, strict_encode, StrictDecode, StrictEncode,
+};
 use lnpbp_services::esb;
 #[cfg(feature = "node")]
 use lnpbp_services::node::TryService;
@@ -63,46 +63,17 @@ impl ServiceId {
 
 impl esb::ServiceAddress for ServiceId {}
 
-impl AsRef<[u8]> for ServiceId {
-    fn as_ref(&self) -> &[u8] {
-        match self {
-            ServiceId::Loopback => "loopback".as_bytes(),
-            ServiceId::Lnpd => "lnpd".as_bytes(),
-            ServiceId::Gossip => "gossipd".as_bytes(),
-            ServiceId::Routing => "routed".as_bytes(),
-            ServiceId::Connection(endpoint) => endpoint.as_ref(),
-            ServiceId::Channel(channel_id) => channel_id.as_inner().as_ref(),
-            ServiceId::Foreign(name) => name.as_bytes(),
-        }
-    }
-}
-
 impl From<ServiceId> for Vec<u8> {
     fn from(daemon_id: ServiceId) -> Self {
-        daemon_id.as_ref().to_vec()
+        strict_encode(&daemon_id).expect("Memory-based encoding does not fail")
     }
 }
 
 impl From<Vec<u8>> for ServiceId {
     fn from(vec: Vec<u8>) -> Self {
-        match vec.as_slice() {
-            v if v == "loopback".as_bytes() => ServiceId::Loopback,
-            v if v == "lnpd".as_bytes() => ServiceId::Lnpd,
-            v if v == "gossipd".as_bytes() => ServiceId::Gossip,
-            v if v == "routed".as_bytes() => ServiceId::Routing,
-            v => {
-                let s = String::from_utf8_lossy(v).to_string();
-                if NodeEndpoint::from_str(&s).is_ok() {
-                    ServiceId::Connection(s)
-                } else if v.len() == 32 {
-                    let mut hash = [0u8; 32];
-                    hash.copy_from_slice(v);
-                    ServiceId::Channel(ChannelId::from_inner(hash.into()))
-                } else {
-                    ServiceId::Foreign(s)
-                }
-            }
-        }
+        strict_decode(&vec).unwrap_or_else(|_| {
+            ServiceId::Foreign(String::from_utf8_lossy(&vec).to_string())
+        })
     }
 }
 

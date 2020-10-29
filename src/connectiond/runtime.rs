@@ -59,7 +59,7 @@ pub fn run(
                 }
             },
             BridgeHandler,
-            zmqsocket::ApiType::EsbClient,
+            zmqsocket::ApiType::Server,
         )?,
     };
     let listener = peer::Listener::with(receiver, bridge_handler);
