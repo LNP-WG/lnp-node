@@ -21,7 +21,7 @@ use lnpbp::lnp::transport::zmqsocket;
 use lnpbp_services::esb;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, DaemonId, Error};
+use crate::{Config, Error, ServiceId};
 
 pub struct Runtime {
     client: esb::Controller<ServiceBus, Request, Handler>,
@@ -34,15 +34,18 @@ impl Runtime {
             "Internal error: URL representation of the CTRL endpoint fails",
         );
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let identity = DaemonId::Foreign(url.to_string());
+        let identity = ServiceId::Foreign(url.to_string());
+        let bus_config = esb::BusConfig::with_locator(
+            config
+                .ctl_endpoint
+                .try_into()
+                .expect("Only ZMQ RPC is currently supported"),
+            Some(ServiceId::router()),
+        );
         let esb = esb::Controller::with(
             map! {
-                ServiceBus::Ctl =>
-                    zmqsocket::Carrier::Locator(config.ctl_endpoint.try_into()
-                        .expect("Only ZMQ RPC is currently supported"))
-
+                ServiceBus::Ctl => bus_config
             },
-            DaemonId::router(),
             Handler { identity },
             zmqsocket::ApiType::EsbClient,
         )?;
@@ -55,7 +58,7 @@ impl Runtime {
 
     pub fn request(
         &mut self,
-        daemon: DaemonId,
+        daemon: ServiceId,
         req: Request,
     ) -> Result<(), Error> {
         debug!("Executing {}", req);
@@ -65,23 +68,23 @@ impl Runtime {
 }
 
 pub struct Handler {
-    identity: DaemonId,
+    identity: ServiceId,
 }
 
 impl esb::Handler<ServiceBus> for Handler {
     type Request = Request;
-    type Address = DaemonId;
+    type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> DaemonId {
+    fn identity(&self) -> ServiceId {
         self.identity.clone()
     }
 
     fn handle(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         _bus: ServiceBus,
-        _addr: DaemonId,
+        _addr: ServiceId,
         _request: Request,
     ) -> Result<(), Error> {
         // Cli does not receive replies for now

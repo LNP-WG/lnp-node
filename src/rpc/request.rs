@@ -15,7 +15,7 @@
 use lnpbp::lnp::rpc_connection;
 use lnpbp::lnp::{message, Messages};
 
-use crate::DaemonId;
+use crate::ServiceId;
 
 #[derive(Clone, Debug, Display, LnpApi)]
 #[lnp_api(encoding = "strict")]
@@ -48,5 +48,5 @@ impl rpc_connection::Request for Request {}
 #[display(Debug)]
 pub struct ChannelParams {
     pub channel_req: message::OpenChannel,
-    pub connectiond: DaemonId,
+    pub connectiond: ServiceId,
 }

@@ -19,7 +19,7 @@ use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
 use crate::rpc::{request, Request};
-use crate::{DaemonId, Error};
+use crate::{Error, ServiceId};
 
 impl Exec for Command {
     type Runtime = Runtime;
@@ -28,14 +28,16 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
-            Command::Ping => runtime.request(DaemonId::Lnpd, Request::PingPeer),
+            Command::Ping => {
+                runtime.request(ServiceId::Lnpd, Request::PingPeer)
+            }
             Command::CreateChannel { node_addr } => {
                 let dumb_key = secp256k1::PublicKey::from_secret_key(
                     &lnpbp::SECP256K1,
                     &secp256k1::key::ONE_KEY,
                 );
                 runtime.request(
-                    DaemonId::Lnpd,
+                    ServiceId::Lnpd,
                     Request::OpenChannelWith(request::ChannelParams {
                         channel_req: message::OpenChannel {
                             chain_hash: none!(),
@@ -61,7 +63,7 @@ impl Exec for Command {
                             shutdown_scriptpubkey: None,
                             unknown_tlvs: none!(),
                         },
-                        connectiond: DaemonId::Connection(
+                        connectiond: ServiceId::Connection(
                             node_addr.to_string(),
                         ),
                     }),

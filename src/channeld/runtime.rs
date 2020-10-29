@@ -13,67 +13,40 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use colored::Colorize;
-use core::convert::TryInto;
-use std::thread::sleep;
-use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1;
-use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb::{self, Handler};
-use lnpbp_services::node::TryService;
 
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, DaemonId, Error};
+use crate::{Config, Error, Service, ServiceId};
 
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
-    debug!("Staring RPC service runtime");
     let runtime = Runtime {
-        identity: DaemonId::Channel(channel_id),
+        identity: ServiceId::Channel(channel_id),
     };
-    let mut esb = esb::Controller::with(
-        map! {
-            ServiceBus::Msg => zmqsocket::Carrier::Locator(
-                config.msg_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            ),
-            ServiceBus::Ctl => zmqsocket::Carrier::Locator(
-                config.ctl_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            )
-        },
-        DaemonId::router(),
-        runtime,
-        zmqsocket::ApiType::EsbClient,
-    )?;
 
-    // We have to sleep in order for ZMQ to bootstrap
-    sleep(Duration::from_secs(1));
-    info!("channeld started");
-    esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
-    esb.send_to(ServiceBus::Msg, DaemonId::Lnpd, Request::Hello)?;
-    esb.run_or_panic("channeld");
-    unreachable!()
+    Service::run(config, runtime, false)
 }
 
 pub struct Runtime {
-    identity: DaemonId,
+    identity: ServiceId,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
-    type Address = DaemonId;
+    type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> DaemonId {
+    fn identity(&self) -> ServiceId {
         self.identity.clone()
     }
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         bus: ServiceBus,
-        source: DaemonId,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match bus {
@@ -96,8 +69,8 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        source: DaemonId,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -133,8 +106,8 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        _source: DaemonId,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {

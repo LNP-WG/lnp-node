@@ -13,68 +13,48 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Wrapper;
-use core::convert::TryInto;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::io;
 use std::process;
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
-use lnpbp::lnp::transport::zmqsocket;
 use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb::{self, Handler};
-use lnpbp_services::node::TryService;
 
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, DaemonId, Error};
+use crate::{Config, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    debug!("Staring RPC service runtime");
     let runtime = Runtime {
-        identity: DaemonId::Lnpd,
+        identity: ServiceId::Lnpd,
         opening_channels: none!(),
         accepting_channels: none!(),
     };
-    let esb = esb::Controller::with(
-        map! {
-            ServiceBus::Msg => zmqsocket::Carrier::Locator(
-                config.msg_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            ),
-            ServiceBus::Ctl => zmqsocket::Carrier::Locator(
-                config.ctl_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            )
-        },
-        DaemonId::router(),
-        runtime,
-        zmqsocket::ApiType::EsbService,
-    )?;
-    info!("lnpd started");
-    esb.run_or_panic("lnpd");
-    unreachable!()
+
+    Service::run(config, runtime, true)
 }
 
 pub struct Runtime {
-    identity: DaemonId,
-    opening_channels: HashMap<DaemonId, request::ChannelParams>,
-    accepting_channels: HashMap<DaemonId, request::ChannelParams>,
+    identity: ServiceId,
+    opening_channels: HashMap<ServiceId, request::ChannelParams>,
+    accepting_channels: HashMap<ServiceId, request::ChannelParams>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
-    type Address = DaemonId;
+    type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> DaemonId {
+    fn identity(&self) -> ServiceId {
         self.identity.clone()
     }
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         bus: ServiceBus,
-        source: DaemonId,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match bus {
@@ -97,8 +77,8 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        source: DaemonId,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -130,8 +110,8 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        source: DaemonId,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -193,8 +173,8 @@ impl Runtime {
 
     fn create_channel(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        source: DaemonId,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        source: ServiceId,
         open_channel: message::OpenChannel,
         accept: bool,
     ) -> Result<(), Error> {
@@ -216,7 +196,7 @@ impl Runtime {
             &mut self.opening_channels
         };
         list.insert(
-            DaemonId::Channel(ChannelId::from_inner(
+            ServiceId::Channel(ChannelId::from_inner(
                 open_channel.temporary_channel_id.into_inner(),
             )),
             request::ChannelParams {

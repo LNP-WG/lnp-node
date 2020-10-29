@@ -13,10 +13,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Bipolar;
-use core::convert::TryInto;
 use std::collections::HashMap;
-use std::thread::{sleep, spawn};
-use std::time::Duration;
+use std::thread::spawn;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
 use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
@@ -29,11 +27,9 @@ use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, DaemonId, Error};
+use crate::{Config, Error, Service, ServiceId};
 
 pub struct MessageFilter {}
-
-pub struct ServiceId {}
 
 pub fn run(
     config: Config,
@@ -49,16 +45,19 @@ pub fn run(
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    let identity = DaemonId::Connection(id);
+    let identity = ServiceId::Connection(id);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {
         identity: identity.clone(),
         bridge: esb::Controller::with(
             map! {
-                ServiceBus::Bridge => zmqsocket::Carrier::Socket(tx)
+                ServiceBus::Bridge => esb::BusConfig {
+                    carrier: zmqsocket::Carrier::Socket(tx),
+                    router: None,
+                    queued: true,
+                }
             },
-            identity.clone(),
             BridgeHandler,
             zmqsocket::ApiType::EsbClient,
         )?,
@@ -74,29 +73,9 @@ pub fn run(
         sender,
         awaited_pong: None,
     };
-    let mut esb = esb::Controller::with(
-        map! {
-            ServiceBus::Msg => zmqsocket::Carrier::Locator(
-                config.msg_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            ),
-            ServiceBus::Ctl => zmqsocket::Carrier::Locator(
-                config.ctl_endpoint.try_into()
-                    .expect("Only ZMQ RPC is currently supported")
-            ),
-            ServiceBus::Bridge => zmqsocket::Carrier::Socket(rx)
-        },
-        DaemonId::router(),
-        runtime,
-        zmqsocket::ApiType::EsbClient,
-    )?;
-
-    // We have to sleep in order for ZMQ to bootstrap
-    sleep(Duration::from_secs(1));
-    info!("connectiond started");
-    esb.send_to(ServiceBus::Ctl, DaemonId::Lnpd, Request::Hello)?;
-    esb.send_to(ServiceBus::Msg, DaemonId::Lnpd, Request::Hello)?;
-    esb.run_or_panic("connectiond-runtime");
+    let mut service = Service::service(config, runtime)?;
+    service.add_loopback(rx)?;
+    service.run_loop()?;
     unreachable!()
 }
 
@@ -104,18 +83,18 @@ pub struct BridgeHandler;
 
 impl esb::Handler<ServiceBus> for BridgeHandler {
     type Request = Request;
-    type Address = DaemonId;
+    type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> DaemonId {
-        DaemonId::Loopback
+    fn identity(&self) -> ServiceId {
+        ServiceId::Loopback
     }
 
     fn handle(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         _bus: ServiceBus,
-        _addr: DaemonId,
+        _addr: ServiceId,
         _request: Request,
     ) -> Result<(), Error> {
         // Bridge does not receive replies for now
@@ -129,7 +108,7 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
 }
 
 pub struct ListenerRuntime {
-    identity: DaemonId,
+    identity: ServiceId,
     bridge: esb::Controller<ServiceBus, Request, BridgeHandler>,
 }
 
@@ -173,7 +152,7 @@ impl peer::Handler for ListenerRuntime {
 }
 
 pub struct Runtime {
-    identity: DaemonId,
+    identity: ServiceId,
     #[allow(dead_code)]
     routing: HashMap<ServiceId, MessageFilter>,
     sender: PeerSender,
@@ -182,18 +161,18 @@ pub struct Runtime {
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
-    type Address = DaemonId;
+    type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> DaemonId {
+    fn identity(&self) -> ServiceId {
         self.identity.clone()
     }
 
     fn handle(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         bus: ServiceBus,
-        source: DaemonId,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Self::Error> {
         match bus {
@@ -214,8 +193,8 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        _source: DaemonId,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -241,8 +220,8 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        _source: DaemonId,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
@@ -274,8 +253,8 @@ impl Runtime {
 
     fn handle_bridge(
         &mut self,
-        senders: &mut esb::Senders<ServiceBus, DaemonId>,
-        _source: DaemonId,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
@@ -306,7 +285,7 @@ impl Runtime {
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    DaemonId::Lnpd,
+                    ServiceId::Lnpd,
                     request,
                 )?;
             }
