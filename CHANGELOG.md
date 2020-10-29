@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v0.1.0-alpha.3
+--------------
+
+- Channel negotiation between nodes
+- Reworked service buses
+- Separated general service runtime functionality
+
 v0.1.0-alpha.2
 --------------
 
