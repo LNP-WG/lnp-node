@@ -219,7 +219,7 @@ impl Runtime {
                   }*/
             }
 
-            Request::Connect(node_addr) => {
+            Request::ConnectPeer(node_addr) => {
                 info!(
                     "{} to remote peer {}",
                     "Connecting".promo(),

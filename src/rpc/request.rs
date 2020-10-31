@@ -12,7 +12,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::{message, rpc_connection, Messages};
+use lnpbp::lnp::{
+    message, rpc_connection, Messages, NodeAddr, RemoteSocketAddr,
+};
 
 use crate::ServiceId;
 
@@ -28,19 +30,27 @@ pub enum Request {
     #[display("lnpwp({_0})")]
     LnpwpMessage(Messages),
 
+    // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 2)]
     #[display("connect()")]
-    Connect(String),
+    Listen(RemoteSocketAddr),
 
+    // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 3)]
+    #[display("connect()")]
+    ConnectPeer(NodeAddr),
+
+    // Can be issued from `cli` to a specific `connectiond`
+    #[lnp_api(type = 4)]
     #[display("ping_peer()")]
     PingPeer,
 
-    #[lnp_api(type = 4)]
+    // Can be issued from `cli` to `lnpd`
+    #[lnp_api(type = 5)]
     #[display("create_channel_with(...)")]
     OpenChannelWith(ChannelParams),
 
-    #[lnp_api(type = 5)]
+    #[lnp_api(type = 6)]
     #[display("accept_channel_from(...)")]
     AcceptChannelFrom(ChannelParams),
 }

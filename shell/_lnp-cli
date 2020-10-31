@@ -42,7 +42,33 @@ _lnp-cli() {
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:lnp-cli-command-$line[1]:"
         case $line[1] in
-            (connect)
+            (listen)
+_arguments "${_arguments_options[@]}" \
+'-i+[IPv4 or IPv6 address to bind to]' \
+'--ip=[IPv4 or IPv6 address to bind to]' \
+'-p+[Port to use; defaults to the native LN port]' \
+'--port=[Port to use; defaults to the native LN port]' \
+'-o+[Use overlay protocol (http, websocket etc)]' \
+'--overlay=[Use overlay protocol (http, websocket etc)]' \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+&& ret=0
+;;
+(connect)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -60,7 +86,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
-':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
 (ping)
@@ -81,7 +107,88 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
-':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+&& ret=0
+;;
+(funding-info)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+&& ret=0
+;;
+(list-funds)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+'*::asset -- Space-separated list of asset identifiers or tickers. If none are given lists all avaliable assets:' \
+&& ret=0
+;;
+(list-peers)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+&& ret=0
+;;
+(list-channels)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
 && ret=0
 ;;
 (create-channel)
@@ -102,7 +209,74 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
-':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':satoshis -- Amount of satoshis to allocate to the channel:' \
+&& ret=0
+;;
+(fund-channel)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':channel -- Channel to which the funding must be added:' \
+'*::asset -- Asset-fund pair:' \
+&& ret=0
+;;
+(invoice)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
+'::asset -- Asset ticker in which the invoice should be issued:' \
+&& ret=0
+;;
+(pay)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':invoice -- Invoice bech32 string:' \
+':channel -- Channel from which the payment should happen:' \
 && ret=0
 ;;
 (help)
@@ -121,9 +295,17 @@ esac
 (( $+functions[_lnp-cli_commands] )) ||
 _lnp-cli_commands() {
     local commands; commands=(
-        "connect:Connect to the peer" \
-"ping:Ping remote peer" \
-"create-channel:Establishes new channel" \
+        "listen:Bind to a socket and start listening for incoming LN peer connections" \
+"connect:Connect to the remote lightning network peer" \
+"ping:Ping remote peer (must be already connected)" \
+"funding-info:Provides information about funding points (bitcoin address or UTXO for RGB assets)" \
+"list-funds:Lists all funds available for channel creation for given list of assets" \
+"list-peers:Lists existing peer connections" \
+"list-channels:Lists existing channels" \
+"create-channel:Create a new channel with the remote peer, which must be already connected" \
+"fund-channel:Adds RGB assets to an existing channel" \
+"invoice:Create an invoice" \
+"pay:Pay the invoice" \
 "help:Prints this message or the help of the given subcommand(s)" \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
@@ -142,12 +324,68 @@ _lnp-cli__create-channel_commands() {
     )
     _describe -t commands 'lnp-cli create-channel commands' commands "$@"
 }
+(( $+functions[_lnp-cli__fund-channel_commands] )) ||
+_lnp-cli__fund-channel_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli fund-channel commands' commands "$@"
+}
+(( $+functions[_lnp-cli__funding-info_commands] )) ||
+_lnp-cli__funding-info_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli funding-info commands' commands "$@"
+}
 (( $+functions[_lnp-cli__help_commands] )) ||
 _lnp-cli__help_commands() {
     local commands; commands=(
         
     )
     _describe -t commands 'lnp-cli help commands' commands "$@"
+}
+(( $+functions[_lnp-cli__invoice_commands] )) ||
+_lnp-cli__invoice_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli invoice commands' commands "$@"
+}
+(( $+functions[_lnp-cli__list-channels_commands] )) ||
+_lnp-cli__list-channels_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli list-channels commands' commands "$@"
+}
+(( $+functions[_lnp-cli__list-funds_commands] )) ||
+_lnp-cli__list-funds_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli list-funds commands' commands "$@"
+}
+(( $+functions[_lnp-cli__list-peers_commands] )) ||
+_lnp-cli__list-peers_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli list-peers commands' commands "$@"
+}
+(( $+functions[_lnp-cli__listen_commands] )) ||
+_lnp-cli__listen_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli listen commands' commands "$@"
+}
+(( $+functions[_lnp-cli__pay_commands] )) ||
+_lnp-cli__pay_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli pay commands' commands "$@"
 }
 (( $+functions[_lnp-cli__ping_commands] )) ||
 _lnp-cli__ping_commands() {

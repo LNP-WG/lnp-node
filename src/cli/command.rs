@@ -29,18 +29,15 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
-            Command::Connect { node_locator } => {
+            Command::Connect { peer: node_locator } => {
                 let peer = node_locator
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
 
-                runtime.request(
-                    ServiceId::Lnpd,
-                    Request::Connect(peer.to_string()),
-                )
+                runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))
             }
 
-            Command::Ping { node_locator: _ } => {
+            Command::Ping { peer: _ } => {
                 unimplemented!()
                 /*
                 let peer = node_locator
@@ -51,7 +48,10 @@ impl Exec for Command {
                  */
             }
 
-            Command::CreateChannel { node_locator } => {
+            Command::CreateChannel {
+                peer: node_locator,
+                satoshis: _,
+            } => {
                 let peer = node_locator
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
@@ -92,6 +92,8 @@ impl Exec for Command {
                     }),
                 )
             }
+
+            _ => unimplemented!(),
         }
     }
 }

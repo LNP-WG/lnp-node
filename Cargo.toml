@@ -72,6 +72,11 @@ configure_me_codegen = "~0.3.14"
 # Remove this once https://github.com/jean-airoldie/zeromq-src-rs/pull/15 got merged
 # zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
 
+# This fixing Display implementation for ParseOrSemanticError and must be
+# removed once the corresponding PR will be merged:
+# <https://github.com/rust-bitcoin/rust-lightning-invoice/pull/43>
+lightning-invoice = { git = "git://github.com/LNP-BP/rust-lightning-invoice", branch = "fix/error" }
+
 # Recommended set of features:
 # 1. Standalone node: `server` (=`node`+`shell`)
 # 2. Cli to remote node: `cli` (auto includes `shell` and `integration`)
