@@ -146,13 +146,13 @@ More information on the service buses used in the node:
   - [`src/channeld`](src/channeld) – daemon managing generalized Lightning
     channels with their extensions
   - [`src/lnpd`](src/lnpd) – daemon initializing creation of new channels and
-    connections    
+    connections
   - [`src/routed`](src/routed) – daemon managing routing information
   - [`src/gossip`](src/gossip) – daemon managing gossip data
   - [`src/keyd`](src/keyd) - key managing daemon
 
 Each daemon (more correctly "microservice", as it can run as a thread, not 
-necessary a process) or other binary (like CLI tool) follows the same  
+necessary a process) or other binary (like CLI tool) follows the same
 organization concept for module/file names:
 * `error.rs` – daemon-specific error types;
 * `opts.rs` – CLAP arguments & daemon configuration data;
@@ -160,6 +160,26 @@ organization concept for module/file names:
   connections and sockets; receiving and processing messages through them;
 * `index/`, `storage/`, `cache/` – storage interfaces and engines;
 * `db/` – SQL-specific schema and code, if needed.
+
+## Build and usage
+
+### Local
+
+To compile the node, please install [cargo](https://doc.rust-lang.org/cargo/),
+then run the following commands:
+
+```bash
+sudo apt install -y libsqlite3-dev libssl-dev libzmq3-dev pkg-config
+cargo install --path . --bins --all-features
+cargo run --color=always --bin connectiond --features=server -- --listen -vvvv
+```
+
+### In docker
+
+```bash
+docker build -t lnp-node .
+docker run --rm --name lnp_node lnp-node
+```
 
 ## Ways of communication
 
