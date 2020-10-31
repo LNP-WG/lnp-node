@@ -23,10 +23,10 @@ use crate::opts::Opts;
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display(Debug)]
 pub struct Config {
-    /// ZMQ RPC socket for transmitting lightning peer network messages
+    /// ZMQ socket for lightning peer network message bus
     pub msg_endpoint: NodeAddr,
 
-    /// ZMQ RPC socket for internal daemon control bus
+    /// ZMQ socket for internal service control bus
     pub ctl_endpoint: NodeAddr,
 }
 

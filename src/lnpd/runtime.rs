@@ -20,9 +20,7 @@ use std::io;
 use std::process;
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
-use lnpbp::lnp::{
-    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
-};
+use lnpbp::lnp::{message, ChannelId, Messages, NodeAddr, TypedEnum};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::{request, Request, ServiceBus};
@@ -43,7 +41,7 @@ pub fn run(config: Config) -> Result<(), Error> {
 
 pub struct Runtime {
     identity: ServiceId,
-    connections: HashSet<RemoteSocketAddr>,
+    connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     //connecting_peers: HashMap<ServiceId, NodeAddr>,
     opening_channels: HashMap<ServiceId, request::ChannelParams>,
@@ -86,7 +84,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
@@ -132,7 +130,7 @@ impl Runtime {
                     "connected".green()
                 );
 
-                match source {
+                match &source {
                     ServiceId::Lnpd => {
                         error!(
                             "{}",
@@ -140,7 +138,7 @@ impl Runtime {
                         );
                     }
                     ServiceId::Connection(connection_id) => {
-                        if self.connections.insert(connection_id) {
+                        if self.connections.insert(connection_id.clone()) {
                             debug!(
                                 "Connection daemon {} is registered; total {} \
                                  connections are known",
@@ -156,7 +154,7 @@ impl Runtime {
                         }
                     }
                     ServiceId::Channel(channel_id) => {
-                        if self.channels.insert(channel_id) {
+                        if self.channels.insert(channel_id.clone()) {
                             debug!(
                                 "Channel daemon {} is registered; total {} \
                                  channels are known",
@@ -262,7 +260,7 @@ impl Runtime {
 
     fn connect_peer(
         &mut self,
-        source: ServiceId,
+        _source: ServiceId,
         node_endpoint: NodeAddr,
     ) -> Result<(), Error> {
         debug!("Instantiating connectiond...");

@@ -19,22 +19,22 @@ use std::thread::spawn;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
 use lnpbp::lnp::{
-    message, presentation, transport, zmqsocket, Messages, PeerConnection,
-    PeerSender, RemoteSocketAddr, SendMessage, TypedEnum, ZmqType, ZMQ_CONTEXT,
+    message, presentation, transport, zmqsocket, Messages, NodeAddr,
+    PeerConnection, PeerSender, SendMessage, TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, Hooks, Service, ServiceId};
+use crate::{Config, Error, Service, ServiceId};
 
 pub struct MessageFilter {}
 
 pub fn run(
     config: Config,
     connection: PeerConnection,
-    id: RemoteSocketAddr,
+    id: NodeAddr,
     connect: bool,
 ) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
@@ -60,7 +60,7 @@ pub fn run(
                 }
             },
             BridgeHandler,
-            ZmqType::Server,
+            ZmqType::Rep,
         )?,
     };
     let listener = peer::Listener::with(receiver, bridge_handler);
@@ -68,7 +68,7 @@ pub fn run(
     // TODO: Use the handle returned by spawn to track the child process
 
     debug!("Staring main service runtime");
-    let mut runtime = Runtime {
+    let runtime = Runtime {
         identity,
         routing: none!(),
         sender,
@@ -162,8 +162,19 @@ pub struct Runtime {
     awaited_pong: Option<u16>,
 }
 
-impl Hooks for Runtime {
-    fn on_ready(&mut self) -> Result<(), Error> {
+impl esb::Handler<ServiceBus> for Runtime {
+    type Request = Request;
+    type Address = ServiceId;
+    type Error = Error;
+
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
+
+    fn on_ready(
+        &mut self,
+        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+    ) -> Result<(), Error> {
         if self.connect {
             info!(
                 "{} with the remote peer",
@@ -180,16 +191,6 @@ impl Hooks for Runtime {
             self.connect = false;
         }
         Ok(())
-    }
-}
-
-impl esb::Handler<ServiceBus> for Runtime {
-    type Request = Request;
-    type Address = ServiceId;
-    type Error = Error;
-
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
     }
 
     fn handle(

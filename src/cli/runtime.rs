@@ -30,11 +30,9 @@ pub struct Runtime {
 impl Runtime {
     pub fn with(config: Config) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
-        let mut url = Url::parse(&config.ctl_endpoint.to_string()).expect(
-            "Internal error: URL representation of the CTRL endpoint fails",
-        );
+        let mut url = Url::from(&config.ctl_endpoint);
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let identity = ServiceId::Client(url.to_string());
+        let identity = ServiceId::client(url);
         let bus_config = esb::BusConfig::with_locator(
             config
                 .ctl_endpoint
@@ -47,7 +45,7 @@ impl Runtime {
                 ServiceBus::Ctl => bus_config
             },
             Handler { identity },
-            ZmqType::EsbClient,
+            ZmqType::RouterConnect,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap

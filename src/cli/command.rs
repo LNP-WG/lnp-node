@@ -40,13 +40,17 @@ impl Exec for Command {
                 )
             }
 
-            /*Command::Ping { node_locator } => {
+            Command::Ping { node_locator: _ } => {
+                unimplemented!()
+                /*
                 let peer = node_locator
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
 
                 runtime.request(ServiceId::Lnpd, Request::PingPeer(peer))
-            }*/
+                 */
+            }
+
             Command::CreateChannel { node_locator } => {
                 let peer = node_locator
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
@@ -84,7 +88,7 @@ impl Exec for Command {
                             shutdown_scriptpubkey: None,
                             unknown_tlvs: none!(),
                         },
-                        connectiond: ServiceId::Connection(peer.into()),
+                        connectiond: ServiceId::Connection(peer),
                     }),
                 )
             }

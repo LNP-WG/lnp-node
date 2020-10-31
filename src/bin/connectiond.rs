@@ -107,7 +107,8 @@ use lnp_node::connectiond::{self, Opts};
 use lnp_node::Config;
 use lnpbp::lnp::transport::FramingProtocol;
 use lnpbp::lnp::{
-    session, LocalNode, PeerConnection, RemoteNodeAddr, RemoteSocketAddr,
+    session, LocalNode, NodeAddr, PeerConnection, RemoteNodeAddr,
+    RemoteSocketAddr,
 };
 use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 
@@ -210,12 +211,17 @@ fn main() {
     let peer_socket = PeerSocket::from(opts);
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
-    let id: RemoteSocketAddr;
+    let id: NodeAddr;
+    let connect: bool;
     let connection = match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
 
-            id = RemoteSocketAddr::Ftcp(inet_addr);
+            connect = false;
+            id = NodeAddr::Remote(RemoteNodeAddr {
+                node_id: local_node.node_id(),
+                remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
+            });
 
             debug!("Binding TCP socket {}", inet_addr);
             let listener = TcpListener::bind(
@@ -261,7 +267,8 @@ fn main() {
         PeerSocket::Connect(node_addr) => {
             debug!("Running in CONNECT mode");
 
-            id = node_addr.remote_addr;
+            connect = true;
+            id = NodeAddr::Remote(node_addr.clone());
 
             info!("Connecting to {}", &node_addr);
             PeerConnection::connect(node_addr, &local_node)
@@ -271,7 +278,7 @@ fn main() {
     };
 
     debug!("Starting runtime ...");
-    connectiond::run(config, connection, id)
+    connectiond::run(config, connection, id, connect)
         .expect("Error running connectiond runtime");
 
     unreachable!()

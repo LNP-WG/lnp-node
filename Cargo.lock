@@ -915,7 +915,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#0fdcb58aa6fa92d0f30e84434aa96b9ec371699e"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#0be1db0507396a99af50aa1b7bec7ea349a3e08b"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -944,7 +944,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#0fdcb58aa6fa92d0f30e84434aa96b9ec371699e"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#0be1db0507396a99af50aa1b7bec7ea349a3e08b"
 dependencies = [
  "amplify",
  "quote 1.0.7",
@@ -954,7 +954,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#0fdcb58aa6fa92d0f30e84434aa96b9ec371699e"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#0be1db0507396a99af50aa1b7bec7ea349a3e08b"
 dependencies = [
  "amplify",
  "amplify_derive",

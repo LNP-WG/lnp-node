@@ -13,15 +13,12 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Wrapper;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
 use lnpbp::bitcoin::hashes::hex::{self, ToHex};
-use lnpbp::lnp::{
-    zmqsocket, AddrError, ChannelId, LocalSocketAddr, NodeAddr,
-    PartialNodeAddr, RemoteNodeAddr, RemoteSocketAddr, TempChannelId, ZmqType,
-};
+use lnpbp::lnp::{zmqsocket, ChannelId, NodeAddr, TempChannelId, ZmqType};
 use lnpbp::strict_encoding::{strict_decode, strict_encode};
 use lnpbp_services::esb;
 #[cfg(feature = "node")]
@@ -82,17 +79,7 @@ impl FromStr for ClientName {
 
 /// Identifiers of daemons participating in LNP Node
 #[derive(
-    Clone,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Debug,
-    Display,
-    From,
-    StrictEncode,
-    StrictDecode,
+    Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode,
 )]
 pub enum ServiceId {
     #[display("loopback")]
@@ -108,7 +95,7 @@ pub enum ServiceId {
     Routing,
 
     #[display("connectiond<{_0}>")]
-    Connection(RemoteSocketAddr),
+    Connection(NodeAddr),
 
     #[display("channel<{_0:#x}>")]
     #[from]
@@ -122,6 +109,12 @@ pub enum ServiceId {
 impl ServiceId {
     pub fn router() -> ServiceId {
         ServiceId::Lnpd
+    }
+
+    pub fn client(name: impl ToString) -> ServiceId {
+        ServiceId::Client(
+            ClientName::from_str(&name.to_string()).expect("never fails"),
+        )
     }
 }
 
@@ -144,79 +137,9 @@ impl From<Vec<u8>> for ServiceId {
     }
 }
 
-/// Strictly-formatted peer id type for interoperable and transferrable node id
-/// storage. Convertible from and to [`RemoteNodeAddr`], [`RemoteSocketAddr`],
-/// [`NodeAddr`] and from [`PartialNodeAddr`]
-// TODO: Move into LNP/BP Core library
-#[derive(
-    Wrapper,
-    Clone,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Debug,
-    Display,
-    From,
-    StrictEncode,
-    StrictDecode,
-)]
-#[display("{repr}")]
-pub struct PeerId {
-    #[from(PartialNodeAddr)]
-    #[from(RemoteNodeAddr)]
-    #[from(RemoteSocketAddr)]
-    #[from(LocalSocketAddr)]
-    #[from(NodeAddr)]
-    repr: String,
-}
-
-impl TryFrom<PeerId> for RemoteNodeAddr {
-    type Error = AddrError;
-
-    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
-        RemoteNodeAddr::from_str(peer_id.as_inner())
-    }
-}
-
-impl TryFrom<PeerId> for NodeAddr {
-    type Error = AddrError;
-
-    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
-        NodeAddr::from_str(peer_id.as_inner())
-    }
-}
-
-impl TryFrom<PeerId> for LocalSocketAddr {
-    type Error = AddrError;
-
-    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
-        PartialNodeAddr::from_str(peer_id.as_inner())?.into()
-    }
-}
-
-impl TryFrom<PeerId> for RemoteSocketAddr {
-    type Error = AddrError;
-
-    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
-        RemoteSocketAddr::from_str(peer_id.as_inner())
-    }
-}
-
-/// Hooks into service life cycle which may be implemented by service runtime
-/// object
-// TODO: Move into LNP/BP Services library
-pub trait Hooks {
-    fn on_ready(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
-}
-
 pub struct Service<Runtime>
 where
-    Runtime: Hooks
-        + esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
     esb::Error: From<Runtime::Error>,
 {
     esb: esb::Controller<ServiceBus, Request, Runtime>,
@@ -225,8 +148,7 @@ where
 
 impl<Runtime> Service<Runtime>
 where
-    Runtime: Hooks
-        + esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
     esb::Error: From<Runtime::Error>,
 {
     #[cfg(feature = "node")]
@@ -265,9 +187,9 @@ where
             },
             runtime,
             if broker {
-                ZmqType::EsbService
+                ZmqType::RouterBind
             } else {
-                ZmqType::EsbClient
+                ZmqType::RouterConnect
             },
         )?;
         Ok(Self { esb, broker })
@@ -323,8 +245,6 @@ where
 
         let identity = self.esb.handler().identity();
         info!("{} started", identity);
-
-        self.esb.handler().on_ready()?;
 
         self.esb.run_or_panic(&identity.to_string());
 
