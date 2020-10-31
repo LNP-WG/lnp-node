@@ -19,7 +19,7 @@ use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::{Config, Error, LogStyle, Service, ServiceId};
 
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     let runtime = Runtime {
@@ -77,13 +77,9 @@ impl Runtime {
             Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
                 info!(
                     "{} from the remote peer {} with temporary id {}",
-                    "Accepting channel".bold(),
-                    source.to_string().as_str().italic(),
-                    accept_channel
-                        .temporary_channel_id
-                        .to_string()
-                        .as_str()
-                        .italic()
+                    "Accepting channel".promo(),
+                    source.promoter(),
+                    accept_channel.temporary_channel_id.promoter()
                 );
             }
 
@@ -117,12 +113,8 @@ impl Runtime {
             }) => {
                 debug!(
                     "Requesting remote peer to {} with temp id {}",
-                    "open a channel".green(),
-                    channel_req
-                        .temporary_channel_id
-                        .to_string()
-                        .as_str()
-                        .bold()
+                    "open a channel".ended(),
+                    channel_req.temporary_channel_id.ender()
                 );
                 senders.send_to(
                     ServiceBus::Msg,

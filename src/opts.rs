@@ -13,7 +13,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use clap::{Clap, ValueHint};
-use log::LevelFilter;
 use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -141,7 +140,6 @@ pub struct Opts {
 
 impl Opts {
     pub fn process(&mut self) {
-        log::set_max_level(LevelFilter::Trace);
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
 
         fs::create_dir_all(&self.data_dir)

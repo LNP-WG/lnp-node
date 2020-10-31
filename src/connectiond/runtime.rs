@@ -27,7 +27,7 @@ use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::{Config, Error, LogStyle, Service, ServiceId};
 
 pub struct MessageFilter {}
 
@@ -176,10 +176,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
     ) -> Result<(), Error> {
         if self.connect {
-            info!(
-                "{} with the remote peer",
-                "Initializing connection".bold().blue()
-            );
+            info!("{} with the remote peer", "Initializing connection".promo());
 
             self.sender.send_message(Messages::Init(message::Init {
                 global_features: none!(),

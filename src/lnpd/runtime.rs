@@ -24,7 +24,7 @@ use lnpbp::lnp::{message, ChannelId, Messages, NodeAddr, TypedEnum};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::{Config, Error, LogStyle, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime {
@@ -124,11 +124,7 @@ impl Runtime {
         match request {
             Request::Hello => {
                 // Ignoring; this is used to set remote identity at ZMQ level
-                info!(
-                    "{} daemon is {}",
-                    source.to_string().as_str().italic().green(),
-                    "connected".green()
-                );
+                info!("{} daemon is {}", source.ended(), "connected".ended());
 
                 match &source {
                     ServiceId::Lnpd => {
@@ -226,8 +222,8 @@ impl Runtime {
             Request::Connect(node_addr) => {
                 info!(
                     "{} to remote peer {}",
-                    "Connecting".bold().blue(),
-                    node_addr.to_string().as_str().italic().blue()
+                    "Connecting".promo(),
+                    node_addr.promoter()
                 );
             }
 
@@ -237,8 +233,8 @@ impl Runtime {
             }) => {
                 info!(
                     "{} by request from {}",
-                    "Creating channel".bold().blue(),
-                    source.to_string().as_str().italic().blue()
+                    "Creating channel".promo(),
+                    source.promoter()
                 );
                 self.create_channel(connectiond, channel_req, false)?;
             }
