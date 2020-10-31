@@ -13,6 +13,9 @@ _lnp-cli() {
                 cmd="lnp__cli"
                 ;;
             
+            connect)
+                cmd+="__connect"
+                ;;
             create-channel)
                 cmd+="__create__channel"
                 ;;
@@ -29,7 +32,7 @@ _lnp-cli() {
 
     case "${cmd}" in
         lnp__cli)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  ping create-channel help"
+            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  connect ping create-channel help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -92,8 +95,63 @@ _lnp-cli() {
             return 0
             ;;
         
+        lnp__cli__connect)
+            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  <node-locator> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                --data-dir)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -d)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -c)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --tor-proxy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -T)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --msg-socket)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -m)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --ctl-socket)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                    -x)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
         lnp__cli__create__channel)
-            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  <node-addr> "
+            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  <node-locator> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -163,7 +221,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__ping)
-            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  "
+            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  <node-locator> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

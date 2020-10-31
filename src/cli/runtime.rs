@@ -17,7 +17,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
 
-use lnpbp::lnp::transport::zmqsocket;
+use lnpbp::lnp::ZmqType;
 use lnpbp_services::esb;
 
 use crate::rpc::{Request, ServiceBus};
@@ -34,7 +34,7 @@ impl Runtime {
             "Internal error: URL representation of the CTRL endpoint fails",
         );
         url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let identity = ServiceId::Foreign(url.to_string());
+        let identity = ServiceId::Client(url.to_string());
         let bus_config = esb::BusConfig::with_locator(
             config
                 .ctl_endpoint
@@ -47,7 +47,7 @@ impl Runtime {
                 ServiceBus::Ctl => bus_config
             },
             Handler { identity },
-            zmqsocket::ApiType::EsbClient,
+            ZmqType::EsbClient,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap

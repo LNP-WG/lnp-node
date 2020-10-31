@@ -13,7 +13,9 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnpbp::bitcoin::secp256k1;
-use lnpbp::lnp::{message, TempChannelId};
+use lnpbp::lnp::{
+    message, TempChannelId, ToNodeAddr, LIGHTNING_P2P_DEFAULT_PORT,
+};
 use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
@@ -27,10 +29,29 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
-            Command::Ping => {
-                runtime.request(ServiceId::Lnpd, Request::PingPeer)
+            Command::Connect { node_locator } => {
+                let peer = node_locator
+                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .expect("Provided node address is invalid");
+
+                runtime.request(
+                    ServiceId::Lnpd,
+                    Request::Connect(peer.to_string()),
+                )
             }
-            Command::CreateChannel { node_addr } => {
+
+            /*Command::Ping { node_locator } => {
+                let peer = node_locator
+                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .expect("Provided node address is invalid");
+
+                runtime.request(ServiceId::Lnpd, Request::PingPeer(peer))
+            }*/
+            Command::CreateChannel { node_locator } => {
+                let peer = node_locator
+                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .expect("Provided node address is invalid");
+
                 let dumb_key = secp256k1::PublicKey::from_secret_key(
                     &lnpbp::SECP256K1,
                     &secp256k1::key::ONE_KEY,
@@ -39,6 +60,8 @@ impl Exec for Command {
                 runtime.request(
                     ServiceId::Lnpd,
                     Request::OpenChannelWith(request::ChannelParams {
+                        // TODO: Provide channel configuration from command-line
+                        //       arguments and configuration file defaults
                         channel_req: message::OpenChannel {
                             chain_hash: none!(),
                             temporary_channel_id: TempChannelId::random(),
@@ -61,9 +84,7 @@ impl Exec for Command {
                             shutdown_scriptpubkey: None,
                             unknown_tlvs: none!(),
                         },
-                        connectiond: ServiceId::Connection(
-                            node_addr.to_string(),
-                        ),
+                        connectiond: ServiceId::Connection(peer.into()),
                     }),
                 )
             }

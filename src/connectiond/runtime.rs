@@ -13,28 +13,29 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Bipolar;
+use colored::Colorize;
 use std::collections::HashMap;
 use std::thread::spawn;
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
-use lnpbp::lnp::transport::zmqsocket::{self, ZMQ_CONTEXT};
 use lnpbp::lnp::{
-    message, Messages, PeerConnection, PeerSender, SendMessage, TypedEnum,
+    message, presentation, transport, zmqsocket, Messages, PeerConnection,
+    PeerSender, RemoteSocketAddr, SendMessage, TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
-use lnpbp::lnp::{presentation, transport};
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::{Config, Error, Hooks, Service, ServiceId};
 
 pub struct MessageFilter {}
 
 pub fn run(
     config: Config,
     connection: PeerConnection,
-    id: String,
+    id: RemoteSocketAddr,
+    connect: bool,
 ) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
@@ -59,7 +60,7 @@ pub fn run(
                 }
             },
             BridgeHandler,
-            zmqsocket::ApiType::Server,
+            ZmqType::Server,
         )?,
     };
     let listener = peer::Listener::with(receiver, bridge_handler);
@@ -67,10 +68,11 @@ pub fn run(
     // TODO: Use the handle returned by spawn to track the child process
 
     debug!("Staring main service runtime");
-    let runtime = Runtime {
+    let mut runtime = Runtime {
         identity,
         routing: none!(),
         sender,
+        connect,
         awaited_pong: None,
     };
     let mut service = Service::service(config, runtime)?;
@@ -156,7 +158,29 @@ pub struct Runtime {
     #[allow(dead_code)]
     routing: HashMap<ServiceId, MessageFilter>,
     sender: PeerSender,
+    connect: bool,
     awaited_pong: Option<u16>,
+}
+
+impl Hooks for Runtime {
+    fn on_ready(&mut self) -> Result<(), Error> {
+        if self.connect {
+            info!(
+                "{} with the remote peer",
+                "Initializing connection".bold().blue()
+            );
+
+            self.sender.send_message(Messages::Init(message::Init {
+                global_features: none!(),
+                local_features: none!(),
+                assets: none!(),
+                unknown_tlvs: none!(),
+            }))?;
+
+            self.connect = false;
+        }
+        Ok(())
+    }
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -202,7 +226,6 @@ impl Runtime {
                 // 1. Check permissions
                 // 2. Forward to the remote peer
                 debug!("Forwarding LN peer message to the remote peer");
-                trace!("Message details: {:?}", message);
                 self.sender.send_message(message)?;
             }
             _ => {
@@ -225,21 +248,6 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            /* TODO: Move to connection initialization
-            Request::InitConnection => {
-                debug!("Initializing connection with the remote peer");
-                self.sender.send_message(Messages::Init(message::Init {
-                    global_features: none!(),
-                    local_features: none!(),
-                    assets: none!(),
-                    unknown_tlvs: none!(),
-                }))?;
-            }
-             */
-            Request::PingPeer => {
-                debug!("Requested to ping remote peer");
-                self.ping()?;
-            }
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
@@ -248,7 +256,6 @@ impl Runtime {
                 ));
             }
         }
-        Ok(())
     }
 
     fn handle_bridge(

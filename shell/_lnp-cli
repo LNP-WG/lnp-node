@@ -42,7 +42,7 @@ _lnp-cli() {
         (( CURRENT += 1 ))
         curcontext="${curcontext%:*:*}:lnp-cli-command-$line[1]:"
         case $line[1] in
-            (ping)
+            (connect)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -60,6 +60,28 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
+':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+&& ret=0
+;;
+(ping)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
 (create-channel)
@@ -80,7 +102,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
-':node-addr -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':node-locator -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
 (help)
@@ -99,11 +121,19 @@ esac
 (( $+functions[_lnp-cli_commands] )) ||
 _lnp-cli_commands() {
     local commands; commands=(
-        "ping:Ping remote peer" \
+        "connect:Connect to the peer" \
+"ping:Ping remote peer" \
 "create-channel:Establishes new channel" \
 "help:Prints this message or the help of the given subcommand(s)" \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
+}
+(( $+functions[_lnp-cli__connect_commands] )) ||
+_lnp-cli__connect_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli connect commands' commands "$@"
 }
 (( $+functions[_lnp-cli__create-channel_commands] )) ||
 _lnp-cli__create-channel_commands() {

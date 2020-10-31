@@ -106,7 +106,9 @@ use std::path::PathBuf;
 use lnp_node::connectiond::{self, Opts};
 use lnp_node::Config;
 use lnpbp::lnp::transport::FramingProtocol;
-use lnpbp::lnp::{session, LocalNode, NodeAddr, PeerConnection, RemoteAddr};
+use lnpbp::lnp::{
+    session, LocalNode, PeerConnection, RemoteNodeAddr, RemoteSocketAddr,
+};
 use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 
 /*
@@ -124,7 +126,7 @@ pub enum PeerSocket {
     /// TCP socket, which may be IPv4- or IPv6-based. For Tor hidden services
     /// use IPv4 TCP port proxied as a Tor hidden service in `torrc`.
     #[display("--listen={_0}")]
-    Listen(RemoteAddr),
+    Listen(RemoteSocketAddr),
 
     /// The service should connect to the remote peer residing on the provided
     /// address, which may be either IPv4/v6 or Onion V2/v3 address (using
@@ -133,7 +135,7 @@ pub enum PeerSocket {
     /// leaking any information about th elocal node to DNS resolvers, are not
     /// supported.
     #[display("--connect={_0}")]
-    Connect(NodeAddr),
+    Connect(RemoteNodeAddr),
 }
 
 impl From<Opts> for PeerSocket {
@@ -143,7 +145,7 @@ impl From<Opts> for PeerSocket {
         } else if let Some(bind_addr) = opts.listen {
             Self::Listen(match opts.overlay {
                 FramingProtocol::FramedRaw => {
-                    RemoteAddr::Ftcp(InetSocketAddr {
+                    RemoteSocketAddr::Ftcp(InetSocketAddr {
                         address: bind_addr
                             .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED))
                             .into(),
@@ -208,12 +210,12 @@ fn main() {
     let peer_socket = PeerSocket::from(opts);
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
-    let id: String;
+    let id: RemoteSocketAddr;
     let connection = match peer_socket {
-        PeerSocket::Listen(RemoteAddr::Ftcp(inet_addr)) => {
+        PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
 
-            id = inet_addr.to_string();
+            id = RemoteSocketAddr::Ftcp(inet_addr);
 
             debug!("Binding TCP socket {}", inet_addr);
             let listener = TcpListener::bind(
@@ -259,7 +261,7 @@ fn main() {
         PeerSocket::Connect(node_addr) => {
             debug!("Running in CONNECT mode");
 
-            id = node_addr.to_string();
+            id = node_addr.remote_addr;
 
             info!("Connecting to {}", &node_addr);
             PeerConnection::connect(node_addr, &local_node)

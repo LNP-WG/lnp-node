@@ -127,6 +127,11 @@ The overall architecture of LNP Node is the following:
 
 ![Node architacture](doc/lnp_node_arch.jpeg)
 
+More information on the service buses used in the node:
+
+![Node architacture](doc/node_esb.jpeg)
+
+
 ## Project organization & architecture
 
 * [`src/bin/`](src/bin/) – binaries for daemons & CLI launching main process
@@ -165,25 +170,3 @@ organization concept for module/file names:
     * dr_orlovsky: my account on IRC
 * Lightning Hackdays Mattermost channel:
   <https://mm.fulmo.org/fulmo/channels/x-rust-ln-node>
-
-## Previous (mostly independent/unrelated) work
-
-* `rust-lightning` architecture explanation: 
-  <https://github.com/rust-bitcoin/rust-lightning/blob/master/ARCH.md>
-* Antoine Riard's explanation on possible LN daemon architecture: 
-  <https://github.com/ariard/hacking-rust-lightning>
-* PR in rust-lightning removing storage of private keys from the memory: 
-  <https://github.com/rust-bitcoin/rust-lightning/pull/562/files>
-* Matt Corallo's sample implementation of rust-lightning based daemon, 
-  showcasing its API: <https://github.com/TheBlueMatt/rust-lightning-bitcoinrpc>
-* Antoine Riard's set of separate lightning daemons based on standard Rust 
-  multithreading/async (no tokio): <https://github.com/ariard/orage>
-* Forks of Matt Corallo's daemon developed much further towards full-flegged 
-  Lightning daemoin:
-    * by @YaaMe: <https://github.com/YaaMe/rust-lightning-bitcoinrpc>
-    * further development by @knarfytrebil: 
-      <https://github.com/knarfytrebil/rust-lightning-bitcoinrpc>
-* Sample of Rust multithreaded server architecture: 
-  <https://github.com/LNP-BP/txserv>
-* SquareCrypto Development Kit based on `rust-lightning` library: 
-  <http://lightningdevkit.org/>

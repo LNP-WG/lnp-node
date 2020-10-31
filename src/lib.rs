@@ -29,8 +29,6 @@ extern crate amplify;
 #[macro_use]
 extern crate amplify_derive;
 #[macro_use]
-pub extern crate lnpbp;
-#[macro_use]
 extern crate lnpbp_derive;
 
 #[cfg(feature = "shell")]
@@ -66,4 +64,4 @@ mod service;
 pub use config::Config;
 pub use error::Error;
 #[cfg(any(feature = "node", feature = "client"))]
-pub use service::{Service, ServiceId};
+pub use service::{ClientName, Hooks, Service, ServiceId};

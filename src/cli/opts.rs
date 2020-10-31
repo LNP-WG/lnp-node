@@ -14,7 +14,7 @@
 
 use clap::{AppSettings, Clap};
 
-use lnpbp::lnp::NodeAddr;
+use lnpbp::lnp::PartialNodeAddr;
 
 /// Command-line tool for working with LNP node
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -46,14 +46,27 @@ impl Opts {
 #[derive(Clap, Clone, PartialEq, Eq, Debug, Display)]
 #[display(doc_comments)]
 pub enum Command {
+    /// Connect to the peer
+    Connect {
+        /// Address of the remote node, in
+        /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
+        #[clap()]
+        node_locator: PartialNodeAddr,
+    },
+
     /// Ping remote peer
-    Ping,
+    Ping {
+        /// Address of the remote node, in
+        /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
+        #[clap()]
+        node_locator: PartialNodeAddr,
+    },
 
     /// Establishes new channel
     CreateChannel {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
         #[clap()]
-        node_addr: NodeAddr,
+        node_locator: PartialNodeAddr,
     },
 }

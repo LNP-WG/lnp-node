@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::NodeEndpoint;
+use lnpbp::lnp::NodeAddr;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;
@@ -24,10 +24,10 @@ use crate::opts::Opts;
 #[display(Debug)]
 pub struct Config {
     /// ZMQ RPC socket for transmitting lightning peer network messages
-    pub msg_endpoint: NodeEndpoint,
+    pub msg_endpoint: NodeAddr,
 
     /// ZMQ RPC socket for internal daemon control bus
-    pub ctl_endpoint: NodeEndpoint,
+    pub ctl_endpoint: NodeAddr,
 }
 
 #[cfg(feature = "shell")]

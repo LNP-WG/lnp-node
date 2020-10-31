@@ -38,9 +38,29 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Prints help information')
             [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Prints version information')
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
+            [CompletionResult]::new('connect', 'connect', [CompletionResultType]::ParameterValue, 'Connect to the peer')
             [CompletionResult]::new('ping', 'ping', [CompletionResultType]::ParameterValue, 'Ping remote peer')
             [CompletionResult]::new('create-channel', 'create-channel', [CompletionResultType]::ParameterValue, 'Establishes new channel')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Prints this message or the help of the given subcommand(s)')
+            break
+        }
+        'lnp-cli;connect' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
+            [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path to the configuration file')
+            [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
+            [CompletionResult]::new('--tor-proxy', 'tor-proxy', [CompletionResultType]::ParameterName, 'Use Tor')
+            [CompletionResult]::new('-m', 'm', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
+            [CompletionResult]::new('--msg-socket', 'msg-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
+            [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
+            [CompletionResult]::new('--ctl-socket', 'ctl-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
+            [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
+            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Prints help information')
+            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Prints help information')
+            [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Prints version information')
+            [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
         'lnp-cli;ping' {

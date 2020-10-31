@@ -13,13 +13,16 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Wrapper;
-use std::collections::HashMap;
+use colored::Colorize;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::io;
 use std::process;
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
-use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
+use lnpbp::lnp::{
+    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
+};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::{request, Request, ServiceBus};
@@ -28,6 +31,9 @@ use crate::{Config, Error, Service, ServiceId};
 pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
+        connections: none!(),
+        channels: none!(),
+        //connecting_peers: none!(),
         opening_channels: none!(),
         accepting_channels: none!(),
     };
@@ -37,6 +43,9 @@ pub fn run(config: Config) -> Result<(), Error> {
 
 pub struct Runtime {
     identity: ServiceId,
+    connections: HashSet<RemoteSocketAddr>,
+    channels: HashSet<ChannelId>,
+    //connecting_peers: HashMap<ServiceId, NodeAddr>,
     opening_channels: HashMap<ServiceId, request::ChannelParams>,
     accepting_channels: HashMap<ServiceId, request::ChannelParams>,
 }
@@ -88,7 +97,7 @@ impl Runtime {
 
             Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Creating channel by peer request from {}", source);
-                self.create_channel(senders, source, open_channel, true)?;
+                self.create_channel(source, open_channel, true)?;
             }
 
             Request::LnpwpMessage(_) => {
@@ -115,17 +124,57 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::OpenChannelWith(request::ChannelParams {
-                channel_req,
-                connectiond,
-            }) => {
-                info!("Creating channel by request from {}", source);
-                self.create_channel(senders, connectiond, channel_req, false)?;
-            }
-
             Request::Hello => {
                 // Ignoring; this is used to set remote identity at ZMQ level
-                trace!("{} says hello", source);
+                info!(
+                    "{} daemon is {}",
+                    source.to_string().as_str().italic().green(),
+                    "connected".green()
+                );
+
+                match source {
+                    ServiceId::Lnpd => {
+                        error!(
+                            "{}",
+                            "Unexpected another lnpd instance connection".red()
+                        );
+                    }
+                    ServiceId::Connection(connection_id) => {
+                        if self.connections.insert(connection_id) {
+                            debug!(
+                                "Connection daemon {} is registered; total {} \
+                                 connections are known",
+                                connection_id,
+                                self.connections.len()
+                            );
+                        } else {
+                            warn!(
+                                "Connection {} was already registered; the \
+                                 service probably was relaunched",
+                                connection_id
+                            );
+                        }
+                    }
+                    ServiceId::Channel(channel_id) => {
+                        if self.channels.insert(channel_id) {
+                            debug!(
+                                "Channel daemon {} is registered; total {} \
+                                 channels are known",
+                                channel_id,
+                                self.channels.len()
+                            );
+                        } else {
+                            warn!(
+                                "Channel {} was already registered; the \
+                                 service probably was relaunched",
+                                channel_id
+                            );
+                        }
+                    }
+                    _ => {
+                        // Ignoring the rest of daemon/client types
+                    }
+                }
 
                 if let Some(channel_params) = self.opening_channels.get(&source)
                 {
@@ -141,6 +190,7 @@ impl Runtime {
                         source.clone(),
                         Request::OpenChannelWith(channel_params.clone()),
                     )?;
+                    self.opening_channels.remove(&source);
                 } else if let Some(channel_params) =
                     self.accepting_channels.get(&source)
                 {
@@ -156,11 +206,50 @@ impl Runtime {
                         source.clone(),
                         Request::AcceptChannelFrom(channel_params.clone()),
                     )?;
-                }
+                    self.accepting_channels.remove(&source);
+                } /* else if let Some(node_endpoint) =
+                      self.connecting_peers.get(&source)
+                  {
+                      debug!(
+                          "Daemon {} is known: we spawned it to create a new \
+                           connection. Ordering it now.",
+                          source
+                      );
+                      senders.send_to(
+                          ServiceBus::Ctl,
+                          self.identity(),
+                          source.clone(),
+                          Request::Connect(node_endpoint.clone()),
+                      )?;
+                      self.connecting_peers.remove(&source);
+                  }*/
+            }
+
+            Request::Connect(node_addr) => {
+                info!(
+                    "{} to remote peer {}",
+                    "Connecting".bold().blue(),
+                    node_addr.to_string().as_str().italic().blue()
+                );
+            }
+
+            Request::OpenChannelWith(request::ChannelParams {
+                channel_req,
+                connectiond,
+            }) => {
+                info!(
+                    "{} by request from {}",
+                    "Creating channel".bold().blue(),
+                    source.to_string().as_str().italic().blue()
+                );
+                self.create_channel(connectiond, channel_req, false)?;
             }
 
             _ => {
-                error!("Request is not supported by the CTL interface");
+                error!(
+                    "{}",
+                    "Request is not supported by the CTL interface".red()
+                );
                 return Err(Error::NotSupported(
                     ServiceBus::Ctl,
                     request.get_type(),
@@ -171,9 +260,30 @@ impl Runtime {
         Ok(())
     }
 
+    fn connect_peer(
+        &mut self,
+        source: ServiceId,
+        node_endpoint: NodeAddr,
+    ) -> Result<(), Error> {
+        debug!("Instantiating connectiond...");
+
+        // Start channeld
+        launch("connectiond", &["--connect", &node_endpoint.to_string()])
+            .and_then(|child| {
+                debug!(
+                    "New instance of connectiond launched with PID {}",
+                    child.id()
+                );
+                Ok(())
+            })?;
+
+        debug!("Awaiting for connectiond to connect...");
+
+        Ok(())
+    }
+
     fn create_channel(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         source: ServiceId,
         open_channel: message::OpenChannel,
         accept: bool,

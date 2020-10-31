@@ -12,10 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod message;
 mod reply;
 pub mod request;
-pub mod types;
 
 pub use reply::Reply;
 pub use request::Request;

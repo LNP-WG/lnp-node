@@ -15,7 +15,7 @@
 use clap::{AppSettings, ArgGroup, Clap, ValueHint};
 use std::net::IpAddr;
 
-use lnpbp::lnp::{transport::FramingProtocol, NodeAddr};
+use lnpbp::lnp::{transport::FramingProtocol, RemoteNodeAddr};
 
 use crate::opts::LNP_NODE_KEY_FILE;
 
@@ -60,7 +60,7 @@ pub struct Opts {
     /// either IPv4, IPv6 or Onion address (v2 or v3); in the former case you
     /// will be also required to provide `--tor` argument.
     #[clap(short = 'C', long, group = "action")]
-    pub connect: Option<NodeAddr>,
+    pub connect: Option<RemoteNodeAddr>,
 
     /// Customize port used by lightning peer network
     ///

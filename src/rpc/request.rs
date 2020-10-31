@@ -12,8 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::rpc_connection;
-use lnpbp::lnp::{message, Messages};
+use lnpbp::lnp::{message, rpc_connection, Messages};
 
 use crate::ServiceId;
 
@@ -30,14 +29,18 @@ pub enum Request {
     LnpwpMessage(Messages),
 
     #[lnp_api(type = 2)]
+    #[display("connect()")]
+    Connect(String),
+
+    #[lnp_api(type = 3)]
     #[display("ping_peer()")]
     PingPeer,
 
-    #[lnp_api(type = 3)]
+    #[lnp_api(type = 4)]
     #[display("create_channel_with(...)")]
     OpenChannelWith(ChannelParams),
 
-    #[lnp_api(type = 4)]
+    #[lnp_api(type = 5)]
     #[display("accept_channel_from(...)")]
     AcceptChannelFrom(ChannelParams),
 }

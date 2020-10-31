@@ -19,7 +19,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use lnpbp::bp;
-use lnpbp::lnp::NodeLocator;
+use lnpbp::lnp::PartialNodeAddr;
 use lnpbp_services::shell::LogLevel;
 
 #[cfg(any(target_os = "linux"))]
@@ -110,7 +110,7 @@ pub struct Opts {
         value_hint = ValueHint::FilePath,
         default_value = LNP_NODE_MSG_SOCKET_NAME
     )]
-    pub msg_socket: NodeLocator,
+    pub msg_socket: PartialNodeAddr,
 
     /// ZMQ socket name/address for daemon control interface
     ///
@@ -126,7 +126,7 @@ pub struct Opts {
         value_hint = ValueHint::FilePath,
         default_value = LNP_NODE_CTL_SOCKET_NAME
     )]
-    pub ctl_socket: NodeLocator,
+    pub ctl_socket: PartialNodeAddr,
 
     /// Blockchain to use
     #[clap(
@@ -150,7 +150,8 @@ impl Opts {
         let me = self.clone();
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
-                NodeLocator::ZmqIpc(path, ..) | NodeLocator::Posix(path) => {
+                PartialNodeAddr::ZmqIpc(path, ..)
+                | PartialNodeAddr::Posix(path) => {
                     me.process_dir(path);
                 }
                 _ => unimplemented!(),

@@ -12,13 +12,17 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryInto;
-use std::io;
+use amplify::Wrapper;
+use std::convert::{TryFrom, TryInto};
+use std::fmt::{self, Display, Formatter};
+use std::str::FromStr;
 
-use lnpbp::lnp::{zmqsocket, ChannelId, TempChannelId};
-use lnpbp::strict_encoding::{
-    self, strict_decode, strict_encode, StrictDecode, StrictEncode,
+use lnpbp::bitcoin::hashes::hex::{self, ToHex};
+use lnpbp::lnp::{
+    zmqsocket, AddrError, ChannelId, LocalSocketAddr, NodeAddr,
+    PartialNodeAddr, RemoteNodeAddr, RemoteSocketAddr, TempChannelId, ZmqType,
 };
+use lnpbp::strict_encoding::{strict_decode, strict_encode};
 use lnpbp_services::esb;
 #[cfg(feature = "node")]
 use lnpbp_services::node::TryService;
@@ -28,8 +32,68 @@ use crate::Config;
 #[cfg(feature = "node")]
 use crate::Error;
 
+#[derive(
+    Wrapper,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+    From,
+    Default,
+    StrictEncode,
+    StrictDecode,
+)]
+pub struct ClientName([u8; 32]);
+
+impl Display for ClientName {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if f.alternate() {
+            write!(
+                f,
+                "{}..{}",
+                self.0[..4].to_hex(),
+                self.0[(self.0.len() - 4)..].to_hex()
+            )
+        } else {
+            f.write_str(&String::from_utf8_lossy(&self.0))
+        }
+    }
+}
+
+impl FromStr for ClientName {
+    type Err = hex::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() > 32 {
+            let mut me = Self::default();
+            me.0.copy_from_slice(&s.as_bytes()[0..32]);
+            Ok(me)
+        } else {
+            let mut me = Self::default();
+            me.0[0..s.len()].copy_from_slice(s.as_bytes());
+            Ok(me)
+        }
+    }
+}
+
 /// Identifiers of daemons participating in LNP Node
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From)]
+#[derive(
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+    Display,
+    From,
+    StrictEncode,
+    StrictDecode,
+)]
 pub enum ServiceId {
     #[display("loopback")]
     Loopback,
@@ -44,15 +108,15 @@ pub enum ServiceId {
     Routing,
 
     #[display("connectiond<{_0}>")]
-    Connection(String),
+    Connection(RemoteSocketAddr),
 
     #[display("channel<{_0:#x}>")]
     #[from]
     #[from(TempChannelId)]
     Channel(ChannelId),
 
-    #[display("external<{_0}>")]
-    Foreign(String),
+    #[display("client<{_0}>")]
+    Client(ClientName),
 }
 
 impl ServiceId {
@@ -72,79 +136,113 @@ impl From<ServiceId> for Vec<u8> {
 impl From<Vec<u8>> for ServiceId {
     fn from(vec: Vec<u8>) -> Self {
         strict_decode(&vec).unwrap_or_else(|_| {
-            ServiceId::Foreign(String::from_utf8_lossy(&vec).to_string())
+            ServiceId::Client(
+                ClientName::from_str(&String::from_utf8_lossy(&vec))
+                    .expect("ClientName conversion never fails"),
+            )
         })
     }
 }
 
-impl StrictEncode for ServiceId {
-    type Error = strict_encoding::Error;
+/// Strictly-formatted peer id type for interoperable and transferrable node id
+/// storage. Convertible from and to [`RemoteNodeAddr`], [`RemoteSocketAddr`],
+/// [`NodeAddr`] and from [`PartialNodeAddr`]
+// TODO: Move into LNP/BP Core library
+#[derive(
+    Wrapper,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Debug,
+    Display,
+    From,
+    StrictEncode,
+    StrictDecode,
+)]
+#[display("{repr}")]
+pub struct PeerId {
+    #[from(PartialNodeAddr)]
+    #[from(RemoteNodeAddr)]
+    #[from(RemoteSocketAddr)]
+    #[from(LocalSocketAddr)]
+    #[from(NodeAddr)]
+    repr: String,
+}
 
-    fn strict_encode<E: io::Write>(
-        &self,
-        mut e: E,
-    ) -> Result<usize, Self::Error> {
-        Ok(match self {
-            ServiceId::Loopback => 0u8.strict_encode(e)?,
-            ServiceId::Lnpd => 1u8.strict_encode(e)?,
-            ServiceId::Gossip => 2u8.strict_encode(e)?,
-            ServiceId::Routing => 3u8.strict_encode(e)?,
-            ServiceId::Connection(peer_id) => {
-                strict_encode_list!(e; 4u8, peer_id)
-            }
-            ServiceId::Channel(channel_id) => {
-                strict_encode_list!(e; 5u8, channel_id)
-            }
-            ServiceId::Foreign(id) => strict_encode_list!(e; 6u8, id),
-        })
+impl TryFrom<PeerId> for RemoteNodeAddr {
+    type Error = AddrError;
+
+    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
+        RemoteNodeAddr::from_str(peer_id.as_inner())
     }
 }
 
-impl StrictDecode for ServiceId {
-    type Error = strict_encoding::Error;
+impl TryFrom<PeerId> for NodeAddr {
+    type Error = AddrError;
 
-    fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, Self::Error> {
-        let ty = u8::strict_decode(&mut d)?;
-        Ok(match ty {
-            0 => ServiceId::Loopback,
-            1 => ServiceId::Lnpd,
-            2 => ServiceId::Gossip,
-            3 => ServiceId::Routing,
-            4 => ServiceId::Connection(StrictDecode::strict_decode(&mut d)?),
-            5 => ServiceId::Channel(StrictDecode::strict_decode(&mut d)?),
-            6 => ServiceId::Foreign(StrictDecode::strict_decode(&mut d)?),
-            _ => Err(strict_encoding::Error::EnumValueNotKnown(
-                s!("DaemonId"),
-                ty,
-            ))?,
-        })
+    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
+        NodeAddr::from_str(peer_id.as_inner())
     }
 }
 
-pub struct Service<H>
+impl TryFrom<PeerId> for LocalSocketAddr {
+    type Error = AddrError;
+
+    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
+        PartialNodeAddr::from_str(peer_id.as_inner())?.into()
+    }
+}
+
+impl TryFrom<PeerId> for RemoteSocketAddr {
+    type Error = AddrError;
+
+    fn try_from(peer_id: PeerId) -> Result<Self, Self::Error> {
+        RemoteSocketAddr::from_str(peer_id.as_inner())
+    }
+}
+
+/// Hooks into service life cycle which may be implemented by service runtime
+/// object
+// TODO: Move into LNP/BP Services library
+pub trait Hooks {
+    fn on_ready(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
+}
+
+pub struct Service<Runtime>
 where
-    H: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
-    esb::Error: From<H::Error>,
+    Runtime: Hooks
+        + esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    esb::Error: From<Runtime::Error>,
 {
-    esb: esb::Controller<ServiceBus, Request, H>,
+    esb: esb::Controller<ServiceBus, Request, Runtime>,
     broker: bool,
 }
 
-impl<H> Service<H>
+impl<Runtime> Service<Runtime>
 where
-    H: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
-    esb::Error: From<H::Error>,
+    Runtime: Hooks
+        + esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    esb::Error: From<Runtime::Error>,
 {
     #[cfg(feature = "node")]
-    pub fn run(config: Config, handler: H, broker: bool) -> Result<(), Error> {
-        let service = Self::with(config, handler, broker)?;
+    pub fn run(
+        config: Config,
+        runtime: Runtime,
+        broker: bool,
+    ) -> Result<(), Error> {
+        let service = Self::with(config, runtime, broker)?;
         service.run_loop()?;
         unreachable!()
     }
 
     fn with(
         config: Config,
-        handler: H,
+        runtime: Runtime,
         broker: bool,
     ) -> Result<Self, esb::Error> {
         let router = if !broker {
@@ -165,22 +263,28 @@ where
                     router
                 )
             },
-            handler,
+            runtime,
             if broker {
-                zmqsocket::ApiType::EsbService
+                ZmqType::EsbService
             } else {
-                zmqsocket::ApiType::EsbClient
+                ZmqType::EsbClient
             },
         )?;
         Ok(Self { esb, broker })
     }
 
-    pub fn broker(config: Config, handler: H) -> Result<Self, esb::Error> {
-        Self::with(config, handler, true)
+    pub fn broker(
+        config: Config,
+        runtime: Runtime,
+    ) -> Result<Self, esb::Error> {
+        Self::with(config, runtime, true)
     }
 
-    pub fn service(config: Config, handler: H) -> Result<Self, esb::Error> {
-        Self::with(config, handler, false)
+    pub fn service(
+        config: Config,
+        runtime: Runtime,
+    ) -> Result<Self, esb::Error> {
+        Self::with(config, runtime, false)
     }
 
     pub fn is_broker(&self) -> bool {
@@ -219,7 +323,11 @@ where
 
         let identity = self.esb.handler().identity();
         info!("{} started", identity);
+
+        self.esb.handler().on_ready()?;
+
         self.esb.run_or_panic(&identity.to_string());
+
         unreachable!()
     }
 }
