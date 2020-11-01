@@ -264,6 +264,10 @@ pub trait LogStyle: ToString {
         self.to_string().italic().bright_blue()
     }
 
+    fn progress(&self) -> colored::ColoredString {
+        self.to_string().bold().green()
+    }
+
     fn ended(&self) -> colored::ColoredString {
         self.to_string().bold().bright_green()
     }
@@ -282,6 +286,10 @@ pub trait LogStyle: ToString {
 
     fn err(&self) -> colored::ColoredString {
         self.to_string().bold().bright_red()
+    }
+
+    fn err_details(&self) -> colored::ColoredString {
+        self.to_string().bold().red()
     }
 }
 

@@ -66,8 +66,8 @@ pub enum Request {
     // Responses to CLI
     // ----------------
     #[lnp_api(type = 102)]
-    #[display("in_progress({_0})")]
-    InProgress(String),
+    #[display("progress({_0})")]
+    Progress(String),
 
     #[lnp_api(type = 101)]
     #[display("success({_0})")]
@@ -92,7 +92,7 @@ impl rpc_connection::Request for Request {}
     StrictEncode,
     StrictDecode,
 )]
-pub struct OptionDetails(Option<String>);
+pub struct OptionDetails(pub Option<String>);
 
 impl Display for OptionDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -126,17 +126,17 @@ impl From<crate::Error> for Request {
     }
 }
 
-pub trait IntoProcessOrFalure {
-    fn into_process_or_failure(self) -> Request;
+pub trait IntoProgressOrFalure {
+    fn into_progress_or_failure(self) -> Request;
 }
 pub trait IntoSuccessOrFalure {
     fn into_success_or_failure(self) -> Request;
 }
 
-impl IntoProcessOrFalure for Result<String, crate::Error> {
-    fn into_process_or_failure(self) -> Request {
+impl IntoProgressOrFalure for Result<String, crate::Error> {
+    fn into_progress_or_failure(self) -> Request {
         match self {
-            Ok(val) => Request::InProgress(val),
+            Ok(val) => Request::Progress(val),
             Err(err) => Request::from(err),
         }
     }

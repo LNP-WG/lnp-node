@@ -24,7 +24,7 @@ use lnpbp::lnp::{
 };
 use lnpbp_services::esb::{self, Handler};
 
-use crate::rpc::request::{IntoProcessOrFalure, IntoSuccessOrFalure};
+use crate::rpc::request::{IntoProgressOrFalure, IntoSuccessOrFalure};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
 use std::convert::TryFrom;
@@ -260,7 +260,7 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    resp.into_process_or_failure(),
+                    resp.into_progress_or_failure(),
                 )?;
                 return Ok(());
             }

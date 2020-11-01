@@ -37,7 +37,8 @@ impl Exec for Command {
             } => {
                 let socket =
                     RemoteSocketAddr::with_ip_addr(*overlay, *ip_addr, *port);
-                runtime.request(ServiceId::Lnpd, Request::Listen(socket))
+                runtime.request(ServiceId::Lnpd, Request::Listen(socket))?;
+                runtime.report_progress()?;
             }
 
             Command::Connect { peer: node_locator } => {
@@ -45,7 +46,8 @@ impl Exec for Command {
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
 
-                runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))
+                runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))?;
+                runtime.report_progress()?;
             }
 
             Command::Ping { peer: _ } => {
@@ -101,10 +103,12 @@ impl Exec for Command {
                         },
                         peerd: ServiceId::Peer(peer),
                     }),
-                )
+                )?;
+                runtime.report_progress()?;
             }
 
             _ => unimplemented!(),
         }
+        Ok(())
     }
 }

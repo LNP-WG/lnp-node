@@ -20,8 +20,9 @@ use url::Url;
 use lnpbp::lnp::ZmqType;
 use lnpbp_services::esb;
 
+use crate::rpc::request::OptionDetails;
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, ServiceId};
+use crate::{Config, Error, LogStyle, ServiceId};
 
 pub struct Runtime {
     esb: esb::Controller<ServiceBus, Request, Handler>,
@@ -62,6 +63,46 @@ impl Runtime {
         debug!("Executing {}", req);
         self.esb.send_to(ServiceBus::Ctl, daemon, req)?;
         Ok(())
+    }
+
+    pub fn report_progress(&mut self) -> Result<usize, Error> {
+        let mut counter = 0;
+        let mut finished = false;
+        while !finished {
+            finished = true;
+            for (_, _, rep) in self.esb.recv_poll()? {
+                counter += 1;
+                match rep {
+                    Request::Failure(fail) => {
+                        error!(
+                            "{}: {}",
+                            "Request failure".err(),
+                            fail.err_details()
+                        );
+                        Err(Error::from(fail))?
+                    }
+                    Request::Progress(info) => {
+                        info!("{}", info.progress());
+                        finished = false;
+                    }
+                    Request::Success(OptionDetails(Some(info))) => {
+                        info!("{}{}", "Success: ".ended(), info.ender());
+                    }
+                    Request::Success(OptionDetails(None)) => {
+                        info!("{}", "Success".ended());
+                    }
+                    other => {
+                        error!(
+                            "{}: {}",
+                            "Unexpected report".err(),
+                            other.err_details()
+                        );
+                        Err(Error::Other(s!("Unexpected server response")))?
+                    }
+                }
+            }
+        }
+        Ok(counter)
     }
 }
 
