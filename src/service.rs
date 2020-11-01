@@ -94,15 +94,15 @@ pub enum ServiceId {
     #[display("routed")]
     Routing,
 
-    #[display("peerd<{_0}>")]
+    #[display("peerd<{0}>")]
     Peer(NodeAddr),
 
-    #[display("channel<{_0:#x}>")]
+    #[display("channel<{0:#x}>")]
     #[from]
     #[from(TempChannelId)]
     Channel(ChannelId),
 
-    #[display("client<{_0}>")]
+    #[display("client<{0}>")]
     Client(ClientName),
 }
 

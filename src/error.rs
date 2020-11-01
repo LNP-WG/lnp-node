@@ -27,25 +27,25 @@ use crate::rpc::ServiceBus;
 #[display(doc_comments)]
 #[non_exhaustive]
 pub enum Error {
-    /// I/O error: {_0:?}
+    /// I/O error: {0:?}
     #[from]
     Io(io::ErrorKind),
 
-    /// ESB error: {_0}
+    /// ESB error: {0}
     #[cfg(any(feature = "node", feature = "client"))]
     #[from]
     Esb(esb::Error),
 
-    /// RPC error: {_0}
+    /// RPC error: {0}
     #[cfg(any(feature = "node", feature = "client"))]
     #[from]
     Rpc(rpc::Error),
 
-    /// Peer interface error: {_0}
+    /// Peer interface error: {0}
     #[from]
     Peer(presentation::Error),
 
-    /// Bridge inerface error: {_0}
+    /// Bridge interface error: {0}
     #[cfg(any(feature = "node", feature = "client"))]
     #[from(zmq::Error)]
     #[from]
@@ -61,7 +61,8 @@ pub enum Error {
     /// Peer has misbehaved LN peer protocol rules
     Misbehaving,
 
-    /// {_0}
+    /// Other error type with string explanation
+    #[display(inner)]
     #[from(amplify::internet::NoOnionSupportError)]
     Other(String),
 }

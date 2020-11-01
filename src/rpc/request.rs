@@ -31,17 +31,17 @@ pub enum Request {
     Hello,
 
     #[lnp_api(type = 1)]
-    #[display("lnpwp({_0})")]
+    #[display("lnpwp({0})")]
     LnpwpMessage(Messages),
 
     // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 2)]
-    #[display("listen({_0})")]
+    #[display("listen({0})")]
     Listen(RemoteSocketAddr),
 
     // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 3)]
-    #[display("connect({_0})")]
+    #[display("connect({0})")]
     ConnectPeer(NodeAddr),
 
     // Can be issued from `cli` to a specific `peerd`
@@ -60,21 +60,21 @@ pub enum Request {
 
     // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 7)]
-    #[display("pay_invoice({_0})")]
+    #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
 
     // Responses to CLI
     // ----------------
     #[lnp_api(type = 102)]
-    #[display("progress({_0})")]
+    #[display("progress({0})")]
     Progress(String),
 
     #[lnp_api(type = 101)]
-    #[display("success({_0})")]
+    #[display("success({0})")]
     Success(OptionDetails),
 
     #[lnp_api(type = 100)]
-    #[display("failure({_0:#})")]
+    #[display("failure({0:#})")]
     #[from]
     Failure(Failure),
 }

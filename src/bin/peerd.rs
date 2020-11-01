@@ -125,7 +125,7 @@ pub enum PeerSocket {
     /// The service should listen for incoming connections on a certain
     /// TCP socket, which may be IPv4- or IPv6-based. For Tor hidden services
     /// use IPv4 TCP port proxied as a Tor hidden service in `torrc`.
-    #[display("--listen={_0}")]
+    #[display("--listen={0}")]
     Listen(RemoteSocketAddr),
 
     /// The service should connect to the remote peer residing on the provided
@@ -134,7 +134,7 @@ pub enum PeerSocket {
     /// DNS names, due to a censorship vulnerability issues and for avoiding
     /// leaking any information about th elocal node to DNS resolvers, are not
     /// supported.
-    #[display("--connect={_0}")]
+    #[display("--connect={0}")]
     Connect(RemoteNodeAddr),
 }
 
