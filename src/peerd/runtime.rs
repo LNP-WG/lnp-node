@@ -45,7 +45,7 @@ pub fn run(
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    let identity = ServiceId::Connection(id);
+    let identity = ServiceId::Peer(id);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {
@@ -63,7 +63,7 @@ pub fn run(
         )?,
     };
     let listener = peer::Listener::with(receiver, bridge_handler);
-    spawn(move || listener.run_or_panic("connectiond-listener"));
+    spawn(move || listener.run_or_panic("peerd-listener"));
     // TODO: Use the handle returned by spawn to track the child process
 
     debug!("Staring main service runtime");

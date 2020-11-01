@@ -28,8 +28,8 @@ pub mod cli {
 pub mod lnpd {
     include!("src/lnpd/opts.rs");
 }
-pub mod connectiond {
-    include!("src/connectiond/opts.rs");
+pub mod peerd {
+    include!("src/peerd/opts.rs");
 }
 pub mod channeld {
     include!("src/channeld/opts.rs");
@@ -46,7 +46,7 @@ fn main() -> Result<(), configure_me_codegen::Error> {
 
     for app in [
         lnpd::Opts::into_app(),
-        connectiond::Opts::into_app(),
+        peerd::Opts::into_app(),
         channeld::Opts::into_app(),
         gossipd::Opts::into_app(),
         routed::Opts::into_app(),

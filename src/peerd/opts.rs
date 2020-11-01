@@ -32,8 +32,8 @@ use crate::opts::LNP_NODE_KEY_FILE;
 /// description)
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
 #[clap(
-    name = "connectiond",
-    bin_name = "connectiond",
+    name = "peerd",
+    bin_name = "peerd",
     author,
     version,
     group = ArgGroup::new("action").required(true),

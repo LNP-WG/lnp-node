@@ -94,8 +94,8 @@ pub enum ServiceId {
     #[display("routed")]
     Routing,
 
-    #[display("connectiond<{_0}>")]
-    Connection(NodeAddr),
+    #[display("peerd<{_0}>")]
+    Peer(NodeAddr),
 
     #[display("channel<{_0:#x}>")]
     #[from]

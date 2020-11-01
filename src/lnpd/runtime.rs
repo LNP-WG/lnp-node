@@ -136,7 +136,7 @@ impl Runtime {
                             "Unexpected another lnpd instance connection".err()
                         );
                     }
-                    ServiceId::Connection(connection_id) => {
+                    ServiceId::Peer(connection_id) => {
                         if self.connections.insert(connection_id.clone()) {
                             debug!(
                                 "Connection daemon {} is registered; total {} \
@@ -254,14 +254,14 @@ impl Runtime {
 
             Request::OpenChannelWith(request::ChannelParams {
                 channel_req,
-                connectiond,
+                peerd,
             }) => {
                 info!(
                     "{} by request from {}",
                     "Creating channel".promo(),
                     source.promoter()
                 );
-                self.create_channel(connectiond, channel_req, false)?;
+                self.create_channel(peerd, channel_req, false)?;
             }
 
             _ => {
@@ -285,15 +285,15 @@ impl Runtime {
             let ip = socket_addr.ip();
             let port = socket_addr.port();
 
-            debug!("Instantiating connectiond...");
+            debug!("Instantiating peerd...");
 
             // Start channeld
             let child = launch(
-                "connectiond",
+                "peerd",
                 &["--listen", &ip.to_string(), "--port", &port.to_string()],
             )?;
             let msg = format!(
-                "New instance of connectiond launched with PID {}",
+                "New instance of peerd launched with PID {}",
                 child.id()
             );
             debug!("{}", msg);
@@ -310,17 +310,18 @@ impl Runtime {
         _source: ServiceId,
         node_endpoint: NodeAddr,
     ) -> Result<(), Error> {
-        debug!("Instantiating connectiond...");
+        debug!("Instantiating peerd...");
 
         // Start channeld
-        launch("connectiond", &["--connect", &node_endpoint.to_string()])
-            .and_then(|child| {
+        launch("peerd", &["--connect", &node_endpoint.to_string()]).and_then(
+            |child| {
                 debug!(
-                    "New instance of connectiond launched with PID {}",
+                    "New instance of peerd launched with PID {}",
                     child.id()
                 );
                 Ok(())
-            })?;
+            },
+        )?;
 
         Ok(())
     }
@@ -354,7 +355,7 @@ impl Runtime {
             )),
             request::ChannelParams {
                 channel_req: open_channel,
-                connectiond: source,
+                peerd: source,
             },
         );
         debug!("Awaiting for channeld to connect...");

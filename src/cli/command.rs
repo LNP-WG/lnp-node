@@ -99,7 +99,7 @@ impl Exec for Command {
                             shutdown_scriptpubkey: None,
                             unknown_tlvs: none!(),
                         },
-                        connectiond: ServiceId::Connection(peer),
+                        peerd: ServiceId::Peer(peer),
                     }),
                 )
             }

@@ -24,7 +24,7 @@
     missing_docs
 )]
 
-//! Main executable for connectiond: lightning peer network connection
+//! Main executable for peerd: lightning peer network connection
 //! microservice.
 //!
 //! Program operations
@@ -103,12 +103,11 @@ use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 
-use lnp_node::connectiond::{self, Opts};
+use lnp_node::peerd::{self, Opts};
 use lnp_node::Config;
-use lnpbp::lnp::transport::FramingProtocol;
 use lnpbp::lnp::{
-    session, LocalNode, NodeAddr, PeerConnection, RemoteNodeAddr,
-    RemoteSocketAddr,
+    session, FramingProtocol, LocalNode, NodeAddr, PeerConnection,
+    RemoteNodeAddr, RemoteSocketAddr,
 };
 use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 
@@ -119,7 +118,7 @@ mod internal {
 }
  */
 
-/// Choses type of service runtime (see `--listen` and `--connect` option
+/// Chooses type of service runtime (see `--listen` and `--connect` option
 /// details in [`Opts`] structure.
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 pub enum PeerSocket {
@@ -165,7 +164,7 @@ impl From<Opts> for PeerSocket {
 }
 
 fn main() {
-    println!("connectiond: lightning peer network connection microservice");
+    println!("peerd: lightning peer network connection microservice");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
@@ -278,8 +277,8 @@ fn main() {
     };
 
     debug!("Starting runtime ...");
-    connectiond::run(config, connection, id, connect)
-        .expect("Error running connectiond runtime");
+    peerd::run(config, connection, id, connect)
+        .expect("Error running peerd runtime");
 
     unreachable!()
 }

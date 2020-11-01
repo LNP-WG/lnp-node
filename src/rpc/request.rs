@@ -44,7 +44,7 @@ pub enum Request {
     #[display("connect({_0})")]
     ConnectPeer(NodeAddr),
 
-    // Can be issued from `cli` to a specific `connectiond`
+    // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 4)]
     #[display("ping_peer()")]
     PingPeer,
@@ -58,7 +58,7 @@ pub enum Request {
     #[display("accept_channel_from(...)")]
     AcceptChannelFrom(ChannelParams),
 
-    // Can be issued from `cli` to a specific `connectiond`
+    // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 7)]
     #[display("pay_invoice({_0})")]
     PayInvoice(Invoice),
@@ -110,10 +110,10 @@ impl OptionDetails {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[display("{connectiond}, ...")]
+#[display("{peerd}, ...")]
 pub struct ChannelParams {
     pub channel_req: message::OpenChannel,
-    pub connectiond: ServiceId,
+    pub peerd: ServiceId,
 }
 
 impl From<crate::Error> for Request {

@@ -107,7 +107,7 @@ impl Runtime {
         match request {
             Request::OpenChannelWith(request::ChannelParams {
                 channel_req,
-                connectiond,
+                peerd,
             }) => {
                 debug!(
                     "Requesting remote peer to {} with temp id {}",
@@ -117,13 +117,13 @@ impl Runtime {
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    connectiond,
+                    peerd,
                     Request::LnpwpMessage(Messages::OpenChannel(channel_req)),
                 )?;
             }
             Request::AcceptChannelFrom(request::ChannelParams {
                 channel_req,
-                connectiond,
+                peerd,
             }) => {
                 let dumb_key = secp256k1::PublicKey::from_secret_key(
                     &lnpbp::SECP256K1,
@@ -152,7 +152,7 @@ impl Runtime {
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    connectiond,
+                    peerd,
                     Request::LnpwpMessage(Messages::AcceptChannel(
                         accept_channel,
                     )),

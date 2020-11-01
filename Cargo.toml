@@ -10,7 +10,19 @@ readme = "README.md"
 build = "build.rs"
 
 [[bin]]
-name = "connectiond"
+name = "lnpd"
+required-features = ["server"]
+
+[[bin]]
+name = "peerd"
+required-features = ["server"]
+
+[[bin]]
+name = "gossipd"
+required-features = ["server"]
+
+[[bin]]
+name = "routed"
 required-features = ["server"]
 
 [[bin]]

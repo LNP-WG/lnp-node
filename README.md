@@ -139,7 +139,7 @@ More information on the service buses used in the node:
 * [`src/rpc/`](src/rpc/) – RPC commands for all daemons used for message bus
 * [`src/i8n/`](src/i8n/) – functions exposed to FFI talking to message bus
 * `src/<name>/` – service/daemon-specific code:
-  - [`src/connectiond/`](src/connectiond) – daemon managing peer connections 
+  - [`src/peerd/`](src/peerd) – daemon managing peer connections 
     within Lightning peer network using LNP (Lightning network protocol). 
     Specific supported message types are defined as a part of 
     [LNP/BP Core Library](https://github.com/LNP-BP/rust-lnpbp)
@@ -171,7 +171,7 @@ then run the following commands:
 ```bash
 sudo apt install -y libsqlite3-dev libssl-dev libzmq3-dev pkg-config
 cargo install --path . --bins --all-features
-cargo run --color=always --bin connectiond --features=server -- --listen -vvvv
+cargo run --color=always --bin peerd --features=server -- --listen -vvvv
 ```
 
 ### In docker
