@@ -110,7 +110,7 @@ _arguments "${_arguments_options[@]}" \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
-(funding-info)
+(info)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -130,7 +130,7 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(list-funds)
+(funds)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -151,7 +151,7 @@ _arguments "${_arguments_options[@]}" \
 '*::asset -- Space-separated list of asset identifiers or tickers. If none are given lists all avaliable assets:' \
 && ret=0
 ;;
-(list-peers)
+(peers)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -171,7 +171,7 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(list-channels)
+(channels)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -191,7 +191,7 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(create-channel)
+(create)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -213,7 +213,7 @@ _arguments "${_arguments_options[@]}" \
 ':satoshis -- Amount of satoshis to allocate to the channel:' \
 && ret=0
 ;;
-(fund-channel)
+(refill)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -298,17 +298,24 @@ _lnp-cli_commands() {
         "listen:Bind to a socket and start listening for incoming LN peer connections" \
 "connect:Connect to the remote lightning network peer" \
 "ping:Ping remote peer (must be already connected)" \
-"funding-info:Provides information about funding points (bitcoin address or UTXO for RGB assets)" \
-"list-funds:Lists all funds available for channel creation for given list of assets" \
-"list-peers:Lists existing peer connections" \
-"list-channels:Lists existing channels" \
-"create-channel:Create a new channel with the remote peer, which must be already connected" \
-"fund-channel:Adds RGB assets to an existing channel" \
+"info:General information about the running node" \
+"funds:Lists all funds available for channel creation for given list of assets and provides information about funding points (bitcoin address or UTXO for RGB assets)" \
+"peers:Lists existing peer connections" \
+"channels:Lists existing channels" \
+"create:Create a new channel with the remote peer, which must be already connected" \
+"refill:Adds RGB assets to an existing channel" \
 "invoice:Create an invoice" \
 "pay:Pay the invoice" \
 "help:Prints this message or the help of the given subcommand(s)" \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
+}
+(( $+functions[_lnp-cli__channels_commands] )) ||
+_lnp-cli__channels_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli channels commands' commands "$@"
 }
 (( $+functions[_lnp-cli__connect_commands] )) ||
 _lnp-cli__connect_commands() {
@@ -317,26 +324,19 @@ _lnp-cli__connect_commands() {
     )
     _describe -t commands 'lnp-cli connect commands' commands "$@"
 }
-(( $+functions[_lnp-cli__create-channel_commands] )) ||
-_lnp-cli__create-channel_commands() {
+(( $+functions[_lnp-cli__create_commands] )) ||
+_lnp-cli__create_commands() {
     local commands; commands=(
         
     )
-    _describe -t commands 'lnp-cli create-channel commands' commands "$@"
+    _describe -t commands 'lnp-cli create commands' commands "$@"
 }
-(( $+functions[_lnp-cli__fund-channel_commands] )) ||
-_lnp-cli__fund-channel_commands() {
+(( $+functions[_lnp-cli__funds_commands] )) ||
+_lnp-cli__funds_commands() {
     local commands; commands=(
         
     )
-    _describe -t commands 'lnp-cli fund-channel commands' commands "$@"
-}
-(( $+functions[_lnp-cli__funding-info_commands] )) ||
-_lnp-cli__funding-info_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli funding-info commands' commands "$@"
+    _describe -t commands 'lnp-cli funds commands' commands "$@"
 }
 (( $+functions[_lnp-cli__help_commands] )) ||
 _lnp-cli__help_commands() {
@@ -345,33 +345,19 @@ _lnp-cli__help_commands() {
     )
     _describe -t commands 'lnp-cli help commands' commands "$@"
 }
+(( $+functions[_lnp-cli__info_commands] )) ||
+_lnp-cli__info_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli info commands' commands "$@"
+}
 (( $+functions[_lnp-cli__invoice_commands] )) ||
 _lnp-cli__invoice_commands() {
     local commands; commands=(
         
     )
     _describe -t commands 'lnp-cli invoice commands' commands "$@"
-}
-(( $+functions[_lnp-cli__list-channels_commands] )) ||
-_lnp-cli__list-channels_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli list-channels commands' commands "$@"
-}
-(( $+functions[_lnp-cli__list-funds_commands] )) ||
-_lnp-cli__list-funds_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli list-funds commands' commands "$@"
-}
-(( $+functions[_lnp-cli__list-peers_commands] )) ||
-_lnp-cli__list-peers_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli list-peers commands' commands "$@"
 }
 (( $+functions[_lnp-cli__listen_commands] )) ||
 _lnp-cli__listen_commands() {
@@ -387,12 +373,26 @@ _lnp-cli__pay_commands() {
     )
     _describe -t commands 'lnp-cli pay commands' commands "$@"
 }
+(( $+functions[_lnp-cli__peers_commands] )) ||
+_lnp-cli__peers_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli peers commands' commands "$@"
+}
 (( $+functions[_lnp-cli__ping_commands] )) ||
 _lnp-cli__ping_commands() {
     local commands; commands=(
         
     )
     _describe -t commands 'lnp-cli ping commands' commands "$@"
+}
+(( $+functions[_lnp-cli__refill_commands] )) ||
+_lnp-cli__refill_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli refill commands' commands "$@"
 }
 
 _lnp-cli "$@"

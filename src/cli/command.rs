@@ -50,18 +50,16 @@ impl Exec for Command {
                 runtime.report_progress()?;
             }
 
-            Command::Ping { peer: _ } => {
-                unimplemented!()
-                /*
-                let peer = node_locator
+            Command::Ping { peer } => {
+                let node_addr = peer
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
 
-                runtime.request(ServiceId::Lnpd, Request::PingPeer(peer))
-                 */
+                runtime
+                    .request(ServiceId::Peer(node_addr), Request::PingPeer)?;
             }
 
-            Command::CreateChannel {
+            Command::Create {
                 peer: node_locator,
                 satoshis: _,
             } => {

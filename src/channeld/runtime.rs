@@ -67,10 +67,11 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
+        let mut notify_cli = None;
         match request {
             Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
                 info!(
@@ -79,6 +80,10 @@ impl Runtime {
                     source.promoter(),
                     accept_channel.temporary_channel_id.promoter()
                 );
+                notify_cli = Some(Request::Progress(format!(
+                    "{} accepted channel",
+                    source
+                )));
             }
 
             Request::LnpwpMessage(_) => {
@@ -95,6 +100,11 @@ impl Runtime {
                 ));
             }
         }
+
+        if let Some(resp) = notify_cli {
+            senders.send_to(ServiceBus::Ctl, ServiceId::Lnpd, source, resp)?;
+        }
+
         Ok(())
     }
 

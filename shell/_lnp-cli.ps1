@@ -41,12 +41,12 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('listen', 'listen', [CompletionResultType]::ParameterValue, 'Bind to a socket and start listening for incoming LN peer connections')
             [CompletionResult]::new('connect', 'connect', [CompletionResultType]::ParameterValue, 'Connect to the remote lightning network peer')
             [CompletionResult]::new('ping', 'ping', [CompletionResultType]::ParameterValue, 'Ping remote peer (must be already connected)')
-            [CompletionResult]::new('funding-info', 'funding-info', [CompletionResultType]::ParameterValue, 'Provides information about funding points (bitcoin address or UTXO for RGB assets)')
-            [CompletionResult]::new('list-funds', 'list-funds', [CompletionResultType]::ParameterValue, 'Lists all funds available for channel creation for given list of assets')
-            [CompletionResult]::new('list-peers', 'list-peers', [CompletionResultType]::ParameterValue, 'Lists existing peer connections')
-            [CompletionResult]::new('list-channels', 'list-channels', [CompletionResultType]::ParameterValue, 'Lists existing channels')
-            [CompletionResult]::new('create-channel', 'create-channel', [CompletionResultType]::ParameterValue, 'Create a new channel with the remote peer, which must be already connected')
-            [CompletionResult]::new('fund-channel', 'fund-channel', [CompletionResultType]::ParameterValue, 'Adds RGB assets to an existing channel')
+            [CompletionResult]::new('info', 'info', [CompletionResultType]::ParameterValue, 'General information about the running node')
+            [CompletionResult]::new('funds', 'funds', [CompletionResultType]::ParameterValue, 'Lists all funds available for channel creation for given list of assets and provides information about funding points (bitcoin address or UTXO for RGB assets)')
+            [CompletionResult]::new('peers', 'peers', [CompletionResultType]::ParameterValue, 'Lists existing peer connections')
+            [CompletionResult]::new('channels', 'channels', [CompletionResultType]::ParameterValue, 'Lists existing channels')
+            [CompletionResult]::new('create', 'create', [CompletionResultType]::ParameterValue, 'Create a new channel with the remote peer, which must be already connected')
+            [CompletionResult]::new('refill', 'refill', [CompletionResultType]::ParameterValue, 'Adds RGB assets to an existing channel')
             [CompletionResult]::new('invoice', 'invoice', [CompletionResultType]::ParameterValue, 'Create an invoice')
             [CompletionResult]::new('pay', 'pay', [CompletionResultType]::ParameterValue, 'Pay the invoice')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Prints this message or the help of the given subcommand(s)')
@@ -115,7 +115,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;funding-info' {
+        'lnp-cli;info' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
@@ -134,7 +134,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;list-funds' {
+        'lnp-cli;funds' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
@@ -153,7 +153,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;list-peers' {
+        'lnp-cli;peers' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
@@ -172,7 +172,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;list-channels' {
+        'lnp-cli;channels' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
@@ -191,7 +191,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;create-channel' {
+        'lnp-cli;create' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
@@ -210,7 +210,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;fund-channel' {
+        'lnp-cli;refill' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')

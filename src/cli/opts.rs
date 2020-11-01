@@ -79,12 +79,13 @@ pub enum Command {
         peer: PartialNodeAddr,
     },
 
-    /// Provides information about funding points (bitcoin address or UTXO for
-    /// RGB assets)
-    FundingInfo,
+    /// General information about the running node
+    Info,
 
     /// Lists all funds available for channel creation for given list of assets
-    ListFunds {
+    /// and provides information about funding points (bitcoin address or UTXO
+    /// for RGB assets)
+    Funds {
         /// Space-separated list of asset identifiers or tickers. If none are
         /// given lists all avaliable assets
         #[clap()]
@@ -92,16 +93,16 @@ pub enum Command {
     },
 
     /// Lists existing peer connections
-    ListPeers,
+    Peers,
 
     /// Lists existing channels
-    ListChannels,
+    Channels,
 
     /// Create a new channel with the remote peer, which must be already
     /// connected.
     ///
     /// RGB assets are added to the channel later with FundChannel command
-    CreateChannel {
+    Create {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
         #[clap()]
@@ -113,7 +114,7 @@ pub enum Command {
     },
 
     /// Adds RGB assets to an existing channel
-    FundChannel {
+    Refill {
         /// Channel to which the funding must be added
         #[clap()]
         channel: ChannelId,
