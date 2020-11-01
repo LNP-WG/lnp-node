@@ -244,12 +244,24 @@ impl Runtime {
                 return Ok(());
             }
 
-            Request::ConnectPeer(node_addr) => {
+            Request::ConnectPeer(addr) => {
                 info!(
                     "{} to remote peer {}",
                     "Connecting".promo(),
-                    node_addr.promoter()
+                    addr.promoter()
                 );
+                let resp = self.connect_peer(addr);
+                match resp {
+                    Ok(_) => {}
+                    Err(ref err) => error!("{}", err.err()),
+                }
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source,
+                    Request::from(resp),
+                )?;
+                return Ok(());
             }
 
             Request::OpenChannelWith(request::ChannelParams {
@@ -307,23 +319,17 @@ impl Runtime {
 
     fn connect_peer(
         &mut self,
-        _source: ServiceId,
         node_endpoint: NodeAddr,
-    ) -> Result<(), Error> {
+    ) -> Result<String, Error> {
         debug!("Instantiating peerd...");
 
         // Start channeld
-        launch("peerd", &["--connect", &node_endpoint.to_string()]).and_then(
-            |child| {
-                debug!(
-                    "New instance of peerd launched with PID {}",
-                    child.id()
-                );
-                Ok(())
-            },
-        )?;
-
-        Ok(())
+        let child =
+            launch("peerd", &["--connect", &node_endpoint.to_string()])?;
+        let msg =
+            format!("New instance of peerd launched with PID {}", child.id());
+        debug!("{}", msg);
+        Ok(msg)
     }
 
     fn create_channel(
