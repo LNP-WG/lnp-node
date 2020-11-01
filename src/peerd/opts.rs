@@ -13,9 +13,12 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use clap::{AppSettings, ArgGroup, Clap, ValueHint};
+use std::fs;
 use std::net::IpAddr;
+use std::path::PathBuf;
 
-use lnpbp::lnp::{transport::FramingProtocol, RemoteNodeAddr};
+use lnpbp::lnp::{FramingProtocol, LocalNode, RemoteNodeAddr};
+use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 
 use crate::opts::LNP_NODE_KEY_FILE;
 
@@ -78,6 +81,19 @@ pub struct Opts {
     )]
     pub overlay: FramingProtocol,
 
+    /// Node key configuration
+    #[clap(flatten)]
+    pub key_opts: KeyOpts,
+
+    /// These params can be read also from the configuration file, not just
+    /// command-line args or environment variables
+    #[clap(flatten)]
+    pub shared: crate::opts::Opts,
+}
+
+/// Node key configuration
+#[derive(Clap, Clone, PartialEq, Eq, Debug)]
+pub struct KeyOpts {
     /// Node key file
     ///
     /// Location for the file containing node private Secp256k1 key
@@ -90,16 +106,40 @@ pub struct Opts {
         value_hint = ValueHint::FilePath
     )]
     pub key_file: String,
-
-    /// These params can be read also from the configuration file, not just
-    /// command-line args or environment variables
-    #[clap(flatten)]
-    pub shared: crate::opts::Opts,
 }
 
 impl Opts {
     pub fn process(&mut self) {
         self.shared.process();
-        self.shared.process_dir(&mut self.key_file);
+        self.key_opts.process(&self.shared);
+    }
+}
+
+impl KeyOpts {
+    pub fn process(&mut self, shared: &crate::opts::Opts) {
+        shared.process_dir(&mut self.key_file);
+    }
+
+    pub fn local_node(&self) -> LocalNode {
+        if PathBuf::from(self.key_file.clone()).exists() {
+            LocalNode::strict_decode(fs::File::open(&self.key_file).expect(
+                &format!(
+                    "Unable to open key file {}; please check \
+                that the user which runs the daemon has necessary permissions",
+                    self.key_file
+                ),
+            ))
+            .expect("Unable to read node code file format")
+        } else {
+            let local_node = LocalNode::new();
+            let key_file = fs::File::create(&self.key_file).expect(&format!(
+                "Unable to create key file '{}'; please check that the path exists",
+                self.key_file
+            ));
+            local_node
+                .strict_encode(key_file)
+                .expect("Unable to save generated node kay");
+            local_node
+        }
     }
 }

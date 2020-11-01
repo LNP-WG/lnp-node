@@ -32,7 +32,7 @@ extern crate log;
 use clap::Clap;
 
 use lnp_node::lnpd::{self, Opts};
-use lnp_node::Config;
+use lnp_node::{Config, LogStyle};
 
 fn main() {
     println!("lnpd: lightning node management microservice");
@@ -47,6 +47,9 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
+    let node_id = opts.key_opts.local_node().node_id();
+    debug!("{}: {}", "Local node id".ended(), node_id.addr());
+
     /*
     use self::internal::ResultExt;
     let (config_from_file, _) =
@@ -57,7 +60,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    lnpd::run(config).expect("Error running lnpd runtime");
+    lnpd::run(config, node_id).expect("Error running lnpd runtime");
 
     unreachable!()
 }

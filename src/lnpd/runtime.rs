@@ -14,27 +14,27 @@
 
 use amplify::Wrapper;
 use std::collections::{HashMap, HashSet};
+use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::io;
+use std::net::SocketAddr;
 use std::process;
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
+use lnpbp::bitcoin::secp256k1;
 use lnpbp::lnp::{
     message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 
-use crate::rpc::request::{
-    IntoProgressOrFalure, IntoSuccessOrFalure, OptionDetails,
-};
+use crate::rpc::request::{IntoProgressOrFalure, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
-use std::convert::TryFrom;
-use std::net::SocketAddr;
 
-pub fn run(config: Config) -> Result<(), Error> {
+pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
+        node_id,
         connections: none!(),
         channels: none!(),
         spawning_services: none!(),
@@ -47,6 +47,7 @@ pub fn run(config: Config) -> Result<(), Error> {
 
 pub struct Runtime {
     identity: ServiceId,
+    node_id: secp256k1::PublicKey,
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_services: HashMap<ServiceId, ServiceId>,
@@ -220,10 +221,10 @@ impl Runtime {
                          connection by a request from {}",
                         source, enquirer
                     );
-                    source = enquirer.clone();
                     notify_cli = Some(Request::Success(OptionDetails::with(
-                        format!("Peer connected to {}", enquirer),
+                        format!("Peer connected to {}", source),
                     )));
+                    source = enquirer.clone();
                     self.spawning_services.remove(&source);
                 }
             }
@@ -235,13 +236,23 @@ impl Runtime {
                     "Starting listener".promo(),
                     addr_str
                 );
-                let resp = self.listen(addr);
+                let resp = self.listen(addr.clone());
                 match resp {
                     Ok(_) => info!("Connection daemon {} for incoming LN peer connections on {}", 
                                    "listens".ended(), addr_str),
                     Err(ref err) => error!("{}", err.err())
                 }
-                notify_cli = Some(resp.into_success_or_failure());
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source.clone(),
+                    resp.into_progress_or_failure(),
+                )?;
+                notify_cli =
+                    Some(Request::Success(OptionDetails::with(format!(
+                        "Node {} listens for connections on {}",
+                        self.node_id, addr
+                    ))));
             }
 
             Request::ConnectPeer(addr) => {
