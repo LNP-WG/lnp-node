@@ -62,6 +62,7 @@ pub enum Error {
     Misbehaving,
 
     /// {_0}
+    #[from(amplify::internet::NoOnionSupportError)]
     Other(String),
 }
 

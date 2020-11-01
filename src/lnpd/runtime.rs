@@ -13,18 +13,21 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Wrapper;
-use colored::Colorize;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsStr;
 use std::io;
 use std::process;
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
-use lnpbp::lnp::{message, ChannelId, Messages, NodeAddr, TypedEnum};
+use lnpbp::lnp::{
+    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
+};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
+use std::convert::TryFrom;
+use std::net::SocketAddr;
 
 pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime {
@@ -130,7 +133,7 @@ impl Runtime {
                     ServiceId::Lnpd => {
                         error!(
                             "{}",
-                            "Unexpected another lnpd instance connection".red()
+                            "Unexpected another lnpd instance connection".err()
                         );
                     }
                     ServiceId::Connection(connection_id) => {
@@ -219,6 +222,28 @@ impl Runtime {
                   }*/
             }
 
+            Request::Listen(addr) => {
+                let addr_str = addr.addr();
+                info!(
+                    "{} for incoming LN peer connections on {}",
+                    "Starting listener".promo(),
+                    addr_str
+                );
+                let resp = self.listen(addr);
+                match resp {
+                    Ok(_) => info!("Connection daemon {} for incoming LN peer connections on {}", 
+                                   "listens".ended(), addr_str),
+                    Err(ref err) => error!("{}", err.err())
+                }
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source,
+                    Request::from(resp),
+                )?;
+                return Ok(());
+            }
+
             Request::ConnectPeer(node_addr) => {
                 info!(
                     "{} to remote peer {}",
@@ -242,7 +267,7 @@ impl Runtime {
             _ => {
                 error!(
                     "{}",
-                    "Request is not supported by the CTL interface".red()
+                    "Request is not supported by the CTL interface".err()
                 );
                 return Err(Error::NotSupported(
                     ServiceBus::Ctl,
@@ -252,6 +277,32 @@ impl Runtime {
         }
 
         Ok(())
+    }
+
+    fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
+        if let RemoteSocketAddr::Ftcp(inet) = addr {
+            let socket_addr = SocketAddr::try_from(inet)?;
+            let ip = socket_addr.ip();
+            let port = socket_addr.port();
+
+            debug!("Instantiating connectiond...");
+
+            // Start channeld
+            let child = launch(
+                "connectiond",
+                &["--listen", &ip.to_string(), "--port", &port.to_string()],
+            )?;
+            let msg = format!(
+                "New instance of connectiond launched with PID {}",
+                child.id()
+            );
+            debug!("{}", msg);
+            Ok(msg)
+        } else {
+            Err(Error::Other(s!(
+                "Only TCP is supported for now as an overlay protocol"
+            )))
+        }
     }
 
     fn connect_peer(
@@ -270,8 +321,6 @@ impl Runtime {
                 );
                 Ok(())
             })?;
-
-        debug!("Awaiting for connectiond to connect...");
 
         Ok(())
     }

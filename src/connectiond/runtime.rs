@@ -13,7 +13,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Bipolar;
-use colored::Colorize;
 use std::collections::HashMap;
 use std::thread::spawn;
 

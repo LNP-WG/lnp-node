@@ -14,7 +14,8 @@
 
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::lnp::{
-    message, TempChannelId, ToNodeAddr, LIGHTNING_P2P_DEFAULT_PORT,
+    message, RemoteSocketAddr, TempChannelId, ToNodeAddr,
+    LIGHTNING_P2P_DEFAULT_PORT,
 };
 use lnpbp_services::shell::Exec;
 
@@ -29,6 +30,16 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
+            Command::Listen {
+                ip_addr,
+                port,
+                overlay,
+            } => {
+                let socket =
+                    RemoteSocketAddr::with_ip_addr(*overlay, *ip_addr, *port);
+                runtime.request(ServiceId::Lnpd, Request::Listen(socket))
+            }
+
             Command::Connect { peer: node_locator } => {
                 let peer = node_locator
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)

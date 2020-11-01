@@ -40,19 +40,13 @@ dependencies = [
 
 [[package]]
 name = "amplify_derive"
-version = "2.1.1"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a033a0991910d3af34df93853d4a6004af535f27e509713f74a85ed1ec05a7f"
+checksum = "e804c5f2175e1f726e6c5253669d8bf64188b05d5bb106a3a9e94880958e6c10"
 dependencies = [
  "quote 1.0.7",
  "syn 1.0.48",
 ]
-
-[[package]]
-name = "arc-swap"
-version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d25d88fd6b8041580a654f9d0c581a047baee2b3efee13275f2fc392fc75034"
 
 [[package]]
 name = "arrayref"
@@ -932,7 +926,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#8dc7fd3a03fbf774d0f1e7de96566f7c946b80ea"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#a9e4a2e773a4c1f68daca69199e69af0b1da2cb6"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -962,7 +956,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#8dc7fd3a03fbf774d0f1e7de96566f7c946b80ea"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#a9e4a2e773a4c1f68daca69199e69af0b1da2cb6"
 dependencies = [
  "amplify",
  "quote 1.0.7",
@@ -972,7 +966,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#8dc7fd3a03fbf774d0f1e7de96566f7c946b80ea"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#a9e4a2e773a4c1f68daca69199e69af0b1da2cb6"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1845,11 +1839,10 @@ dependencies = [
 
 [[package]]
 name = "signal-hook-registry"
-version = "1.2.1"
+version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e12110bc539e657a646068aaf5eb5b63af9d0c1f7b29c97113fad80e15f035"
+checksum = "ce32ea0c6c56d5eacaeb814fbed9960547021d3edd010ded1425f180536b20ab"
 dependencies = [
- "arc-swap",
  "libc",
 ]
 

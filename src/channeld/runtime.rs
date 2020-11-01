@@ -12,8 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use colored::Colorize;
-
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::lnp::{message, ChannelId, Messages, TypedEnum};
 use lnpbp_services::esb::{self, Handler};

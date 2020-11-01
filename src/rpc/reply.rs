@@ -35,7 +35,7 @@ impl rpc_connection::Reply for Reply {}
 impl From<Error> for rpc::Failure {
     fn from(err: Error) -> Self {
         rpc::Failure {
-            code: 0,
+            code: 1, // Error from LNPD
             info: err.to_string(),
         }
     }

@@ -275,6 +275,14 @@ pub trait LogStyle: ToString {
     fn amount(&self) -> colored::ColoredString {
         self.to_string().bold().bright_yellow()
     }
+
+    fn addr(&self) -> colored::ColoredString {
+        self.to_string().bold().bright_yellow()
+    }
+
+    fn err(&self) -> colored::ColoredString {
+        self.to_string().bold().bright_red()
+    }
 }
 
 impl<T> LogStyle for T where T: ToString {}
