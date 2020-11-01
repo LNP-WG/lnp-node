@@ -114,26 +114,31 @@ impl Runtime {
         _source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
+        let mut notify_cli = None;
         match request {
-            Request::OpenChannelWith(request::ChannelParams {
+            Request::OpenChannelWith(request::CreateChannel {
                 channel_req,
                 peerd,
+                report_to,
             }) => {
-                debug!(
+                let msg = format!(
                     "Requesting remote peer to {} with temp id {}",
                     "open a channel".ended(),
                     channel_req.temporary_channel_id.ender()
                 );
+                info!("{}", msg);
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     peerd,
                     Request::LnpwpMessage(Messages::OpenChannel(channel_req)),
                 )?;
+                notify_cli = Some((report_to, msg))
             }
-            Request::AcceptChannelFrom(request::ChannelParams {
+            Request::AcceptChannelFrom(request::CreateChannel {
                 channel_req,
                 peerd,
+                ..
             }) => {
                 let dumb_key = secp256k1::PublicKey::from_secret_key(
                     &lnpbp::SECP256K1,
@@ -176,6 +181,14 @@ impl Runtime {
                     request.get_type(),
                 ));
             }
+        }
+        if let Some((Some(report_to), resp)) = notify_cli {
+            senders.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                report_to,
+                Request::Progress(resp),
+            )?;
         }
         Ok(())
     }

@@ -74,7 +74,7 @@ impl Exec for Command {
 
                 runtime.request(
                     ServiceId::Lnpd,
-                    Request::OpenChannelWith(request::ChannelParams {
+                    Request::OpenChannelWith(request::CreateChannel {
                         // TODO: Provide channel configuration from command-line
                         //       arguments and configuration file defaults
                         channel_req: message::OpenChannel {
@@ -100,6 +100,7 @@ impl Exec for Command {
                             unknown_tlvs: none!(),
                         },
                         peerd: ServiceId::Peer(peer),
+                        report_to: Some(runtime.identity()),
                     }),
                 )?;
                 runtime.report_progress()?;

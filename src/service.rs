@@ -103,7 +103,10 @@ pub enum ServiceId {
     Channel(ChannelId),
 
     #[display("client<{0}>")]
-    Client(ClientName),
+    Client(u64),
+
+    #[display("other<{0}>")]
+    Other(ClientName),
 }
 
 impl ServiceId {
@@ -111,10 +114,9 @@ impl ServiceId {
         ServiceId::Lnpd
     }
 
-    pub fn client(name: impl ToString) -> ServiceId {
-        ServiceId::Client(
-            ClientName::from_str(&name.to_string()).expect("never fails"),
-        )
+    pub fn client() -> ServiceId {
+        use lnpbp::bitcoin::secp256k1::rand;
+        ServiceId::Client(rand::random())
     }
 }
 
@@ -129,7 +131,7 @@ impl From<ServiceId> for Vec<u8> {
 impl From<Vec<u8>> for ServiceId {
     fn from(vec: Vec<u8>) -> Self {
         strict_decode(&vec).unwrap_or_else(|_| {
-            ServiceId::Client(
+            ServiceId::Other(
                 ClientName::from_str(&String::from_utf8_lossy(&vec))
                     .expect("ClientName conversion never fails"),
             )

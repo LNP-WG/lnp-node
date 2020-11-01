@@ -52,11 +52,11 @@ pub enum Request {
     // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 5)]
     #[display("create_channel_with(...)")]
-    OpenChannelWith(ChannelParams),
+    OpenChannelWith(CreateChannel),
 
     #[lnp_api(type = 6)]
     #[display("accept_channel_from(...)")]
-    AcceptChannelFrom(ChannelParams),
+    AcceptChannelFrom(CreateChannel),
 
     // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 7)]
@@ -115,9 +115,10 @@ impl OptionDetails {
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[display("{peerd}, ...")]
-pub struct ChannelParams {
+pub struct CreateChannel {
     pub channel_req: message::OpenChannel,
     pub peerd: ServiceId,
+    pub report_to: Option<ServiceId>,
 }
 
 impl From<crate::Error> for Request {

@@ -183,7 +183,7 @@ fn main() {
      */
 
     let local_node = opts.key_opts.local_node();
-    debug!("{}: {}", "Local node id".ended(), local_node.addr());
+    info!("{}: {}", "Local node id".ended(), local_node.addr());
     let peer_socket = PeerSocket::from(opts);
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 

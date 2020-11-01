@@ -48,7 +48,7 @@ fn main() {
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
     let node_id = opts.key_opts.local_node().node_id();
-    debug!("{}: {}", "Local node id".ended(), node_id.addr());
+    info!("{}: {}", "Local node id".ended(), node_id.addr());
 
     /*
     use self::internal::ResultExt;

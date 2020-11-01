@@ -51,8 +51,8 @@ pub struct Runtime {
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_services: HashMap<ServiceId, ServiceId>,
-    opening_channels: HashMap<ServiceId, request::ChannelParams>,
-    accepting_channels: HashMap<ServiceId, request::ChannelParams>,
+    opening_channels: HashMap<ServiceId, request::CreateChannel>,
+    accepting_channels: HashMap<ServiceId, request::CreateChannel>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -102,7 +102,7 @@ impl Runtime {
 
             Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Creating channel by peer request from {}", source);
-                self.create_channel(source, open_channel, true)?;
+                self.create_channel(source, None, open_channel, true)?;
             }
 
             Request::LnpwpMessage(_) => {
@@ -125,7 +125,7 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        mut source: ServiceId,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         let mut notify_cli = None;
@@ -143,7 +143,7 @@ impl Runtime {
                     }
                     ServiceId::Peer(connection_id) => {
                         if self.connections.insert(connection_id.clone()) {
-                            debug!(
+                            info!(
                                 "Connection daemon {} is registered; total {} \
                                  connections are known",
                                 connection_id,
@@ -159,7 +159,7 @@ impl Runtime {
                     }
                     ServiceId::Channel(channel_id) => {
                         if self.channels.insert(channel_id.clone()) {
-                            debug!(
+                            info!(
                                 "Channel daemon {} is registered; total {} \
                                  channels are known",
                                 channel_id,
@@ -186,10 +186,13 @@ impl Runtime {
                         "Daemon {} is known: we spawned it to create a channel. \
                          Ordering channel opening", source
                     );
-                    notify_cli = Some(Request::Progress(format!(
-                        "Channel daemon {} operational",
-                        source
-                    )));
+                    notify_cli = Some((
+                        channel_params.report_to.clone(),
+                        Request::Progress(format!(
+                            "Channel daemon {} operational",
+                            source
+                        )),
+                    ));
                     senders.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
@@ -221,10 +224,13 @@ impl Runtime {
                          connection by a request from {}",
                         source, enquirer
                     );
-                    notify_cli = Some(Request::Success(OptionDetails::with(
-                        format!("Peer connected to {}", source),
-                    )));
-                    source = enquirer.clone();
+                    notify_cli = Some((
+                        Some(enquirer.clone()),
+                        Request::Success(OptionDetails::with(format!(
+                            "Peer connected to {}",
+                            source
+                        ))),
+                    ));
                     self.spawning_services.remove(&source);
                 }
             }
@@ -248,11 +254,13 @@ impl Runtime {
                     source.clone(),
                     resp.into_progress_or_failure(),
                 )?;
-                notify_cli =
-                    Some(Request::Success(OptionDetails::with(format!(
+                notify_cli = Some((
+                    Some(source.clone()),
+                    Request::Success(OptionDetails::with(format!(
                         "Node {} listens for connections on {}",
                         self.node_id, addr
-                    ))));
+                    ))),
+                ));
             }
 
             Request::ConnectPeer(addr) => {
@@ -266,24 +274,32 @@ impl Runtime {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
                 }
-                notify_cli = Some(resp.into_progress_or_failure());
+                notify_cli = Some((
+                    Some(source.clone()),
+                    resp.into_progress_or_failure(),
+                ));
             }
 
-            Request::OpenChannelWith(request::ChannelParams {
+            Request::OpenChannelWith(request::CreateChannel {
                 channel_req,
                 peerd,
+                report_to,
             }) => {
                 info!(
                     "{} by request from {}",
                     "Creating channel".promo(),
                     source.promoter()
                 );
-                let resp = self.create_channel(peerd, channel_req, false);
+                let resp =
+                    self.create_channel(peerd, report_to, channel_req, false);
                 match resp {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
                 }
-                notify_cli = Some(resp.into_progress_or_failure());
+                notify_cli = Some((
+                    Some(source.clone()),
+                    resp.into_progress_or_failure(),
+                ));
             }
 
             _ => {
@@ -298,8 +314,13 @@ impl Runtime {
             }
         }
 
-        if let Some(resp) = notify_cli {
-            senders.send_to(ServiceBus::Ctl, ServiceId::Lnpd, source, resp)?;
+        if let Some((Some(respond_to), resp)) = notify_cli {
+            senders.send_to(
+                ServiceBus::Ctl,
+                ServiceId::Lnpd,
+                respond_to,
+                resp,
+            )?;
         }
 
         Ok(())
@@ -322,7 +343,7 @@ impl Runtime {
                 "New instance of peerd launched with PID {}",
                 child.id()
             );
-            debug!("{}", msg);
+            info!("{}", msg);
             Ok(msg)
         } else {
             Err(Error::Other(s!(
@@ -342,7 +363,7 @@ impl Runtime {
         let child = launch("peerd", &["--connect", &node_addr.to_string()])?;
         let msg =
             format!("New instance of peerd launched with PID {}", child.id());
-        debug!("{}", msg);
+        info!("{}", msg);
 
         self.spawning_services
             .insert(ServiceId::Peer(node_addr), source);
@@ -354,6 +375,7 @@ impl Runtime {
     fn create_channel(
         &mut self,
         source: ServiceId,
+        report_to: Option<ServiceId>,
         open_channel: message::OpenChannel,
         accept: bool,
     ) -> Result<String, Error> {
@@ -366,7 +388,7 @@ impl Runtime {
             "New instance of channeld launched with PID {}",
             child.id()
         );
-        debug!("{}", msg);
+        info!("{}", msg);
 
         let list = if accept {
             &mut self.accepting_channels
@@ -377,9 +399,10 @@ impl Runtime {
             ServiceId::Channel(ChannelId::from_inner(
                 open_channel.temporary_channel_id.into_inner(),
             )),
-            request::ChannelParams {
+            request::CreateChannel {
                 channel_req: open_channel,
                 peerd: source,
+                report_to: report_to,
             },
         );
         debug!("Awaiting for channeld to connect...");

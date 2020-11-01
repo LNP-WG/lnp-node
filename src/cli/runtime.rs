@@ -15,7 +15,6 @@
 use core::convert::TryInto;
 use std::thread::sleep;
 use std::time::Duration;
-use url::Url;
 
 use lnpbp::lnp::ZmqType;
 use lnpbp_services::esb;
@@ -25,15 +24,14 @@ use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, LogStyle, ServiceId};
 
 pub struct Runtime {
+    identity: ServiceId,
     esb: esb::Controller<ServiceBus, Request, Handler>,
 }
 
 impl Runtime {
     pub fn with(config: Config) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
-        let mut url = Url::from(&config.ctl_endpoint);
-        url.set_fragment(Some(&format!("cli={}", std::process::id())));
-        let identity = ServiceId::client(url);
+        let identity = ServiceId::client();
         let bus_config = esb::BusConfig::with_locator(
             config
                 .ctl_endpoint
@@ -45,14 +43,20 @@ impl Runtime {
             map! {
                 ServiceBus::Ctl => bus_config
             },
-            Handler { identity },
+            Handler {
+                identity: identity.clone(),
+            },
             ZmqType::RouterConnect,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self { esb })
+        Ok(Self { identity, esb })
+    }
+
+    pub fn identity(&self) -> ServiceId {
+        self.identity.clone()
     }
 
     pub fn request(
@@ -74,7 +78,7 @@ impl Runtime {
                 counter += 1;
                 match rep {
                     Request::Failure(fail) => {
-                        error!(
+                        eprintln!(
                             "{}: {}",
                             "Request failure".err(),
                             fail.err_details()
@@ -82,17 +86,17 @@ impl Runtime {
                         Err(Error::from(fail))?
                     }
                     Request::Progress(info) => {
-                        info!("{}", info.progress());
+                        println!("{}", info.progress());
                         finished = false;
                     }
                     Request::Success(OptionDetails(Some(info))) => {
-                        info!("{}{}", "Success: ".ended(), info.ender());
+                        println!("{}{}", "Success: ".ended(), info.ender());
                     }
                     Request::Success(OptionDetails(None)) => {
-                        info!("{}", "Success".ended());
+                        println!("{}", "Success".ended());
                     }
                     other => {
-                        error!(
+                        eprintln!(
                             "{}: {}",
                             "Unexpected report".err(),
                             other.err_details()
