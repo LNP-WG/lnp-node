@@ -16,7 +16,7 @@ use clap::{AppSettings, Clap};
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use lnpbp::lnp::{ChannelId, FramingProtocol, Invoice, PartialNodeAddr};
+use lnpbp::lnp::{ChannelId, FramingProtocol, PartialNodeAddr};
 
 /// Command-line tool for working with LNP node
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -140,7 +140,9 @@ pub enum Command {
     Pay {
         /// Invoice bech32 string
         #[clap()]
-        invoice: Invoice,
+        // TODO: Replace with `Invoice` type once our fix will get merged:
+        //       <<https://github.com/rust-bitcoin/rust-lightning-invoice/pull/43>>
+        invoice: String,
 
         /// Channel from which the payment should happen
         #[clap()]

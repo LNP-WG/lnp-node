@@ -876,7 +876,8 @@ checksum = "4d58d1b70b004888f764dfbf6a26a3b0342a1632d33968e4a179d8011c760614"
 [[package]]
 name = "lightning-invoice"
 version = "0.3.0"
-source = "git+git://github.com/LNP-BP/rust-lightning-invoice?branch=fix/error#fb82978b39e2d237be9d7caabc594ae427598b3a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e0a8e3f3dcb1bf88550e6d2cc2b831779f8f4f7b2462573c2be0a1b28a59e82"
 dependencies = [
  "bech32",
  "bitcoin_hashes 0.7.6",
@@ -902,7 +903,7 @@ checksum = "8dd5a6d5999d9907cda8ed67bbd137d3af8085216c2ac62de5be860bd41f304a"
 
 [[package]]
 name = "lnp_node"
-version = "0.1.0-alpha.3"
+version = "0.1.0-alpha.4"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -940,7 +941,8 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95dee9e61c3d20c401ede8d5c32e865a2cdbf4687a3ef20ffc29d8d3a93e2cd3"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -971,7 +973,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "280d91ec1ed2a26f8307380647d97e861b3a6f1d72accc0e55b7f64ff11d7c73"
 dependencies = [
  "amplify",
  "quote 1.0.7",
@@ -981,7 +984,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f6c0525cdbde2d99de5817ebfd0daaed28cbaa656b997ea17aaebd0d7aacd2e"
 dependencies = [
  "amplify",
  "amplify_derive",
