@@ -24,6 +24,7 @@ use lnpbp::lnp::{
 };
 use lnpbp_services::esb::{self, Handler};
 
+use crate::rpc::request::{IntoProcessOrFalure, IntoSuccessOrFalure};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
 use std::convert::TryFrom;
@@ -239,7 +240,7 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::from(resp),
+                    resp.into_success_or_failure(),
                 )?;
                 return Ok(());
             }
@@ -259,7 +260,7 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::from(resp),
+                    resp.into_process_or_failure(),
                 )?;
                 return Ok(());
             }

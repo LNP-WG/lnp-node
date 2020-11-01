@@ -24,7 +24,7 @@ use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, ServiceId};
 
 pub struct Runtime {
-    client: esb::Controller<ServiceBus, Request, Handler>,
+    esb: esb::Controller<ServiceBus, Request, Handler>,
 }
 
 impl Runtime {
@@ -51,7 +51,7 @@ impl Runtime {
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self { client: esb })
+        Ok(Self { esb })
     }
 
     pub fn request(
@@ -60,7 +60,7 @@ impl Runtime {
         req: Request,
     ) -> Result<(), Error> {
         debug!("Executing {}", req);
-        self.client.send_to(ServiceBus::Ctl, daemon, req)?;
+        self.esb.send_to(ServiceBus::Ctl, daemon, req)?;
         Ok(())
     }
 }

@@ -65,6 +65,10 @@ pub enum Request {
 
     // Responses to CLI
     // ----------------
+    #[lnp_api(type = 102)]
+    #[display("in_progress({_0})")]
+    InProgress(String),
+
     #[lnp_api(type = 101)]
     #[display("success({_0})")]
     Success(OptionDetails),
@@ -122,13 +126,35 @@ impl From<crate::Error> for Request {
     }
 }
 
-impl<T> From<Result<T, crate::Error>> for Request
-where
-    T: ToString,
-{
-    fn from(res: Result<T, crate::Error>) -> Self {
-        match res {
+pub trait IntoProcessOrFalure {
+    fn into_process_or_failure(self) -> Request;
+}
+pub trait IntoSuccessOrFalure {
+    fn into_success_or_failure(self) -> Request;
+}
+
+impl IntoProcessOrFalure for Result<String, crate::Error> {
+    fn into_process_or_failure(self) -> Request {
+        match self {
+            Ok(val) => Request::InProgress(val),
+            Err(err) => Request::from(err),
+        }
+    }
+}
+
+impl IntoSuccessOrFalure for Result<String, crate::Error> {
+    fn into_success_or_failure(self) -> Request {
+        match self {
             Ok(val) => Request::Success(OptionDetails::with(val)),
+            Err(err) => Request::from(err),
+        }
+    }
+}
+
+impl IntoSuccessOrFalure for Result<(), crate::Error> {
+    fn into_success_or_failure(self) -> Request {
+        match self {
+            Ok(_) => Request::Success(OptionDetails::new()),
             Err(err) => Request::from(err),
         }
     }
