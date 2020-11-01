@@ -20,7 +20,7 @@ extern crate log;
 use clap::Clap;
 
 use lnp_node::cli::{Opts, Runtime};
-use lnp_node::Config;
+use lnp_node::{Config, LogStyle};
 use lnpbp_services::shell::Exec;
 
 fn main() {
@@ -42,5 +42,5 @@ fn main() {
     trace!("Executing command: {:?}", opts.command);
     opts.command
         .exec(&mut runtime)
-        .unwrap_or_else(|err| error!("{}", err));
+        .unwrap_or_else(|err| eprintln!("{}", err.err()));
 }

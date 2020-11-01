@@ -69,6 +69,23 @@ impl Runtime {
         Ok(())
     }
 
+    pub fn report_response(&mut self) -> Result<(), Error> {
+        for (_, _, rep) in self.esb.recv_poll()? {
+            match rep {
+                Request::Failure(fail) => {
+                    eprintln!(
+                        "{}: {}",
+                        "Request failure".err(),
+                        fail.err_details()
+                    );
+                    Err(Error::from(fail))?
+                }
+                resp => println!("{:#}", resp),
+            }
+        }
+        Ok(())
+    }
+
     pub fn report_progress(&mut self) -> Result<usize, Error> {
         let mut counter = 0;
         let mut finished = false;

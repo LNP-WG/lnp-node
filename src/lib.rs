@@ -31,6 +31,10 @@ extern crate amplify_derive;
 #[macro_use]
 extern crate lnpbp_derive;
 
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde_crate as serde;
+
 #[cfg(feature = "shell")]
 extern crate clap;
 #[cfg(feature = "shell")]

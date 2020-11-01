@@ -73,7 +73,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         let mut notify_cli = None;
         match request {
-            Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
+            Request::SendMessage(Messages::AcceptChannel(accept_channel)) => {
                 info!(
                     "{} from the remote peer {} with temporary id {}",
                     "Accepting channel".promo(),
@@ -86,7 +86,7 @@ impl Runtime {
                 )));
             }
 
-            Request::LnpwpMessage(_) => {
+            Request::SendMessage(_) => {
                 // Ignore the rest of LN peer messages
             }
 
@@ -131,7 +131,7 @@ impl Runtime {
                     ServiceBus::Msg,
                     self.identity(),
                     peerd,
-                    Request::LnpwpMessage(Messages::OpenChannel(channel_req)),
+                    Request::SendMessage(Messages::OpenChannel(channel_req)),
                 )?;
                 notify_cli = Some((report_to, msg))
             }
@@ -168,7 +168,7 @@ impl Runtime {
                     ServiceBus::Msg,
                     self.identity(),
                     peerd,
-                    Request::LnpwpMessage(Messages::AcceptChannel(
+                    Request::SendMessage(Messages::AcceptChannel(
                         accept_channel,
                     )),
                 )?;

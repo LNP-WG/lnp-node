@@ -19,6 +19,7 @@ use std::ffi::OsStr;
 use std::io;
 use std::net::SocketAddr;
 use std::process;
+use std::time::{Duration, SystemTime};
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
 use lnpbp::bitcoin::secp256k1;
@@ -26,8 +27,9 @@ use lnpbp::lnp::{
     message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
+use lnpbp_services::rpc::Failure;
 
-use crate::rpc::request::{IntoProgressOrFalure, OptionDetails};
+use crate::rpc::request::{IntoProgressOrFalure, NodeInfo, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
 
@@ -35,6 +37,8 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         node_id,
+        listens: none!(),
+        started: SystemTime::now(),
         connections: none!(),
         channels: none!(),
         spawning_services: none!(),
@@ -48,6 +52,8 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
 pub struct Runtime {
     identity: ServiceId,
     node_id: secp256k1::PublicKey,
+    listens: HashSet<RemoteSocketAddr>,
+    started: SystemTime,
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_services: HashMap<ServiceId, ServiceId>,
@@ -100,12 +106,12 @@ impl Runtime {
                 // Ignoring; this is used to set remote identity at ZMQ level
             }
 
-            Request::LnpwpMessage(Messages::OpenChannel(open_channel)) => {
+            Request::SendMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Creating channel by peer request from {}", source);
                 self.create_channel(source, None, open_channel, true)?;
             }
 
-            Request::LnpwpMessage(_) => {
+            Request::SendMessage(_) => {
                 // Ignore the rest of LN peer messages
             }
 
@@ -235,32 +241,85 @@ impl Runtime {
                 }
             }
 
+            Request::GetInfo => {
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source,
+                    Request::NodeInfo(NodeInfo {
+                        node_id: self.node_id,
+                        listens: self.listens.iter().cloned().collect(),
+                        uptime: SystemTime::now()
+                            .duration_since(self.started)
+                            .unwrap_or(Duration::from_secs(0)),
+                        since: self
+                            .started
+                            .duration_since(SystemTime::UNIX_EPOCH)
+                            .unwrap_or(Duration::from_secs(0))
+                            .as_secs(),
+                        peers: self.connections.len(),
+                        channels: self.channels.len(),
+                    }),
+                )?;
+            }
+
+            Request::ListPeers => {
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source,
+                    Request::PeerList(vec![].into()),
+                )?;
+            }
+
+            Request::ListChannels => {
+                senders.send_to(
+                    ServiceBus::Ctl,
+                    ServiceId::Lnpd,
+                    source,
+                    Request::ChannelList(vec![].into()),
+                )?;
+            }
+
             Request::Listen(addr) => {
                 let addr_str = addr.addr();
-                info!(
-                    "{} for incoming LN peer connections on {}",
-                    "Starting listener".promo(),
-                    addr_str
-                );
-                let resp = self.listen(addr.clone());
-                match resp {
+                if self.listens.contains(&addr) {
+                    let msg = format!(
+                        "Listener on {} already exists, ignoring request",
+                        addr
+                    );
+                    warn!("{}", msg.err());
+                    notify_cli = Some((
+                        Some(source.clone()),
+                        Request::Failure(Failure { code: 1, info: msg }),
+                    ));
+                } else {
+                    self.listens.insert(addr);
+                    info!(
+                        "{} for incoming LN peer connections on {}",
+                        "Starting listener".promo(),
+                        addr_str
+                    );
+                    let resp = self.listen(addr);
+                    match resp {
                     Ok(_) => info!("Connection daemon {} for incoming LN peer connections on {}", 
                                    "listens".ended(), addr_str),
                     Err(ref err) => error!("{}", err.err())
                 }
-                senders.send_to(
-                    ServiceBus::Ctl,
-                    ServiceId::Lnpd,
-                    source.clone(),
-                    resp.into_progress_or_failure(),
-                )?;
-                notify_cli = Some((
-                    Some(source.clone()),
-                    Request::Success(OptionDetails::with(format!(
-                        "Node {} listens for connections on {}",
-                        self.node_id, addr
-                    ))),
-                ));
+                    senders.send_to(
+                        ServiceBus::Ctl,
+                        ServiceId::Lnpd,
+                        source.clone(),
+                        resp.into_progress_or_failure(),
+                    )?;
+                    notify_cli = Some((
+                        Some(source.clone()),
+                        Request::Success(OptionDetails::with(format!(
+                            "Node {} listens for connections on {}",
+                            self.node_id, addr
+                        ))),
+                    ));
+                }
             }
 
             Request::ConnectPeer(addr) => {

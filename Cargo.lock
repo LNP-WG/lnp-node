@@ -40,9 +40,9 @@ dependencies = [
 
 [[package]]
 name = "amplify_derive"
-version = "2.2.1"
+version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab4e1c8aded4bc5c5a5596278d1f163d563e6586560d9b2afa95fa186dc231c4"
+checksum = "609a4b66c3302e58ac44eb3c5c90bb5fdeb577ba1f1e9c1bce7d01b71ed5a636"
 dependencies = [
  "quote 1.0.7",
  "syn 1.0.48",
@@ -273,6 +273,19 @@ dependencies = [
  "cipher",
  "poly1305",
  "zeroize 1.1.1",
+]
+
+[[package]]
+name = "chrono"
+version = "0.4.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
+dependencies = [
+ "libc",
+ "num-integer",
+ "num-traits 0.2.14",
+ "time",
+ "winapi 0.3.9",
 ]
 
 [[package]]
@@ -691,7 +704,7 @@ checksum = "fc587bc0ec293155d5bfa6b9891ec18a1e330c234f896ea47fbada4cadbe47e6"
 dependencies = [
  "cfg-if",
  "libc",
- "wasi",
+ "wasi 0.9.0+wasi-snapshot-preview1",
 ]
 
 [[package]]
@@ -896,6 +909,7 @@ dependencies = [
  "async-trait",
  "base64 0.12.3",
  "bech32",
+ "chrono",
  "clap",
  "clap_generate",
  "colored",
@@ -926,7 +940,7 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#f3c1313a3232ee021f0f2fe889a53833c659bf79"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -935,6 +949,7 @@ dependencies = [
  "bitcoin",
  "bitcoin_hashes 0.9.4",
  "chacha20poly1305",
+ "chrono",
  "deflate",
  "ed25519-dalek",
  "grin_secp256k1zkp",
@@ -956,7 +971,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#f3c1313a3232ee021f0f2fe889a53833c659bf79"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
 dependencies = [
  "amplify",
  "quote 1.0.7",
@@ -966,7 +981,7 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.1"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#f3c1313a3232ee021f0f2fe889a53833c659bf79"
+source = "git+git://github.com/LNP-BP/rust-lnpbp#d05e9b3bf01b23ecb66066a08deabf15116a3a48"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1148,6 +1163,16 @@ dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.7",
  "syn 1.0.48",
+]
+
+[[package]]
+name = "num-integer"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
+dependencies = [
+ "autocfg 1.0.1",
+ "num-traits 0.2.14",
 ]
 
 [[package]]
@@ -1540,9 +1565,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.20"
+version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cab7a364d15cde1e505267766a2d3c4e22a843e1a601f0fa7564c0f82ced11c"
+checksum = "3b181ba2dcf07aaccad5448e8ead58db5b742cf85dfe035e2227f137a539a189"
 
 [[package]]
 name = "ring"
@@ -2002,6 +2027,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "time"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6db9e6914ab8b1ae1c260a4ae7a49b6c5611b40328a735b21862567685e73255"
+dependencies = [
+ "libc",
+ "wasi 0.10.0+wasi-snapshot-preview1",
+ "winapi 0.3.9",
+]
+
+[[package]]
 name = "tinyvec"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2192,6 +2228,12 @@ name = "wasi"
 version = "0.9.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
+
+[[package]]
+name = "wasi"
+version = "0.10.0+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 
 [[package]]
 name = "wasm-bindgen"

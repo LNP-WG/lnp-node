@@ -128,7 +128,7 @@ impl peer::Handler for ListenerRuntime {
     fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         trace!("LNPWP message details: {:?}", message);
-        self.send_over_bridge(Request::LnpwpMessage(message))
+        self.send_over_bridge(Request::SendMessage(message))
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
@@ -219,7 +219,7 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::LnpwpMessage(message) => {
+            Request::SendMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the remote peer
                 debug!("Forwarding LN peer message to the remote peer");
@@ -267,14 +267,14 @@ impl Runtime {
                 self.ping()?;
             }
 
-            Request::LnpwpMessage(Messages::Ping(message::Ping {
+            Request::SendMessage(Messages::Ping(message::Ping {
                 pong_size,
                 ..
             })) => {
                 self.pong(pong_size)?;
             }
 
-            Request::LnpwpMessage(Messages::Pong(noise)) => {
+            Request::SendMessage(Messages::Pong(noise)) => {
                 match self.awaited_pong {
                     None => error!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => warn!(
@@ -285,7 +285,7 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            Request::LnpwpMessage(Messages::OpenChannel(_)) => {
+            Request::SendMessage(Messages::OpenChannel(_)) => {
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -294,18 +294,18 @@ impl Runtime {
                 )?;
             }
 
-            Request::LnpwpMessage(Messages::AcceptChannel(accept_channel)) => {
+            Request::SendMessage(Messages::AcceptChannel(accept_channel)) => {
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     accept_channel.temporary_channel_id.into(),
-                    Request::LnpwpMessage(Messages::AcceptChannel(
+                    Request::SendMessage(Messages::AcceptChannel(
                         accept_channel,
                     )),
                 )?;
             }
 
-            Request::LnpwpMessage(message) => {
+            Request::SendMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the corresponding daemon
                 debug!("Got peer LNPWP message {}", message);

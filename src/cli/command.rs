@@ -30,6 +30,21 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
+            Command::Info => {
+                runtime.request(ServiceId::Lnpd, Request::GetInfo)?;
+                runtime.report_response()?;
+            }
+
+            Command::Peers => {
+                runtime.request(ServiceId::Lnpd, Request::ListPeers)?;
+                runtime.report_response()?;
+            }
+
+            Command::Channels => {
+                runtime.request(ServiceId::Lnpd, Request::ListChannels)?;
+                runtime.report_response()?;
+            }
+
             Command::Listen {
                 ip_addr,
                 port,

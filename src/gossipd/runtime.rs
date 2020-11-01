@@ -71,7 +71,7 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::LnpwpMessage(_message) => {
+            Request::SendMessage(_message) => {
                 // TODO: Process message
             }
             _ => {
