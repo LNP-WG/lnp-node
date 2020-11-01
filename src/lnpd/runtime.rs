@@ -49,7 +49,7 @@ pub struct Runtime {
     identity: ServiceId,
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
-    spawning_services: HashSet<ServiceId>,
+    spawning_services: HashMap<ServiceId, ServiceId>,
     opening_channels: HashMap<ServiceId, request::ChannelParams>,
     accepting_channels: HashMap<ServiceId, request::ChannelParams>,
 }
@@ -124,7 +124,7 @@ impl Runtime {
     fn handle_rpc_ctl(
         &mut self,
         senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        source: ServiceId,
+        mut source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         let mut notify_cli = None;
@@ -148,12 +148,6 @@ impl Runtime {
                                 connection_id,
                                 self.connections.len()
                             );
-                            notify_cli = Some(Request::Success(
-                                OptionDetails::with(format!(
-                                    "Peer was connected to {}",
-                                    connection_id
-                                )),
-                            ));
                         } else {
                             warn!(
                                 "Connection {} was already registered; the \
@@ -218,16 +212,19 @@ impl Runtime {
                         Request::AcceptChannelFrom(channel_params.clone()),
                     )?;
                     self.accepting_channels.remove(&source);
-                } else if self.spawning_services.contains(&source) {
+                } else if let Some(enquirer) =
+                    self.spawning_services.get(&source)
+                {
                     debug!(
                         "Daemon {} is known: we spawned it to create a new peer \
-                         connection",
-                        source
+                         connection by a request from {}",
+                        source, enquirer
                     );
-                    self.spawning_services.remove(&source);
+                    source = enquirer.clone();
                     notify_cli = Some(Request::Success(OptionDetails::with(
-                        format!("Peer connected to {}", source),
+                        format!("Peer connected to {}", enquirer),
                     )));
+                    self.spawning_services.remove(&source);
                 }
             }
 
@@ -253,7 +250,7 @@ impl Runtime {
                     "Connecting".promo(),
                     addr.promoter()
                 );
-                let resp = self.connect_peer(addr);
+                let resp = self.connect_peer(source.clone(), addr);
                 match resp {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
@@ -325,16 +322,21 @@ impl Runtime {
 
     fn connect_peer(
         &mut self,
-        node_endpoint: NodeAddr,
+        source: ServiceId,
+        node_addr: NodeAddr,
     ) -> Result<String, Error> {
         debug!("Instantiating peerd...");
 
         // Start channeld
-        let child =
-            launch("peerd", &["--connect", &node_endpoint.to_string()])?;
+        let child = launch("peerd", &["--connect", &node_addr.to_string()])?;
         let msg =
             format!("New instance of peerd launched with PID {}", child.id());
         debug!("{}", msg);
+
+        self.spawning_services
+            .insert(ServiceId::Peer(node_addr), source);
+        debug!("Awaiting for peerd to connect...");
+
         Ok(msg)
     }
 
