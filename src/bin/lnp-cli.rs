@@ -19,8 +19,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp_node::cli::{Opts, Runtime};
-use lnp_node::{Config, LogStyle};
+use lnp::cli::{Opts, Runtime};
+use lnp::{Config, LogStyle};
 use lnpbp_services::shell::Exec;
 
 fn main() {

@@ -101,8 +101,8 @@ use nix::unistd::{fork, ForkResult};
 use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-use lnp_node::peerd::{self, Opts};
-use lnp_node::{Config, LogStyle};
+use lnp::peerd::{self, Opts};
+use lnp::{Config, LogStyle};
 use lnpbp::lnp::{
     session, FramingProtocol, NodeAddr, PeerConnection, RemoteNodeAddr,
     RemoteSocketAddr,

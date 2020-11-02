@@ -32,8 +32,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp_node::routed::{self, Opts};
-use lnp_node::Config;
+use lnp::routed::{self, Opts};
+use lnp::Config;
 
 fn main() {
     println!("routed: lightning peer network routing microservice");

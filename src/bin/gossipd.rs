@@ -32,8 +32,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp_node::gossipd::{self, Opts};
-use lnp_node::Config;
+use lnp::gossipd::{self, Opts};
+use lnp::Config;
 
 fn main() {
     println!("gossipd: lightning peer network gossip microservice");

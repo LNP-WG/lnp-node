@@ -31,8 +31,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp_node::lnpd::{self, Opts};
-use lnp_node::{Config, LogStyle};
+use lnp::lnpd::{self, Opts};
+use lnp::{Config, LogStyle};
 
 fn main() {
     println!("lnpd: lightning node management microservice");

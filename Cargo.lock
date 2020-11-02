@@ -284,6 +284,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits 0.2.14",
+ "serde 1.0.117",
  "time",
  "winapi 0.3.9",
 ]
@@ -345,6 +346,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 dependencies = [
  "bitflags",
+]
+
+[[package]]
+name = "cmake"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e56268c17a6248366d66d4a47a3381369d068cce8409bb1716ed77ea32163bb"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -903,7 +913,7 @@ checksum = "8dd5a6d5999d9907cda8ed67bbd137d3af8085216c2ac62de5be860bd41f304a"
 
 [[package]]
 name = "lnp_node"
-version = "0.1.0-alpha.4"
+version = "0.1.0-beta.1"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -2427,6 +2437,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeromq-src"
+version = "0.1.10+4.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df9133d366817fcffe22e4356043ba187ae122ec5db63d7ce73d1e6a18efa2f1"
+dependencies = [
+ "cmake",
+]
+
+[[package]]
 name = "zmq"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2446,4 +2465,5 @@ checksum = "d33a2c51dde24d5b451a2ed4b488266df221a5eaee2ee519933dc46b9a9b3648"
 dependencies = [
  "libc",
  "metadeps",
+ "zeromq-src",
 ]

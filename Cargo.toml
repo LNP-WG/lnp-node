@@ -1,13 +1,17 @@
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.1.0-alpha.4"
+version = "0.1.0-beta.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rgb"]
 edition = "2018"
 readme = "README.md"
 build = "build.rs"
+exclude = [".github", "/doc", "/test", "Dockerfile"]
+
+[lib]
+name = "lnp"
 
 [[bin]]
 name = "lnpd"
@@ -81,10 +85,13 @@ log = { version = "~0.4.8", features = ["max_level_trace", "release_max_level_de
 shellexpand = "~2.0.0"
 configure_me_codegen = "~0.3.14"
 
-[patch.crates-io]
+[target.'cfg(target_os="android")'.dependencies]
+zmq = { version = "~0.9", features = ["vendored"] }
+
+[target.'cfg(target_os="android")'.patch.crates-io]
 # Use this for Android builds
 # Remove this once https://github.com/jean-airoldie/zeromq-src-rs/pull/15 got merged
-# zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
+zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
 
 # Recommended set of features:
 # 1. Standalone node: `server` (=`node`+`shell`)
@@ -115,7 +122,7 @@ shell = [
 node = ["serde", "lnpbp/keygen", "tokio", "lnpbp/tokio", "zmq", "lnpbp_services/node",
         "url", "lnpbp/url"]
 serde = ["serde_crate", "serde_with", "serde_yaml", "toml",
-         "amplify/serde", "lnpbp/serde", "lnpbp_services/serde"]
+         "amplify/serde", "lnpbp/serde", "lnpbp_services/serde", "chrono/serde"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"
