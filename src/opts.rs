@@ -142,10 +142,9 @@ impl Opts {
     pub fn process(&mut self) {
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
         let me = self.clone();
-        let mut data_dir = self.data_dir.to_str().unwrap().to_string();
+        let mut data_dir = self.data_dir.to_string_lossy().to_string();
         me.process_dir(&mut data_dir);
         self.data_dir = PathBuf::from(data_dir);
-        println!("{}", self.data_dir.to_str().unwrap());
         fs::create_dir_all(&self.data_dir)
             .expect("Unable to access data directory");
 
