@@ -127,6 +127,8 @@ impl Runtime {
     ) -> Result<(), Error> {
         match request {
             Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
+                self.state = ChannelState::Accepted;
+
                 let enquirer = self.enquirer.clone();
 
                 self.channel_accepted(senders, &accept_channel, &source)
@@ -194,6 +196,8 @@ impl Runtime {
                     peerd,
                     Request::PeerMessage(Messages::OpenChannel(channel_req)),
                 )?;
+
+                self.state = ChannelState::Proposed;
             }
 
             Request::AcceptChannelFrom(request::CreateChannel {
@@ -201,6 +205,8 @@ impl Runtime {
                 peerd,
                 report_to,
             }) => {
+                self.state = ChannelState::Proposed;
+
                 if let ServiceId::Peer(ref addr) = peerd {
                     self.remote_peer = Some(addr.clone());
                 }
@@ -219,6 +225,8 @@ impl Runtime {
                         accept_channel,
                     )),
                 )?;
+
+                self.state = ChannelState::Accepted;
             }
 
             Request::GetInfo => {
@@ -298,6 +306,7 @@ impl Runtime {
 
         self.params = ChannelParams::with(&channel_req)?;
         self.local_keys = ChannelKeys::from(channel_req);
+
         Ok(())
     }
 
@@ -314,6 +323,7 @@ impl Runtime {
             peerd.promoter()
         );
         info!("{}", msg);
+
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
         let enquirer = self.enquirer.clone();
