@@ -16,18 +16,18 @@ use amplify::DumbDefault;
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use lnpbp::bitcoin::secp256k1::{self};
-use lnpbp::bitcoin::{self, OutPoint};
+use lnpbp::bitcoin::secp256k1;
+use lnpbp::bitcoin::OutPoint;
 use lnpbp::lnp::{
     message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
     ChannelParams, ChannelState, Messages, NodeAddr, TempChannelId, TypedEnum,
 };
-use lnpbp::miniscript::{Descriptor, Miniscript, Terminal};
 use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, SendTo, Senders, Service, ServiceId};
+use lnpbp::bp::PubkeyScript;
 
 pub fn run(
     config: Config,
@@ -135,24 +135,10 @@ impl Runtime {
                     })?;
 
                 // Construct funding output scriptPubkey
-                // TODO: Move all miniscript constructions to LNP/BP Core
-                //       Library
-                let lock = Terminal::Multi(
-                    2,
-                    vec![
-                        bitcoin::PublicKey {
-                            compressed: false,
-                            key: accept_channel.funding_pubkey,
-                        },
-                        bitcoin::PublicKey {
-                            compressed: false,
-                            key: self.local_keys.funding_pubkey,
-                        },
-                    ],
+                let script_pubkey = PubkeyScript::with_ln_funding_v1(
+                    accept_channel.funding_pubkey,
+                    self.local_keys.funding_pubkey,
                 );
-                let ms = Miniscript::from_ast(lock)
-                    .expect("miniscript library broken: parse of static miniscript failed");
-                let script_pubkey = Descriptor::Wsh(ms).script_pubkey().into();
 
                 // Ignoring possible reporting error here: do not want to
                 // halt the channel just because the client disconnected
@@ -274,7 +260,7 @@ impl Runtime {
                     since: self.since,
                     total_updates: self.total_updates,
                     pending_updates: self.pending_updates,
-                    params: self.params.clone(), // TODO: Remove clone
+                    params: self.params,
                     local_keys: self.local_keys.clone(),
                     remote_keys: bmap(&self.remote_peer, &self.remote_keys),
                 };
