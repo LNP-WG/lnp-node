@@ -14,7 +14,7 @@
 
 use amplify::DumbDefault;
 use std::collections::BTreeMap;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bitcoin::OutPoint;
@@ -49,8 +49,7 @@ pub fn run(
         remote_balances: zero!(),
         funding_outpoint: default!(),
         remote_peer: None,
-        uptime: zero!(),
-        since: 0,
+        started: SystemTime::now(),
         total_updates: 0,
         pending_updates: 0,
         params: default!(),
@@ -76,8 +75,7 @@ pub struct Runtime {
     remote_balances: AssetsBalance,
     funding_outpoint: OutPoint,
     remote_peer: Option<NodeAddr>,
-    uptime: Duration,
-    since: i64,
+    started: SystemTime,
     total_updates: u64,
     pending_updates: u16,
     params: ChannelParams,
@@ -284,8 +282,14 @@ impl Runtime {
                         .clone()
                         .map(|p| vec![p])
                         .unwrap_or_default(),
-                    uptime: self.uptime,
-                    since: self.since,
+                    uptime: SystemTime::now()
+                        .duration_since(self.started)
+                        .unwrap_or(Duration::from_secs(0)),
+                    since: self
+                        .started
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs(),
                     total_updates: self.total_updates,
                     pending_updates: self.pending_updates,
                     params: self.params,

@@ -103,6 +103,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use lnp::peerd::{self, Opts};
 use lnp::{Config, LogStyle};
+use lnpbp::bitcoin::secp256k1::PublicKey;
 use lnpbp::lnp::{
     session, FramingProtocol, NodeAddr, PeerConnection, RemoteNodeAddr,
     RemoteSocketAddr,
@@ -183,17 +184,22 @@ fn main() {
      */
 
     let local_node = opts.key_opts.local_node();
-    info!("{}: {}", "Local node id".ended(), local_node.addr());
+    let local_id = local_node.node_id();
+    info!("{}: {}", "Local node id".ended(), local_id.addr());
     let peer_socket = PeerSocket::from(opts);
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
     let id: NodeAddr;
+    let mut local_socket: Option<InetSocketAddr> = None;
+    let mut remote_id: Option<PublicKey> = None;
+    let mut remote_socket: InetSocketAddr;
     let connect: bool;
     let connection = match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
 
             connect = false;
+            local_socket = Some(inet_addr);
             id = NodeAddr::Remote(RemoteNodeAddr {
                 node_id: local_node.node_id(),
                 remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
@@ -209,10 +215,12 @@ fn main() {
             debug!("Running TCP listener event loop");
             loop {
                 debug!("Awaiting for incoming connections...");
-                let (stream, remote_addr) = listener
+                let (stream, remote_socket_addr) = listener
                     .accept()
                     .expect("Error accepting incpming peer connection");
-                debug!("New connection from {}", remote_addr);
+                debug!("New connection from {}", remote_socket_addr);
+
+                remote_socket = remote_socket_addr.into();
 
                 // TODO: Support multithread mode
                 debug!("Forking child process");
@@ -240,22 +248,33 @@ fn main() {
                 break PeerConnection::with(session);
             }
         }
-        PeerSocket::Connect(node_addr) => {
+        PeerSocket::Connect(remote_node_addr) => {
             debug!("Running in CONNECT mode");
 
             connect = true;
-            id = NodeAddr::Remote(node_addr.clone());
+            id = NodeAddr::Remote(remote_node_addr.clone());
+            remote_id = Some(remote_node_addr.node_id);
+            remote_socket = remote_node_addr.remote_addr.into();
 
-            info!("Connecting to {}", &node_addr);
-            PeerConnection::connect(node_addr, &local_node)
+            info!("Connecting to {}", &remote_node_addr);
+            PeerConnection::connect(remote_node_addr, &local_node)
                 .expect("Unable to connect to the remote peer")
         }
         _ => unimplemented!(),
     };
 
     debug!("Starting runtime ...");
-    peerd::run(config, connection, id, connect)
-        .expect("Error running peerd runtime");
+    peerd::run(
+        config,
+        connection,
+        id,
+        local_id,
+        remote_id,
+        local_socket,
+        remote_socket,
+        connect,
+    )
+    .expect("Error running peerd runtime");
 
     unreachable!()
 }

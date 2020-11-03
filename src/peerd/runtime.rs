@@ -12,11 +12,14 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::internet::InetSocketAddr;
 use amplify::Bipolar;
 use std::collections::HashMap;
 use std::thread::spawn;
+use std::time::{Duration, SystemTime};
 
 use lnpbp::bitcoin::secp256k1::rand::{self, Rng};
+use lnpbp::bitcoin::secp256k1::PublicKey;
 use lnpbp::lnp::{
     message, presentation, transport, zmqsocket, Messages, NodeAddr,
     PeerConnection, PeerSender, SendMessage, TypedEnum, ZmqType, ZMQ_CONTEXT,
@@ -25,8 +28,8 @@ use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
-use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, LogStyle, Service, ServiceId};
+use crate::rpc::{request::PeerInfo, Request, ServiceBus};
+use crate::{Config, Error, LogStyle, SendTo, Service, ServiceId};
 
 pub struct MessageFilter {}
 
@@ -34,6 +37,10 @@ pub fn run(
     config: Config,
     connection: PeerConnection,
     id: NodeAddr,
+    local_id: PublicKey,
+    remote_id: Option<PublicKey>,
+    local_socket: Option<InetSocketAddr>,
+    remote_socket: InetSocketAddr,
     connect: bool,
 ) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
@@ -69,9 +76,16 @@ pub fn run(
     debug!("Staring main service runtime");
     let runtime = Runtime {
         identity,
-        routing: none!(),
+        local_id,
+        remote_id,
+        local_socket,
+        remote_socket,
+        routing: empty!(),
         sender,
         connect,
+        started: SystemTime::now(),
+        messages_sent: 0,
+        messages_received: 0,
         awaited_pong: None,
     };
     let mut service = Service::service(config, runtime)?;
@@ -154,12 +168,22 @@ impl peer::Handler for ListenerRuntime {
 
 pub struct Runtime {
     identity: ServiceId,
-    #[allow(dead_code)]
+    local_id: PublicKey,
+    remote_id: Option<PublicKey>,
+    local_socket: Option<InetSocketAddr>,
+    remote_socket: InetSocketAddr,
+
     routing: HashMap<ServiceId, MessageFilter>,
     sender: PeerSender,
     connect: bool,
+
+    started: SystemTime,
+    messages_sent: usize,
+    messages_received: usize,
     awaited_pong: Option<u16>,
 }
+
+impl SendTo for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
@@ -223,6 +247,7 @@ impl Runtime {
                 // 1. Check permissions
                 // 2. Forward to the remote peer
                 debug!("Forwarding LN peer message to the remote peer");
+                self.messages_sent += 1;
                 self.sender.send_message(message)?;
             }
             _ => {
@@ -240,11 +265,47 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _source: ServiceId,
+        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
         match request {
+            Request::GetInfo => {
+                let info = PeerInfo {
+                    local_id: self.local_id,
+                    remote_id: self
+                        .remote_id
+                        .map(|id| vec![id])
+                        .unwrap_or_default(),
+                    local_socket: self.local_socket,
+                    remote_socket: vec![self.remote_socket],
+                    uptime: SystemTime::now()
+                        .duration_since(self.started)
+                        .unwrap_or(Duration::from_secs(0)),
+                    since: self
+                        .started
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs(),
+                    messages_sent: self.messages_sent,
+                    messages_received: self.messages_received,
+                    channels: self
+                        .routing
+                        .keys()
+                        .filter_map(|id| {
+                            if let ServiceId::Channel(channel_id) = id {
+                                Some(channel_id.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .collect(),
+                    connected: !self.connect,
+                    awaits_pong: self.awaited_pong.is_some(),
+                };
+                self.send_to(senders, source, Request::PeerInfo(info))?;
+            }
+
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(
@@ -253,6 +314,7 @@ impl Runtime {
                 ));
             }
         }
+        Ok(())
     }
 
     fn handle_bridge(
@@ -262,6 +324,11 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
+
+        if let Request::PeerMessage(_) = request {
+            self.messages_received += 1;
+        }
+
         match request {
             Request::PingPeer => {
                 self.ping()?;
@@ -295,10 +362,13 @@ impl Runtime {
             }
 
             Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
+                let channeld: ServiceId =
+                    accept_channel.temporary_channel_id.into();
+                self.routing.insert(channeld.clone(), MessageFilter {});
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    accept_channel.temporary_channel_id.into(),
+                    channeld,
                     Request::PeerMessage(Messages::AcceptChannel(
                         accept_channel,
                     )),
@@ -334,6 +404,7 @@ impl Runtime {
             noise[i] = rng.gen();
         }
         let pong_size = rng.gen_range(4, 32);
+        self.messages_sent += 1;
         self.sender.send_message(Messages::Ping(message::Ping {
             ignored: noise,
             pong_size,
@@ -349,6 +420,7 @@ impl Runtime {
         for i in 0..noise.len() {
             noise[i] = rng.gen();
         }
+        self.messages_sent += 1;
         self.sender.send_message(Messages::Pong(noise))?;
         Ok(())
     }

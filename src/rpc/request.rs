@@ -32,6 +32,7 @@ use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::rpc::Failure;
 
 use crate::ServiceId;
+use amplify::internet::InetSocketAddr;
 
 #[derive(Clone, Debug, Display, From, LnpApi)]
 #[lnp_api(encoding = "strict")]
@@ -160,6 +161,7 @@ pub struct CreateChannel {
 pub struct NodeInfo {
     pub node_id: secp256k1::PublicKey,
     pub listens: Vec<RemoteSocketAddr>,
+    #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: u64,
     #[serde_as(as = "Vec<DisplayFromStr>")]
@@ -168,6 +170,7 @@ pub struct NodeInfo {
     pub channels: Vec<ChannelId>,
 }
 
+#[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[cfg_attr(
     feature = "serde",
@@ -176,10 +179,21 @@ pub struct NodeInfo {
 )]
 #[display(PeerInfo::to_yaml_string)]
 pub struct PeerInfo {
-    pub node_id: secp256k1::PublicKey,
+    pub local_id: secp256k1::PublicKey,
+    pub remote_id: Vec<secp256k1::PublicKey>,
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub local_socket: Option<InetSocketAddr>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub remote_socket: Vec<InetSocketAddr>,
+    #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
-    pub since: i64,
-    pub channels: usize,
+    pub since: u64,
+    pub messages_sent: usize,
+    pub messages_received: usize,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub channels: Vec<ChannelId>,
+    pub connected: bool,
+    pub awaits_pong: bool,
 }
 
 pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
@@ -215,7 +229,7 @@ pub struct ChannelInfo {
     pub remote_peers: Vec<NodeAddr>,
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
-    pub since: i64,
+    pub since: u64,
     pub total_updates: u64,
     pub pending_updates: u16,
     pub params: ChannelParams,
