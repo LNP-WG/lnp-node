@@ -81,7 +81,12 @@ pub enum Command {
     },
 
     /// General information about the running node
-    Info,
+    Info {
+        /// Remote peer address or temporary/permanent/short channel id. If
+        /// absent, returns information about the node itself
+        #[clap()]
+        subject: Option<String>,
+    },
 
     /*
     /// Lists all funds available for channel creation for given list of assets

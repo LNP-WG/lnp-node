@@ -300,7 +300,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__info)
-            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  "
+            opts=" -d -c -v -T -m -x -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --help --version  <subject> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

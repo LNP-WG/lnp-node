@@ -128,6 +128,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
+'::subject -- Remote peer address or temporary/permanent/short channel id. If absent, returns information about the node itself:' \
 && ret=0
 ;;
 (peers)

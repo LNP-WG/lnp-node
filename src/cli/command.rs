@@ -13,9 +13,11 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::DumbDefault;
+use std::str::FromStr;
 
 use lnpbp::lnp::{
-    message, RemoteSocketAddr, ToNodeAddr, LIGHTNING_P2P_DEFAULT_PORT,
+    message, ChannelId, NodeAddr, RemoteSocketAddr, ToNodeAddr,
+    LIGHTNING_P2P_DEFAULT_PORT,
 };
 use lnpbp_services::shell::Exec;
 
@@ -30,9 +32,39 @@ impl Exec for Command {
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
-            Command::Info => {
-                runtime.request(ServiceId::Lnpd, Request::GetInfo)?;
-                runtime.report_response()?;
+            Command::Info { subject } => {
+                if let Some(subj) = subject {
+                    if let Ok(node_addr) = NodeAddr::from_str(subj) {
+                        runtime.request(
+                            ServiceId::Peer(node_addr),
+                            Request::GetInfo,
+                        )?;
+                    } else if let Ok(channel_id) = ChannelId::from_str(subj) {
+                        runtime.request(
+                            ServiceId::Channel(channel_id),
+                            Request::GetInfo,
+                        )?;
+                    } else {
+                        let err = format!(
+                            "{}",
+                            "Subject parameter must be either remote node \
+                            address or channel id represented by a hex string"
+                                .err()
+                        );
+                        return Err(Error::Other(err));
+                    }
+                } else {
+                    runtime.request(ServiceId::Lnpd, Request::GetInfo)?;
+                }
+                match runtime.response()? {
+                    Request::NodeInfo(info) => println!("{}", info),
+                    Request::PeerInfo(info) => println!("{}", info),
+                    Request::ChannelInfo(info) => println!("{}", info),
+                    _ => Err(Error::Other(format!(
+                        "{}",
+                        "Server returned unrecognizable response"
+                    )))?,
+                }
             }
 
             Command::Peers => {

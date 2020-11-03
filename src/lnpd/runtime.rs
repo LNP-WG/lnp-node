@@ -261,8 +261,8 @@ impl Runtime {
                             .duration_since(SystemTime::UNIX_EPOCH)
                             .unwrap_or(Duration::from_secs(0))
                             .as_secs(),
-                        peers: self.connections.len(),
-                        channels: self.channels.len(),
+                        peers: self.connections.iter().cloned().collect(),
+                        channels: self.channels.iter().cloned().collect(),
                     }),
                 )?;
             }
@@ -272,7 +272,9 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::PeerList(vec![].into()),
+                    Request::PeerList(
+                        self.connections.iter().cloned().collect(),
+                    ),
                 )?;
             }
 
@@ -281,7 +283,9 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::ChannelList(vec![].into()),
+                    Request::ChannelList(
+                        self.channels.iter().cloned().collect(),
+                    ),
                 )?;
             }
 

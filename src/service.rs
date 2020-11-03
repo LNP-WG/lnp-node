@@ -25,7 +25,6 @@ use lnpbp_services::{esb, rpc};
 
 use crate::rpc::{Request, ServiceBus};
 use crate::Config;
-#[cfg(feature = "node")]
 use crate::Error;
 
 #[derive(

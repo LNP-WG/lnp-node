@@ -18,6 +18,7 @@ use std::time::Duration;
 
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bitcoin::OutPoint;
+use lnpbp::bp::Chain;
 use lnpbp::lnp::{
     message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
     ChannelParams, ChannelState, Messages, NodeAddr, TempChannelId, TypedEnum,
@@ -33,10 +34,12 @@ pub fn run(
     config: Config,
     node_id: secp256k1::PublicKey,
     channel_id: ChannelId,
+    chain: Chain,
 ) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         node_id,
+        chain,
         channel_id: None,
         temporary_channel_id: channel_id.into(),
         state: default!(),
@@ -62,6 +65,7 @@ pub fn run(
 pub struct Runtime {
     identity: ServiceId,
     node_id: secp256k1::PublicKey,
+    chain: Chain,
 
     channel_id: Option<ChannelId>,
     temporary_channel_id: TempChannelId,
@@ -137,10 +141,26 @@ impl Runtime {
                     })?;
 
                 // Construct funding output scriptPubkey
-                let script_pubkey = PubkeyScript::with_ln_funding_v1(
-                    accept_channel.funding_pubkey,
-                    self.local_keys.funding_pubkey,
+                let remote_pk = accept_channel.funding_pubkey;
+                let local_pk = self.local_keys.funding_pubkey;
+                trace!(
+                    "Generating script pubkey from local {} and remote {}",
+                    local_pk,
+                    remote_pk
                 );
+                let script_pubkey =
+                    PubkeyScript::with_ln_funding_v1(local_pk, remote_pk);
+                trace!("Funding script: {}", script_pubkey);
+                if let Some(addr) = script_pubkey.address(self.chain.clone()) {
+                    debug!("Funding address: {}", addr);
+                } else {
+                    error!(
+                        "{} {}",
+                        "Unable to generate funding address for the current network "
+                            .err(),
+                        self.chain.err()
+                    )
+                }
 
                 // Ignoring possible reporting error here: do not want to
                 // halt the channel just because the client disconnected
@@ -293,16 +313,20 @@ impl Runtime {
         senders: &mut Senders,
         channel_req: &message::OpenChannel,
     ) -> Result<(), ChannelNegotiationError> {
-        let msg = format!(
-            "Requesting remote peer to {} with temp id {:#}",
+        info!(
+            "{} remote peer to {} with temp id {:#}",
+            "Proposing".promo(),
             "open a channel".promo(),
             channel_req.temporary_channel_id.promoter()
         );
-        info!("{}", msg);
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
         let enquirer = self.enquirer.clone();
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress_to(
+            senders,
+            &enquirer,
+            format!("Proposing remote peer to open a channel"),
+        );
 
         self.params = ChannelParams::with(&channel_req)?;
         self.local_keys = ChannelKeys::from(channel_req);

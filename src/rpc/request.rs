@@ -13,9 +13,11 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::{ToYamlString, Wrapper};
-use serde_with::DurationSeconds;
+#[cfg(feature = "serde")]
+use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
+use std::iter::FromIterator;
 use std::time::Duration;
 
 use lnpbp::bitcoin::{secp256k1, OutPoint};
@@ -112,19 +114,24 @@ pub enum Request {
     NodeInfo(NodeInfo),
 
     #[lnp_api(type = 1101)]
+    #[display("node_info({0})", alt = "{0:#}")]
+    #[from]
+    PeerInfo(PeerInfo),
+
+    #[lnp_api(type = 1102)]
     #[display("channel_info({0})", alt = "{0:#}")]
     #[from]
     ChannelInfo(ChannelInfo),
 
-    #[lnp_api(type = 1102)]
+    #[lnp_api(type = 1103)]
     #[display("peer_list({0})", alt = "{0:#}")]
     #[from]
-    PeerList(List<PeerInfo>),
+    PeerList(List<NodeAddr>),
 
-    #[lnp_api(type = 1103)]
+    #[lnp_api(type = 1104)]
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
-    ChannelList(List<ChannelInfo>),
+    ChannelList(List<ChannelId>),
 
     #[lnp_api(type = 1203)]
     #[display("channel_funding({0})", alt = "{0:#}")]
@@ -142,6 +149,7 @@ pub struct CreateChannel {
     pub report_to: Option<ServiceId>,
 }
 
+#[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[cfg_attr(
     feature = "serde",
@@ -154,8 +162,10 @@ pub struct NodeInfo {
     pub listens: Vec<RemoteSocketAddr>,
     pub uptime: Duration,
     pub since: u64,
-    pub peers: usize,
-    pub channels: usize,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub peers: Vec<NodeAddr>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub channels: Vec<ChannelId>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
@@ -184,15 +194,24 @@ pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
 )]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
+    #[serde_as(as = "Option<DisplayFromStr>")]
     pub channel_id: Option<ChannelId>,
+    #[serde_as(as = "DisplayFromStr")]
     pub temporary_channel_id: TempChannelId,
     pub state: ChannelState,
     pub local_capacity: u64,
+    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub remote_capacities: RemotePeerMap<u64>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub assets: Vec<AssetId>,
+    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub local_balances: AssetsBalance,
+    #[serde_as(
+        as = "BTreeMap<DisplayFromStr, BTreeMap<DisplayFromStr, Same>>"
+    )]
     pub remote_balances: RemotePeerMap<AssetsBalance>,
     pub funding_outpoint: OutPoint,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
     pub remote_peers: Vec<NodeAddr>,
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
@@ -201,6 +220,7 @@ pub struct ChannelInfo {
     pub pending_updates: u16,
     pub params: ChannelParams,
     pub local_keys: ChannelKeys,
+    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub remote_keys: BTreeMap<NodeAddr, ChannelKeys>,
 }
 
@@ -242,6 +262,22 @@ where
             &serde_yaml::to_string(self)
                 .expect("internal YAML serialization error"),
         )
+    }
+}
+
+impl<T> FromIterator<T> for List<T>
+where
+    T: Clone
+        + PartialEq
+        + Eq
+        + Debug
+        + Display
+        + serde::Serialize
+        + StrictEncode<Error = strict_encoding::Error>
+        + StrictDecode<Error = strict_encoding::Error>,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from_inner(iter.into_iter().collect())
     }
 }
 
