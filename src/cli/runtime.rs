@@ -16,6 +16,7 @@ use core::convert::TryInto;
 use std::thread::sleep;
 use std::time::Duration;
 
+use lnpbp::bp::Chain;
 use lnpbp::lnp::ZmqType;
 use lnpbp_services::esb;
 
@@ -25,11 +26,13 @@ use crate::{Config, Error, LogStyle, ServiceId};
 
 pub struct Runtime {
     identity: ServiceId,
+    chain: Chain,
+    response_queue: Vec<Request>,
     esb: esb::Controller<ServiceBus, Request, Handler>,
 }
 
 impl Runtime {
-    pub fn with(config: Config) -> Result<Self, Error> {
+    pub fn with(config: Config, chain: Chain) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
         let identity = ServiceId::client();
         let bus_config = esb::BusConfig::with_locator(
@@ -52,11 +55,20 @@ impl Runtime {
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self { identity, esb })
+        Ok(Self {
+            identity,
+            chain,
+            response_queue: empty!(),
+            esb,
+        })
     }
 
     pub fn identity(&self) -> ServiceId {
         self.identity.clone()
+    }
+
+    pub fn chain(&self) -> Chain {
+        self.chain.clone()
     }
 
     pub fn request(
@@ -69,20 +81,35 @@ impl Runtime {
         Ok(())
     }
 
-    pub fn report_response(&mut self) -> Result<(), Error> {
-        for (_, _, rep) in self.esb.recv_poll()? {
-            match rep {
-                Request::Failure(fail) => {
-                    eprintln!(
-                        "{}: {}",
-                        "Request failure".err(),
-                        fail.err_details()
-                    );
-                    Err(Error::from(fail))?
-                }
-                resp => println!("{:#}", resp),
+    pub fn response(&mut self) -> Result<Request, Error> {
+        if self.response_queue.is_empty() {
+            for (_, _, rep) in self.esb.recv_poll()? {
+                self.response_queue.push(rep);
             }
         }
+        return Ok(self
+            .response_queue
+            .pop()
+            .expect("We always have at least one element"));
+    }
+
+    pub fn report_failure(&mut self) -> Result<Request, Error> {
+        match self.response()? {
+            Request::Failure(fail) => {
+                eprintln!(
+                    "{}: {}",
+                    "Request failure".err(),
+                    fail.err_details()
+                );
+                Err(Error::from(fail))?
+            }
+            resp => Ok(resp),
+        }
+    }
+
+    pub fn report_response(&mut self) -> Result<(), Error> {
+        let resp = self.report_failure()?;
+        println!("{:#}", resp);
         Ok(())
     }
 
@@ -91,35 +118,26 @@ impl Runtime {
         let mut finished = false;
         while !finished {
             finished = true;
-            for (_, _, rep) in self.esb.recv_poll()? {
-                counter += 1;
-                match rep {
-                    Request::Failure(fail) => {
-                        eprintln!(
-                            "{}: {}",
-                            "Request failure".err(),
-                            fail.err_details()
-                        );
-                        Err(Error::from(fail))?
-                    }
-                    Request::Progress(info) => {
-                        println!("{}", info.progress());
-                        finished = false;
-                    }
-                    Request::Success(OptionDetails(Some(info))) => {
-                        println!("{}{}", "Success: ".ended(), info.ender());
-                    }
-                    Request::Success(OptionDetails(None)) => {
-                        println!("{}", "Success".ended());
-                    }
-                    other => {
-                        eprintln!(
-                            "{}: {}",
-                            "Unexpected report".err(),
-                            other.err_details()
-                        );
-                        Err(Error::Other(s!("Unexpected server response")))?
-                    }
+            counter += 1;
+            match self.report_failure()? {
+                // Failure is already covered by `report_response()`
+                Request::Progress(info) => {
+                    println!("{}", info.progress());
+                    finished = false;
+                }
+                Request::Success(OptionDetails(Some(info))) => {
+                    println!("{}{}", "Success: ".ended(), info);
+                }
+                Request::Success(OptionDetails(None)) => {
+                    println!("{}", "Success".ended());
+                }
+                other => {
+                    eprintln!(
+                        "{}: {}",
+                        "Unexpected report".err(),
+                        other.err_details()
+                    );
+                    Err(Error::Other(s!("Unexpected server response")))?
                 }
             }
         }

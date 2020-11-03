@@ -36,8 +36,8 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
-    let mut runtime =
-        Runtime::with(config).expect("Error initializing runtime");
+    let mut runtime = Runtime::with(config, opts.shared.chain)
+        .expect("Error initializing runtime");
 
     trace!("Executing command: {:?}", opts.command);
     opts.command

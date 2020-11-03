@@ -25,7 +25,8 @@ use lnpbp::bitcoin::hashes::hex::ToHex;
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bp::Chain;
 use lnpbp::lnp::{
-    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
+    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TempChannelId,
+    TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::rpc::Failure;
@@ -153,7 +154,7 @@ impl Runtime {
                     ServiceId::Peer(connection_id) => {
                         if self.connections.insert(connection_id.clone()) {
                             info!(
-                                "Connection daemon {} is registered; total {} \
+                                "Connection {} is registered; total {} \
                                  connections are known",
                                 connection_id,
                                 self.connections.len()
@@ -169,7 +170,7 @@ impl Runtime {
                     ServiceId::Channel(channel_id) => {
                         if self.channels.insert(channel_id.clone()) {
                             info!(
-                                "Channel daemon {} is registered; total {} \
+                                "Channel {} is registered; total {} \
                                  channels are known",
                                 channel_id,
                                 self.channels.len()
@@ -438,10 +439,19 @@ impl Runtime {
         &mut self,
         source: ServiceId,
         report_to: Option<ServiceId>,
-        channel_req: message::OpenChannel,
+        mut channel_req: message::OpenChannel,
         accept: bool,
     ) -> Result<String, Error> {
         debug!("Instantiating channeld...");
+
+        // We need to initialize temporary channel id here
+        if !accept {
+            channel_req.temporary_channel_id = TempChannelId::random();
+            debug!(
+                "Generated {} as a temporary channel id",
+                channel_req.temporary_channel_id
+            );
+        }
 
         // Start channeld
         let child =

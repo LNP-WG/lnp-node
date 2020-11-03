@@ -21,7 +21,7 @@ use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
 use crate::rpc::{request, Request};
-use crate::{Error, ServiceId};
+use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
     type Runtime = Runtime;
@@ -96,6 +96,43 @@ impl Exec for Command {
                     }),
                 )?;
                 runtime.report_progress()?;
+                match runtime.response()? {
+                    Request::ChannelFunding(pubkey_script) => {
+                        let address = pubkey_script.address(runtime.chain());
+                        match address {
+                            None => {
+                                eprintln!(
+                                    "{}", 
+                                    "Can't generate funding address for a given network".err()
+                                );
+                                println!(
+                                    "{}\nAssembly: {}\nHex: {:x}",
+                                    "Please transfer channel funding to an output with the following raw `scriptPubkey`"
+                                        .progress(),
+                                    pubkey_script,
+                                    pubkey_script,
+                                );
+                            }
+                            Some(address) => {
+                                println!(
+                                    "{} {}",
+                                    "Please transfer channel funding to "
+                                        .progress(),
+                                    address.ended()
+                                );
+                            }
+                        }
+                    }
+                    other => {
+                        eprintln!(
+                            "{} {} {}",
+                            "Unexpected server response".err(),
+                            other,
+                            "while waiting for channel funding information"
+                                .err()
+                        );
+                    }
+                }
             }
 
             _ => unimplemented!(),

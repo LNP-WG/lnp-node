@@ -294,9 +294,9 @@ impl Runtime {
         channel_req: &message::OpenChannel,
     ) -> Result<(), ChannelNegotiationError> {
         let msg = format!(
-            "Requesting remote peer to {} with temp id {}",
-            "open a channel".ended(),
-            channel_req.temporary_channel_id.ender()
+            "Requesting remote peer to {} with temp id {:#}",
+            "open a channel".promo(),
+            channel_req.temporary_channel_id.promoter()
         );
         info!("{}", msg);
         // Ignoring possible reporting errors here and after: do not want to
@@ -317,7 +317,7 @@ impl Runtime {
         peerd: &ServiceId,
     ) -> Result<message::AcceptChannel, ChannelNegotiationError> {
         let msg = format!(
-            "{} with temp id {} from remote peer {}",
+            "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
             channel_req.temporary_channel_id.promoter(),
             peerd.promoter()
@@ -374,17 +374,20 @@ impl Runtime {
         accept_channel: &message::AcceptChannel,
         peerd: &ServiceId,
     ) -> Result<(), ChannelNegotiationError> {
-        let msg = format!(
+        info!(
             "Channel {:#} {} by the remote peer {}",
-            accept_channel.temporary_channel_id.promoter(),
-            "was accepted".promo(),
-            peerd.promoter()
+            accept_channel.temporary_channel_id.ender(),
+            "was accepted".ended(),
+            peerd.ender()
         );
-        info!("{}", msg);
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
         let enquirer = self.enquirer.clone();
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress_to(
+            senders,
+            &enquirer,
+            "Channel was accepted by the remote peer",
+        );
 
         let msg = format!(
             "{} returned parameters for the channel {:#}",
@@ -392,7 +395,6 @@ impl Runtime {
             accept_channel.temporary_channel_id.promoter()
         );
         info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
 
         // TODO: Add a reasonable min depth bound
         self.params.updated(accept_channel, None)?;
@@ -400,8 +402,8 @@ impl Runtime {
 
         let msg = format!(
             "Channel {:#} is {}",
-            accept_channel.temporary_channel_id.promoter(),
-            "is ready for funding".promo()
+            accept_channel.temporary_channel_id.ender(),
+            "ready for funding".ended()
         );
         info!("{}", msg);
         let _ = self.report_success_to(senders, &enquirer, Some(msg));
