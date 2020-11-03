@@ -93,6 +93,7 @@ pub enum ServiceId {
     Routing,
 
     #[display("peerd<{0}>")]
+    #[from]
     Peer(NodeAddr),
 
     #[display("channel<{0:#x}>")]
@@ -276,7 +277,7 @@ impl TryToServiceId for Option<ServiceId> {
     }
 }
 
-pub trait SendTo
+pub trait CtlServer
 where
     Self: esb::Handler<ServiceBus, Address = ServiceId>,
     esb::Error: From<Self::Error>,
@@ -334,7 +335,7 @@ where
         Error::Terminate(failure.to_string())
     }
 
-    fn send_to(
+    fn send_ctl(
         &mut self,
         senders: &mut Senders,
         dest: impl TryToServiceId,

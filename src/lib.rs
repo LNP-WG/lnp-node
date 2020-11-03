@@ -71,5 +71,5 @@ pub use config::Config;
 pub use error::Error;
 #[cfg(any(feature = "node", feature = "client"))]
 pub use service::{
-    LogStyle, SendTo, Senders, Service, ServiceId, TryToServiceId,
+    CtlServer, LogStyle, Senders, Service, ServiceId, TryToServiceId,
 };

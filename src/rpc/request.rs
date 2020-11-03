@@ -89,8 +89,12 @@ pub enum Request {
     #[display("accept_channel_from(...)")]
     AcceptChannelFrom(CreateChannel),
 
-    // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 205)]
+    #[display("fund_channel({0})")]
+    FundChannel(OutPoint),
+
+    // Can be issued from `cli` to a specific `peerd`
+    #[lnp_api(type = 206)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
 

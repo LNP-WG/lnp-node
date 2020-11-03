@@ -167,6 +167,17 @@ impl Exec for Command {
                 }
             }
 
+            Command::Fund {
+                channel,
+                funding_outpoint,
+            } => {
+                runtime.request(
+                    channel.clone().into(),
+                    Request::FundChannel(*funding_outpoint),
+                )?;
+                runtime.report_progress()?;
+            }
+
             _ => unimplemented!(),
         }
         Ok(())

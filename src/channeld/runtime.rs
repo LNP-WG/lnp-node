@@ -16,9 +16,10 @@ use amplify::DumbDefault;
 use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime};
 
-use lnpbp::bitcoin::secp256k1;
+use lnpbp::bitcoin::secp256k1::{self, Signature};
 use lnpbp::bitcoin::OutPoint;
-use lnpbp::bp::Chain;
+use lnpbp::bp::{Chain, PubkeyScript};
+use lnpbp::lnp::application::channel::ScriptGenerators;
 use lnpbp::lnp::{
     message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
     ChannelParams, ChannelState, Messages, NodeAddr, TempChannelId, TypedEnum,
@@ -27,8 +28,7 @@ use lnpbp_services::esb::{self, Handler};
 
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, Error, LogStyle, SendTo, Senders, Service, ServiceId};
-use lnpbp::bp::PubkeyScript;
+use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(
     config: Config,
@@ -38,6 +38,7 @@ pub fn run(
 ) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
+        peer_service: ServiceId::Loopback,
         node_id,
         chain,
         channel_id: None,
@@ -63,6 +64,7 @@ pub fn run(
 
 pub struct Runtime {
     identity: ServiceId,
+    peer_service: ServiceId,
     node_id: secp256k1::PublicKey,
     chain: Chain,
 
@@ -85,7 +87,7 @@ pub struct Runtime {
     enquirer: Option<ServiceId>,
 }
 
-impl SendTo for Runtime {}
+impl CtlServer for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
@@ -121,6 +123,20 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
+    fn send_peer(
+        &self,
+        senders: &mut Senders,
+        message: Messages,
+    ) -> Result<(), Error> {
+        senders.send_to(
+            ServiceBus::Msg,
+            self.identity(),
+            self.peer_service.clone(),
+            Request::PeerMessage(message),
+        )?;
+        Ok(())
+    }
+
     fn handle_rpc_msg(
         &mut self,
         senders: &mut Senders,
@@ -147,7 +163,7 @@ impl Runtime {
                     remote_pk
                 );
                 let script_pubkey =
-                    PubkeyScript::with_ln_funding_v1(local_pk, remote_pk);
+                    PubkeyScript::ln_funding(local_pk, remote_pk);
                 trace!("Funding script: {}", script_pubkey);
                 if let Some(addr) = script_pubkey.address(self.chain.clone()) {
                     debug!("Funding address: {}", addr);
@@ -162,11 +178,25 @@ impl Runtime {
 
                 // Ignoring possible reporting error here: do not want to
                 // halt the channel just because the client disconnected
-                let _ = self.send_to(
+                let _ = self.send_ctl(
                     senders,
                     &enquirer,
                     Request::ChannelFunding(script_pubkey),
                 );
+            }
+
+            Request::PeerMessage(Messages::FundingSigned(funding_signed)) => {
+                // TODO:
+                //      1. Get commitment tx
+                //      2. Verify signature
+                //      3. Save signature/commitment tx
+                //      4. Send funding locked request
+            }
+
+            Request::PeerMessage(Messages::FundingLocked(funding_locked)) => {
+                // TODO:
+                //      1. Change the channel state
+                //      2. Do something with per-commitment point
             }
 
             Request::PeerMessage(_) => {
@@ -198,6 +228,7 @@ impl Runtime {
                 peerd,
                 report_to,
             }) => {
+                self.peer_service = peerd.clone();
                 self.enquirer = report_to.clone();
 
                 if let ServiceId::Peer(ref addr) = peerd {
@@ -208,12 +239,7 @@ impl Runtime {
                     self.report_failure_to(senders, &report_to, err)
                 })?;
 
-                senders.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    peerd,
-                    Request::PeerMessage(Messages::OpenChannel(channel_req)),
-                )?;
+                self.send_peer(senders, Messages::OpenChannel(channel_req))?;
 
                 self.state = ChannelState::Proposed;
             }
@@ -223,6 +249,7 @@ impl Runtime {
                 peerd,
                 report_to,
             }) => {
+                self.peer_service = peerd.clone();
                 self.state = ChannelState::Proposed;
 
                 if let ServiceId::Peer(ref addr) = peerd {
@@ -235,16 +262,30 @@ impl Runtime {
                         self.report_failure_to(senders, &report_to, err)
                     })?;
 
-                senders.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    peerd,
-                    Request::PeerMessage(Messages::AcceptChannel(
-                        accept_channel,
-                    )),
+                self.send_peer(
+                    senders,
+                    Messages::AcceptChannel(accept_channel),
                 )?;
 
                 self.state = ChannelState::Accepted;
+            }
+
+            Request::FundChannel(funding_outpoint) => {
+                // TODO:
+                //      1. Get somehow peerd id
+                //      2. Construct commitment tx
+                //      3. Sign commitment tx
+                //      4. Update channel id
+                self.send_peer(
+                    senders,
+                    Messages::FundingCreated(message::FundingCreated {
+                        temporary_channel_id: self.temporary_channel_id,
+                        funding_txid: funding_outpoint.txid,
+                        funding_output_index: funding_outpoint.vout as u16,
+                        signature: Signature::from_compact(&vec![0u8])
+                            .expect("This will fail"),
+                    }),
+                );
             }
 
             Request::GetInfo => {
@@ -296,7 +337,7 @@ impl Runtime {
                     local_keys: self.local_keys.clone(),
                     remote_keys: bmap(&self.remote_peer, &self.remote_keys),
                 };
-                self.send_to(senders, source, Request::ChannelInfo(info))?;
+                self.send_ctl(senders, source, Request::ChannelInfo(info))?;
             }
 
             _ => {

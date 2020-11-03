@@ -29,7 +29,7 @@ use lnpbp_services::node::TryService;
 use lnpbp_services::peer;
 
 use crate::rpc::{request::PeerInfo, Request, ServiceBus};
-use crate::{Config, Error, LogStyle, SendTo, Service, ServiceId};
+use crate::{Config, CtlServer, Error, LogStyle, Service, ServiceId};
 
 pub struct MessageFilter {}
 
@@ -183,7 +183,7 @@ pub struct Runtime {
     awaited_pong: Option<u16>,
 }
 
-impl SendTo for Runtime {}
+impl CtlServer for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
@@ -303,7 +303,7 @@ impl Runtime {
                     connected: !self.connect,
                     awaits_pong: self.awaited_pong.is_some(),
                 };
-                self.send_to(senders, source, Request::PeerInfo(info))?;
+                self.send_ctl(senders, source, Request::PeerInfo(info))?;
             }
 
             _ => {
