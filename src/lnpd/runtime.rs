@@ -25,8 +25,7 @@ use lnpbp::bitcoin::hashes::hex::ToHex;
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bp::Chain;
 use lnpbp::lnp::{
-    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TempChannelId,
-    TypedEnum,
+    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::rpc::Failure;
@@ -445,8 +444,8 @@ impl Runtime {
         debug!("Instantiating channeld...");
 
         // Start channeld
-        let temp_channel_id = TempChannelId::random();
-        let child = launch("channeld", &[temp_channel_id.to_hex()])?;
+        let child =
+            launch("channeld", &[channel_req.temporary_channel_id.to_hex()])?;
         let msg = format!(
             "New instance of channeld launched with PID {}",
             child.id()
@@ -457,7 +456,6 @@ impl Runtime {
         let node_key = self.node_id;
         let channel_req = message::OpenChannel {
             chain_hash: self.chain.clone().chain_params().genesis_hash.into(),
-            temporary_channel_id: temp_channel_id,
             // TODO: Take these parameters from configuration
             push_msat: 0,
             dust_limit_satoshis: 0,

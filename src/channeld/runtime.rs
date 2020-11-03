@@ -357,7 +357,7 @@ impl Runtime {
         self.local_keys = ChannelKeys::from(&accept_channel);
 
         let msg = format!(
-            "{} channel {} from remote peer {}",
+            "{} channel {:#} from remote peer {}",
             "Accepted".ended(),
             channel_req.temporary_channel_id.ender(),
             peerd.ender()
@@ -375,7 +375,7 @@ impl Runtime {
         peerd: &ServiceId,
     ) -> Result<(), ChannelNegotiationError> {
         let msg = format!(
-            "Channel {} {} by the remote peer {}",
+            "Channel {:#} {} by the remote peer {}",
             accept_channel.temporary_channel_id.promoter(),
             "was accepted".promo(),
             peerd.promoter()
@@ -387,7 +387,7 @@ impl Runtime {
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
         let msg = format!(
-            "{} returned parameters for the channel {}",
+            "{} returned parameters for the channel {:#}",
             "Verifying".promo(),
             accept_channel.temporary_channel_id.promoter()
         );
@@ -399,7 +399,7 @@ impl Runtime {
         self.remote_keys = ChannelKeys::from(accept_channel);
 
         let msg = format!(
-            "Channel {} is {}",
+            "Channel {:#} is {}",
             accept_channel.temporary_channel_id.promoter(),
             "is ready for funding".promo()
         );

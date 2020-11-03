@@ -40,6 +40,10 @@ pub enum Request {
     Hello,
 
     #[lnp_api(type = 1)]
+    #[display("update_channel_id({0})")]
+    UpdateChannelId(ChannelId),
+
+    #[lnp_api(type = 2)]
     #[display("send_message({0})")]
     PeerMessage(Messages),
 
