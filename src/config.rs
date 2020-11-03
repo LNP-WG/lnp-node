@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use lnpbp::bp::Chain;
 use lnpbp::lnp::NodeAddr;
 
 #[cfg(feature = "shell")]
@@ -23,6 +24,9 @@ use crate::opts::Opts;
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display(Debug)]
 pub struct Config {
+    /// Bitcoin blockchain to use (mainnet, testnet, signet, liquid etc)
+    pub chain: Chain,
+
     /// ZMQ socket for lightning peer network message bus
     pub msg_endpoint: NodeAddr,
 
@@ -34,6 +38,7 @@ pub struct Config {
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Config {
+            chain: opts.chain,
             msg_endpoint: opts.msg_socket.into(),
             ctl_endpoint: opts.ctl_socket.into(),
         }

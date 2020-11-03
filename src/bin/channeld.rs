@@ -32,7 +32,7 @@ extern crate log;
 use clap::Clap;
 
 use lnp::channeld::{self, Opts};
-use lnp::Config;
+use lnp::{Config, LogStyle};
 
 fn main() {
     println!("channeld: lightning channel microservice");
@@ -47,6 +47,9 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
+    let node_id = opts.key_opts.local_node().node_id();
+    info!("{}: {}", "Local node id".ended(), node_id.addr());
+
     /*
     use self::internal::ResultExt;
     let (config_from_file, _) =
@@ -57,7 +60,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config, opts.channel_id)
+    channeld::run(config, node_id, opts.channel_id)
         .expect("Error running channeld runtime");
 
     unreachable!()

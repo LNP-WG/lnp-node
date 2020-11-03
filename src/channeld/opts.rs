@@ -17,6 +17,8 @@ use lnpbp::lnp::ChannelId;
 
 use lnpbp::bitcoin::hashes::hex::FromHex;
 
+use crate::peerd::KeyOpts;
+
 /// Lightning peer network channel daemon; part of LNP Node
 ///
 /// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
@@ -30,6 +32,10 @@ use lnpbp::bitcoin::hashes::hex::FromHex;
     setting = AppSettings::ColoredHelp
 )]
 pub struct Opts {
+    /// Node key configuration
+    #[clap(flatten)]
+    pub key_opts: KeyOpts,
+
     /// Channel id
     #[clap(parse(try_from_str = ChannelId::from_hex))]
     pub channel_id: ChannelId,
@@ -42,6 +48,7 @@ pub struct Opts {
 
 impl Opts {
     pub fn process(&mut self) {
-        self.shared.process()
+        self.shared.process();
+        self.key_opts.process(&self.shared);
     }
 }

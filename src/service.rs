@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::Wrapper;
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
@@ -20,9 +19,9 @@ use std::str::FromStr;
 use lnpbp::bitcoin::hashes::hex::{self, ToHex};
 use lnpbp::lnp::{zmqsocket, ChannelId, NodeAddr, TempChannelId, ZmqType};
 use lnpbp::strict_encoding::{strict_decode, strict_encode};
-use lnpbp_services::esb;
 #[cfg(feature = "node")]
 use lnpbp_services::node::TryService;
+use lnpbp_services::{esb, rpc};
 
 use crate::rpc::{Request, ServiceBus};
 use crate::Config;
@@ -251,6 +250,101 @@ where
         self.esb.run_or_panic(&identity.to_string());
 
         unreachable!()
+    }
+}
+
+pub type Senders = esb::SenderList<ServiceBus, ServiceId>;
+
+pub trait TryToServiceId {
+    fn try_to_service_id(&self) -> Option<ServiceId>;
+}
+
+impl TryToServiceId for ServiceId {
+    fn try_to_service_id(&self) -> Option<ServiceId> {
+        Some(self.clone())
+    }
+}
+
+impl TryToServiceId for &Option<ServiceId> {
+    fn try_to_service_id(&self) -> Option<ServiceId> {
+        (*self).clone()
+    }
+}
+
+impl TryToServiceId for Option<ServiceId> {
+    fn try_to_service_id(&self) -> Option<ServiceId> {
+        self.clone()
+    }
+}
+
+pub trait SendTo
+where
+    Self: esb::Handler<ServiceBus, Address = ServiceId>,
+    esb::Error: From<Self::Error>,
+{
+    fn report_success_to(
+        &mut self,
+        senders: &mut Senders,
+        dest: impl TryToServiceId,
+        msg: Option<impl ToString>,
+    ) -> Result<(), Error> {
+        if let Some(dest) = dest.try_to_service_id() {
+            senders.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                dest,
+                Request::Success(msg.map(|m| m.to_string()).into()),
+            )?;
+        }
+        Ok(())
+    }
+
+    fn report_progress_to(
+        &mut self,
+        senders: &mut Senders,
+        dest: impl TryToServiceId,
+        msg: impl ToString,
+    ) -> Result<(), Error> {
+        if let Some(dest) = dest.try_to_service_id() {
+            senders.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                dest,
+                Request::Progress(msg.to_string()),
+            )?;
+        }
+        Ok(())
+    }
+
+    fn report_failure_to(
+        &mut self,
+        senders: &mut Senders,
+        dest: impl TryToServiceId,
+        failure: impl Into<rpc::Failure>,
+    ) -> Error {
+        let failure = failure.into();
+        if let Some(dest) = dest.try_to_service_id() {
+            // Even if we fail, we still have to terminate :)
+            let _ = senders.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                dest,
+                Request::Failure(failure.clone()),
+            );
+        }
+        Error::Terminate(failure.to_string())
+    }
+
+    fn send_to(
+        &mut self,
+        senders: &mut Senders,
+        dest: impl TryToServiceId,
+        request: Request,
+    ) -> Result<(), Error> {
+        if let Some(dest) = dest.try_to_service_id() {
+            senders.send_to(ServiceBus::Ctl, self.identity(), dest, request)?;
+        }
+        Ok(())
     }
 }
 

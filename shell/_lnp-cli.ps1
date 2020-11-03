@@ -42,10 +42,10 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('connect', 'connect', [CompletionResultType]::ParameterValue, 'Connect to the remote lightning network peer')
             [CompletionResult]::new('ping', 'ping', [CompletionResultType]::ParameterValue, 'Ping remote peer (must be already connected)')
             [CompletionResult]::new('info', 'info', [CompletionResultType]::ParameterValue, 'General information about the running node')
-            [CompletionResult]::new('funds', 'funds', [CompletionResultType]::ParameterValue, 'Lists all funds available for channel creation for given list of assets and provides information about funding points (bitcoin address or UTXO for RGB assets)')
             [CompletionResult]::new('peers', 'peers', [CompletionResultType]::ParameterValue, 'Lists existing peer connections')
             [CompletionResult]::new('channels', 'channels', [CompletionResultType]::ParameterValue, 'Lists existing channels')
-            [CompletionResult]::new('create', 'create', [CompletionResultType]::ParameterValue, 'Create a new channel with the remote peer, which must be already connected')
+            [CompletionResult]::new('propose', 'propose', [CompletionResultType]::ParameterValue, 'Proposes a new channel to the remote peer, which must be already connected')
+            [CompletionResult]::new('fund', 'fund', [CompletionResultType]::ParameterValue, 'Fund new channel (which must be already accepted by the remote peer) with bitcoins')
             [CompletionResult]::new('refill', 'refill', [CompletionResultType]::ParameterValue, 'Adds RGB assets to an existing channel')
             [CompletionResult]::new('invoice', 'invoice', [CompletionResultType]::ParameterValue, 'Create an invoice')
             [CompletionResult]::new('pay', 'pay', [CompletionResultType]::ParameterValue, 'Pay the invoice')
@@ -134,25 +134,6 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;funds' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
-            [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path to the configuration file')
-            [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
-            [CompletionResult]::new('--tor-proxy', 'tor-proxy', [CompletionResultType]::ParameterName, 'Use Tor')
-            [CompletionResult]::new('-m', 'm', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
-            [CompletionResult]::new('--msg-socket', 'msg-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
-            [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
-            [CompletionResult]::new('--ctl-socket', 'ctl-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
-            [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Prints help information')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Prints help information')
-            [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Prints version information')
-            [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
-            break
-        }
         'lnp-cli;peers' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
@@ -191,7 +172,26 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
             break
         }
-        'lnp-cli;create' {
+        'lnp-cli;propose' {
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')
+            [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path to the configuration file')
+            [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
+            [CompletionResult]::new('--tor-proxy', 'tor-proxy', [CompletionResultType]::ParameterName, 'Use Tor')
+            [CompletionResult]::new('-m', 'm', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
+            [CompletionResult]::new('--msg-socket', 'msg-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address to forward all incoming lightning messages')
+            [CompletionResult]::new('-x', 'x', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
+            [CompletionResult]::new('--ctl-socket', 'ctl-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for daemon control interface')
+            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
+            [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
+            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Prints help information')
+            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Prints help information')
+            [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Prints version information')
+            [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Prints version information')
+            break
+        }
+        'lnp-cli;fund' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')

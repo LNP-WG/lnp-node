@@ -12,10 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::bitcoin::secp256k1;
+use amplify::DumbDefault;
+
 use lnpbp::lnp::{
-    message, RemoteSocketAddr, TempChannelId, ToNodeAddr,
-    LIGHTNING_P2P_DEFAULT_PORT,
+    message, RemoteSocketAddr, ToNodeAddr, LIGHTNING_P2P_DEFAULT_PORT,
 };
 use lnpbp_services::shell::Exec;
 
@@ -74,47 +74,24 @@ impl Exec for Command {
                     .request(ServiceId::Peer(node_addr), Request::PingPeer)?;
             }
 
-            Command::Create {
-                peer: node_locator,
-                satoshis: _,
+            Command::Propose {
+                peer,
+                funding_satoshis,
             } => {
-                let peer = node_locator
+                let node_addr = peer
                     .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
                     .expect("Provided node address is invalid");
-
-                let dumb_key = secp256k1::PublicKey::from_secret_key(
-                    &lnpbp::SECP256K1,
-                    &secp256k1::key::ONE_KEY,
-                );
 
                 runtime.request(
                     ServiceId::Lnpd,
                     Request::OpenChannelWith(request::CreateChannel {
-                        // TODO: Provide channel configuration from command-line
-                        //       arguments and configuration file defaults
                         channel_req: message::OpenChannel {
-                            chain_hash: none!(),
-                            temporary_channel_id: TempChannelId::random(),
-                            funding_satoshis: 0,
-                            push_msat: 0,
-                            dust_limit_satoshis: 0,
-                            max_htlc_value_in_flight_msat: 0,
-                            channel_reserve_satoshis: 0,
-                            htlc_minimum_msat: 0,
-                            feerate_per_kw: 0,
-                            to_self_delay: 0,
-                            max_accepted_htlcs: 0,
-                            funding_pubkey: dumb_key,
-                            revocation_basepoint: dumb_key,
-                            payment_point: dumb_key,
-                            delayed_payment_basepoint: dumb_key,
-                            htlc_basepoint: dumb_key,
-                            first_per_commitment_point: dumb_key,
-                            channel_flags: 0,
-                            shutdown_scriptpubkey: None,
-                            unknown_tlvs: none!(),
+                            funding_satoshis: *funding_satoshis,
+                            // The rest of parameters will be filled in by the
+                            // daemon
+                            ..dumb!()
                         },
-                        peerd: ServiceId::Peer(peer),
+                        peerd: ServiceId::Peer(node_addr),
                         report_to: Some(runtime.identity()),
                     }),
                 )?;

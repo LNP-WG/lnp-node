@@ -130,27 +130,6 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(funds)
-_arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'*-v[Set verbosity level]' \
-'*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
-'*::asset -- Space-separated list of asset identifiers or tickers. If none are given lists all avaliable assets:' \
-&& ret=0
-;;
 (peers)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
@@ -191,7 +170,7 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 && ret=0
 ;;
-(create)
+(propose)
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
@@ -210,7 +189,29 @@ _arguments "${_arguments_options[@]}" \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
-':satoshis -- Amount of satoshis to allocate to the channel:' \
+':funding-satoshis -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
+&& ret=0
+;;
+(fund)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':channel -- Accepted channel to which the funding must be added:' \
+':funding-outpoint -- Outpoint (in form of <txid>\:<output_no>) which will be used as a channel funding. Output `scriptPubkey` must be equal to the one provided by the `propose` command:' \
 && ret=0
 ;;
 (refill)
@@ -232,7 +233,7 @@ _arguments "${_arguments_options[@]}" \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
 ':channel -- Channel to which the funding must be added:' \
-'*::asset -- Asset-fund pair:' \
+'::asset -- Asset ticker or bech32-encoded `AssetId`:' \
 && ret=0
 ;;
 (invoice)
@@ -299,10 +300,10 @@ _lnp-cli_commands() {
 "connect:Connect to the remote lightning network peer" \
 "ping:Ping remote peer (must be already connected)" \
 "info:General information about the running node" \
-"funds:Lists all funds available for channel creation for given list of assets and provides information about funding points (bitcoin address or UTXO for RGB assets)" \
 "peers:Lists existing peer connections" \
 "channels:Lists existing channels" \
-"create:Create a new channel with the remote peer, which must be already connected" \
+"propose:Proposes a new channel to the remote peer, which must be already connected" \
+"fund:Fund new channel (which must be already accepted by the remote peer) with bitcoins" \
 "refill:Adds RGB assets to an existing channel" \
 "invoice:Create an invoice" \
 "pay:Pay the invoice" \
@@ -324,19 +325,12 @@ _lnp-cli__connect_commands() {
     )
     _describe -t commands 'lnp-cli connect commands' commands "$@"
 }
-(( $+functions[_lnp-cli__create_commands] )) ||
-_lnp-cli__create_commands() {
+(( $+functions[_lnp-cli__fund_commands] )) ||
+_lnp-cli__fund_commands() {
     local commands; commands=(
         
     )
-    _describe -t commands 'lnp-cli create commands' commands "$@"
-}
-(( $+functions[_lnp-cli__funds_commands] )) ||
-_lnp-cli__funds_commands() {
-    local commands; commands=(
-        
-    )
-    _describe -t commands 'lnp-cli funds commands' commands "$@"
+    _describe -t commands 'lnp-cli fund commands' commands "$@"
 }
 (( $+functions[_lnp-cli__help_commands] )) ||
 _lnp-cli__help_commands() {
@@ -386,6 +380,13 @@ _lnp-cli__ping_commands() {
         
     )
     _describe -t commands 'lnp-cli ping commands' commands "$@"
+}
+(( $+functions[_lnp-cli__propose_commands] )) ||
+_lnp-cli__propose_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli propose commands' commands "$@"
 }
 (( $+functions[_lnp-cli__refill_commands] )) ||
 _lnp-cli__refill_commands() {

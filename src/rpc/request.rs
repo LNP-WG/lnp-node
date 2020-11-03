@@ -12,15 +12,19 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::Wrapper;
+use amplify::{ToYamlString, Wrapper};
+use serde_with::DurationSeconds;
+use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::time::Duration;
 
-use lnpbp::bitcoin::{secp256k1, Txid};
+use lnpbp::bitcoin::{secp256k1, OutPoint};
 use lnpbp::bp::chain::AssetId;
+use lnpbp::bp::PubkeyScript;
 use lnpbp::lnp::{
-    message, rpc_connection, ChannelId, ChannelState, Invoice, Messages,
-    NodeAddr, RemoteSocketAddr,
+    message, rpc_connection, AssetsBalance, ChannelId, ChannelKeys,
+    ChannelParams, ChannelState, Invoice, Messages, NodeAddr, RemoteSocketAddr,
+    TempChannelId,
 };
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::rpc::Failure;
@@ -37,11 +41,11 @@ pub enum Request {
 
     #[lnp_api(type = 1)]
     #[display("send_message({0})")]
-    SendMessage(Messages),
+    PeerMessage(Messages),
 
     // Can be issued from `cli` to `lnpd`
     #[lnp_api(type = 100)]
-    #[display("node_info()")]
+    #[display("get_info()")]
     GetInfo,
 
     // Can be issued from `cli` to `lnpd`
@@ -99,33 +103,32 @@ pub enum Request {
     Failure(Failure),
 
     #[lnp_api(type = 1100)]
-    #[display("nonde_info({0})", alt = "{0:#}")]
+    #[display("node_info({0})", alt = "{0:#}")]
     #[from]
     NodeInfo(NodeInfo),
 
     #[lnp_api(type = 1101)]
+    #[display("channel_info({0})", alt = "{0:#}")]
+    #[from]
+    ChannelInfo(ChannelInfo),
+
+    #[lnp_api(type = 1102)]
     #[display("peer_list({0})", alt = "{0:#}")]
     #[from]
     PeerList(List<PeerInfo>),
 
-    #[lnp_api(type = 1102)]
+    #[lnp_api(type = 1103)]
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
     ChannelList(List<ChannelInfo>),
+
+    #[lnp_api(type = 1203)]
+    #[display("channel_funding({0})", alt = "{0:#}")]
+    #[from]
+    ChannelFunding(PubkeyScript),
 }
 
 impl rpc_connection::Request for Request {}
-
-// TODO: Move to amplify
-#[cfg(feature = "serde")]
-pub trait ToYamlString
-where
-    Self: serde::Serialize,
-{
-    fn to_yaml_string(&self) -> String {
-        serde_yaml::to_string(self).expect("internal YAML serialization error")
-    }
-}
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[display("{peerd}, ...")]
@@ -165,6 +168,10 @@ pub struct PeerInfo {
     pub channels: usize,
 }
 
+pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
+
+//#[serde_as]
+#[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[cfg_attr(
     feature = "serde",
@@ -173,18 +180,24 @@ pub struct PeerInfo {
 )]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
-    pub channel_id: ChannelId,
+    pub channel_id: Option<ChannelId>,
+    pub temporary_channel_id: TempChannelId,
     pub state: ChannelState,
-    pub capacities: (u64, u64),
+    pub local_capacity: u64,
+    pub remote_capacities: RemotePeerMap<u64>,
     pub assets: Vec<AssetId>,
-    // assets: HashMap<AssetId, ((u64, u64), String)>,
-    pub funding_tx: Txid,
+    pub local_balances: AssetsBalance,
+    pub remote_balances: RemotePeerMap<AssetsBalance>,
+    pub funding_outpoint: OutPoint,
     pub remote_peers: Vec<NodeAddr>,
+    #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: i64,
     pub total_updates: u64,
     pub pending_updates: u16,
-    pub max_updates: u16,
+    pub params: ChannelParams,
+    pub local_keys: ChannelKeys,
+    pub remote_keys: BTreeMap<NodeAddr, ChannelKeys>,
 }
 
 #[cfg(feature = "serde")]

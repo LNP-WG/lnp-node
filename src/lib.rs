@@ -32,8 +32,10 @@ extern crate amplify_derive;
 extern crate lnpbp_derive;
 
 #[cfg(feature = "serde")]
-#[macro_use]
 extern crate serde_crate as serde;
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde_with;
 
 #[cfg(feature = "shell")]
 extern crate clap;
@@ -68,4 +70,6 @@ mod service;
 pub use config::Config;
 pub use error::Error;
 #[cfg(any(feature = "node", feature = "client"))]
-pub use service::{LogStyle, Service, ServiceId};
+pub use service::{
+    LogStyle, SendTo, Senders, Service, ServiceId, TryToServiceId,
+};

@@ -23,8 +23,10 @@ use std::time::{Duration, SystemTime};
 
 use lnpbp::bitcoin::hashes::hex::ToHex;
 use lnpbp::bitcoin::secp256k1;
+use lnpbp::bp::Chain;
 use lnpbp::lnp::{
-    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TypedEnum,
+    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TempChannelId,
+    TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 use lnpbp_services::rpc::Failure;
@@ -37,6 +39,7 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         node_id,
+        chain: config.chain.clone(),
         listens: none!(),
         started: SystemTime::now(),
         connections: none!(),
@@ -52,6 +55,7 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
 pub struct Runtime {
     identity: ServiceId,
     node_id: secp256k1::PublicKey,
+    chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
     connections: HashSet<NodeAddr>,
@@ -106,12 +110,12 @@ impl Runtime {
                 // Ignoring; this is used to set remote identity at ZMQ level
             }
 
-            Request::SendMessage(Messages::OpenChannel(open_channel)) => {
+            Request::PeerMessage(Messages::OpenChannel(open_channel)) => {
                 info!("Creating channel by peer request from {}", source);
                 self.create_channel(source, None, open_channel, true)?;
             }
 
-            Request::SendMessage(_) => {
+            Request::PeerMessage(_) => {
                 // Ignore the rest of LN peer messages
             }
 
@@ -435,19 +439,44 @@ impl Runtime {
         &mut self,
         source: ServiceId,
         report_to: Option<ServiceId>,
-        open_channel: message::OpenChannel,
+        channel_req: message::OpenChannel,
         accept: bool,
     ) -> Result<String, Error> {
         debug!("Instantiating channeld...");
 
         // Start channeld
-        let child =
-            launch("channeld", &[open_channel.temporary_channel_id.to_hex()])?;
+        let temp_channel_id = TempChannelId::random();
+        let child = launch("channeld", &[temp_channel_id.to_hex()])?;
         let msg = format!(
             "New instance of channeld launched with PID {}",
             child.id()
         );
         info!("{}", msg);
+
+        // Construct channel creation request
+        let node_key = self.node_id;
+        let channel_req = message::OpenChannel {
+            chain_hash: self.chain.clone().chain_params().genesis_hash.into(),
+            temporary_channel_id: temp_channel_id,
+            // TODO: Take these parameters from configuration
+            push_msat: 0,
+            dust_limit_satoshis: 0,
+            max_htlc_value_in_flight_msat: 10000,
+            channel_reserve_satoshis: 0,
+            htlc_minimum_msat: 0,
+            feerate_per_kw: 1,
+            to_self_delay: 1,
+            max_accepted_htlcs: 1000,
+            funding_pubkey: node_key,
+            revocation_basepoint: node_key,
+            payment_point: node_key,
+            delayed_payment_basepoint: node_key,
+            htlc_basepoint: node_key,
+            first_per_commitment_point: node_key,
+            channel_flags: 1, // Announce the channel
+            shutdown_scriptpubkey: None,
+            ..channel_req
+        };
 
         let list = if accept {
             &mut self.accepting_channels
@@ -456,12 +485,12 @@ impl Runtime {
         };
         list.insert(
             ServiceId::Channel(ChannelId::from_inner(
-                open_channel.temporary_channel_id.into_inner(),
+                channel_req.temporary_channel_id.into_inner(),
             )),
             request::CreateChannel {
-                channel_req: open_channel,
+                channel_req,
                 peerd: source,
-                report_to: report_to,
+                report_to,
             },
         );
         debug!("Awaiting for channeld to connect...");

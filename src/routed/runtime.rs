@@ -71,7 +71,7 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::SendMessage(_message) => {
+            Request::PeerMessage(_message) => {
                 // TODO: Process message
             }
             _ => {

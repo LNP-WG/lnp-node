@@ -15,6 +15,8 @@ _channeld() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
+'-k+[Node key file]: :_files' \
+'--key-file=[Node key file]: :_files' \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \

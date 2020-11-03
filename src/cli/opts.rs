@@ -16,7 +16,8 @@ use clap::{AppSettings, Clap};
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use lnpbp::lnp::{ChannelId, FramingProtocol, PartialNodeAddr};
+use lnpbp::bitcoin::OutPoint;
+use lnpbp::lnp::{ChannelId, FramingProtocol, PartialNodeAddr, TempChannelId};
 
 /// Command-line tool for working with LNP node
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -82,6 +83,7 @@ pub enum Command {
     /// General information about the running node
     Info,
 
+    /*
     /// Lists all funds available for channel creation for given list of assets
     /// and provides information about funding points (bitcoin address or UTXO
     /// for RGB assets)
@@ -91,26 +93,44 @@ pub enum Command {
         #[clap()]
         asset: Vec<String>,
     },
-
+     */
     /// Lists existing peer connections
     Peers,
 
     /// Lists existing channels
     Channels,
 
-    /// Create a new channel with the remote peer, which must be already
+    /// Proposes a new channel to the remote peer, which must be already
     /// connected.
     ///
-    /// RGB assets are added to the channel later with FundChannel command
-    Create {
+    /// Bitcoins will be added after the channel acceptance with `fund`
+    /// command. RGB assets are added to the channel later with `refill``
+    /// command
+    Propose {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
         #[clap()]
         peer: PartialNodeAddr,
 
-        /// Amount of satoshis to allocate to the channel
+        /// Amount of satoshis to allocate to the channel (the actual
+        /// allocation will happen later using `fund` command after the
+        /// channel acceptance)
         #[clap()]
-        satoshis: u64,
+        funding_satoshis: u64,
+    },
+
+    /// Fund new channel (which must be already accepted by the remote peer)
+    /// with bitcoins.
+    Fund {
+        /// Accepted channel to which the funding must be added
+        #[clap()]
+        channel: TempChannelId,
+
+        /// Outpoint (in form of <txid>:<output_no>) which will be used as a
+        /// channel funding. Output `scriptPubkey` must be equal to the one
+        /// provided by the `propose` command.
+        #[clap()]
+        funding_outpoint: OutPoint,
     },
 
     /// Adds RGB assets to an existing channel
@@ -119,9 +139,9 @@ pub enum Command {
         #[clap()]
         channel: ChannelId,
 
-        /// Asset-fund pair
-        #[clap()]
-        asset: Vec<AmountOfAsset>,
+        /// Asset ticker or bech32-encoded `AssetId`
+        #[clap(default_value = "btc")]
+        asset: String,
     },
 
     /// Create an invoice

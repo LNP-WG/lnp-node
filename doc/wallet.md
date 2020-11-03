@@ -21,7 +21,11 @@ Tasks to cover:
 2. It must be manually configured by the user with the list of supported assets
 
 ## Create channel
-1. Construct tx, transfer from the pool-controlled address to the funding tx with funding mutisig output
+/* 1. Construct tx, transfer from the pool-controlled address to the funding tx with funding mutisig output*/
+1. Constructs funding output and prints it out
+2. Gets txid and vout for funding output (via new cli command)
+3. Awaits for funding tx to be mined [optional]
+4. Creates channel
 
 ## Fund channel with RGB assets
 1. Make a consignment from outside of the LNP (like RGB) to the funding output. 

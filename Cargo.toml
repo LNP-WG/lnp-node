@@ -39,20 +39,20 @@ required-features = ["cli"]
 
 [dependencies]
 # LNP/BP crates
-amplify = "~2.2.1"
-amplify_derive = "~2.2.2"
-lnpbp = { version = "~0.2.0-beta.1", features = ["lnp", "url", "websockets"] }
-lnpbp_derive = "=0.2.0-beta.1"
-lnpbp_services = "=0.2.0-beta.1"
-lazy_static = "~1.4.0"
+amplify = "~2.3.0"
+amplify_derive = "~2.3.0"
+lnpbp = { git = "git://github.com/LNP-BP/rust-lnpbp", features = ["lnp", "url", "websockets"] }
+lnpbp_derive = { git = "git://github.com/LNP-BP/rust-lnpbp" }
+lnpbp_services = { git = "git://github.com/LNP-BP/rust-lnpbp" }
 # Rust language
+lazy_static = "~1.4.0"
 nix = { version = "~0.19.0", optional = true }
 chrono = "~0.4.19"
 # Bitcoin
 electrum-client = { version = "=0.3.0-beta.1", optional = true }
 # Serialization & parsing
 serde_crate = { package = "serde", version = "~1.0.106", features = ["derive"], optional = true }
-serde_with = { version = "~1.5.0", optional = true }
+serde_with = { version = "~1.5.1", optional = true, features = ["hex"] }
 serde_json = { version = "~1.0.55", optional = true }
 serde_yaml = { version = "~0.8.13", optional = true }
 toml = { version = "~0.5.6", optional = true }
@@ -75,10 +75,10 @@ tokio = { version = "~0.2.21", features = ["full"], optional = true }
 zmq = { version = "~0.9.2", optional = true }
 
 [build-dependencies]
-amplify = "~2.2.1"
-amplify_derive = "~2.2.2"
-lnpbp = { version = "=0.2.0-beta.1", features = ["lnp", "url", "websockets"] }
-lnpbp_services = "=0.2.0-beta.1"
+amplify = "~2.3.0"
+amplify_derive = "~2.3.0"
+lnpbp = { git = "git://github.com/LNP-BP/rust-lnpbp", features = ["lnp", "url", "websockets"] }
+lnpbp_services = { git = "git://github.com/LNP-BP/rust-lnpbp" }
 clap = "=3.0.0-beta.2"
 clap_generate = "=3.0.0-beta.2"
 log = { version = "~0.4.8", features = ["max_level_trace", "release_max_level_debug"] }

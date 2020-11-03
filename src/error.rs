@@ -61,6 +61,9 @@ pub enum Error {
     /// Peer has misbehaved LN peer protocol rules
     Misbehaving,
 
+    /// unrecoverable error "{0}"
+    Terminate(String),
+
     /// Other error type with string explanation
     #[display(inner)]
     #[from(amplify::internet::NoOnionSupportError)]
