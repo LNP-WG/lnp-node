@@ -12,24 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "shell")]
-mod opts;
-//pub mod persistance;
-mod runtime;
-#[allow(dead_code)]
-pub(self) mod storage;
+mod disk;
+mod driver;
 
-#[cfg(feature = "shell")]
-pub use opts::Opts;
-pub use runtime::run;
-
-// TODO: Replace with more generic persistance API
-
-/*
-pub struct ChannelTx {
-    pub funding: OutPoint,
-    pub commitment: Psbt,
-    pub offered: HashMap<u16, Psbt>,
-    pub received: HashMap<u16, Psbt>,
-}
-*/
+pub use disk::{DiskConfig, DiskDriver};
+pub use driver::Driver;

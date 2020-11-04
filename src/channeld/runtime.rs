@@ -16,32 +16,36 @@ use amplify::DumbDefault;
 use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime};
 
-use lnpbp::bitcoin::secp256k1::{self, Signature};
-use lnpbp::bitcoin::OutPoint;
+use lnpbp::bitcoin::hashes::{sha256, Hash, HashEngine};
+use lnpbp::bitcoin::secp256k1;
+use lnpbp::bitcoin::util::bip143::SigHashCache;
+use lnpbp::bitcoin::{OutPoint, SigHashType, Transaction};
 use lnpbp::bp::{Chain, PubkeyScript};
-use lnpbp::lnp::application::channel::ScriptGenerators;
+use lnpbp::lnp::application::channel::{ScriptGenerators, TxGenerators};
 use lnpbp::lnp::{
     message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
-    ChannelParams, ChannelState, Messages, NodeAddr, TempChannelId, TypedEnum,
+    ChannelParams, ChannelState, LocalNode, Messages, NodeAddr, TempChannelId,
+    TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 
+use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(
     config: Config,
-    node_id: secp256k1::PublicKey,
+    local_node: LocalNode,
     channel_id: ChannelId,
     chain: Chain,
 ) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         peer_service: ServiceId::Loopback,
-        node_id,
+        local_node,
         chain,
-        channel_id: None,
+        channel_id: zero!(),
         temporary_channel_id: channel_id.into(),
         state: default!(),
         local_capacity: 0,
@@ -56,7 +60,15 @@ pub fn run(
         params: default!(),
         local_keys: dumb!(),
         remote_keys: dumb!(),
+        is_originator: false,
+        obscuring_factor: 0,
         enquirer: None,
+        storage: Box::new(storage::DiskDriver::init(
+            channel_id,
+            Box::new(storage::DiskConfig {
+                path: Default::default(),
+            }),
+        )?),
     };
 
     Service::run(config, runtime, false)
@@ -65,10 +77,10 @@ pub fn run(
 pub struct Runtime {
     identity: ServiceId,
     peer_service: ServiceId,
-    node_id: secp256k1::PublicKey,
+    local_node: LocalNode,
     chain: Chain,
 
-    channel_id: Option<ChannelId>,
+    channel_id: ChannelId,
     temporary_channel_id: TempChannelId,
     state: ChannelState,
     local_capacity: u64,
@@ -84,10 +96,28 @@ pub struct Runtime {
     local_keys: ChannelKeys,
     remote_keys: ChannelKeys,
 
+    is_originator: bool,
+    obscuring_factor: u64,
+
     enquirer: Option<ServiceId>,
+
+    #[allow(dead_code)]
+    storage: Box<dyn storage::Driver>,
 }
 
 impl CtlServer for Runtime {}
+
+impl Runtime {
+    #[inline]
+    pub fn node_id(&self) -> secp256k1::PublicKey {
+        self.local_node.node_id()
+    }
+
+    #[inline]
+    pub fn channel_capacity(&self) -> u64 {
+        self.local_capacity + self.remote_capacity
+    }
+}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = Request;
@@ -162,8 +192,11 @@ impl Runtime {
                     local_pk,
                     remote_pk
                 );
-                let script_pubkey =
-                    PubkeyScript::ln_funding(local_pk, remote_pk);
+                let script_pubkey = PubkeyScript::ln_funding(
+                    self.channel_capacity(),
+                    local_pk,
+                    remote_pk,
+                );
                 trace!("Funding script: {}", script_pubkey);
                 if let Some(addr) = script_pubkey.address(self.chain.clone()) {
                     debug!("Funding address: {}", addr);
@@ -185,7 +218,7 @@ impl Runtime {
                 );
             }
 
-            Request::PeerMessage(Messages::FundingSigned(funding_signed)) => {
+            Request::PeerMessage(Messages::FundingSigned(_funding_signed)) => {
                 // TODO:
                 //      1. Get commitment tx
                 //      2. Verify signature
@@ -193,7 +226,7 @@ impl Runtime {
                 //      4. Send funding locked request
             }
 
-            Request::PeerMessage(Messages::FundingLocked(funding_locked)) => {
+            Request::PeerMessage(Messages::FundingLocked(_funding_locked)) => {
                 // TODO:
                 //      1. Change the channel state
                 //      2. Do something with per-commitment point
@@ -271,21 +304,12 @@ impl Runtime {
             }
 
             Request::FundChannel(funding_outpoint) => {
-                // TODO:
-                //      1. Get somehow peerd id
-                //      2. Construct commitment tx
-                //      3. Sign commitment tx
-                //      4. Update channel id
+                let funding_created =
+                    self.fund_channel(senders, funding_outpoint)?;
                 self.send_peer(
                     senders,
-                    Messages::FundingCreated(message::FundingCreated {
-                        temporary_channel_id: self.temporary_channel_id,
-                        funding_txid: funding_outpoint.txid,
-                        funding_output_index: funding_outpoint.vout as u16,
-                        signature: Signature::from_compact(&vec![0u8])
-                            .expect("This will fail"),
-                    }),
-                );
+                    Messages::FundingCreated(funding_created),
+                )?;
             }
 
             Request::GetInfo => {
@@ -302,8 +326,13 @@ impl Runtime {
                         .unwrap_or_default()
                 };
 
+                let channel_id = if self.channel_id == zero!() {
+                    None
+                } else {
+                    Some(self.channel_id)
+                };
                 let info = ChannelInfo {
-                    channel_id: self.channel_id,
+                    channel_id,
                     temporary_channel_id: self.temporary_channel_id,
                     state: self.state,
                     local_capacity: self.local_capacity,
@@ -333,6 +362,7 @@ impl Runtime {
                         .as_secs(),
                     total_updates: self.total_updates,
                     pending_updates: self.pending_updates,
+                    is_originator: self.is_originator,
                     params: self.params,
                     local_keys: self.local_keys.clone(),
                     remote_keys: bmap(&self.remote_peer, &self.remote_keys),
@@ -373,6 +403,7 @@ impl Runtime {
             format!("Proposing remote peer to open a channel"),
         );
 
+        self.is_originator = true;
         self.params = ChannelParams::with(&channel_req)?;
         self.local_keys = ChannelKeys::from(channel_req);
 
@@ -398,10 +429,11 @@ impl Runtime {
         let enquirer = self.enquirer.clone();
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
+        self.is_originator = false;
         self.params = ChannelParams::with(channel_req)?;
         self.remote_keys = ChannelKeys::from(channel_req);
 
-        let dumb_key = self.node_id;
+        let dumb_key = self.node_id();
         let accept_channel = message::AcceptChannel {
             temporary_channel_id: channel_req.temporary_channel_id,
             dust_limit_satoshis: channel_req.dust_limit_satoshis,
@@ -478,5 +510,108 @@ impl Runtime {
         let _ = self.report_success_to(senders, &enquirer, Some(msg));
 
         Ok(())
+    }
+
+    pub fn fund_channel(
+        &mut self,
+        senders: &mut Senders,
+        funding_outpoint: OutPoint,
+    ) -> Result<message::FundingCreated, Error> {
+        info!(
+            "{} {}",
+            "Funding channel".promo(),
+            self.temporary_channel_id.promo()
+        );
+        let enquirer = self.enquirer.clone();
+        let _ = self.report_progress_to(
+            senders,
+            &enquirer,
+            format!("Funding channel {:#}", self.temporary_channel_id),
+        );
+
+        let mut engine = sha256::Hash::engine();
+        if self.is_originator {
+            engine.input(&self.local_keys.payment_basepoint.serialize());
+            engine.input(&self.remote_keys.payment_basepoint.serialize());
+        } else {
+            engine.input(&self.remote_keys.payment_basepoint.serialize());
+            engine.input(&self.local_keys.payment_basepoint.serialize());
+        }
+        let obscuring_hash = sha256::Hash::from_engine(engine);
+        trace!("Obscuring hash: {}", obscuring_hash);
+
+        let mut buf = [0u8; 8];
+        buf.copy_from_slice(&obscuring_hash[24..]);
+        self.obscuring_factor = u64::from_be_bytes(buf);
+        trace!("Obscuring factor: {:#016x}", self.obscuring_factor);
+        self.total_updates = 0;
+        // We are doing counterparty's transaction!
+        let mut cmt_tx = Transaction::ln_cmt_base(
+            self.remote_capacity,
+            self.local_capacity,
+            self.total_updates,
+            self.obscuring_factor,
+            self.funding_outpoint,
+            self.local_keys.payment_basepoint,
+            self.local_keys.revocation_basepoint,
+            self.remote_keys.delayed_payment_basepoint,
+            self.params.to_self_delay,
+        );
+        trace!("Counterparty's commitment tx: {:?}", cmt_tx);
+
+        // Update channel id!
+        self.channel_id = ChannelId::with(funding_outpoint);
+        debug!("Updating channel id to {}", self.channel_id);
+        self.send_ctl(
+            senders,
+            ServiceId::Lnpd,
+            Request::UpdateChannelId(self.channel_id),
+        )?;
+        self.identity = self.channel_id.into();
+        let msg = format!(
+            "{} set to {}",
+            "Channel ID".ended(),
+            self.channel_id.ender()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        let mut sig_hasher = SigHashCache::new(&mut cmt_tx);
+        let sighash = sig_hasher.signature_hash(
+            0,
+            &PubkeyScript::ln_funding(
+                self.channel_capacity(),
+                self.local_keys.funding_pubkey,
+                self.remote_keys.funding_pubkey,
+            )
+            .into(),
+            self.channel_capacity(),
+            SigHashType::All,
+        );
+        let sign_msg = secp256k1::Message::from_slice(&sighash[..])
+            .expect("Sighash size always match requirements");
+        let signature = self.local_node.sign(&sign_msg);
+        trace!("Commitment transaction signature created");
+        // .serialize_der();
+        // let mut with_hashtype = signature.to_vec();
+        // with_hashtype.push(SigHashType::All.as_u32() as u8);
+
+        let funding_created = message::FundingCreated {
+            temporary_channel_id: self.temporary_channel_id,
+            funding_txid: funding_outpoint.txid,
+            funding_output_index: funding_outpoint.vout as u16,
+            signature,
+        };
+        trace!("Prepared funding_created: {:?}", funding_created);
+
+        let msg = format!(
+            "{} for channel {:#}. Awaiting for remote node signature.",
+            "Funding created".ended(),
+            self.channel_id.ender()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(funding_created)
     }
 }

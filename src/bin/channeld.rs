@@ -60,8 +60,13 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config, node_id, opts.channel_id, opts.shared.chain)
-        .expect("Error running channeld runtime");
+    channeld::run(
+        config,
+        opts.key_opts.local_node(),
+        opts.channel_id,
+        opts.shared.chain,
+    )
+    .expect("Error running channeld runtime");
 
     unreachable!()
 }

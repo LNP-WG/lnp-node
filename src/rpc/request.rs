@@ -236,6 +236,7 @@ pub struct ChannelInfo {
     pub since: u64,
     pub total_updates: u64,
     pub pending_updates: u16,
+    pub is_originator: bool,
     pub params: ChannelParams,
     pub local_keys: ChannelKeys,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]

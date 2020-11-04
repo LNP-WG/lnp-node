@@ -12,24 +12,29 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "shell")]
-mod opts;
-//pub mod persistance;
-mod runtime;
-#[allow(dead_code)]
-pub(self) mod storage;
+use std::any::Any;
+use std::path::PathBuf;
 
-#[cfg(feature = "shell")]
-pub use opts::Opts;
-pub use runtime::run;
+use lnpbp::lnp::ChannelId;
 
-// TODO: Replace with more generic persistance API
+use super::Driver;
+use crate::Error;
 
-/*
-pub struct ChannelTx {
-    pub funding: OutPoint,
-    pub commitment: Psbt,
-    pub offered: HashMap<u16, Psbt>,
-    pub received: HashMap<u16, Psbt>,
+pub struct DiskConfig {
+    pub path: PathBuf,
 }
-*/
+
+pub struct DiskDriver {
+    channel_id: ChannelId,
+    config: DiskConfig,
+}
+
+impl Driver for DiskDriver {
+    fn init(
+        channel_id: ChannelId,
+        config: Box<dyn Any>,
+    ) -> Result<Self, Error> {
+        let config = *config.downcast().map_err(|_| Error::Other(s!("")))?;
+        Ok(Self { channel_id, config })
+    }
+}
