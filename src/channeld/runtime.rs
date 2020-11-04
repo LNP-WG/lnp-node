@@ -33,6 +33,7 @@ use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
+use lnpbp::lnp::application::channel::Channel;
 
 pub fn run(
     config: Config,
@@ -40,6 +41,9 @@ pub fn run(
     channel_id: ChannelId,
     chain: Chain,
 ) -> Result<(), Error> {
+    // Construct channel
+    let channel = Channel::with();
+
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         peer_service: ServiceId::Loopback,
@@ -61,9 +65,6 @@ pub fn run(
         params: default!(),
         local_keys: dumb!(),
         remote_keys: dumb!(),
-        offered_htlc: empty!(),
-        received_htlc: empty!(),
-        resolved_htlc: empty!(),
         is_originator: false,
         obscuring_factor: 0,
         enquirer: None,
@@ -101,15 +102,12 @@ pub struct Runtime {
     local_keys: payment::channel::Keyset,
     remote_keys: payment::channel::Keyset,
 
-    offered_htlc: Vec<HtlcKnown>,
-    received_htlc: Vec<HtlcSecret>,
-    resolved_htlc: Vec<HtlcKnown>,
-
     is_originator: bool,
     obscuring_factor: u64,
 
-    enquirer: Option<ServiceId>,
+    channel: Channel<ExtensionId>,
 
+    enquirer: Option<ServiceId>,
     #[allow(dead_code)]
     storage: Box<dyn storage::Driver>,
 }
