@@ -54,3 +54,5 @@ $ lnp-cli connect <node_id_from_info>@127.0.0.1
 $ lnp-cli info
 $ lnp-cli connect <node_id_from_info>@127.0.0.1 100
 ```
+For troubleshooting check out this issue
+https://github.com/LNP-BP/lnp-node/issues/22#event-3959465543
