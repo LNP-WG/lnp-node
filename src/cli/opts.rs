@@ -14,6 +14,7 @@
 
 use clap::{AppSettings, Clap};
 use std::net::IpAddr;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use lnpbp::bitcoin::OutPoint;
@@ -145,8 +146,13 @@ pub enum Command {
         channel: ChannelId,
 
         /// Asset ticker or bech32-encoded `AssetId`
-        #[clap(default_value = "btc")]
+        #[clap()]
         asset: String,
+
+        /// Consignment file to read containing information about transfer of
+        /// RGB20 asset to the funding transaction output
+        #[clap()]
+        consignment: PathBuf,
     },
 
     /// Create an invoice

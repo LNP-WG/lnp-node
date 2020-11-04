@@ -131,6 +131,7 @@ pub struct Opts {
     #[clap(
         short = 'n',
         long,
+        global = true,
         alias = "network",
         default_value = "signet",
         env = "LNP_NODE_NETWORK"

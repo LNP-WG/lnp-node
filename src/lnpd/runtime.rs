@@ -250,11 +250,18 @@ impl Runtime {
                     "Requested to update channel id {} on {}",
                     source, new_id
                 );
-                if !self.channels.remove(&new_id) {
-                    warn!("Channel daemon {} was unknown", source);
+                if let ServiceId::Channel(old_id) = source {
+                    if !self.channels.remove(&old_id) {
+                        warn!("Channel daemon {} was unknown", source);
+                    }
+                    self.channels.insert(new_id);
+                    debug!("Registered channel daemon id {}", new_id);
+                } else {
+                    error!(
+                        "Chanel id update may be requested only by a channeld, not {}", 
+                        source
+                    );
                 }
-                self.channels.insert(new_id);
-                debug!("Registered channel daemon id {}", new_id);
             }
 
             Request::GetInfo => {

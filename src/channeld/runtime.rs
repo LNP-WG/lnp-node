@@ -218,6 +218,18 @@ impl Runtime {
                 );
             }
 
+            Request::PeerMessage(Messages::FundingCreated(funding_created)) => {
+                let funding_signed =
+                    self.funding_created(senders, funding_created)?;
+
+                // TODO: Implement better state cycle
+                // self.state = ChannelState::FundingCreated;
+                self.send_peer(
+                    senders,
+                    Messages::FundingSigned(funding_signed),
+                )?;
+            }
+
             Request::PeerMessage(Messages::FundingSigned(_funding_signed)) => {
                 // TODO:
                 //      1. Get commitment tx
@@ -522,17 +534,93 @@ impl Runtime {
         senders: &mut Senders,
         funding_outpoint: OutPoint,
     ) -> Result<message::FundingCreated, Error> {
+        let enquirer = self.enquirer.clone();
+
         info!(
             "{} {}",
             "Funding channel".promo(),
             self.temporary_channel_id.promoter()
         );
-        let enquirer = self.enquirer.clone();
         let _ = self.report_progress_to(
             senders,
             &enquirer,
             format!("Funding channel {:#}", self.temporary_channel_id),
         );
+
+        self.funding_outpoint = funding_outpoint;
+        self.funding_update(senders)?;
+
+        let signature = self.sign_funding();
+        let funding_created = message::FundingCreated {
+            temporary_channel_id: self.temporary_channel_id,
+            funding_txid: self.funding_outpoint.txid,
+            funding_output_index: self.funding_outpoint.vout as u16,
+            signature,
+        };
+        trace!("Prepared funding_created: {:?}", funding_created);
+
+        let msg = format!(
+            "{} for channel {:#}. Awaiting for remote node signature.",
+            "Funding created".ended(),
+            self.channel_id.ender()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(funding_created)
+    }
+
+    pub fn funding_created(
+        &mut self,
+        senders: &mut Senders,
+        funding_created: message::FundingCreated,
+    ) -> Result<message::FundingSigned, Error> {
+        let enquirer = self.enquirer.clone();
+
+        info!(
+            "{} {}",
+            "Accepting channel funding".promo(),
+            self.temporary_channel_id.promoter()
+        );
+        let _ = self.report_progress_to(
+            senders,
+            &enquirer,
+            format!(
+                "Accepting channel funding {:#}",
+                self.temporary_channel_id
+            ),
+        );
+
+        self.funding_outpoint = OutPoint {
+            txid: funding_created.funding_txid,
+            vout: funding_created.funding_output_index as u32,
+        };
+        // TODO: Save signature!
+        self.funding_update(senders)?;
+
+        let signature = self.sign_funding();
+        let funding_signed = message::FundingSigned {
+            channel_id: self.channel_id,
+            signature,
+        };
+        trace!("Prepared funding_signed: {:?}", funding_signed);
+
+        let msg = format!(
+            "{} for channel {:#}. Awaiting for funding tx mining.",
+            "Funding signed".ended(),
+            self.channel_id.ender()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(funding_signed)
+    }
+
+    pub fn funding_update(
+        &mut self,
+        senders: &mut Senders,
+    ) -> Result<(), Error> {
+        let enquirer = self.enquirer.clone();
 
         let mut engine = sha256::Hash::engine();
         if self.is_originator {
@@ -550,23 +638,9 @@ impl Runtime {
         self.obscuring_factor = u64::from_be_bytes(buf);
         trace!("Obscuring factor: {:#016x}", self.obscuring_factor);
         self.total_updates = 0;
-        self.funding_outpoint = funding_outpoint;
-        // We are doing counterparty's transaction!
-        let mut cmt_tx = Transaction::ln_cmt_base(
-            self.remote_capacity,
-            self.local_capacity,
-            self.total_updates,
-            self.obscuring_factor,
-            self.funding_outpoint,
-            self.local_keys.payment_basepoint,
-            self.local_keys.revocation_basepoint,
-            self.remote_keys.delayed_payment_basepoint,
-            self.params.to_self_delay,
-        );
-        trace!("Counterparty's commitment tx: {:?}", cmt_tx);
 
         // Update channel id!
-        self.channel_id = ChannelId::with(funding_outpoint);
+        self.channel_id = ChannelId::with(self.funding_outpoint);
         debug!("Updating channel id to {}", self.channel_id);
         self.send_ctl(
             senders,
@@ -581,6 +655,24 @@ impl Runtime {
         );
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(())
+    }
+
+    pub fn sign_funding(&mut self) -> secp256k1::Signature {
+        // We are doing counterparty's transaction!
+        let mut cmt_tx = Transaction::ln_cmt_base(
+            self.remote_capacity,
+            self.local_capacity,
+            self.total_updates,
+            self.obscuring_factor,
+            self.funding_outpoint,
+            self.local_keys.payment_basepoint,
+            self.local_keys.revocation_basepoint,
+            self.remote_keys.delayed_payment_basepoint,
+            self.params.to_self_delay,
+        );
+        trace!("Counterparty's commitment tx: {:?}", cmt_tx);
 
         let mut sig_hasher = SigHashCache::new(&mut cmt_tx);
         let sighash = sig_hasher.signature_hash(
@@ -602,22 +694,6 @@ impl Runtime {
         // let mut with_hashtype = signature.to_vec();
         // with_hashtype.push(SigHashType::All.as_u32() as u8);
 
-        let funding_created = message::FundingCreated {
-            temporary_channel_id: self.temporary_channel_id,
-            funding_txid: self.funding_outpoint.txid,
-            funding_output_index: self.funding_outpoint.vout as u16,
-            signature,
-        };
-        trace!("Prepared funding_created: {:?}", funding_created);
-
-        let msg = format!(
-            "{} for channel {:#}. Awaiting for remote node signature.",
-            "Funding created".ended(),
-            self.channel_id.ender()
-        );
-        info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
-
-        Ok(funding_created)
+        signature
     }
 }
