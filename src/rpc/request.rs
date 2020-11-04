@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::internet::InetSocketAddr;
 use amplify::{ToYamlString, Wrapper};
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
@@ -23,16 +24,17 @@ use std::time::Duration;
 use lnpbp::bitcoin::{secp256k1, OutPoint};
 use lnpbp::bp::chain::AssetId;
 use lnpbp::bp::PubkeyScript;
+use lnpbp::lnp::application::payment::{
+    self, AssetsBalance, Invoice, Lifecycle,
+};
 use lnpbp::lnp::{
-    message, rpc_connection, AssetsBalance, ChannelId, ChannelKeys,
-    ChannelParams, ChannelState, Invoice, Messages, NodeAddr, RemoteSocketAddr,
+    message, rpc_connection, ChannelId, Messages, NodeAddr, RemoteSocketAddr,
     TempChannelId,
 };
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::rpc::Failure;
 
 use crate::ServiceId;
-use amplify::internet::InetSocketAddr;
 
 #[derive(Clone, Debug, Display, From, LnpApi)]
 #[lnp_api(encoding = "strict")]
@@ -229,7 +231,7 @@ pub struct ChannelInfo {
     pub channel_id: Option<ChannelId>,
     #[serde_as(as = "DisplayFromStr")]
     pub temporary_channel_id: TempChannelId,
-    pub state: ChannelState,
+    pub state: Lifecycle,
     pub local_capacity: u64,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub remote_capacities: RemotePeerMap<u64>,
@@ -251,10 +253,10 @@ pub struct ChannelInfo {
     pub total_payments: u64,
     pub pending_payments: u16,
     pub is_originator: bool,
-    pub params: ChannelParams,
-    pub local_keys: ChannelKeys,
+    pub params: payment::channel::Params,
+    pub local_keys: payment::channel::Keyset,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_keys: BTreeMap<NodeAddr, ChannelKeys>,
+    pub remote_keys: BTreeMap<NodeAddr, payment::channel::Keyset>,
 }
 
 #[cfg(feature = "serde")]

@@ -20,17 +20,16 @@ use lnpbp::bitcoin::hashes::{sha256, Hash, HashEngine};
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bitcoin::util::bip143::SigHashCache;
 use lnpbp::bitcoin::{OutPoint, SigHashType, Transaction};
-use lnpbp::bp::{Chain, PubkeyScript};
-use lnpbp::lnp::application::channel::{ScriptGenerators, TxGenerators};
+use lnpbp::bp::{Chain, HashPreimage, PubkeyScript};
+use lnpbp::lnp::application::payment::bolt3::{ScriptGenerators, TxGenerators};
+use lnpbp::lnp::application::payment::htlc::{HtlcKnown, HtlcSecret};
+use lnpbp::lnp::application::payment::{self, AssetsBalance, Lifecycle};
 use lnpbp::lnp::{
-    message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
-    ChannelParams, ChannelState, LocalNode, Messages, NodeAddr,
-    PaymentPreimage, TempChannelId, TypedEnum,
+    message, ChannelId, LocalNode, Messages, NodeAddr, TempChannelId, TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 
 use super::storage::{self, Driver};
-use super::{HtlcKnown, HtlcSecret};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
@@ -87,7 +86,7 @@ pub struct Runtime {
 
     channel_id: ChannelId,
     temporary_channel_id: TempChannelId,
-    state: ChannelState,
+    state: Lifecycle,
     local_capacity: u64,
     remote_capacity: u64,
     local_balances: AssetsBalance,
@@ -98,9 +97,9 @@ pub struct Runtime {
     commitment_number: u64,
     total_payments: u64,
     pending_payments: u16,
-    params: ChannelParams,
-    local_keys: ChannelKeys,
-    remote_keys: ChannelKeys,
+    params: payment::channel::Params,
+    local_keys: payment::channel::Keyset,
+    remote_keys: payment::channel::Keyset,
 
     offered_htlc: Vec<HtlcKnown>,
     received_htlc: Vec<HtlcSecret>,
@@ -185,7 +184,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         match request {
             Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
-                self.state = ChannelState::Accepted;
+                self.state = Lifecycle::Accepted;
 
                 let enquirer = self.enquirer.clone();
 
@@ -233,7 +232,7 @@ impl Runtime {
                     self.funding_created(senders, funding_created)?;
 
                 // TODO: Implement better state cycle
-                // self.state = ChannelState::FundingCreated;
+                // self.state = Lifecycle::FundingCreated;
                 self.send_peer(
                     senders,
                     Messages::FundingSigned(funding_signed),
@@ -255,8 +254,8 @@ impl Runtime {
             }
 
             Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
-                let commitment_signed =
-                    self.htlc_receive(senders, update_add_htlc)?;
+                // let commitment_signed =
+                //    self.htlc_receive(senders, update_add_htlc)?;
             }
 
             Request::PeerMessage(Messages::CommitmentSigned(
@@ -307,7 +306,7 @@ impl Runtime {
 
                 self.send_peer(senders, Messages::OpenChannel(channel_req))?;
 
-                self.state = ChannelState::Proposed;
+                self.state = Lifecycle::Proposed;
             }
 
             Request::AcceptChannelFrom(request::CreateChannel {
@@ -316,7 +315,7 @@ impl Runtime {
                 report_to,
             }) => {
                 self.peer_service = peerd.clone();
-                self.state = ChannelState::Proposed;
+                self.state = Lifecycle::Proposed;
 
                 if let ServiceId::Peer(ref addr) = peerd {
                     self.remote_peer = Some(addr.clone());
@@ -333,7 +332,7 @@ impl Runtime {
                     Messages::AcceptChannel(accept_channel),
                 )?;
 
-                self.state = ChannelState::Accepted;
+                self.state = Lifecycle::Accepted;
             }
 
             Request::FundChannel(funding_outpoint) => {
@@ -343,7 +342,7 @@ impl Runtime {
                     self.fund_channel(senders, funding_outpoint)?;
 
                 // TODO: Implement better state cycle
-                // self.state = ChannelState::FundingCreated;
+                // self.state = Lifecycle::FundingCreated;
                 self.send_peer(
                     senders,
                     Messages::FundingCreated(funding_created),
@@ -437,7 +436,7 @@ impl Runtime {
         &mut self,
         senders: &mut Senders,
         channel_req: &message::OpenChannel,
-    ) -> Result<(), ChannelNegotiationError> {
+    ) -> Result<(), payment::channel::NegotiationError> {
         info!(
             "{} remote peer to {} with temp id {:#}",
             "Proposing".promo(),
@@ -454,8 +453,8 @@ impl Runtime {
         );
 
         self.is_originator = true;
-        self.params = ChannelParams::with(&channel_req)?;
-        self.local_keys = ChannelKeys::from(channel_req);
+        self.params = payment::channel::Params::with(&channel_req)?;
+        self.local_keys = payment::channel::Keyset::from(channel_req);
 
         Ok(())
     }
@@ -465,7 +464,8 @@ impl Runtime {
         senders: &mut Senders,
         channel_req: &message::OpenChannel,
         peerd: &ServiceId,
-    ) -> Result<message::AcceptChannel, ChannelNegotiationError> {
+    ) -> Result<message::AcceptChannel, payment::channel::NegotiationError>
+    {
         let msg = format!(
             "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
@@ -480,8 +480,8 @@ impl Runtime {
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
         self.is_originator = false;
-        self.params = ChannelParams::with(channel_req)?;
-        self.remote_keys = ChannelKeys::from(channel_req);
+        self.params = payment::channel::Params::with(channel_req)?;
+        self.remote_keys = payment::channel::Keyset::from(channel_req);
 
         let dumb_key = self.node_id();
         let accept_channel = message::AcceptChannel {
@@ -505,7 +505,7 @@ impl Runtime {
         };
 
         self.params.updated(&accept_channel, None)?;
-        self.local_keys = ChannelKeys::from(&accept_channel);
+        self.local_keys = payment::channel::Keyset::from(&accept_channel);
 
         let msg = format!(
             "{} channel {:#} from remote peer {}",
@@ -524,7 +524,7 @@ impl Runtime {
         senders: &mut Senders,
         accept_channel: &message::AcceptChannel,
         peerd: &ServiceId,
-    ) -> Result<(), ChannelNegotiationError> {
+    ) -> Result<(), payment::channel::NegotiationError> {
         info!(
             "Channel {:#} {} by the remote peer {}",
             accept_channel.temporary_channel_id.ender(),
@@ -549,7 +549,7 @@ impl Runtime {
 
         // TODO: Add a reasonable min depth bound
         self.params.updated(accept_channel, None)?;
-        self.remote_keys = ChannelKeys::from(accept_channel);
+        self.remote_keys = payment::channel::Keyset::from(accept_channel);
 
         let msg = format!(
             "Channel {:#} is {}",
@@ -748,7 +748,7 @@ impl Runtime {
                 .promoter(),
         );
 
-        let preimage = PaymentPreimage::random();
+        let preimage = HashPreimage::random();
         let payment_hash = preimage.into();
         let htlc = HtlcKnown {
             preimage,
@@ -789,17 +789,20 @@ impl Runtime {
         // TODO: Use From/To for message <-> Htlc conversion in LNP/BP
         //       Core lib
         let htlc = HtlcSecret {
-            preimage: update_add_htlc.payment_hash,
+            hashlock: update_add_htlc.payment_hash,
             id: update_add_htlc.htlc_id,
             cltv_expiry: update_add_htlc.cltv_expiry,
             asset_id: update_add_htlc.asset_id,
         };
         self.received_htlc.push(htlc);
+
         // TODO:
         //      1. Generate new commitment tx
         //      2. Generate new transitions and anchor, commit into tx
         //      3. Sign commitment tx
         //      4. Generate HTLCs, tweak etc each of them
         //      3. Send response
+
+        unimplemented!()
     }
 }
