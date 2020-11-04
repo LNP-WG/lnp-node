@@ -245,6 +245,18 @@ impl Runtime {
                 }
             }
 
+            Request::UpdateChannelId(new_id) => {
+                debug!(
+                    "Requested to update channel id {} on {}",
+                    source, new_id
+                );
+                if !self.channels.remove(&new_id) {
+                    warn!("Channel daemon {} was unknown", source);
+                }
+                self.channels.insert(new_id);
+                debug!("Registered channel daemon id {}", new_id);
+            }
+
             Request::GetInfo => {
                 senders.send_to(
                     ServiceBus::Ctl,

@@ -304,8 +304,13 @@ impl Runtime {
             }
 
             Request::FundChannel(funding_outpoint) => {
+                self.enquirer = source.into();
+
                 let funding_created =
                     self.fund_channel(senders, funding_outpoint)?;
+
+                // TODO: Implement better state cycle
+                // self.state = ChannelState::FundingCreated;
                 self.send_peer(
                     senders,
                     Messages::FundingCreated(funding_created),
@@ -520,7 +525,7 @@ impl Runtime {
         info!(
             "{} {}",
             "Funding channel".promo(),
-            self.temporary_channel_id.promo()
+            self.temporary_channel_id.promoter()
         );
         let enquirer = self.enquirer.clone();
         let _ = self.report_progress_to(
@@ -545,6 +550,7 @@ impl Runtime {
         self.obscuring_factor = u64::from_be_bytes(buf);
         trace!("Obscuring factor: {:#016x}", self.obscuring_factor);
         self.total_updates = 0;
+        self.funding_outpoint = funding_outpoint;
         // We are doing counterparty's transaction!
         let mut cmt_tx = Transaction::ln_cmt_base(
             self.remote_capacity,
@@ -598,8 +604,8 @@ impl Runtime {
 
         let funding_created = message::FundingCreated {
             temporary_channel_id: self.temporary_channel_id,
-            funding_txid: funding_outpoint.txid,
-            funding_output_index: funding_outpoint.vout as u16,
+            funding_txid: self.funding_outpoint.txid,
+            funding_output_index: self.funding_outpoint.vout as u16,
             signature,
         };
         trace!("Prepared funding_created: {:?}", funding_created);

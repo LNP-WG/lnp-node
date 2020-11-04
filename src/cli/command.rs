@@ -139,7 +139,8 @@ impl Exec for Command {
                                 );
                                 println!(
                                     "{}\nAssembly: {}\nHex: {:x}",
-                                    "Please transfer channel funding to an output with the following raw `scriptPubkey`"
+                                    "Please transfer channel funding to an output \
+                                     with the following raw `scriptPubkey`"
                                         .progress(),
                                     pubkey_script,
                                     pubkey_script,
