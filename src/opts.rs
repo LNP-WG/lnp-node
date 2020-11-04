@@ -144,11 +144,13 @@ pub struct Opts {
 impl Opts {
     pub fn process(&mut self) {
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
+        let mut me = self.clone();
 
+        me.data_dir = PathBuf::from(shellexpand::tilde(
+                &me.data_dir.to_string_lossy().to_string()).to_string());
         fs::create_dir_all(&self.data_dir)
             .expect("Unable to access data directory");
 
-        let me = self.clone();
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
                 PartialNodeAddr::ZmqIpc(path, ..)
