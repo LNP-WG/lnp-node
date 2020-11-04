@@ -33,3 +33,24 @@ pub struct ChannelTx {
     pub received: HashMap<u16, Psbt>,
 }
 */
+
+// TODO: Move to LNP/BP Core Library
+
+use lnpbp::bp::chain::AssetId;
+use lnpbp::lnp::{PaymentHash, PaymentPreimage};
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct HtlcKnown {
+    pub preimage: PaymentPreimage,
+    pub id: u64,
+    pub cltv_expiry: u32,
+    pub asset_id: Option<AssetId>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct HtlcSecret {
+    pub preimage: PaymentHash,
+    pub id: u64,
+    pub cltv_expiry: u32,
+    pub asset_id: Option<AssetId>,
+}

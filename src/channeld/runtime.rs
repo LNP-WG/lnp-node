@@ -30,6 +30,7 @@ use lnpbp::lnp::{
 use lnpbp_services::esb::{self, Handler};
 
 use super::storage::{self, Driver};
+use super::{HtlcKnown, HtlcSecret};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
@@ -61,6 +62,9 @@ pub fn run(
         params: default!(),
         local_keys: dumb!(),
         remote_keys: dumb!(),
+        offered_htlc: empty!(),
+        received_htlc: empty!(),
+        resolved_htlc: empty!(),
         is_originator: false,
         obscuring_factor: 0,
         enquirer: None,
@@ -97,6 +101,10 @@ pub struct Runtime {
     params: ChannelParams,
     local_keys: ChannelKeys,
     remote_keys: ChannelKeys,
+
+    offered_htlc: Vec<HtlcKnown>,
+    received_htlc: Vec<HtlcSecret>,
+    resolved_htlc: Vec<HtlcKnown>,
 
     is_originator: bool,
     obscuring_factor: u64,
@@ -245,6 +253,17 @@ impl Runtime {
                 //      1. Change the channel state
                 //      2. Do something with per-commitment point
             }
+
+            Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
+                let commitment_signed =
+                    self.htlc_receive(senders, update_add_htlc)?;
+            }
+
+            Request::PeerMessage(Messages::CommitmentSigned(
+                commitment_signed,
+            )) => {}
+
+            Request::PeerMessage(Messages::RevokeAndAck(revoke_ack)) => {}
 
             Request::PeerMessage(_) => {
                 // Ignore the rest of LN peer messages
@@ -731,12 +750,21 @@ impl Runtime {
 
         let preimage = PaymentPreimage::random();
         let payment_hash = preimage.into();
+        let htlc = HtlcKnown {
+            preimage,
+            id: self.total_payments,
+            cltv_expiry: 0,
+            asset_id: transfer_req.asset,
+        };
+        trace!("Generated HTLC: {:?}", htlc);
+        self.offered_htlc.push(htlc);
+
         let update_add_htlc = message::UpdateAddHtlc {
             channel_id: self.channel_id,
-            htlc_id: self.total_payments, //
+            htlc_id: htlc.id,
             amount_msat: transfer_req.amount,
-            payment_hash,                  //
-            cltv_expiry: 0,                //
+            payment_hash,
+            cltv_expiry: htlc.cltv_expiry,
             onion_routing_packet: dumb!(), // TODO: Generate proper onion packet
             asset_id: transfer_req.asset,
         };
@@ -750,5 +778,28 @@ impl Runtime {
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
         Ok(update_add_htlc)
+    }
+
+    pub fn htlcs_receive(
+        &mut self,
+        senders: &mut Senders,
+        update_add_htlc: message::UpdateAddHtlc,
+    ) -> Result<message::CommitmentSigned, Error> {
+        trace!("Updating HTLCs with {:?}", update_add_htlc);
+        // TODO: Use From/To for message <-> Htlc conversion in LNP/BP
+        //       Core lib
+        let htlc = HtlcSecret {
+            preimage: update_add_htlc.payment_hash,
+            id: update_add_htlc.htlc_id,
+            cltv_expiry: update_add_htlc.cltv_expiry,
+            asset_id: update_add_htlc.asset_id,
+        };
+        self.received_htlc.push(htlc);
+        // TODO:
+        //      1. Generate new commitment tx
+        //      2. Generate new transitions and anchor, commit into tx
+        //      3. Sign commitment tx
+        //      4. Generate HTLCs, tweak etc each of them
+        //      3. Send response
     }
 }
