@@ -145,14 +145,22 @@ pub enum Command {
         #[clap()]
         channel: ChannelId,
 
-        /// Asset ticker or bech32-encoded `AssetId`
-        #[clap()]
-        asset: String,
-
         /// Consignment file to read containing information about transfer of
         /// RGB20 asset to the funding transaction output
         #[clap()]
         consignment: PathBuf,
+    },
+
+    /// Do an invoiceless direct payment
+    Transfer {
+        /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
+        /// unit type)
+        #[clap()]
+        amount: u64,
+
+        /// Asset ticker in which the invoice should be issued
+        #[clap(default_value = "btc")]
+        asset: String,
     },
 
     /// Create an invoice

@@ -24,8 +24,8 @@ use lnpbp::bp::{Chain, PubkeyScript};
 use lnpbp::lnp::application::channel::{ScriptGenerators, TxGenerators};
 use lnpbp::lnp::{
     message, AssetsBalance, ChannelId, ChannelKeys, ChannelNegotiationError,
-    ChannelParams, ChannelState, LocalNode, Messages, NodeAddr, TempChannelId,
-    TypedEnum,
+    ChannelParams, ChannelState, LocalNode, Messages, NodeAddr,
+    PaymentPreimage, TempChannelId, TypedEnum,
 };
 use lnpbp_services::esb::{self, Handler};
 
@@ -55,8 +55,9 @@ pub fn run(
         funding_outpoint: default!(),
         remote_peer: None,
         started: SystemTime::now(),
-        total_updates: 0,
-        pending_updates: 0,
+        commitment_number: 0,
+        total_payments: 0,
+        pending_payments: 0,
         params: default!(),
         local_keys: dumb!(),
         remote_keys: dumb!(),
@@ -90,8 +91,9 @@ pub struct Runtime {
     funding_outpoint: OutPoint,
     remote_peer: Option<NodeAddr>,
     started: SystemTime,
-    total_updates: u64,
-    pending_updates: u16,
+    commitment_number: u64,
+    total_payments: u64,
+    pending_payments: u16,
     params: ChannelParams,
     local_keys: ChannelKeys,
     remote_keys: ChannelKeys,
@@ -329,6 +331,17 @@ impl Runtime {
                 )?;
             }
 
+            Request::Transfer(transfer_req) => {
+                self.enquirer = source.into();
+
+                let update_add_htlc = self.transfer(senders, transfer_req)?;
+
+                self.send_peer(
+                    senders,
+                    Messages::UpdateAddHtlc(update_add_htlc),
+                )?;
+            }
+
             Request::GetInfo => {
                 fn bmap<T>(
                     remote_peer: &Option<NodeAddr>,
@@ -377,8 +390,9 @@ impl Runtime {
                         .duration_since(SystemTime::UNIX_EPOCH)
                         .unwrap_or(Duration::from_secs(0))
                         .as_secs(),
-                    total_updates: self.total_updates,
-                    pending_updates: self.pending_updates,
+                    commitment_updates: self.commitment_number,
+                    total_payments: self.total_payments,
+                    pending_payments: self.pending_payments,
                     is_originator: self.is_originator,
                     params: self.params,
                     local_keys: self.local_keys.clone(),
@@ -637,7 +651,7 @@ impl Runtime {
         buf.copy_from_slice(&obscuring_hash[24..]);
         self.obscuring_factor = u64::from_be_bytes(buf);
         trace!("Obscuring factor: {:#016x}", self.obscuring_factor);
-        self.total_updates = 0;
+        self.commitment_number = 0;
 
         // Update channel id!
         self.channel_id = ChannelId::with(self.funding_outpoint);
@@ -664,7 +678,7 @@ impl Runtime {
         let mut cmt_tx = Transaction::ln_cmt_base(
             self.remote_capacity,
             self.local_capacity,
-            self.total_updates,
+            self.commitment_number,
             self.obscuring_factor,
             self.funding_outpoint,
             self.local_keys.payment_basepoint,
@@ -695,5 +709,46 @@ impl Runtime {
         // with_hashtype.push(SigHashType::All.as_u32() as u8);
 
         signature
+    }
+
+    pub fn transfer(
+        &mut self,
+        senders: &mut Senders,
+        transfer_req: request::Transfer,
+    ) -> Result<message::UpdateAddHtlc, Error> {
+        let enquirer = self.enquirer.clone();
+
+        info!(
+            "{} {} {} to the remote peer",
+            "Transferring".promo(),
+            transfer_req.amount.promoter(),
+            transfer_req
+                .asset
+                .map(|a| a.to_string())
+                .unwrap_or(s!("btc"))
+                .promoter(),
+        );
+
+        let preimage = PaymentPreimage::random();
+        let payment_hash = preimage.into();
+        let update_add_htlc = message::UpdateAddHtlc {
+            channel_id: self.channel_id,
+            htlc_id: self.total_payments, //
+            amount_msat: transfer_req.amount,
+            payment_hash,                  //
+            cltv_expiry: 0,                //
+            onion_routing_packet: dumb!(), // TODO: Generate proper onion packet
+            asset_id: transfer_req.asset,
+        };
+        self.total_payments += 1;
+
+        let msg = format!(
+            "{}, awaiting for peer signature",
+            "Funding transferred".ended()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(update_add_htlc)
     }
 }

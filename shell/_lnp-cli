@@ -252,8 +252,31 @@ _arguments "${_arguments_options[@]}" \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
 ':channel -- Channel to which the funding must be added:' \
-':asset -- Asset ticker or bech32-encoded `AssetId`:' \
 ':consignment -- Consignment file to read containing information about transfer of RGB20 asset to the funding transaction output:' \
+&& ret=0
+;;
+(transfer)
+_arguments "${_arguments_options[@]}" \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'*-T+[Use Tor]: :_hosts' \
+'*--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'-n+[Blockchain to use]' \
+'--chain=[Blockchain to use]' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+'-h[Prints help information]' \
+'--help[Prints help information]' \
+'-V[Prints version information]' \
+'--version[Prints version information]' \
+':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
+'::asset -- Asset ticker in which the invoice should be issued:' \
 && ret=0
 ;;
 (invoice)
@@ -329,6 +352,7 @@ _lnp-cli_commands() {
 "propose:Proposes a new channel to the remote peer, which must be already connected" \
 "fund:Fund new channel (which must be already accepted by the remote peer) with bitcoins" \
 "refill:Adds RGB assets to an existing channel" \
+"transfer:Do an invoiceless direct payment" \
 "invoice:Create an invoice" \
 "pay:Pay the invoice" \
 "help:Prints this message or the help of the given subcommand(s)" \
@@ -418,6 +442,13 @@ _lnp-cli__refill_commands() {
         
     )
     _describe -t commands 'lnp-cli refill commands' commands "$@"
+}
+(( $+functions[_lnp-cli__transfer_commands] )) ||
+_lnp-cli__transfer_commands() {
+    local commands; commands=(
+        
+    )
+    _describe -t commands 'lnp-cli transfer commands' commands "$@"
 }
 
 _lnp-cli "$@"

@@ -95,6 +95,11 @@ pub enum Request {
 
     // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 206)]
+    #[display("transfer({0})")]
+    Transfer(Transfer),
+
+    // Can be issued from `cli` to a specific `peerd`
+    #[lnp_api(type = 207)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
 
@@ -152,6 +157,14 @@ pub struct CreateChannel {
     pub channel_req: message::OpenChannel,
     pub peerd: ServiceId,
     pub report_to: Option<ServiceId>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{amount} {asset:?} to {channeld}")]
+pub struct Transfer {
+    pub channeld: ServiceId,
+    pub amount: u64,
+    pub asset: Option<AssetId>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]
@@ -234,8 +247,9 @@ pub struct ChannelInfo {
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: u64,
-    pub total_updates: u64,
-    pub pending_updates: u16,
+    pub commitment_updates: u64,
+    pub total_payments: u64,
+    pub pending_payments: u16,
     pub is_originator: bool,
     pub params: ChannelParams,
     pub local_keys: ChannelKeys,
