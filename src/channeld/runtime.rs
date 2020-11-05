@@ -570,6 +570,11 @@ impl Runtime {
             ServiceId::Lnpd,
             Request::UpdateChannelId(self.channel_id),
         )?;
+        self.send_ctl(
+            senders,
+            self.peer_service.clone(),
+            Request::UpdateChannelId(self.channel_id),
+        )?;
         self.identity = self.channel_id.into();
         let msg = format!(
             "{} set to {}",
@@ -749,8 +754,6 @@ impl Runtime {
         );
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
-
-        self.update_channel_id(senders)?;
 
         Ok(funding_created)
     }

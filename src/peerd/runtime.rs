@@ -173,7 +173,7 @@ pub struct Runtime {
     local_socket: Option<InetSocketAddr>,
     remote_socket: InetSocketAddr,
 
-    routing: HashMap<ServiceId, MessageFilter>,
+    routing: HashMap<ServiceId, ServiceId>,
     sender: PeerSender,
     connect: bool,
 
@@ -245,17 +245,13 @@ impl Runtime {
         match &request {
             Request::PeerMessage(Messages::FundingSigned(
                 message::FundingSigned { channel_id, .. },
-            ))
-            | Request::PeerMessage(Messages::FundingLocked(
-                message::FundingLocked { channel_id, .. },
             )) => {
                 debug!(
                     "Renaming channeld service from temporary id {:#} to channel id #{:#}", 
                     source, channel_id
                 );
                 self.routing.remove(&source);
-                self.routing
-                    .insert(channel_id.clone().into(), MessageFilter {});
+                self.routing.insert(channel_id.clone().into(), source);
             }
             _ => {}
         }
@@ -287,6 +283,15 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
+            Request::UpdateChannelId(channel_id) => {
+                debug!(
+                    "Renaming channeld service from temporary id {:#} to channel id #{:#}",
+                    source, channel_id
+                );
+                self.routing.remove(&source);
+                self.routing.insert(channel_id.clone().into(), source);
+            }
+
             Request::GetInfo => {
                 let info = PeerInfo {
                     local_id: self.local_id,
@@ -381,7 +386,7 @@ impl Runtime {
             Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
                 let channeld: ServiceId =
                     accept_channel.temporary_channel_id.into();
-                self.routing.insert(channeld.clone(), MessageFilter {});
+                self.routing.insert(channeld.clone(), channeld.clone());
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -425,10 +430,11 @@ impl Runtime {
             | Request::PeerMessage(Messages::AssignFunds(
                 message::AssignFunds { channel_id, .. },
             )) => {
+                let channeld: ServiceId = channel_id.clone().into();
                 senders.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    channel_id.clone().into(),
+                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
                     request,
                 )?;
             }
