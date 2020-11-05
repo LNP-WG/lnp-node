@@ -22,4 +22,6 @@ pub trait Driver {
     fn init(channel_id: ChannelId, config: Box<dyn Any>) -> Result<Self, Error>
     where
         Self: Sized;
+
+    fn store(&mut self) -> Result<(), Error>;
 }

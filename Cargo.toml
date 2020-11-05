@@ -39,7 +39,7 @@ required-features = ["cli"]
 
 [dependencies]
 # LNP/BP crates
-amplify = "~2.3.0"
+amplify = "~2.3.1"
 amplify_derive = "~2.3.0"
 lnpbp = { git = "git://github.com/LNP-BP/rust-lnpbp", features = ["lnp", "url", "websockets"] }
 lnpbp_derive = { git = "git://github.com/LNP-BP/rust-lnpbp" }

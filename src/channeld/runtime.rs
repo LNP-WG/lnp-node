@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::DumbDefault;
 use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime};
 
@@ -32,7 +31,7 @@ use lnpbp::lnp::{
     TempChannelId, TypedEnum, Unmarshall,
 };
 use lnpbp::lnp::{session, Session, Unmarshaller};
-use lnpbp::rgb::{Consignment, Node};
+use lnpbp::rgb::Consignment;
 use lnpbp_services::esb::{self, Handler};
 
 use super::storage::{self, Driver};
@@ -251,7 +250,7 @@ impl Runtime {
                     )
                 }
 
-                // Ignoring possible reporting error here: do not want to
+                // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
                 let _ = self.send_ctl(
                     senders,
@@ -261,34 +260,98 @@ impl Runtime {
             }
 
             Request::PeerMessage(Messages::FundingCreated(funding_created)) => {
+                let enquirer = self.enquirer.clone();
+
+                self.state = Lifecycle::Funding;
+
                 let funding_signed =
                     self.funding_created(senders, funding_created)?;
 
-                // TODO: Implement better state cycle
-                // self.state = Lifecycle::FundingCreated;
                 self.send_peer(
                     senders,
                     Messages::FundingSigned(funding_signed),
                 )?;
+
+                self.state = Lifecycle::Funded;
+
+                // Ignoring possible error here: do not want to
+                // halt the channel just because the client disconnected
+                let msg = format!(
+                    "{} both signatures present",
+                    "Channel funded:".ended()
+                );
+                info!("{}", msg);
+                let _ = self.report_progress_to(senders, &enquirer, msg);
             }
 
-            Request::PeerMessage(Messages::FundingSigned(_funding_signed)) => {
+            Request::PeerMessage(Messages::FundingSigned(funding_signed)) => {
                 // TODO:
                 //      1. Get commitment tx
                 //      2. Verify signature
                 //      3. Save signature/commitment tx
                 //      4. Send funding locked request
+
+                let enquirer = self.enquirer.clone();
+
+                self.state = Lifecycle::Funded;
+
+                // Ignoring possible error here: do not want to
+                // halt the channel just because the client disconnected
+                let msg = format!(
+                    "{} both signatures present",
+                    "Channel funded:".ended()
+                );
+                info!("{}", msg);
+                let _ = self.report_progress_to(senders, &enquirer, msg);
+
+                let funding_locked = message::FundingLocked {
+                    channel_id: self.channel_id,
+                    next_per_commitment_point: self
+                        .local_keys
+                        .first_per_commitment_point,
+                };
+
+                self.send_peer(
+                    senders,
+                    Messages::FundingLocked(funding_locked),
+                );
+
+                self.state = Lifecycle::Active;
+
+                // Ignoring possible error here: do not want to
+                // halt the channel just because the client disconnected
+                let msg = format!(
+                    "{} transaction confirmed",
+                    "Channel active:".ended()
+                );
+                info!("{}", msg);
+                let _ = self.report_success_to(senders, &enquirer, Some(msg));
             }
 
             Request::PeerMessage(Messages::FundingLocked(_funding_locked)) => {
+                let enquirer = self.enquirer.clone();
+
+                self.state = Lifecycle::Locked;
+
                 // TODO:
                 //      1. Change the channel state
                 //      2. Do something with per-commitment point
+
+                self.state = Lifecycle::Active;
+
+                // Ignoring possible error here: do not want to
+                // halt the channel just because the client disconnected
+                let msg = format!(
+                    "{} transaction confirmed",
+                    "Channel active:".ended()
+                );
+                info!("{}", msg);
+                let _ = self.report_success_to(senders, &enquirer, Some(msg));
             }
 
             Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
-                // let commitment_signed =
-                //    self.htlc_receive(senders, update_add_htlc)?;
+                let commitment_signed =
+                    self.htlc_receive(senders, update_add_htlc)?;
             }
 
             Request::PeerMessage(Messages::CommitmentSigned(
@@ -303,6 +366,8 @@ impl Runtime {
                     assign_req.outpoint,
                     assign_req.blinding,
                 )?;
+
+                // TODO: Re-sign the commitment and return to the remote peer
             }
 
             Request::PeerMessage(_) => {
@@ -382,8 +447,7 @@ impl Runtime {
                 let funding_created =
                     self.fund_channel(senders, funding_outpoint)?;
 
-                // TODO: Implement better state cycle
-                // self.state = Lifecycle::FundingCreated;
+                self.state = Lifecycle::Funding;
                 self.send_peer(
                     senders,
                     Messages::FundingCreated(funding_created),
@@ -881,7 +945,7 @@ impl Runtime {
         Ok(())
     }
 
-    pub fn htlcs_receive(
+    pub fn htlc_receive(
         &mut self,
         senders: &mut Senders,
         update_add_htlc: message::UpdateAddHtlc,

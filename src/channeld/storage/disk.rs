@@ -37,4 +37,8 @@ impl Driver for DiskDriver {
         let config = *config.downcast().map_err(|_| Error::Other(s!("")))?;
         Ok(Self { channel_id, config })
     }
+
+    fn store(&mut self) -> Result<(), Error> {
+        unimplemented!()
+    }
 }

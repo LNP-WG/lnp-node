@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::DumbDefault;
 use std::str::FromStr;
 
 use lnpbp::lnp::{
