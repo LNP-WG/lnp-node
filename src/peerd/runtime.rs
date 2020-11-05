@@ -239,9 +239,26 @@ impl Runtime {
     fn handle_rpc_msg(
         &mut self,
         _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _source: ServiceId,
+        source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
+        match &request {
+            Request::PeerMessage(Messages::FundingSigned(
+                message::FundingSigned { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::FundingLocked(
+                message::FundingLocked { channel_id, .. },
+            )) => {
+                debug!(
+                    "Renaming channeld service from temporary id {:#} to channel id #{:#}", 
+                    source, channel_id
+                );
+                self.routing.remove(&source);
+                self.routing
+                    .insert(channel_id.clone().into(), MessageFilter {});
+            }
+            _ => {}
+        }
         match request {
             Request::PeerMessage(message) => {
                 // 1. Check permissions
@@ -329,7 +346,7 @@ impl Runtime {
             self.messages_received += 1;
         }
 
-        match request {
+        match &request {
             Request::PingPeer => {
                 self.ping()?;
             }
@@ -338,7 +355,7 @@ impl Runtime {
                 pong_size,
                 ..
             })) => {
-                self.pong(pong_size)?;
+                self.pong(*pong_size)?;
             }
 
             Request::PeerMessage(Messages::Pong(noise)) => {
@@ -369,9 +386,50 @@ impl Runtime {
                     ServiceBus::Msg,
                     self.identity(),
                     channeld,
-                    Request::PeerMessage(Messages::AcceptChannel(
-                        accept_channel,
-                    )),
+                    request,
+                )?;
+            }
+
+            Request::PeerMessage(Messages::FundingCreated(
+                message::FundingCreated {
+                    temporary_channel_id,
+                    ..
+                },
+            )) => {
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    temporary_channel_id.clone().into(),
+                    request,
+                )?;
+            }
+
+            Request::PeerMessage(Messages::FundingSigned(
+                message::FundingSigned { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::FundingLocked(
+                message::FundingLocked { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::UpdateAddHtlc(
+                message::UpdateAddHtlc { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::UpdateFulfillHtlc(
+                message::UpdateFulfillHtlc { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::UpdateFailHtlc(
+                message::UpdateFailHtlc { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::UpdateFailMalformedHtlc(
+                message::UpdateFailMalformedHtlc { channel_id, .. },
+            ))
+            | Request::PeerMessage(Messages::AssignFunds(
+                message::AssignFunds { channel_id, .. },
+            )) => {
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    channel_id.clone().into(),
+                    request,
                 )?;
             }
 
