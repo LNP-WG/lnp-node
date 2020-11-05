@@ -575,7 +575,7 @@ impl Runtime {
             self.peer_service.clone(),
             Request::UpdateChannelId(self.channel_id),
         )?;
-        self.identity = self.channel_id.into();
+        // self.identity = self.channel_id.into();
         let msg = format!(
             "{} set to {}",
             "Channel ID".ended(),
