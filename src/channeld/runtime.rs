@@ -20,6 +20,7 @@ use lnpbp::bitcoin::hashes::{sha256, Hash, HashEngine};
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bitcoin::util::bip143::SigHashCache;
 use lnpbp::bitcoin::{OutPoint, SigHashType, Transaction};
+use lnpbp::bp::blind::OutpointReveal;
 use lnpbp::bp::{chain::AssetId, Chain, HashPreimage, PubkeyScript};
 use lnpbp::lnp::application::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnpbp::lnp::application::payment::htlc::{HtlcKnown, HtlcSecret};
@@ -31,14 +32,13 @@ use lnpbp::lnp::{
     TempChannelId, TypedEnum, Unmarshall,
 };
 use lnpbp::lnp::{session, Session, Unmarshaller};
-use lnpbp::rgb::Node;
+use lnpbp::rgb::{Consignment, Node};
 use lnpbp_services::esb::{self, Handler};
 
 use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
-use lnpbp::bp::blind::OutpointReveal;
 
 pub fn run(
     config: Config,
@@ -297,6 +297,14 @@ impl Runtime {
 
             Request::PeerMessage(Messages::RevokeAndAck(revoke_ack)) => {}
 
+            Request::PeerMessage(Messages::AssignFunds(assign_req)) => {
+                self.refill(
+                    assign_req.consignment,
+                    assign_req.outpoint,
+                    assign_req.blinding,
+                )?;
+            }
+
             Request::PeerMessage(_) => {
                 // Ignore the rest of LN peer messages
             }
@@ -385,49 +393,11 @@ impl Runtime {
             Request::RefillChannel(refill_req) => {
                 self.enquirer = source.into();
 
-                debug!("Validating consignment with RGB Node ...");
-                self.request_rbg20(
-                    rgb_node::api::fungible::Request::Validate(
-                        refill_req.consignment.clone(),
-                    ),
+                self.refill(
+                    refill_req.consignment.clone(),
+                    refill_req.outpoint,
+                    refill_req.blinding,
                 )?;
-
-                debug!("Adding consignment to stash via RGB Node ...");
-                self.request_rbg20(rgb_node::api::fungible::Request::Accept(
-                    rgb_node::api::fungible::AcceptApi {
-                        consignment: refill_req.consignment.clone(),
-                        reveal_outpoints: vec![OutpointReveal {
-                            blinding: refill_req.blinding,
-                            txid: refill_req.outpoint.txid,
-                            vout: refill_req.outpoint.vout,
-                        }],
-                    },
-                ))?;
-
-                debug!(
-                    "Requesting new balances for {} ...",
-                    refill_req.outpoint
-                );
-                match self.request_rbg20(
-                    rgb_node::api::fungible::Request::Assets(
-                        refill_req.outpoint,
-                    ),
-                )? {
-                    rgb_node::api::Reply::Assets(balances) => {
-                        for (id, balances) in balances {
-                            let asset_id = AssetId::from(id);
-                            let balance: u64 = balances.into_iter().sum();
-                            debug!(
-                                "Adding {} of {} to balance",
-                                balance, asset_id
-                            );
-                            self.local_balances.insert(asset_id, balance);
-                        }
-                    }
-                    _ => {
-                        Err(Error::Other(s!("Unrecognized RGB Node response")))?
-                    }
-                }
 
                 let assign_funds = message::AssignFunds {
                     channel_id: self.channel_id,
@@ -868,6 +838,47 @@ impl Runtime {
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
         Ok(update_add_htlc)
+    }
+
+    pub fn refill(
+        &mut self,
+        consignment: Consignment,
+        outpoint: OutPoint,
+        blinding: u64,
+    ) -> Result<(), Error> {
+        debug!("Validating consignment with RGB Node ...");
+        self.request_rbg20(rgb_node::api::fungible::Request::Validate(
+            consignment.clone(),
+        ))?;
+
+        debug!("Adding consignment to stash via RGB Node ...");
+        self.request_rbg20(rgb_node::api::fungible::Request::Accept(
+            rgb_node::api::fungible::AcceptApi {
+                consignment: consignment.clone(),
+                reveal_outpoints: vec![OutpointReveal {
+                    blinding: blinding,
+                    txid: outpoint.txid,
+                    vout: outpoint.vout,
+                }],
+            },
+        ))?;
+
+        debug!("Requesting new balances for {} ...", outpoint);
+        match self
+            .request_rbg20(rgb_node::api::fungible::Request::Assets(outpoint))?
+        {
+            rgb_node::api::Reply::Assets(balances) => {
+                for (id, balances) in balances {
+                    let asset_id = AssetId::from(id);
+                    let balance: u64 = balances.into_iter().sum();
+                    debug!("Adding {} of {} to balance", balance, asset_id);
+                    self.local_balances.insert(asset_id, balance);
+                }
+            }
+            _ => Err(Error::Other(s!("Unrecognized RGB Node response")))?,
+        }
+
+        Ok(())
     }
 
     pub fn htlcs_receive(
