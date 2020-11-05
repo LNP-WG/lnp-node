@@ -57,7 +57,7 @@ pub struct RgbOpts {
     /// ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)
     #[clap(
         short,
-        long = "rgb20-socket",
+        long = "rgb20-rpc",
         global = true,
         env = "FUNGIBLED_RPC_ENDPOINT",
         value_hint = ValueHint::FilePath,

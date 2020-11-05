@@ -55,7 +55,7 @@ pub const LNP_NODE_CTL_SOCKET_NAME: &'static str =
     "lnpz:{data_dir}/ctl.rpc?api=esb";
 lazy_static::lazy_static! {
     pub static ref FUNGIBLED_RPC_ENDPOINT: String =
-        format!("lnpz:{}/fungibled.rpc", RGB_NODE_DATA_DIR);
+        format!("lnpz://{}/fungibled.rpc?api=rpc", RGB_NODE_DATA_DIR);
 }
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp.toml";

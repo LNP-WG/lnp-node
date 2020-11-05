@@ -85,6 +85,10 @@ pub struct Opts {
     #[clap(flatten)]
     pub key_opts: KeyOpts,
 
+    /// RGB configuration: ignored by this daemon
+    #[clap(short, long = "rgb20-rpc")]
+    pub r: Option<String>,
+
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
     #[clap(flatten)]

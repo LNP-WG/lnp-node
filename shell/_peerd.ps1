@@ -30,6 +30,8 @@ Register-ArgumentCompleter -Native -CommandName 'peerd' -ScriptBlock {
             [CompletionResult]::new('--overlay', 'overlay', [CompletionResultType]::ParameterName, 'Overlay peer communications through different transport protocol')
             [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')
             [CompletionResult]::new('--key-file', 'key-file', [CompletionResultType]::ParameterName, 'Node key file')
+            [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'RGB configuration: ignored by this daemon')
+            [CompletionResult]::new('--rgb20-rpc', 'rgb20-rpc', [CompletionResultType]::ParameterName, 'RGB configuration: ignored by this daemon')
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')

@@ -25,6 +25,8 @@ _peerd() {
 '--overlay=[Overlay peer communications through different transport protocol]: :(tcp zmq http websocket smtp)' \
 '-k+[Node key file]: :_files' \
 '--key-file=[Node key file]: :_files' \
+'-r+[RGB configuration: ignored by this daemon]' \
+'--rgb20-rpc=[RGB configuration: ignored by this daemon]' \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \

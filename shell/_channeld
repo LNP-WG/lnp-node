@@ -18,7 +18,7 @@ _channeld() {
 '-k+[Node key file]: :_files' \
 '--key-file=[Node key file]: :_files' \
 '-r+[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
-'--rgb20-socket=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
+'--rgb20-rpc=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \

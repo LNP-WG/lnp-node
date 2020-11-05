@@ -16,7 +16,7 @@ _lnpd() {
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
 '-r+[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
-'--rgb20-socket=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
+'--rgb20-rpc=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
 '-k+[Node key file]: :_files' \
 '--key-file=[Node key file]: :_files' \
 '-d+[Data directory path]: :_files -/' \
