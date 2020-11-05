@@ -31,6 +31,7 @@ use lnpbp::lnp::{
     message, rpc_connection, ChannelId, Messages, NodeAddr, RemoteSocketAddr,
     TempChannelId,
 };
+use lnpbp::rgb::Consignment;
 use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
 use lnpbp_services::rpc::Failure;
 
@@ -97,11 +98,16 @@ pub enum Request {
 
     // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 206)]
+    #[display("refill_channel({0})")]
+    RefillChannel(RefillChannel),
+
+    // Can be issued from `cli` to a specific `peerd`
+    #[lnp_api(type = 207)]
     #[display("transfer({0})")]
     Transfer(Transfer),
 
     // Can be issued from `cli` to a specific `peerd`
-    #[lnp_api(type = 207)]
+    #[lnp_api(type = 208)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
 
@@ -167,6 +173,14 @@ pub struct Transfer {
     pub channeld: ServiceId,
     pub amount: u64,
     pub asset: Option<AssetId>,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{outpoint}, {blinding}, ...")]
+pub struct RefillChannel {
+    pub consignment: Consignment,
+    pub outpoint: OutPoint,
+    pub blinding: u64,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

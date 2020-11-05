@@ -30,6 +30,7 @@ extern crate amplify;
 extern crate amplify_derive;
 #[macro_use]
 extern crate lnpbp_derive;
+extern crate rgb as rgb_node;
 
 #[cfg(feature = "serde")]
 extern crate serde_crate as serde;
@@ -65,6 +66,8 @@ pub mod peerd;
 pub mod routed;
 #[cfg(any(feature = "node", feature = "client"))]
 mod service;
+
+pub mod util;
 
 #[cfg(any(feature = "node", feature = "client"))]
 pub use config::Config;

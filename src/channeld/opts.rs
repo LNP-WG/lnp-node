@@ -12,10 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, Clap};
-use lnpbp::lnp::ChannelId;
-
+use clap::{AppSettings, Clap, ValueHint};
 use lnpbp::bitcoin::hashes::hex::FromHex;
+use lnpbp::lnp::{ChannelId, PartialNodeAddr};
+
+use crate::opts::FUNGIBLED_RPC_ENDPOINT;
 
 use crate::peerd::KeyOpts;
 
@@ -36,6 +37,10 @@ pub struct Opts {
     #[clap(flatten)]
     pub key_opts: KeyOpts,
 
+    /// RGB configuration
+    #[clap(flatten)]
+    pub rgb_opts: RgbOpts,
+
     /// Channel id
     #[clap(parse(try_from_str = ChannelId::from_hex))]
     pub channel_id: ChannelId,
@@ -46,9 +51,36 @@ pub struct Opts {
     pub shared: crate::opts::Opts,
 }
 
+/// RGB configuration
+#[derive(Clap, Clone, PartialEq, Eq, Debug)]
+pub struct RgbOpts {
+    /// ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)
+    #[clap(
+        short,
+        long = "rgb20-socket",
+        global = true,
+        env = "FUNGIBLED_RPC_ENDPOINT",
+        value_hint = ValueHint::FilePath,
+        default_value = &*FUNGIBLED_RPC_ENDPOINT
+    )]
+    pub rgb20_socket: PartialNodeAddr,
+}
+
 impl Opts {
     pub fn process(&mut self) {
         self.shared.process();
         self.key_opts.process(&self.shared);
+    }
+}
+
+impl RgbOpts {
+    pub fn process(&mut self, shared: &crate::opts::Opts) {
+        match &mut self.rgb20_socket {
+            PartialNodeAddr::ZmqIpc(path, ..)
+            | PartialNodeAddr::Posix(path) => {
+                shared.process_dir(path);
+            }
+            _ => {}
+        }
     }
 }

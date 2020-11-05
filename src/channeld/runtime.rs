@@ -20,26 +20,41 @@ use lnpbp::bitcoin::hashes::{sha256, Hash, HashEngine};
 use lnpbp::bitcoin::secp256k1;
 use lnpbp::bitcoin::util::bip143::SigHashCache;
 use lnpbp::bitcoin::{OutPoint, SigHashType, Transaction};
-use lnpbp::bp::{Chain, HashPreimage, PubkeyScript};
+use lnpbp::bp::{chain::AssetId, Chain, HashPreimage, PubkeyScript};
 use lnpbp::lnp::application::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnpbp::lnp::application::payment::htlc::{HtlcKnown, HtlcSecret};
 use lnpbp::lnp::application::payment::{self, AssetsBalance, Lifecycle};
+use lnpbp::lnp::presentation::Encode;
+use lnpbp::lnp::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 use lnpbp::lnp::{
-    message, ChannelId, LocalNode, Messages, NodeAddr, TempChannelId, TypedEnum,
+    message, ChannelId, CreateUnmarshaller, LocalNode, Messages, NodeAddr,
+    TempChannelId, TypedEnum, Unmarshall,
 };
+use lnpbp::lnp::{session, Session, Unmarshaller};
+use lnpbp::rgb::Node;
 use lnpbp_services::esb::{self, Handler};
 
 use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
+use lnpbp::bp::blind::OutpointReveal;
 
 pub fn run(
     config: Config,
     local_node: LocalNode,
     channel_id: ChannelId,
     chain: Chain,
+    rgb20_socket_addr: ZmqSocketAddr,
 ) -> Result<(), Error> {
+    let rgb20_rpc = session::Raw::with_zmq_unencrypted(
+        ZmqType::Req,
+        &rgb20_socket_addr,
+        None,
+        None,
+    )?;
+    let rgb_unmarshaller = rgb_node::api::Reply::create_unmarshaller();
+
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         peer_service: ServiceId::Loopback,
@@ -67,6 +82,8 @@ pub fn run(
         is_originator: false,
         obscuring_factor: 0,
         enquirer: None,
+        rgb20_rpc,
+        rgb_unmarshaller,
         storage: Box::new(storage::DiskDriver::init(
             channel_id,
             Box::new(storage::DiskConfig {
@@ -109,6 +126,8 @@ pub struct Runtime {
     obscuring_factor: u64,
 
     enquirer: Option<ServiceId>,
+    rgb20_rpc: session::Raw<session::PlainTranscoder, zmqsocket::Connection>,
+    rgb_unmarshaller: Unmarshaller<rgb_node::api::Reply>,
 
     #[allow(dead_code)]
     storage: Box<dyn storage::Driver>,
@@ -174,6 +193,20 @@ impl Runtime {
             Request::PeerMessage(message),
         )?;
         Ok(())
+    }
+
+    fn request_rbg20(
+        &mut self,
+        request: rgb_node::api::fungible::Request,
+    ) -> Result<rgb_node::api::Reply, Error> {
+        let data = request.encode()?;
+        self.rgb20_rpc.send_raw_message(&data)?;
+        let raw = self.rgb20_rpc.recv_raw_message()?;
+        let reply = &*self.rgb_unmarshaller.unmarshall(&raw)?;
+        if let rgb_node::api::Reply::Failure(failure) = reply {
+            error!("{} {}", "RGB Node reported failure:".err(), failure.err())
+        }
+        Ok(reply.clone())
     }
 
     fn handle_rpc_msg(
@@ -347,6 +380,63 @@ impl Runtime {
                     senders,
                     Messages::FundingCreated(funding_created),
                 )?;
+            }
+
+            Request::RefillChannel(refill_req) => {
+                self.enquirer = source.into();
+
+                debug!("Validating consignment with RGB Node ...");
+                self.request_rbg20(
+                    rgb_node::api::fungible::Request::Validate(
+                        refill_req.consignment.clone(),
+                    ),
+                )?;
+
+                debug!("Adding consignment to stash via RGB Node ...");
+                self.request_rbg20(rgb_node::api::fungible::Request::Accept(
+                    rgb_node::api::fungible::AcceptApi {
+                        consignment: refill_req.consignment.clone(),
+                        reveal_outpoints: vec![OutpointReveal {
+                            blinding: refill_req.blinding,
+                            txid: refill_req.outpoint.txid,
+                            vout: refill_req.outpoint.vout,
+                        }],
+                    },
+                ))?;
+
+                debug!(
+                    "Requesting new balances for {} ...",
+                    refill_req.outpoint
+                );
+                match self.request_rbg20(
+                    rgb_node::api::fungible::Request::Assets(
+                        refill_req.outpoint,
+                    ),
+                )? {
+                    rgb_node::api::Reply::Assets(balances) => {
+                        for (id, balances) in balances {
+                            let asset_id = AssetId::from(id);
+                            let balance: u64 = balances.into_iter().sum();
+                            debug!(
+                                "Adding {} of {} to balance",
+                                balance, asset_id
+                            );
+                            self.local_balances.insert(asset_id, balance);
+                        }
+                    }
+                    _ => {
+                        Err(Error::Other(s!("Unrecognized RGB Node response")))?
+                    }
+                }
+
+                let assign_funds = message::AssignFunds {
+                    channel_id: self.channel_id,
+                    consignment: refill_req.consignment,
+                    outpoint: refill_req.outpoint,
+                    blinding: refill_req.blinding,
+                };
+
+                self.send_peer(senders, Messages::AssignFunds(assign_funds))?;
             }
 
             Request::Transfer(transfer_req) => {

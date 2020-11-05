@@ -1,5 +1,4 @@
-// LNP Node: node running lightning network protocol and generalized lightning
-// channels.
+// RGB standard library
 // Written in 2020 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
@@ -12,12 +11,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "shell")]
-mod opts;
-mod runtime;
-#[allow(dead_code)]
-pub(self) mod storage;
+#[macro_use]
+mod macros;
+pub mod file;
+mod magic_numbers;
 
-#[cfg(feature = "shell")]
-pub use opts::{Opts, RgbOpts};
-pub use runtime::run;
+pub use magic_numbers::MagicNumber;

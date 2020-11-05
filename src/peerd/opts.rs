@@ -124,8 +124,8 @@ impl KeyOpts {
         if PathBuf::from(self.key_file.clone()).exists() {
             LocalNode::strict_decode(fs::File::open(&self.key_file).expect(
                 &format!(
-                    "Unable to open key file {}; please check \
-                that the user which runs the daemon has necessary permissions",
+                    "Unable to open key file {}; please check that the user \
+                     running the daemon has necessary permissions",
                     self.key_file
                 ),
             ))

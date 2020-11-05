@@ -14,6 +14,7 @@
 
 use clap::{AppSettings, Clap};
 
+use crate::channeld::RgbOpts;
 use crate::peerd::KeyOpts;
 
 /// Lightning node management daemon; part of LNP Node
@@ -29,6 +30,10 @@ use crate::peerd::KeyOpts;
     setting = AppSettings::ColoredHelp
 )]
 pub struct Opts {
+    /// RGB configuration
+    #[clap(flatten)]
+    pub rgb_opts: RgbOpts,
+
     /// Node key configuration
     #[clap(flatten)]
     pub key_opts: KeyOpts,
@@ -43,5 +48,6 @@ impl Opts {
     pub fn process(&mut self) {
         self.shared.process();
         self.key_opts.process(&self.shared);
+        self.rgb_opts.process(&self.shared);
     }
 }

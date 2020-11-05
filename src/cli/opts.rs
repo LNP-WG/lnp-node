@@ -69,7 +69,6 @@ pub enum Command {
     Connect {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
-        #[clap()]
         peer: PartialNodeAddr,
     },
 
@@ -77,7 +76,6 @@ pub enum Command {
     Ping {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
-        #[clap()]
         peer: PartialNodeAddr,
     },
 
@@ -85,7 +83,6 @@ pub enum Command {
     Info {
         /// Remote peer address or temporary/permanent/short channel id. If
         /// absent, returns information about the node itself
-        #[clap()]
         subject: Option<String>,
     },
 
@@ -115,13 +112,11 @@ pub enum Command {
     Propose {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
-        #[clap()]
         peer: PartialNodeAddr,
 
         /// Amount of satoshis to allocate to the channel (the actual
         /// allocation will happen later using `fund` command after the
         /// channel acceptance)
-        #[clap()]
         funding_satoshis: u64,
     },
 
@@ -129,33 +124,35 @@ pub enum Command {
     /// with bitcoins.
     Fund {
         /// Accepted channel to which the funding must be added
-        #[clap()]
         channel: TempChannelId,
 
         /// Outpoint (in form of <txid>:<output_no>) which will be used as a
         /// channel funding. Output `scriptPubkey` must be equal to the one
         /// provided by the `propose` command.
-        #[clap()]
         funding_outpoint: OutPoint,
     },
 
     /// Adds RGB assets to an existing channel
     Refill {
         /// Channel to which the funding must be added
-        #[clap()]
         channel: ChannelId,
 
         /// Consignment file to read containing information about transfer of
         /// RGB20 asset to the funding transaction output
-        #[clap()]
         consignment: PathBuf,
+
+        /// Locally-controlled outpoint (specified when the invoice was
+        /// created)
+        outpoint: OutPoint,
+
+        /// Outpoint blinding factor (generated when the invoice was created)
+        blinding_factor: u64,
     },
 
     /// Do an invoiceless direct payment
     Transfer {
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
         /// unit type)
-        #[clap()]
         amount: u64,
 
         /// Asset ticker in which the invoice should be issued
@@ -167,7 +164,6 @@ pub enum Command {
     Invoice {
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
         /// unit type)
-        #[clap()]
         amount: u64,
 
         /// Asset ticker in which the invoice should be issued

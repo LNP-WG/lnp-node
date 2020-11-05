@@ -19,10 +19,12 @@ use lnpbp::lnp::{
     message, ChannelId, NodeAddr, RemoteSocketAddr, ToNodeAddr,
     LIGHTNING_P2P_DEFAULT_PORT,
 };
+use lnpbp::rgb::Consignment;
 use lnpbp_services::shell::Exec;
 
 use super::{Command, Runtime};
 use crate::rpc::{request, Request};
+use crate::util::file::ReadWrite;
 use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
@@ -175,6 +177,33 @@ impl Exec for Command {
                 runtime.request(
                     channel.clone().into(),
                     Request::FundChannel(*funding_outpoint),
+                )?;
+                runtime.report_progress()?;
+            }
+
+            Command::Refill {
+                channel,
+                consignment,
+                outpoint,
+                blinding_factor,
+            } => {
+                trace!("Reading consignment from file {:?}", &consignment);
+                let consignment = Consignment::read_file(consignment.clone())
+                    .map_err(|err| {
+                    Error::Other(format!(
+                        "Error in consignment encoding: {}",
+                        err
+                    ))
+                })?;
+                trace!("Outpoint parsed as {:?}", outpoint);
+
+                runtime.request(
+                    channel.clone().into(),
+                    Request::RefillChannel(request::RefillChannel {
+                        consignment,
+                        outpoint: *outpoint,
+                        blinding: *blinding_factor,
+                    }),
                 )?;
                 runtime.report_progress()?;
             }

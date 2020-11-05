@@ -253,6 +253,8 @@ _arguments "${_arguments_options[@]}" \
 '--version[Prints version information]' \
 ':channel -- Channel to which the funding must be added:' \
 ':consignment -- Consignment file to read containing information about transfer of RGB20 asset to the funding transaction output:' \
+':outpoint -- Locally-controlled outpoint (specified when the invoice was created):' \
+':blinding-factor -- Outpoint blinding factor (generated when the invoice was created):' \
 && ret=0
 ;;
 (transfer)

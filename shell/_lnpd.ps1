@@ -20,6 +20,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'lnpd' {
+            [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)')
+            [CompletionResult]::new('--rgb20-socket', 'rgb20-socket', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)')
             [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')
             [CompletionResult]::new('--key-file', 'key-file', [CompletionResultType]::ParameterName, 'Node key file')
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')

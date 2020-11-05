@@ -35,10 +35,28 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = ".";
 
+#[cfg(any(target_os = "linux"))]
+pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
+#[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
+#[cfg(target_os = "macos")]
+pub const RGB_NODE_DATA_DIR: &'static str =
+    "~/Library/Application Support/LNP Node";
+#[cfg(target_os = "windows")]
+pub const RGB_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\RGB Node";
+#[cfg(target_os = "ios")]
+pub const RGB_NODE_DATA_DIR: &'static str = "~/Documents";
+#[cfg(target_os = "android")]
+pub const RGB_NODE_DATA_DIR: &'static str = ".";
+
 pub const LNP_NODE_MSG_SOCKET_NAME: &'static str =
     "lnpz:{data_dir}/msg.rpc?api=esb";
 pub const LNP_NODE_CTL_SOCKET_NAME: &'static str =
     "lnpz:{data_dir}/ctl.rpc?api=esb";
+lazy_static::lazy_static! {
+    pub static ref FUNGIBLED_RPC_ENDPOINT: String =
+        format!("lnpz:{}/fungibled.rpc", RGB_NODE_DATA_DIR);
+}
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp.toml";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
@@ -146,8 +164,10 @@ impl Opts {
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
         let mut me = self.clone();
 
-        me.data_dir = PathBuf::from(shellexpand::tilde(
-                &me.data_dir.to_string_lossy().to_string()).to_string());
+        me.data_dir = PathBuf::from(
+            shellexpand::tilde(&me.data_dir.to_string_lossy().to_string())
+                .to_string(),
+        );
         fs::create_dir_all(&self.data_dir)
             .expect("Unable to access data directory");
 
@@ -157,7 +177,7 @@ impl Opts {
                 | PartialNodeAddr::Posix(path) => {
                     me.process_dir(path);
                 }
-                _ => unimplemented!(),
+                _ => {}
             }
         }
     }
