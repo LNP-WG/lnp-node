@@ -87,6 +87,8 @@ The node must maintain simple/modular upgradability for:
 * Pay-to-elliptic curve point lock contracts (PTLC) - replacement for HTLCs
 * eltoo
 
+See [here](/demo) for a demo of the node capabilities as for version `v0.1.0-alpha.4`.
+
 ## Design
 
 ### Approach
