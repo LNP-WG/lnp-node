@@ -19,6 +19,7 @@ use std::str::FromStr;
 
 use lnpbp::bitcoin::OutPoint;
 use lnpbp::lnp::{ChannelId, FramingProtocol, PartialNodeAddr, TempChannelId};
+use lnpbp::rgb::ContractId;
 
 /// Command-line tool for working with LNP node
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -151,13 +152,16 @@ pub enum Command {
 
     /// Do an invoiceless direct payment
     Transfer {
+        /// Channel to which the funding must be added
+        channel: ChannelId,
+
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
         /// unit type)
         amount: u64,
 
         /// Asset ticker in which the invoice should be issued
-        #[clap(default_value = "btc")]
-        asset: String,
+        #[clap(short, long)]
+        asset: Option<ContractId>,
     },
 
     /// Create an invoice

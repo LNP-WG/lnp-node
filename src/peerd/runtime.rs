@@ -31,8 +31,6 @@ use lnpbp_services::peer;
 use crate::rpc::{request::PeerInfo, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Service, ServiceId};
 
-pub struct MessageFilter {}
-
 pub fn run(
     config: Config,
     connection: PeerConnection,

@@ -180,6 +180,22 @@ impl Exec for Command {
                 runtime.report_progress()?;
             }
 
+            Command::Transfer {
+                channel,
+                amount,
+                asset,
+            } => {
+                runtime.request(
+                    channel.clone().into(),
+                    Request::Transfer(request::Transfer {
+                        channeld: channel.clone().into(),
+                        amount: *amount,
+                        asset: asset.map(|id| id.into()),
+                    }),
+                )?;
+                runtime.report_progress()?;
+            }
+
             Command::Refill {
                 channel,
                 consignment,

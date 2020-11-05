@@ -77,7 +77,6 @@ pub fn run(
         remote_keys: dumb!(),
         offered_htlc: empty!(),
         received_htlc: empty!(),
-        resolved_htlc: empty!(),
         is_originator: false,
         obscuring_factor: 0,
         enquirer: None,
@@ -119,7 +118,6 @@ pub struct Runtime {
 
     offered_htlc: Vec<HtlcKnown>,
     received_htlc: Vec<HtlcSecret>,
-    resolved_htlc: Vec<HtlcKnown>,
 
     is_originator: bool,
     obscuring_factor: u64,
@@ -284,7 +282,7 @@ impl Runtime {
                 let _ = self.report_progress_to(senders, &enquirer, msg);
             }
 
-            Request::PeerMessage(Messages::FundingSigned(funding_signed)) => {
+            Request::PeerMessage(Messages::FundingSigned(_funding_signed)) => {
                 // TODO:
                 //      1. Get commitment tx
                 //      2. Verify signature
@@ -314,9 +312,10 @@ impl Runtime {
                 self.send_peer(
                     senders,
                     Messages::FundingLocked(funding_locked),
-                );
+                )?;
 
                 self.state = Lifecycle::Active;
+                self.local_capacity = self.params.funding_satoshis;
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -350,18 +349,19 @@ impl Runtime {
             }
 
             Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
-                let commitment_signed =
+                let _commitment_signed =
                     self.htlc_receive(senders, update_add_htlc)?;
             }
 
             Request::PeerMessage(Messages::CommitmentSigned(
-                commitment_signed,
+                _commitment_signed,
             )) => {}
 
-            Request::PeerMessage(Messages::RevokeAndAck(revoke_ack)) => {}
+            Request::PeerMessage(Messages::RevokeAndAck(_revoke_ack)) => {}
 
             Request::PeerMessage(Messages::AssignFunds(assign_req)) => {
                 self.refill(
+                    senders,
                     assign_req.consignment,
                     assign_req.outpoint,
                     assign_req.blinding,
@@ -458,6 +458,7 @@ impl Runtime {
                 self.enquirer = source.into();
 
                 self.refill(
+                    senders,
                     refill_req.consignment.clone(),
                     refill_req.outpoint,
                     refill_req.blinding,
@@ -808,8 +809,6 @@ impl Runtime {
         &mut self,
         senders: &mut Senders,
     ) -> Result<(), Error> {
-        let enquirer = self.enquirer.clone();
-
         let mut engine = sha256::Hash::engine();
         if self.is_originator {
             engine.input(&self.local_keys.payment_basepoint.serialize());
@@ -877,6 +876,18 @@ impl Runtime {
     ) -> Result<message::UpdateAddHtlc, Error> {
         let enquirer = self.enquirer.clone();
 
+        let available = if let Some(asset_id) = transfer_req.asset {
+            self.local_balances.get(&asset_id).copied().unwrap_or(0)
+        } else {
+            self.local_capacity
+        };
+
+        if available < transfer_req.amount {
+            Err(Error::Other(s!(
+                "You do not have required amount of the asset"
+            )))?
+        }
+
         info!(
             "{} {} {} to the remote peer",
             "Transferring".promo(),
@@ -909,11 +920,22 @@ impl Runtime {
             asset_id: transfer_req.asset,
         };
         self.total_payments += 1;
+        match transfer_req.asset {
+            Some(asset_id) => {
+                self.local_balances.get_mut(&asset_id).map(|balance| {
+                    *balance -= transfer_req.amount;
+                });
 
-        let msg = format!(
-            "{}, awaiting for peer signature",
-            "Funding transferred".ended()
-        );
+                let entry = self.remote_balances.entry(asset_id).or_insert(0);
+                *entry += transfer_req.amount;
+            }
+            None => {
+                self.local_capacity -= transfer_req.amount;
+                self.remote_capacity += transfer_req.amount;
+            }
+        }
+
+        let msg = format!("{}", "Funding transferred".ended());
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
@@ -922,10 +944,13 @@ impl Runtime {
 
     pub fn refill(
         &mut self,
+        senders: &mut Senders,
         consignment: Consignment,
         outpoint: OutPoint,
         blinding: u64,
     ) -> Result<(), Error> {
+        let enquirer = self.enquirer.clone();
+
         debug!("Validating consignment with RGB Node ...");
         self.request_rbg20(rgb_node::api::fungible::Request::Validate(
             consignment.clone(),
@@ -951,21 +976,38 @@ impl Runtime {
                 for (id, balances) in balances {
                     let asset_id = AssetId::from(id);
                     let balance: u64 = balances.into_iter().sum();
-                    debug!("Adding {} of {} to balance", balance, asset_id);
+                    info!(
+                        "{} {} of {} to balance",
+                        "Adding".promo(),
+                        balance.promoter(),
+                        asset_id.promoter()
+                    );
+                    let msg = format!(
+                        "adding {} of {} to balance",
+                        balance.ender(),
+                        asset_id.ender()
+                    );
+                    let _ = self.report_progress_to(senders, &enquirer, msg);
+
                     self.local_balances.insert(asset_id, balance);
                 }
             }
             _ => Err(Error::Other(s!("Unrecognized RGB Node response")))?,
         }
 
+        let _ = self.report_success_to(
+            senders,
+            &enquirer,
+            Some("transfer completed"),
+        );
         Ok(())
     }
 
     pub fn htlc_receive(
         &mut self,
-        senders: &mut Senders,
+        _senders: &mut Senders,
         update_add_htlc: message::UpdateAddHtlc,
-    ) -> Result<message::CommitmentSigned, Error> {
+    ) -> Result</* message::CommitmentSigned */ (), Error> {
         trace!("Updating HTLCs with {:?}", update_add_htlc);
         // TODO: Use From/To for message <-> Htlc conversion in LNP/BP
         //       Core lib
@@ -977,13 +1019,28 @@ impl Runtime {
         };
         self.received_htlc.push(htlc);
 
+        match update_add_htlc.asset_id {
+            Some(asset_id) => {
+                self.remote_balances.get_mut(&asset_id).map(|balance| {
+                    *balance -= update_add_htlc.amount_msat;
+                });
+
+                let entry = self.local_balances.entry(asset_id).or_insert(0);
+                *entry += update_add_htlc.amount_msat;
+            }
+            None => {
+                self.remote_capacity -= update_add_htlc.amount_msat;
+                self.local_capacity += update_add_htlc.amount_msat;
+            }
+        }
+
+        Ok(())
+
         // TODO:
         //      1. Generate new commitment tx
         //      2. Generate new transitions and anchor, commit into tx
         //      3. Sign commitment tx
         //      4. Generate HTLCs, tweak etc each of them
         //      3. Send response
-
-        unimplemented!()
     }
 }

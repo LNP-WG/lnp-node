@@ -249,6 +249,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             break
         }
         'lnp-cli;transfer' {
+            [CompletionResult]::new('-a', 'a', [CompletionResultType]::ParameterName, 'Asset ticker in which the invoice should be issued')
+            [CompletionResult]::new('--asset', 'asset', [CompletionResultType]::ParameterName, 'Asset ticker in which the invoice should be issued')
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')

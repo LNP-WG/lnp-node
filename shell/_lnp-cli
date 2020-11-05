@@ -259,6 +259,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (transfer)
 _arguments "${_arguments_options[@]}" \
+'-a+[Asset ticker in which the invoice should be issued]' \
+'--asset=[Asset ticker in which the invoice should be issued]' \
 '-d+[Data directory path]: :_files -/' \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
@@ -277,8 +279,8 @@ _arguments "${_arguments_options[@]}" \
 '--help[Prints help information]' \
 '-V[Prints version information]' \
 '--version[Prints version information]' \
+':channel -- Channel to which the funding must be added:' \
 ':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
-'::asset -- Asset ticker in which the invoice should be issued:' \
 && ret=0
 ;;
 (invoice)
