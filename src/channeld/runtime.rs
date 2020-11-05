@@ -556,6 +556,32 @@ impl Runtime {
 }
 
 impl Runtime {
+    pub fn update_channel_id(
+        &mut self,
+        senders: &mut Senders,
+    ) -> Result<(), Error> {
+        let enquirer = self.enquirer.clone();
+
+        // Update channel id!
+        self.channel_id = ChannelId::with(self.funding_outpoint);
+        debug!("Updating channel id to {}", self.channel_id);
+        self.send_ctl(
+            senders,
+            ServiceId::Lnpd,
+            Request::UpdateChannelId(self.channel_id),
+        )?;
+        self.identity = self.channel_id.into();
+        let msg = format!(
+            "{} set to {}",
+            "Channel ID".ended(),
+            self.channel_id.ender()
+        );
+        info!("{}", msg);
+        let _ = self.report_progress_to(senders, &enquirer, msg);
+
+        Ok(())
+    }
+
     pub fn open_channel(
         &mut self,
         senders: &mut Senders,
@@ -724,6 +750,8 @@ impl Runtime {
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
+        self.update_channel_id(senders)?;
+
         Ok(funding_created)
     }
 
@@ -796,22 +824,7 @@ impl Runtime {
         trace!("Obscuring factor: {:#016x}", self.obscuring_factor);
         self.commitment_number = 0;
 
-        // Update channel id!
-        self.channel_id = ChannelId::with(self.funding_outpoint);
-        debug!("Updating channel id to {}", self.channel_id);
-        self.send_ctl(
-            senders,
-            ServiceId::Lnpd,
-            Request::UpdateChannelId(self.channel_id),
-        )?;
-        self.identity = self.channel_id.into();
-        let msg = format!(
-            "{} set to {}",
-            "Channel ID".ended(),
-            self.channel_id.ender()
-        );
-        info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        self.update_channel_id(senders)?;
 
         Ok(())
     }
