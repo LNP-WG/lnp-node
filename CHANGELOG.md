@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+v0.1.0-beta.1
+--------------
+
+- Channel funding
+- Channel operations, HTLCs
+- RGB node integration
+- Adding assets to the channel (funding with assets)
+- Transfers of RGB assets
+
 v0.1.0-alpha.4
 --------------
 

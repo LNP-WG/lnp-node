@@ -41,10 +41,10 @@ required-features = ["cli"]
 # LNP/BP crates
 amplify = "~2.3.1"
 amplify_derive = "~2.3.0"
-lnpbp = { git = "git://github.com/LNP-BP/rust-lnpbp", features = ["lnp", "url", "websockets"] }
-lnpbp_derive = { git = "git://github.com/LNP-BP/rust-lnpbp" }
-lnpbp_services = { git = "git://github.com/LNP-BP/rust-lnpbp" }
-rgb_node = { git = "git://github.com/LNP-BP/rgb-node", features = ["client", "fungibles"] }
+lnpbp = { version = "=0.2.0-beta.2", features = ["lnp", "url", "websockets"] }
+lnpbp_derive = "=0.2.0-beta.2"
+lnpbp_services = "=0.2.0-beta.2"
+rgb_node = { version = "~0.2.0-beta.2", features = ["client", "fungibles"] }
 # Rust language
 lazy_static = "~1.4.0"
 nix = { version = "~0.19.0", optional = true }
@@ -76,10 +76,10 @@ tokio = { version = "~0.2.21", features = ["full"], optional = true }
 zmq = { version = "~0.9.2", optional = true }
 
 [build-dependencies]
-amplify = "~2.3.0"
+amplify = "~2.3.1"
 amplify_derive = "~2.3.0"
-lnpbp = { git = "git://github.com/LNP-BP/rust-lnpbp", features = ["lnp", "url", "websockets"] }
-lnpbp_services = { git = "git://github.com/LNP-BP/rust-lnpbp" }
+lnpbp = { version = "=0.2.0-beta.2", features = ["lnp", "url", "websockets"] }
+lnpbp_services = "=0.2.0-beta.2"
 lazy_static = "~1.4.0"
 clap = "=3.0.0-beta.2"
 clap_generate = "=3.0.0-beta.2"
@@ -89,11 +89,6 @@ configure_me_codegen = "~0.3.14"
 
 [target.'cfg(target_os="android")'.dependencies]
 zmq = { version = "~0.9", features = ["vendored"] }
-
-[target.'cfg(target_os="android")'.patch.crates-io]
-# Use this for Android builds
-# Remove this once https://github.com/jean-airoldie/zeromq-src-rs/pull/15 got merged
-zeromq-src = { git = "https://github.com/LNP-BP/zeromq-src-rs", branch = "fix/cmake" }
 
 # Recommended set of features:
 # 1. Standalone node: `server` (=`node`+`shell`)

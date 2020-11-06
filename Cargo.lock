@@ -1099,7 +1099,8 @@ dependencies = [
 [[package]]
 name = "lnpbp"
 version = "0.2.0-beta.2"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d57a4544accf5aa7489fe3f89d611103635d903a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42de6988e741d7ba9cbe56e87f053f3afa3efe5b804a964c231c3b6bb0a6f7ca"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1130,7 +1131,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_derive"
 version = "0.2.0-beta.2"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d57a4544accf5aa7489fe3f89d611103635d903a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6633b058816646fffaa4c218bcb26bd9aa7972d5c03be26022e0f9f9b8edd004"
 dependencies = [
  "amplify",
  "quote 1.0.7",
@@ -1140,7 +1142,8 @@ dependencies = [
 [[package]]
 name = "lnpbp_services"
 version = "0.2.0-beta.2"
-source = "git+git://github.com/LNP-BP/rust-lnpbp#d57a4544accf5aa7489fe3f89d611103635d903a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0c4424ee45a4864d8da19df7e2729d265eaf9da03f595604a1f30aabe573ca9"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1786,7 +1789,8 @@ checksum = "3b181ba2dcf07aaccad5448e8ead58db5b742cf85dfe035e2227f137a539a189"
 [[package]]
 name = "rgb_node"
 version = "0.2.0-beta.2"
-source = "git+git://github.com/LNP-BP/rgb-node#9dee1629b7c770bbd308951fdb2d080c452a0838"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "325a505c0a431425049d464e14f97e33134841f884f3712bd1ecfbf828c7cc83"
 dependencies = [
  "amplify",
  "amplify_derive",
