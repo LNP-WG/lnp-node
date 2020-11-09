@@ -1,0 +1,26 @@
+version: '3.2'
+
+services:
+  lnp-node-0:
+    container_name: lnp-node-0
+    image: lnp-node:v0.1.0-alpha.4
+    restart: unless-stopped
+    networks: 
+      lightning:
+        ipv4_address: 172.1.0.10  
+    entrypoint: "lnpd -vvvv"
+  lnp-node-1:
+    container_name: lnp-node-1
+    image: lnp-node:v0.1.0-alpha.4
+    restart: unless-stopped
+    networks: 
+      lightning:
+        ipv4_address: 172.1.0.11  
+    entrypoint: "lnpd -vvvv"
+
+networks:
+  lightning:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.1.0.0/16
