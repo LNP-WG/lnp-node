@@ -58,7 +58,7 @@ In order to create a simple setup that allows you to test the interactions betwe
 ### Setup
 ```bash=
 git clone https://github.com/LNP-BP/lnp-node
-cd lnp-node/demo
+cd lnp-node/doc/dempo-alpha.4
 # build lnp-node docker image (it takes a while...)
 docker build -t lnp-node:v0.1.0-alpha.4 .
 # run docker containers, use -d to run them in background
@@ -131,7 +131,7 @@ SUBCOMMANDS:
     help        Prints this message or the help of the given subcommand(s)
     info        General information about the running node
     invoice     Create an invoice
-    listen      Bind to a socket and start listening for incoming LN peer connections
+    listen      Bind to a socket and starts listening to incoming LN peer connections
     pay         Pay the invoice
     peers       Lists existing peer connections
     ping        Ping remote peer (must be already connected)
