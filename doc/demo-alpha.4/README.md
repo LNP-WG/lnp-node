@@ -58,7 +58,7 @@ In order to create a simple setup that allows you to test the interactions betwe
 ### Setup
 ```bash=
 git clone https://github.com/LNP-BP/lnp-node
-cd lnp-node/demo
+cd lnp-node/doc/dempo-alpha.4
 # build lnp-node docker image (it takes a while...)
 docker build -t lnp-node:v0.1.0-alpha.4 .
 # run docker containers, use -d to run them in background
@@ -123,17 +123,17 @@ OPTIONS:
 
 SUBCOMMANDS:
     channels    Lists existing channels
-    connect     Connect to the remote lightning network peer
-    create      Create a new channel with the remote peer, which must be already connected
+    connect     Connects to the remote lightning network peer
+    create      Creates a new channel with the remote peer, which must be already connected
     funds       Lists all funds available for channel creation for given list of assets and
                 provides information about funding points (bitcoin address or UTXO for RGB
                 assets)
-    help        Prints this message or the help of the given subcommand(s)
+    help        Prints the current message or the help-message of the given subcommand(s)
     info        General information about the running node
-    invoice     Create an invoice
-    listen      Bind to a socket and start listening for incoming LN peer connections
-    pay         Pay the invoice
+    invoice     Creates an invoice
+    listen      Binds to a socket and starts listening to incoming LN peer connections
+    pay         Pays the invoice
     peers       Lists existing peer connections
-    ping        Ping remote peer (must be already connected)
+    ping        Pings remote peer (must be already connected)
     refill      Adds RGB assets to an existing channel
 ```
