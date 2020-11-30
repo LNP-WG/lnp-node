@@ -1,0 +1,52 @@
+version: '3.2'
+
+services:
+  rgb-node:
+    container_name: rgb-node
+    image: rgb-node:0.2.0-beta.3
+    build: docker/rgb-node
+    entrypoint: "rgbd -vvvv --threaded"
+    volumes:
+      - data:/var/lib/rgb
+      - ./samples:/var/lib/rgb/samples
+    working_dir: /var/lib/rgb
+  lnp-node-0:
+    container_name: lnp-node-0
+    image: lnp-node:0.1.0-beta.1
+    build: docker/lnp-node
+    restart: unless-stopped
+    volumes:
+      - data:/var/lib/rgb
+      - data0:/srv/app/.lnp_node
+      - ./samples:/srv/app/samples
+    networks:
+      lightning:
+        ipv4_address: 172.1.0.10
+    entrypoint: "lnpd -vvvv -r lnpz:/var/lib/rgb/testnet/fungibled.rpc?api=rpc"
+    working_dir: /srv/app
+  lnp-node-1:
+    container_name: lnp-node-1
+    image: lnp-node:0.1.0-beta.1
+    build: docker/lnp-node
+    restart: unless-stopped
+    volumes:
+      - data:/var/lib/rgb
+      - data1:/srv/app/.lnp_node
+      - ./samples:/srv/app/samples
+    networks:
+      lightning:
+        ipv4_address: 172.1.0.11
+    entrypoint: "lnpd -vvvv -r lnpz:/var/lib/rgb/testnet/fungibled.rpc?api=rpc"
+    working_dir: /srv/app
+
+volumes:
+  data:
+  data0:
+  data1:
+
+networks:
+  lightning:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.1.0.0/16
