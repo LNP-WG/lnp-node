@@ -1,7 +1,7 @@
 # LNP node alpha.4 demo
 
-### introduction
-This document contains a textual version of the [lnp-node alpha demo]( https://www.youtube.com/watch?v=TgmyO0ecVNI&feature=youtu.be), updated to operate with a later stage of development (alpha.4) that allows improved usability. It is meant to demonstrate initial functionality of the node and its interface.
+### Introduction
+This document contains a textual version of the [LNP Node Alpha 4 demo video]( https://www.youtube.com/watch?v=TgmyO0ecVNI&feature=youtu.be), based on the [0.1 Aplha 4 release](https://github.com/LNP-BP/lnp-node/releases/tag/v0.1.0-alpha.4). It is meant to demonstrate initial functionality of the node and its interface (for additional information on the functionality check out the release notes).
 
 For troubleshooting check out this [issue](https://github.com/LNP-BP/lnp-node/issues/22#event-3959465543)
 
@@ -11,32 +11,32 @@ Two different setups are available:
 
 Once either of them is complete, you can proceed with the actual [demo](#demo)
 
-## local
-This setup consists in a local installation of `lnp-node`.
+## Local
+This setup describes a local installation of the `lnp-node`.
 
-#### requirements
+#### Requirements
 - [cargo](https://doc.rust-lang.org/book/ch01-01-installation.html#installation)
 
-### setup
-**Note:** *there is no need to use git or download the code, it's already in Rust crate repository and all is done by cargo command*
+### Setup
+**Note:** *there is no need to use git or download the code, it's already in Rust crate repository and everything is being done via cargo command*
 
-In a first terminal, to install `lnp-node` and launch the first instance, run: 
+In the first terminal, to install `lnp-node` and launch the first instance, run: 
 ```bash=
 cargo install lnp_node --vers 0.1.0-alpha.4 --all-features
 lnpd -vvvv -d ./data_dir_0
 ```
 
-In a second terminal you can launch the second instance:
+In the second terminal you can launch the second instance:
 ```bash=
 lnpd -vvvv -d ./data_dir_1
 ```
-These two terminals will print out logs from the two nodes, you can check them out to understand internal workflows. To reduce verbosity, decrease the number of `v` in launch commands
+These two terminals will print out logs from the two nodes, you can check them out to understand internal workflows. To reduce verbosity, decrease the number of `v` in launch commands.
 
-Now, in a third terminal, we can setup aliases to directly access nodes' command-line interfaces:
+Now, in the third terminal, we can setup aliases to directly access both nodes' command-line interfaces:
 ```bash=
 alias lnp0-cli="lnp-cli -d ./data_dir_0"
 alias lnp1-cli="lnp-cli -d ./data_dir_1"
-# list of available commands, not all of them are implemented yet
+# list of available commands, not all of them have been implemented yet
 lnp0-cli help
 ```
 We will need the node_uri for both nodes, so we store it in a variable for convenience:
@@ -46,16 +46,16 @@ node1_uri=$(lnp1-cli info | awk '/node_id/ {print $2"@127.0.0.1"}')
 ```
 
 
-## docker
+## Docker
 
-In order to create a simple setup that allows to test interactions between lnp-nodes, we use `docker-compose` together with some helper aliases. You will have CLI access to a couple of lnp-nodes that will establish connections and channels between them.
+In order to create a simple setup that allows you to test the interactions between lnp-nodes, we use `docker-compose` together with some helper aliases. You will have CLI access to a couple of lnp-nodes that will establish connections and channels between them.
 
-#### requirements
+#### Requirements
 - [git](https://git-scm.com/downloads)
 - [docker](https://docs.docker.com/get-docker/)
 - [docker-compose](https://docs.docker.com/compose/install/)
 
-### setup
+### Setup
 ```bash=
 git clone https://github.com/LNP-BP/lnp-node
 cd lnp-node/demo
@@ -66,7 +66,7 @@ docker-compose up [-d]
 # to get isolated logs from each node you can for instance run:
 docker logs lnp-node-0
 ```
-Now we can setup aliases to be able to access nodes' command-line interfaces
+Now we can setup aliases to be able to access both nodes' command-line interfaces:
 ```bash=
 alias lnp0-cli="docker exec lnp-node-0 lnp-cli"
 alias lnp1-cli="docker exec lnp-node-1 lnp-cli"
@@ -79,12 +79,12 @@ node0_uri=$(lnp0-cli info | awk '/node_id/ {print $2"@172.1.0.10"}')
 node1_uri=$(lnp1-cli info | awk '/node_id/ {print $2"@172.1.0.11"}')
 ```
 
-## demo
+## Demo
 
-Once you completed either of the setups above and the two nodes are up and running, you can proceed to the actual demo.
+Once you have completed either of the setups above and the two nodes are up and running, you can proceed to the actual demo.
 
-### create a channel
-Our task will be to connect the two nodes as peers and create a lightning channel between them. 
+### Create a channel
+Our task will be to connect the two nodes as peers and create a Lightning channel between them. 
 
 First, we connect the nodes as peers:
 ```bash=
