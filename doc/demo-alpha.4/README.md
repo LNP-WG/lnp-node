@@ -98,7 +98,7 @@ lnp0-cli create "$node1_uri" 1234
 ```
 **Note:** *although the call to `lnp-cli create` remains hanging ([we are trying to solve it](https://github.com/LNP-BP/lnp-node/issues/25)), the channel is created: the `channels` field in `lnp0-cli info` increases correctly.*
 
-### list of available commands
+### List of available commands
 
 
 ```
