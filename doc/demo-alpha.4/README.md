@@ -58,7 +58,7 @@ In order to create a simple setup that allows you to test the interactions betwe
 ### Setup
 ```bash=
 git clone https://github.com/LNP-BP/lnp-node
-cd lnp-node/demo
+cd lnp-node/doc/dempo-alpha.4
 # build lnp-node docker image (it takes a while...)
 docker build -t lnp-node:v0.1.0-alpha.4 .
 # run docker containers, use -d to run them in background
