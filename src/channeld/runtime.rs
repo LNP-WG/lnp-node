@@ -337,6 +337,7 @@ impl Runtime {
                 //      2. Do something with per-commitment point
 
                 self.state = Lifecycle::Active;
+                self.remote_capacity = self.params.funding_satoshis;
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -365,6 +366,7 @@ impl Runtime {
                     assign_req.consignment,
                     assign_req.outpoint,
                     assign_req.blinding,
+                    false,
                 )?;
 
                 // TODO: Re-sign the commitment and return to the remote peer
@@ -462,6 +464,7 @@ impl Runtime {
                     refill_req.consignment.clone(),
                     refill_req.outpoint,
                     refill_req.blinding,
+                    true,
                 )?;
 
                 let assign_funds = message::AssignFunds {
@@ -895,7 +898,7 @@ impl Runtime {
             transfer_req
                 .asset
                 .map(|a| a.to_string())
-                .unwrap_or(s!("btc"))
+                .unwrap_or(s!("msat"))
                 .promoter(),
         );
 
@@ -948,6 +951,7 @@ impl Runtime {
         consignment: Consignment,
         outpoint: OutPoint,
         blinding: u64,
+        refill_originator: bool,
     ) -> Result<(), Error> {
         let enquirer = self.enquirer.clone();
 
@@ -989,7 +993,13 @@ impl Runtime {
                     );
                     let _ = self.report_progress_to(senders, &enquirer, msg);
 
-                    self.local_balances.insert(asset_id, balance);
+                    if refill_originator {
+                        self.local_balances.insert(asset_id, balance);
+                        self.remote_balances.insert(asset_id, 0);
+                    } else {
+                        self.remote_balances.insert(asset_id, balance);
+                        self.local_balances.insert(asset_id, 0);
+                    };
                 }
             }
             _ => Err(Error::Other(s!("Unrecognized RGB Node response")))?,
@@ -1019,6 +1029,19 @@ impl Runtime {
         };
         self.received_htlc.push(htlc);
 
+        let available = if let Some(asset_id) = update_add_htlc.asset_id {
+            self.remote_balances.get(&asset_id).copied().unwrap_or(0)
+        } else {
+            self.remote_capacity
+        };
+
+        if available < update_add_htlc.amount_msat {
+            Err(Error::Other(s!(
+                "Remote node does not have required amount of the asset"
+            )))?
+        }
+
+        self.total_payments += 1;
         match update_add_htlc.asset_id {
             Some(asset_id) => {
                 self.remote_balances.get_mut(&asset_id).map(|balance| {
