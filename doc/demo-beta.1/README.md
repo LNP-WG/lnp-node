@@ -32,14 +32,14 @@ git clone https://github.com/LNP-BP/lnp-node
 cd lnp-node/doc/demo-beta.1
 cargo install --locked --root . rgb_node --version 0.2.0-beta.4 --all-features
 cargo install --locked --root . --git "https://github.com/LNP-BP/lnp-node#0.1.0-beta.1" --all-features
-./bin/rgbd -vvvv -d ./data -b ./bin/
+./bin/rgbd -vvv -d ./data -b ./bin/
 ```
 *Note: A single `rgb-node` will serve both `lnp-node`s for simplicity.*
 
 In the second and third terminal you can launch the two `lnp-node` instances:
 ```bash=
-./bin/lnpd -vvvv -d ./data_0 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
-./bin/lnpd -vvvv -d ./data_1 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
+./bin/lnpd -vvv -d ./data_0 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
+./bin/lnpd -vvv -d ./data_1 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
 ```
 These three terminals will print out logs from the nodes, you can check them out to understand internal workflows. To reduce verbosity, decrease the number of `v` in launch commands.
 
