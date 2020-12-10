@@ -41,7 +41,7 @@ In the second and third terminal you can launch the two `lnp-node` instances:
 ./bin/lnpd -vvv -d ./data_0 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
 ./bin/lnpd -vvv -d ./data_1 -r lnpz:./data/testnet/fungibled.rpc?api=rpc
 ```
-These three terminals will print out logs from the nodes, you can check them out to understand internal workflows. To reduce verbosity, decrease the number of `v` in launch commands.
+These three terminals will print out logs from the nodes, you can check them out to understand internal workflows. To set verbosity level, change the number of `v` in launch commands [0-4].
 
 Now, in the fourth terminal, we can setup aliases to directly access both nodes' command-line interfaces:
 ```bash=
