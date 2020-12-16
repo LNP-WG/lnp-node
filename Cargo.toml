@@ -40,8 +40,8 @@ required-features = ["cli"]
 [dependencies]
 # LNP/BP crates
 amplify = "~2.3.1"
-amplify_derive = "~2.3.0"
-lnpbp = { version = "=0.2.0-beta.2", features = ["lnp", "url", "websockets"] }
+amplify_derive = "~2.3.1"
+lnpbp = { version = "=0.2.0-beta.2", features = ["lnp", "websockets"] }
 lnpbp_derive = "=0.2.0-beta.2"
 lnpbp_services = "=0.2.0-beta.2"
 rgb_node = { version = "~0.2.0-beta.2", features = ["client", "fungibles"] }

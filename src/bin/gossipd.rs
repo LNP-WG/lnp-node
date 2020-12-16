@@ -36,7 +36,7 @@ use lnp::gossipd::{self, Opts};
 use lnp::Config;
 
 fn main() {
-    println!("gossipd: lightning peer network gossip microservice");
+    println!("gossipd: lightning peer network gossip daemon");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
