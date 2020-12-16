@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v0.1.0-beta.2
+-------------
+- Fix balances consistency in channeld
+- README & build instructions improvements
+- Modernizing for LNP/BP Core v0.2 release & RGB Node v0.2 RC
+
 v0.1.0-beta.1
 --------------
 
