@@ -12,7 +12,7 @@ RUN apt-get update \
         libpq-dev libssl-dev libzmq3-dev libsqlite3-dev
 WORKDIR "$SRC_DIR"
 
-RUN cargo install --locked --root "${BUILDER_DIR}" rgb_node --version 0.2.0-beta.4 --all-features
+RUN cargo install --locked --root "${BUILDER_DIR}" rgb_node --version 0.2.0 --all-features
 
 FROM debian:buster-slim
 
