@@ -13,8 +13,7 @@ ENV SRC=/usr/local/src/lnpnode
 
 WORKDIR ${SRC}
 
-RUN cargo install --git https://github.com/LNP-BP/lnp-node#0.1.0-beta.1 \
-        --root ${SRC} --locked --all-features
+RUN cargo install --locked --root "${SRC}" lnp_node --version 0.1.0-beta.3 --all-features
 
 
 FROM debian:buster-slim

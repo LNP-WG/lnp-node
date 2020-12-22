@@ -30,8 +30,8 @@ Alongside `lnp-node`, we also need to install `rgb-node` which will be queried f
 ```bash=
 git clone https://github.com/LNP-BP/lnp-node
 cd lnp-node/doc/demo-beta.1
-cargo install --locked --root . rgb_node --version 0.2.0-beta.4 --all-features
-cargo install --locked --root . --git "https://github.com/LNP-BP/lnp-node#0.1.0-beta.1" --all-features
+cargo install --locked --root . rgb_node --version 0.2.0 --all-features
+cargo install --locked --root . lnp_node --version 0.1.0-beta.3 --all-features
 ./bin/rgbd -vvv -d ./data -b ./bin/
 ```
 *Note: A single `rgb-node` will serve both `lnp-node`s for simplicity.*
