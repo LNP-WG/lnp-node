@@ -1072,7 +1072,7 @@ checksum = "8dd5a6d5999d9907cda8ed67bbd137d3af8085216c2ac62de5be860bd41f304a"
 
 [[package]]
 name = "lnp_node"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 dependencies = [
  "amplify",
  "amplify_derive",

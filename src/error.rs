@@ -14,6 +14,7 @@
 
 use std::io;
 
+use amplify::IoError;
 #[cfg(any(feature = "node", feature = "client"))]
 use lnpbp::lnp::TypeId;
 use lnpbp::lnp::{presentation, transport};
@@ -28,8 +29,8 @@ use crate::rpc::ServiceBus;
 #[non_exhaustive]
 pub enum Error {
     /// I/O error: {0:?}
-    #[from]
-    Io(io::ErrorKind),
+    #[from(io::Error)]
+    Io(IoError),
 
     /// ESB error: {0}
     #[cfg(any(feature = "node", feature = "client"))]
@@ -71,12 +72,6 @@ pub enum Error {
 }
 
 impl lnpbp_services::error::Error for Error {}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Self {
-        Error::Io(err.kind())
-    }
-}
 
 #[cfg(any(feature = "node", feature = "client"))]
 impl From<Error> for esb::Error {

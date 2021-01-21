@@ -19,7 +19,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp::cli::{Opts, Runtime};
+use lnp::cli::Opts;
+use lnp::rpc::Client;
 use lnp::{Config, LogStyle};
 use lnpbp_services::shell::Exec;
 
@@ -36,11 +37,11 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
-    let mut runtime = Runtime::with(config, opts.shared.chain)
-        .expect("Error initializing runtime");
+    let mut client = Client::with(config, opts.shared.chain)
+        .expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
     opts.command
-        .exec(&mut runtime)
+        .exec(&mut client)
         .unwrap_or_else(|err| eprintln!("{}", err.err()));
 }

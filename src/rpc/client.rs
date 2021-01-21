@@ -24,14 +24,15 @@ use crate::rpc::request::OptionDetails;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, LogStyle, ServiceId};
 
-pub struct Runtime {
+#[repr(C)]
+pub struct Client {
     identity: ServiceId,
     chain: Chain,
     response_queue: Vec<Request>,
     esb: esb::Controller<ServiceBus, Request, Handler>,
 }
 
-impl Runtime {
+impl Client {
     pub fn with(config: Config, chain: Chain) -> Result<Self, Error> {
         debug!("Setting up RPC client...");
         let identity = ServiceId::client();

@@ -21,13 +21,13 @@ use lnpbp::lnp::{
 use lnpbp::rgb::Consignment;
 use lnpbp_services::shell::Exec;
 
-use super::{Command, Runtime};
-use crate::rpc::{request, Request};
+use super::Command;
+use crate::rpc::{request, Client, Request};
 use crate::util::file::ReadWrite;
 use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
-    type Runtime = Runtime;
+    type Runtime = Client;
     type Error = Error;
 
     fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {

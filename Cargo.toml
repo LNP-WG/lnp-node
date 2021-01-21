@@ -1,14 +1,14 @@
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rgb"]
 edition = "2018"
 readme = "README.md"
 build = "build.rs"
-exclude = [".github", "/doc", "/test", "Dockerfile"]
+exclude = [".github", "/test", "Dockerfile"]
 
 [lib]
 name = "lnp"

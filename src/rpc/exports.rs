@@ -12,33 +12,26 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod client;
-pub mod exports;
-mod reply;
-pub mod request;
+use std::os::raw::{c_char, c_double, c_uchar};
 
-pub use client::Client;
-pub use reply::Reply;
-pub use request::Request;
+use super::Client;
 
-use lnpbp::lnp::rpc_connection::Api;
-use lnpbp_services::esb::BusId;
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
-pub enum ServiceBus {
-    #[display("MSG")]
-    Msg,
-    #[display("CTL")]
-    Ctl,
-    #[display("BRIDGE")]
-    Bridge,
+#[derive(Default)]
+#[repr(C)]
+pub struct CError {
+    code: u32,
+    message: *const c_char,
 }
 
-impl BusId for ServiceBus {}
-
-pub struct Rpc {}
-
-impl Api for Rpc {
-    type Request = Request;
-    type Reply = Reply;
+#[repr(C)]
+pub struct CResult<T> {
+    success: bool,
+    payload: T,
+    error: CError,
 }
+
+#[no_mangle]
+pub extern "C" fn lnp_client_connect() -> CResult<Client> {}
+
+#[no_mangle]
+pub extern "C" fn lnp_client_send() -> CResult {}

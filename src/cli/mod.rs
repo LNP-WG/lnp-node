@@ -14,7 +14,6 @@
 
 mod command;
 mod opts;
-mod runtime;
 
 pub use opts::{Command, Opts};
-pub use runtime::Runtime;
+pub use runtime::Client;

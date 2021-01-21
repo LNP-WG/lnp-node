@@ -154,7 +154,7 @@ pub struct Opts {
         default_value = "testnet",
         env = "LNP_NODE_NETWORK"
     )]
-    // TODO: Put it back to `signed` default network once rust-bitcoin will
+    // TODO: Put it back to `signet` default network once rust-bitcoin will
     //       release signet support
     pub chain: bp::Chain,
 }
