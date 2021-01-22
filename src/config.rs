@@ -12,8 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::bp::Chain;
-use lnpbp::lnp::NodeAddr;
+use internet2::NodeAddr;
+use lnpbp::Chain;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;

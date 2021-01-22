@@ -12,12 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::rpc_connection;
-use lnpbp_services::rpc;
+use microservices::{rpc, rpc_connection};
 
 use crate::Error;
 
 #[derive(Clone, Debug, Display, From, LnpApi)]
+#[encoding_crate(lnpbp::strict_encoding)]
 #[lnp_api(encoding = "strict")]
 #[display(Debug)]
 #[non_exhaustive]

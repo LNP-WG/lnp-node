@@ -19,10 +19,10 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp::cli::Opts;
-use lnp::rpc::Client;
-use lnp::{Config, LogStyle};
-use lnpbp_services::shell::Exec;
+use lnp_node::cli::Opts;
+use lnp_node::rpc::Client;
+use lnp_node::{Config, LogStyle};
+use microservices::shell::Exec;
 
 fn main() {
     println!("lnp-cli: command-line tool for working with LNP node");

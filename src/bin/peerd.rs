@@ -93,21 +93,21 @@ extern crate log;
 #[macro_use]
 extern crate amplify_derive;
 
-use amplify::internet::InetSocketAddr;
 use clap::Clap;
-use core::convert::TryFrom;
-use core::time::Duration;
+use internet2::addr::InetSocketAddr;
 use nix::unistd::{fork, ForkResult};
+use std::convert::TryFrom;
 use std::net::TcpListener;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::time::Duration;
 
-use lnp::peerd::{self, Opts};
-use lnp::{Config, LogStyle};
-use lnpbp::bitcoin::secp256k1::PublicKey;
-use lnpbp::lnp::{
-    session, FramingProtocol, NodeAddr, PeerConnection, RemoteNodeAddr,
-    RemoteSocketAddr,
+use bitcoin::secp256k1::PublicKey;
+use internet2::{
+    session, FramingProtocol, NodeAddr, RemoteNodeAddr, RemoteSocketAddr,
 };
+use lnp_node::peerd::{self, Opts};
+use lnp_node::{Config, LogStyle};
+use microservices::peer::PeerConnection;
 
 /*
 mod internal {

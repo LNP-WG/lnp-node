@@ -32,8 +32,8 @@ extern crate log;
 
 use clap::Clap;
 
-use lnp::gossipd::{self, Opts};
-use lnp::Config;
+use lnp_node::gossipd::{self, Opts};
+use lnp_node::Config;
 
 fn main() {
     println!("gossipd: lightning peer network gossip daemon");

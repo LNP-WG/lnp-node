@@ -17,9 +17,11 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use lnpbp::bitcoin::OutPoint;
-use lnpbp::lnp::{ChannelId, FramingProtocol, PartialNodeAddr, TempChannelId};
-use lnpbp::rgb::ContractId;
+use bitcoin::OutPoint;
+use internet2::{FramingProtocol, PartialNodeAddr};
+use lnp::{ChannelId, TempChannelId};
+#[cfg(feature = "rgb")]
+use rgb::ContractId;
 
 /// Command-line tool for working with LNP node
 #[derive(Clap, Clone, PartialEq, Eq, Debug)]
@@ -134,6 +136,7 @@ pub enum Command {
     },
 
     /// Adds RGB assets to an existing channel
+    #[cfg(feature = "rgb")]
     Refill {
         /// Channel to which the funding must be added
         channel: ChannelId,
@@ -160,6 +163,7 @@ pub enum Command {
         amount: u64,
 
         /// Asset ticker in which the invoice should be issued
+        #[cfg(feature = "rgb")]
         #[clap(short, long)]
         asset: Option<ContractId>,
     },

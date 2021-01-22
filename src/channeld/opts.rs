@@ -13,8 +13,10 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use clap::{AppSettings, Clap, ValueHint};
-use lnpbp::bitcoin::hashes::hex::FromHex;
-use lnpbp::lnp::{ChannelId, PartialNodeAddr};
+
+use bitcoin::hashes::hex::FromHex;
+use internet2::PartialNodeAddr;
+use lnp::ChannelId;
 
 use crate::opts::FUNGIBLED_RPC_ENDPOINT;
 

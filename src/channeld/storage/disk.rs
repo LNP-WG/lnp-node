@@ -15,7 +15,7 @@
 use std::any::Any;
 use std::path::PathBuf;
 
-use lnpbp::lnp::ChannelId;
+use lnp::ChannelId;
 
 use super::Driver;
 use crate::Error;

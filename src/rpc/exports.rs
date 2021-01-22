@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::os::raw::{c_char, c_double, c_uchar};
+use std::os::raw::c_char;
 
 use super::Client;
 

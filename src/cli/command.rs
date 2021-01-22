@@ -12,18 +12,20 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::convert::TryFrom;
 use std::str::FromStr;
 
-use lnpbp::lnp::{
-    message, ChannelId, NodeAddr, RemoteSocketAddr, ToNodeAddr,
-    LIGHTNING_P2P_DEFAULT_PORT,
-};
-use lnpbp::rgb::Consignment;
-use lnpbp_services::shell::Exec;
+use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr};
+use lnp::{message, ChannelId, LIGHTNING_P2P_DEFAULT_PORT};
+use microservices::shell::Exec;
+
+#[cfg(feature = "rgb")]
+use rgb::Consignment;
+#[cfg(feature = "rgb")]
+use rgb_node::util::file::ReadWrite;
 
 use super::Command;
 use crate::rpc::{request, Client, Request};
-use crate::util::file::ReadWrite;
 use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
@@ -131,7 +133,12 @@ impl Exec for Command {
                 runtime.report_progress()?;
                 match runtime.response()? {
                     Request::ChannelFunding(pubkey_script) => {
-                        let address = pubkey_script.address(runtime.chain());
+                        let address =
+                            bitcoin::Network::try_from(runtime.chain())
+                                .ok()
+                                .and_then(|network| {
+                                    pubkey_script.address(network)
+                                });
                         match address {
                             None => {
                                 eprintln!(
@@ -196,6 +203,7 @@ impl Exec for Command {
                 runtime.report_progress()?;
             }
 
+            #[cfg(feature = "rgb")]
             Command::Refill {
                 channel,
                 consignment,

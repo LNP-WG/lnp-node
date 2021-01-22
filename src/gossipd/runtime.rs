@@ -12,8 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnpbp::lnp::TypedEnum;
-use lnpbp_services::esb;
+use internet2::TypedEnum;
+use microservices::esb;
 
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, Service, ServiceId};

@@ -13,7 +13,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 mod client;
-pub mod exports;
 mod reply;
 pub mod request;
 
@@ -21,8 +20,8 @@ pub use client::Client;
 pub use reply::Reply;
 pub use request::Request;
 
-use lnpbp::lnp::rpc_connection::Api;
-use lnpbp_services::esb::BusId;
+use microservices::esb::BusId;
+use microservices::rpc_connection::Api;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
 pub enum ServiceBus {

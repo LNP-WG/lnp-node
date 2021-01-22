@@ -13,26 +13,29 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::collections::BTreeMap;
+use std::convert::TryFrom;
 use std::time::{Duration, SystemTime};
 
-use lnpbp::bitcoin::hashes::{sha256, Hash, HashEngine};
-use lnpbp::bitcoin::secp256k1;
-use lnpbp::bitcoin::util::bip143::SigHashCache;
-use lnpbp::bitcoin::{OutPoint, SigHashType, Transaction};
-use lnpbp::bp::blind::OutpointReveal;
-use lnpbp::bp::{chain::AssetId, Chain, HashPreimage, PubkeyScript};
-use lnpbp::lnp::application::payment::bolt3::{ScriptGenerators, TxGenerators};
-use lnpbp::lnp::application::payment::htlc::{HtlcKnown, HtlcSecret};
-use lnpbp::lnp::application::payment::{self, AssetsBalance, Lifecycle};
-use lnpbp::lnp::presentation::Encode;
-use lnpbp::lnp::zmqsocket::{self, ZmqSocketAddr, ZmqType};
-use lnpbp::lnp::{
-    message, ChannelId, CreateUnmarshaller, LocalNode, Messages, NodeAddr,
-    TempChannelId, TypedEnum, Unmarshall,
+use bitcoin::hashes::{sha256, Hash, HashEngine};
+use bitcoin::secp256k1;
+use bitcoin::util::bip143::SigHashCache;
+use bitcoin::{OutPoint, SigHashType, Transaction};
+use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
+use internet2::{
+    session, CreateUnmarshaller, LocalNode, NodeAddr, Session, TypedEnum,
+    Unmarshall, Unmarshaller,
 };
-use lnpbp::lnp::{session, Session, Unmarshaller};
-use lnpbp::rgb::Consignment;
-use lnpbp_services::esb::{self, Handler};
+use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
+use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
+use lnp::payment::{self, AssetsBalance, Lifecycle};
+use lnp::{message, ChannelId, Messages, TempChannelId};
+use lnpbp::seals::OutpointReveal;
+use lnpbp::{chain::AssetId, Chain};
+use microservices::esb::{self, Handler};
+use wallet::{HashPreimage, PubkeyScript};
+
+#[cfg(feature = "rgb")]
+use rgb::Consignment;
 
 use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
@@ -52,7 +55,7 @@ pub fn run(
         None,
         None,
     )?;
-    let rgb_unmarshaller = rgb_node::api::Reply::create_unmarshaller();
+    let rgb_unmarshaller = rgb_node::rpc::Reply::create_unmarshaller();
 
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
@@ -124,7 +127,7 @@ pub struct Runtime {
 
     enquirer: Option<ServiceId>,
     rgb20_rpc: session::Raw<session::PlainTranscoder, zmqsocket::Connection>,
-    rgb_unmarshaller: Unmarshaller<rgb_node::api::Reply>,
+    rgb_unmarshaller: Unmarshaller<rgb_node::rpc::Reply>,
 
     #[allow(dead_code)]
     storage: Box<dyn storage::Driver>,
@@ -194,13 +197,13 @@ impl Runtime {
 
     fn request_rbg20(
         &mut self,
-        request: rgb_node::api::fungible::Request,
-    ) -> Result<rgb_node::api::Reply, Error> {
-        let data = request.encode()?;
+        request: rgb_node::rpc::fungible::Request,
+    ) -> Result<rgb_node::rpc::Reply, Error> {
+        let data = request.serialize();
         self.rgb20_rpc.send_raw_message(&data)?;
         let raw = self.rgb20_rpc.recv_raw_message()?;
         let reply = &*self.rgb_unmarshaller.unmarshall(&raw)?;
-        if let rgb_node::api::Reply::Failure(failure) = reply {
+        if let rgb_node::rpc::Reply::Failure(failure) = reply {
             error!("{} {}", "RGB Node reported failure:".err(), failure.err())
         }
         Ok(reply.clone())
@@ -220,7 +223,14 @@ impl Runtime {
 
                 self.channel_accepted(senders, &accept_channel, &source)
                     .map_err(|err| {
-                        self.report_failure_to(senders, &enquirer, err)
+                        self.report_failure_to(
+                            senders,
+                            &enquirer,
+                            microservices::rpc::Failure {
+                                code: 0, // TODO: Create error type system
+                                info: err.to_string(),
+                            },
+                        )
                     })?;
 
                 // Construct funding output scriptPubkey
@@ -237,7 +247,10 @@ impl Runtime {
                     remote_pk,
                 );
                 trace!("Funding script: {}", script_pubkey);
-                if let Some(addr) = script_pubkey.address(self.chain.clone()) {
+                if let Some(addr) = bitcoin::Network::try_from(&self.chain)
+                    .ok()
+                    .and_then(|network| script_pubkey.address(network))
+                {
                     debug!("Funding address: {}", addr);
                 } else {
                     error!(
@@ -360,6 +373,7 @@ impl Runtime {
 
             Request::PeerMessage(Messages::RevokeAndAck(_revoke_ack)) => {}
 
+            #[cfg(feature = "rgb")]
             Request::PeerMessage(Messages::AssignFunds(assign_req)) => {
                 self.refill(
                     senders,
@@ -409,7 +423,14 @@ impl Runtime {
                 }
 
                 self.open_channel(senders, &channel_req).map_err(|err| {
-                    self.report_failure_to(senders, &report_to, err)
+                    self.report_failure_to(
+                        senders,
+                        &report_to,
+                        microservices::rpc::Failure {
+                            code: 0, // TODO: Create error type system
+                            info: err.to_string(),
+                        },
+                    )
                 })?;
 
                 self.send_peer(senders, Messages::OpenChannel(channel_req))?;
@@ -432,7 +453,14 @@ impl Runtime {
                 let accept_channel = self
                     .accept_channel(senders, &channel_req, &peerd)
                     .map_err(|err| {
-                        self.report_failure_to(senders, &report_to, err)
+                        self.report_failure_to(
+                            senders,
+                            &report_to,
+                            microservices::rpc::Failure {
+                                code: 0, // TODO: Create error type system
+                                info: err.to_string(),
+                            },
+                        )
                     })?;
 
                 self.send_peer(
@@ -456,6 +484,7 @@ impl Runtime {
                 )?;
             }
 
+            #[cfg(feature = "rgb")]
             Request::RefillChannel(refill_req) => {
                 self.enquirer = source.into();
 
@@ -500,7 +529,7 @@ impl Runtime {
                         .as_ref()
                         .map(|p| bmap! { p.clone() => v.clone() })
                         .unwrap_or_default()
-                };
+                }
 
                 let channel_id = if self.channel_id == zero!() {
                     None
@@ -659,8 +688,8 @@ impl Runtime {
             delayed_payment_basepoint: dumb_key,
             htlc_basepoint: dumb_key,
             first_per_commitment_point: dumb_key,
-            shutdown_scriptpubkey: None,
-            unknown_tlvs: none!(),
+            /* shutdown_scriptpubkey: None,
+             * unknown_tlvs: none!(), */
         };
 
         self.params.updated(&accept_channel, None)?;
@@ -908,6 +937,7 @@ impl Runtime {
             preimage,
             id: self.total_payments,
             cltv_expiry: 0,
+            amount: transfer_req.amount,
             asset_id: transfer_req.asset,
         };
         trace!("Generated HTLC: {:?}", htlc);
@@ -945,6 +975,7 @@ impl Runtime {
         Ok(update_add_htlc)
     }
 
+    #[cfg(feature = "rgb")]
     pub fn refill(
         &mut self,
         senders: &mut Senders,
@@ -956,13 +987,13 @@ impl Runtime {
         let enquirer = self.enquirer.clone();
 
         debug!("Validating consignment with RGB Node ...");
-        self.request_rbg20(rgb_node::api::fungible::Request::Validate(
+        self.request_rbg20(rgb_node::rpc::fungible::Request::Validate(
             consignment.clone(),
         ))?;
 
         debug!("Adding consignment to stash via RGB Node ...");
-        self.request_rbg20(rgb_node::api::fungible::Request::Accept(
-            rgb_node::api::fungible::AcceptApi {
+        self.request_rbg20(rgb_node::rpc::fungible::Request::Accept(
+            rgb_node::rpc::fungible::AcceptApi {
                 consignment: consignment.clone(),
                 reveal_outpoints: vec![OutpointReveal {
                     blinding: blinding,
@@ -974,9 +1005,9 @@ impl Runtime {
 
         debug!("Requesting new balances for {} ...", outpoint);
         match self
-            .request_rbg20(rgb_node::api::fungible::Request::Assets(outpoint))?
+            .request_rbg20(rgb_node::rpc::fungible::Request::Assets(outpoint))?
         {
-            rgb_node::api::Reply::Assets(balances) => {
+            rgb_node::rpc::Reply::Assets(balances) => {
                 for (id, balances) in balances {
                     let asset_id = AssetId::from(id);
                     let balance: u64 = balances.into_iter().sum();
@@ -1022,6 +1053,7 @@ impl Runtime {
         // TODO: Use From/To for message <-> Htlc conversion in LNP/BP
         //       Core lib
         let htlc = HtlcSecret {
+            amount: update_add_htlc.amount_msat,
             hashlock: update_add_htlc.payment_hash,
             id: update_add_htlc.htlc_id,
             cltv_expiry: update_add_htlc.cltv_expiry,

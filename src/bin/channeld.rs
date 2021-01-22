@@ -32,8 +32,8 @@ extern crate log;
 use clap::Clap;
 use std::convert::TryInto;
 
-use lnp::channeld::{self, Opts};
-use lnp::{Config, LogStyle};
+use lnp_node::channeld::{self, Opts};
+use lnp_node::{Config, LogStyle};
 
 fn main() {
     println!("channeld: lightning channel microservice");

@@ -15,13 +15,13 @@
 use std::io;
 
 use amplify::IoError;
-#[cfg(any(feature = "node", feature = "client"))]
-use lnpbp::lnp::TypeId;
-use lnpbp::lnp::{presentation, transport};
-#[cfg(any(feature = "node", feature = "client"))]
-use lnpbp_services::{esb, rpc};
+#[cfg(feature = "_rpc")]
+use internet2::TypeId;
+use internet2::{presentation, transport};
+#[cfg(feature = "_rpc")]
+use microservices::{esb, rpc};
 
-#[cfg(any(feature = "node", feature = "client"))]
+#[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
 
 #[derive(Clone, Debug, Display, From, Error)]
@@ -33,12 +33,12 @@ pub enum Error {
     Io(IoError),
 
     /// ESB error: {0}
-    #[cfg(any(feature = "node", feature = "client"))]
+    #[cfg(feature = "_rpc")]
     #[from]
     Esb(esb::Error),
 
     /// RPC error: {0}
-    #[cfg(any(feature = "node", feature = "client"))]
+    #[cfg(feature = "_rpc")]
     #[from]
     Rpc(rpc::Error),
 
@@ -53,7 +53,7 @@ pub enum Error {
     Bridge(transport::Error),
 
     /// Provided RPC request is not supported for the used type of endpoint
-    #[cfg(any(feature = "node", feature = "client"))]
+    #[cfg(feature = "_rpc")]
     NotSupported(ServiceBus, TypeId),
 
     /// Peer does not respond to ping messages
@@ -67,13 +67,13 @@ pub enum Error {
 
     /// Other error type with string explanation
     #[display(inner)]
-    #[from(amplify::internet::NoOnionSupportError)]
+    #[from(internet2::addr::NoOnionSupportError)]
     Other(String),
 }
 
-impl lnpbp_services::error::Error for Error {}
+impl microservices::error::Error for Error {}
 
-#[cfg(any(feature = "node", feature = "client"))]
+#[cfg(feature = "_rpc")]
 impl From<Error> for esb::Error {
     fn from(err: Error) -> Self {
         match err {
@@ -83,7 +83,7 @@ impl From<Error> for esb::Error {
     }
 }
 
-#[cfg(any(feature = "node", feature = "client"))]
+#[cfg(feature = "_rpc")]
 impl From<Error> for rpc::Error {
     fn from(err: Error) -> Self {
         match err {

@@ -21,15 +21,13 @@ use std::net::SocketAddr;
 use std::process;
 use std::time::{Duration, SystemTime};
 
-use lnpbp::bitcoin::hashes::hex::ToHex;
-use lnpbp::bitcoin::secp256k1;
-use lnpbp::bp::Chain;
-use lnpbp::lnp::{
-    message, ChannelId, Messages, NodeAddr, RemoteSocketAddr, TempChannelId,
-    TypedEnum,
-};
-use lnpbp_services::esb::{self, Handler};
-use lnpbp_services::rpc::Failure;
+use bitcoin::hashes::hex::ToHex;
+use bitcoin::secp256k1;
+use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
+use lnp::{message, ChannelId, Messages, TempChannelId};
+use lnpbp::Chain;
+use microservices::esb::{self, Handler};
+use microservices::rpc::Failure;
 
 use crate::rpc::request::{IntoProgressOrFalure, NodeInfo, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
@@ -505,7 +503,7 @@ impl Runtime {
             htlc_basepoint: node_key,
             first_per_commitment_point: node_key,
             channel_flags: 1, // Announce the channel
-            shutdown_scriptpubkey: None,
+            // shutdown_scriptpubkey: None,
             ..channel_req
         };
 

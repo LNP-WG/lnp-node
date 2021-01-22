@@ -12,8 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::internet::InetSocketAddr;
 use amplify::{ToYamlString, Wrapper};
+use internet2::addr::InetSocketAddr;
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use std::collections::BTreeMap;
@@ -21,23 +21,23 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::FromIterator;
 use std::time::Duration;
 
-use lnpbp::bitcoin::{secp256k1, OutPoint};
-use lnpbp::bp::chain::AssetId;
-use lnpbp::bp::PubkeyScript;
-use lnpbp::lnp::application::payment::{
-    self, AssetsBalance, Invoice, Lifecycle,
-};
-use lnpbp::lnp::{
-    message, rpc_connection, ChannelId, Messages, NodeAddr, RemoteSocketAddr,
-    TempChannelId,
-};
-use lnpbp::rgb::Consignment;
-use lnpbp::strict_encoding::{self, StrictDecode, StrictEncode};
-use lnpbp_services::rpc::Failure;
+use bitcoin::{secp256k1, OutPoint};
+use internet2::{NodeAddr, RemoteSocketAddr};
+use lnp::payment::{self, AssetsBalance, Lifecycle};
+use lnp::{message, ChannelId, Messages, TempChannelId};
+use lnpbp::chain::AssetId;
+use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
+use microservices::rpc::Failure;
+use microservices::rpc_connection;
+use wallet::PubkeyScript;
+
+#[cfg(feature = "rgb")]
+use rgb::Consignment;
 
 use crate::ServiceId;
 
 #[derive(Clone, Debug, Display, From, LnpApi)]
+#[encoding_crate(lnpbp::strict_encoding)]
 #[lnp_api(encoding = "strict")]
 #[non_exhaustive]
 pub enum Request {
@@ -97,6 +97,7 @@ pub enum Request {
     FundChannel(OutPoint),
 
     // Can be issued from `cli` to a specific `peerd`
+    #[cfg(feature = "rgb")]
     #[lnp_api(type = 206)]
     #[display("refill_channel({0})")]
     RefillChannel(RefillChannel),
@@ -106,11 +107,12 @@ pub enum Request {
     #[display("transfer({0})")]
     Transfer(Transfer),
 
+    /* TODO: Activate after lightning-invoice library update
     // Can be issued from `cli` to a specific `peerd`
     #[lnp_api(type = 208)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
-
+     */
     // Responses to CLI
     // ----------------
     #[lnp_api(type = 1002)]
@@ -160,6 +162,7 @@ pub enum Request {
 impl rpc_connection::Request for Request {}
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{peerd}, ...")]
 pub struct CreateChannel {
     pub channel_req: message::OpenChannel,
@@ -168,6 +171,7 @@ pub struct CreateChannel {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{amount} {asset:?} to {channeld}")]
 pub struct Transfer {
     pub channeld: ServiceId,
@@ -175,7 +179,9 @@ pub struct Transfer {
     pub asset: Option<AssetId>,
 }
 
+#[cfg(feature = "rgb")]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{outpoint}, {blinding}, ...")]
 pub struct RefillChannel {
     pub consignment: Consignment,
@@ -190,6 +196,7 @@ pub struct RefillChannel {
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(NodeInfo::to_yaml_string)]
 pub struct NodeInfo {
     pub node_id: secp256k1::PublicKey,
@@ -210,6 +217,7 @@ pub struct NodeInfo {
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(PeerInfo::to_yaml_string)]
 pub struct PeerInfo {
     pub local_id: secp256k1::PublicKey,
@@ -239,6 +247,7 @@ pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
     #[serde_as(as = "Option<DisplayFromStr>")]
@@ -283,16 +292,11 @@ impl ToYamlString for ChannelInfo {}
 #[derive(
     Wrapper, Clone, PartialEq, Eq, Debug, From, StrictEncode, StrictDecode,
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[wrapper(IndexRange)]
 pub struct List<T>(Vec<T>)
 where
-    T: Clone
-        + PartialEq
-        + Eq
-        + Debug
-        + Display
-        + StrictEncode<Error = strict_encoding::Error>
-        + StrictDecode<Error = strict_encoding::Error>;
+    T: Clone + PartialEq + Eq + Debug + Display + StrictEncode + StrictDecode;
 
 #[cfg(feature = "serde")]
 impl<'a, T> Display for List<T>
@@ -303,8 +307,8 @@ where
         + Debug
         + Display
         + serde::Serialize
-        + StrictEncode<Error = strict_encoding::Error>
-        + StrictDecode<Error = strict_encoding::Error>,
+        + StrictEncode
+        + StrictDecode,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(
@@ -322,8 +326,8 @@ where
         + Debug
         + Display
         + serde::Serialize
-        + StrictEncode<Error = strict_encoding::Error>
-        + StrictDecode<Error = strict_encoding::Error>,
+        + StrictEncode
+        + StrictDecode,
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self::from_inner(iter.into_iter().collect())
@@ -339,8 +343,8 @@ where
         + Debug
         + Display
         + serde::Serialize
-        + StrictEncode<Error = strict_encoding::Error>
-        + StrictDecode<Error = strict_encoding::Error>,
+        + StrictEncode
+        + StrictDecode,
 {
     fn serialize<S>(
         &self,
@@ -364,6 +368,7 @@ where
     StrictEncode,
     StrictDecode,
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub struct OptionDetails(pub Option<String>);
 
 impl Display for OptionDetails {

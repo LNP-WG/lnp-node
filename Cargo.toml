@@ -11,7 +11,7 @@ build = "build.rs"
 exclude = [".github", "/test", "Dockerfile"]
 
 [lib]
-name = "lnp"
+name = "lnp_node"
 
 [[bin]]
 name = "lnpd"
@@ -42,17 +42,20 @@ required-features = ["cli"]
 amplify = "3"
 amplify_derive = "2.4.2"
 lnpbp = "0.3"
-descriptor-wallet = "0.3"
-slip132 = "0.3.0-rc.1"
-rgb_node = { version = "0.3.0-beta.1", path = "../../lnpbp/rgb-node", optional = true, default-features = false, features = ["client", "fungibles"] }
-internet2 = { version = "0.3.4", default-features = false, features = ["derive", "descriptor-wallet", "bitcoin-ext"] }
-microservices = { version = "0.3.2", default-features = false }
+descriptor-wallet = { version = "0.3.3", features = ["keygen"] }
+slip132 = "0.3"
+lnp-core = "0.3"
+rgb-core = { version = "0.3", optional = true }
+rgb_node = { version = "0.3.0-rc.1", path = "../../lnpbp/rgb-node", optional = true, default-features = false, features = ["client", "fungibles"] }
+internet2 = { version = "0.3.7", default-features = false, features = ["derive", "descriptor-wallet", "bitcoin-ext", "lnpbp"] }
+microservices = { version = "0.3.7", default-features = false, features = ["peer"] }
 # Bitcoin
 bitcoin = "0.26"
 electrum-client = { version = "0.5.0-beta.1", optional = true, git = "https://github.com/LNP-BP/rust-electrum-client", branch = "bitcoin-0.26" }
 # Rust language
 lazy_static = "1.4"
 chrono = "0.4"
+nix = { version = "0.19", optional = true }
 # Serialization & parsing
 serde_crate = { package = "serde", version = "1", features = ["derive"], optional = true }
 serde_with = { version = "1.5", optional = true }
@@ -70,13 +73,18 @@ configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
 colored = { version = "2", optional = true }
 shellexpand = { version = "2", optional = true }
+# IPC
+zmq = "0.9"
 
 [build-dependencies]
 amplify = "3"
 amplify_derive = "2.4.2"
 lnpbp = "0.3"
-internet2 = { version = "0.3.4", default-features = false, features = ["derive", "descriptor-wallet"] }
-microservices = { version = "0.3.2", default-features = false }
+bitcoin = "0.26"
+lnp-core =  "0.3"
+rgb-core = { version = "0.3", optional = true }
+internet2 = { version = "0.3.7", default-features = false, features = ["derive", "descriptor-wallet", "bitcoin-ext", "lnpbp"] }
+microservices = { version = "0.3.7", default-features = false, features = ["peer"] }
 lazy_static = "1.4"
 clap = "3.0.0-beta.2"
 clap_generate = "3.0.0-beta.2"
@@ -95,7 +103,7 @@ default = ["server", "cli", "rgb"]
 all = ["server", "cli", "rgb", "serde", "tor", "vendored_openssl"]
 
 # Server is a standalone application that runs daemon
-server = ["node", "shell", "microservices/server"]
+server = ["node", "shell", "microservices/server", "nix"]
 # Command-line application feature
 cli = ["shell", "client", "serde", "microservices/cli"]
 
@@ -124,11 +132,11 @@ shell = [
 _config = ["serde_yaml", "toml"]
 _rpc = []
 
-rgb = ["rgb_node"]
+rgb = ["lnp-core/rgb", "rgb-core", "rgb_node", "internet2/rgb"]
 serde = ["serde_crate", "serde_with", "serde_yaml", "serde_json", "toml",
     "chrono/serde", "bitcoin/use-serde", "slip132/serde",
     "amplify/serde", "internet2/serde", "microservices/serde",
-    "lnpbp/serde", "descriptor-wallet/serde", "rgb_node/serde" ]
+    "lnpbp/serde", "descriptor-wallet/serde", "rgb_node/serde", "rgb-core/serde", "lnp-core/serde" ]
 tor = ["microservices/tor", "internet2/tor", "rgb_node/tor"]
 vendored_openssl = ["microservices/vendored_openssl", "internet2/vendored_openssl", "rgb_node/vendored_openssl"]
 

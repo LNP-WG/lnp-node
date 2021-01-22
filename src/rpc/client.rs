@@ -12,13 +12,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use core::convert::TryInto;
+use std::convert::TryInto;
 use std::thread::sleep;
 use std::time::Duration;
 
-use lnpbp::bp::Chain;
-use lnpbp::lnp::ZmqType;
-use lnpbp_services::esb;
+use internet2::ZmqType;
+use lnpbp::Chain;
+use microservices::esb;
 
 use crate::rpc::request::OptionDetails;
 use crate::rpc::{Request, ServiceBus};

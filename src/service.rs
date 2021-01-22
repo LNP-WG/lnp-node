@@ -16,12 +16,13 @@ use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-use lnpbp::bitcoin::hashes::hex::{self, ToHex};
-use lnpbp::lnp::{zmqsocket, ChannelId, NodeAddr, TempChannelId, ZmqType};
-use lnpbp::strict_encoding::{strict_decode, strict_encode};
+use bitcoin::hashes::hex::{self, ToHex};
+use internet2::{zmqsocket, NodeAddr, ZmqType};
+use lnp::{ChannelId, TempChannelId};
+use lnpbp::strict_encoding::{strict_deserialize, strict_serialize};
 #[cfg(feature = "node")]
-use lnpbp_services::node::TryService;
-use lnpbp_services::{esb, rpc};
+use microservices::node::TryService;
+use microservices::{esb, rpc};
 
 use crate::rpc::{Request, ServiceBus};
 use crate::Config;
@@ -42,6 +43,7 @@ use crate::Error;
     StrictEncode,
     StrictDecode,
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub struct ClientName([u8; 32]);
 
 impl Display for ClientName {
@@ -79,6 +81,7 @@ impl FromStr for ClientName {
 #[derive(
     Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode,
 )]
+#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub enum ServiceId {
     #[display("loopback")]
     Loopback,
@@ -114,7 +117,7 @@ impl ServiceId {
     }
 
     pub fn client() -> ServiceId {
-        use lnpbp::bitcoin::secp256k1::rand;
+        use bitcoin::secp256k1::rand;
         ServiceId::Client(rand::random())
     }
 }
@@ -123,13 +126,14 @@ impl esb::ServiceAddress for ServiceId {}
 
 impl From<ServiceId> for Vec<u8> {
     fn from(daemon_id: ServiceId) -> Self {
-        strict_encode(&daemon_id).expect("Memory-based encoding does not fail")
+        strict_serialize(&daemon_id)
+            .expect("Memory-based encoding does not fail")
     }
 }
 
 impl From<Vec<u8>> for ServiceId {
     fn from(vec: Vec<u8>) -> Self {
-        strict_decode(&vec).unwrap_or_else(|_| {
+        strict_deserialize(&vec).unwrap_or_else(|_| {
             ServiceId::Other(
                 ClientName::from_str(&String::from_utf8_lossy(&vec))
                     .expect("ClientName conversion never fails"),
