@@ -46,7 +46,7 @@ descriptor-wallet = { version = "0.3.3", features = ["keygen"] }
 slip132 = "0.3"
 lnp-core = "0.3"
 rgb-core = { version = "0.3", optional = true }
-rgb_node = { version = "0.3.0-rc.1", path = "../../lnpbp/rgb-node", optional = true, default-features = false, features = ["client", "fungibles"] }
+rgb_node = { version = "0.3", optional = true, default-features = false, features = ["client", "fungibles"] }
 internet2 = { version = "0.3.7", default-features = false, features = ["derive", "descriptor-wallet", "bitcoin-ext", "lnpbp"] }
 microservices = { version = "0.3.7", default-features = false, features = ["peer"] }
 # Bitcoin

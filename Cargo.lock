@@ -41,13 +41,13 @@ dependencies = [
 
 [[package]]
 name = "amplify_derive"
-version = "2.4.3"
+version = "2.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52b6f7800cee9ebed559f3786c8d7669690b5c530fe04579e772bd77f192f7d7"
+checksum = "c9cc50fd13f783af1129d1c7bdaa9a54a56cf9bd7697ee3609497bf7968daff3"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -175,9 +175,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
+checksum = "f07aa6688c702439a1be0307b6a94dffe1168569e45b9500c1372bc580740d59"
 
 [[package]]
 name = "byte-tools"
@@ -301,7 +301,7 @@ dependencies = [
  "proc-macro-error",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -455,7 +455,7 @@ dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
  "strsim 0.9.3",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -466,7 +466,7 @@ checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
 dependencies = [
  "darling_core",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -588,6 +588,22 @@ dependencies = [
 name = "electrum-client"
 version = "0.5.0-beta.1"
 source = "git+https://github.com/LNP-BP/rust-electrum-client?branch=bitcoin-0.26#3ac7f6ec6b25c4cd64640a1885cf5163bb7ada64"
+dependencies = [
+ "bitcoin",
+ "log",
+ "rustls",
+ "serde 1.0.120",
+ "serde_json",
+ "socks",
+ "webpki",
+ "webpki-roots",
+]
+
+[[package]]
+name = "electrum-client"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21453800c95bb1aaa57490458c42d60c6277cb8a3e386030ec2381d5c2d4fa77"
 dependencies = [
  "bitcoin",
  "log",
@@ -821,14 +837,14 @@ dependencies = [
 
 [[package]]
 name = "inet2_derive"
-version = "0.3.2"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f26ec35956b6895f4ee884b35034ae6d06521df6df7109530c87092c480e78d"
+checksum = "ed63eec171fbbb095cac5bf95b41255dccfea6da00efb9fe7310b983d6ce0996"
 dependencies = [
  "amplify",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -842,9 +858,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.3.7"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "865cca07c3fd4c6e33a17afa8b8c9bd60f6cc1198ad0aeb41760b6ce56736847"
+checksum = "44f694e31b521bd1002315d759f33a3fd9eb1f78233075e6cbfe7f56dcd6764e"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -963,7 +979,7 @@ dependencies = [
  "configure_me_codegen",
  "descriptor-wallet",
  "dotenv",
- "electrum-client",
+ "electrum-client 0.5.0-beta.1",
  "env_logger",
  "internet2",
  "lazy_static",
@@ -1048,9 +1064,9 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.3.7"
+version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c80e2d6b3b86ab40d1872a0ca76d8b26776614c1c7ec98dd748294769ff62f"
+checksum = "3561ea1023a0c53f9c94ccfb5ead29f2e9429a437c01b127787f6dfbe3060582"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1114,7 +1130,7 @@ checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -1267,7 +1283,7 @@ dependencies = [
  "proc-macro-error-attr",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
  "version_check",
 ]
 
@@ -1579,15 +1595,18 @@ dependencies = [
 
 [[package]]
 name = "rgb_node"
-version = "0.3.0-rc.1"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dff0fbd6fabc9be09cd45aa634db800da3a2cf710d16ef104e2e7bba617d3fe9"
 dependencies = [
  "amplify",
  "amplify_derive",
  "base64 0.12.3",
+ "bech32",
  "bitcoin",
  "chrono",
  "clap",
- "electrum-client",
+ "electrum-client 0.6.0",
  "env_logger",
  "internet2",
  "lazy_static",
@@ -1745,7 +1764,7 @@ checksum = "0ca2a8cb5805ce9e3b95435e3765b7b553cecc762d938d409434338386cb5775"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -1798,7 +1817,7 @@ dependencies = [
  "darling",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -1912,9 +1931,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.0.1"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0956cfdd7fcd053c0492e4cb5b293ac341de971bb2ff043aa5efdb3b0a29ca49"
+checksum = "08d73b9bc1fcceb3ae1d357920a29ac97c28114e16b48050f289bc142d25988e"
 dependencies = [
  "amplify",
  "amplify_derive",
@@ -1935,7 +1954,7 @@ dependencies = [
  "amplify",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
 ]
 
 [[package]]
@@ -1985,9 +2004,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.58"
+version = "1.0.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc60a3d73ea6594cd712d830cc1f0390fd71542d8c8cd24e70cc54cdfd5e05d5"
+checksum = "07cb8b1b4ebf86a89ee88cbd201b022b94138c623644d035185c84d3f41b7e66"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
@@ -2014,7 +2033,7 @@ checksum = "b834f2d66f734cb897113e34aaff2f1ab4719ca946f9a7358dba8f8064148701"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
  "unicode-xid 0.2.1",
 ]
 
@@ -2038,11 +2057,11 @@ dependencies = [
 
 [[package]]
 name = "thread_local"
-version = "1.1.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb9bc092d0d51e76b2b19d9d85534ffc9ec2db959a2523cdae0697e2972cd447"
+checksum = "301bdd13d23c49672926be451130892d274d3ba0b410c18e00daa7990ff38d99"
 dependencies = [
- "lazy_static",
+ "once_cell",
 ]
 
 [[package]]
@@ -2253,7 +2272,7 @@ dependencies = [
  "log",
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
  "wasm-bindgen-shared",
 ]
 
@@ -2275,7 +2294,7 @@ checksum = "b5a48c72f299d80557c7c62e37e7225369ecc0c963964059509fbafe917c7549"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
 ]
@@ -2415,7 +2434,7 @@ checksum = "c3f369ddb18862aba61aa49bf31e74d29f0f162dec753063200e1dc084345d16"
 dependencies = [
  "proc-macro2 1.0.24",
  "quote 1.0.8",
- "syn 1.0.58",
+ "syn 1.0.59",
  "synstructure 0.12.4",
 ]
 

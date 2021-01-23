@@ -145,7 +145,7 @@ impl peer::Handler for ListenerRuntime {
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
-        debug!("Underlying peer interface requested to handle {:?}", err);
+        debug!("Underlying peer interface requested to handle {}", err);
         match err {
             Error::Peer(presentation::Error::Transport(
                 transport::Error::TimedOut,
@@ -158,7 +158,7 @@ impl peer::Handler for ListenerRuntime {
             // for all other error types, indicating internal errors, we
             // propagate error to the upper level
             _ => {
-                error!("Unrecoverable peer error {:?}, halting", err);
+                error!("Unrecoverable peer error {}, halting", err);
                 Err(err)
             }
         }

@@ -218,7 +218,7 @@ impl Exec for Command {
                         err
                     ))
                 })?;
-                trace!("Outpoint parsed as {:?}", outpoint);
+                trace!("Outpoint parsed as {}", outpoint);
 
                 runtime.request(
                     channel.clone().into(),
