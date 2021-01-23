@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v0.1.0-beta.3
+-------------
+- Support for lightning peer message encoding (before used custom strict-encding)
+- Better representation of log messages
+- Migration on v0.3 of LNP/BP Core libraries after their complete refactoring
+
 v0.1.0-beta.2
 -------------
 - Fix balances consistency in channeld
@@ -9,7 +15,6 @@ v0.1.0-beta.2
 
 v0.1.0-beta.1
 --------------
-
 - Channel funding
 - Channel operations, HTLCs
 - RGB node integration
@@ -18,7 +23,6 @@ v0.1.0-beta.1
 
 v0.1.0-alpha.4
 --------------
-
 - Daemon management with LNPd
 - Connection initialisation cycle
 - Much better reporting in console tool
@@ -28,14 +32,12 @@ v0.1.0-alpha.4
 
 v0.1.0-alpha.3
 --------------
-
 - Channel negotiation between nodes
 - Reworked service buses; added inter-daemon routing
 - Separated general service runtime functionality
 
 v0.1.0-alpha.2
 --------------
-
 - Skeleton for lnpd, channeld, gossipd and routed services/daemons
 - Ping/pong interplay betweeen nodes
 - Completed implementatino of enterprise service buses (CTL, MSG, BRIDGE)
@@ -43,7 +45,6 @@ v0.1.0-alpha.2
 
 v0.1.0-alpha.1
 --------------
-
 Initial pre-release:
 - Multithreaded concurrent architecture
 - Connection daemon
