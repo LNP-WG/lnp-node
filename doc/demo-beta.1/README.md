@@ -111,6 +111,13 @@ For the purposes of this demo, since `rgb-node` has no knowledge of the blockcha
 - `funding_outpoint`: `79d0191dab03ffbccc27500a740f20a75cb175e77346244a567011d3c86d2b0b:0`
 - an example `transfer_psbt` can be found in the `doc/demo-beta.1/samples` folder
 
+To simplify the description of later steps, you can store those values into bash variables:
+```bash=
+issuance_utxo='5aa2d0a8098371ee12b4b59f43ffe6a2de637341258af65936a5baa01da49e9b:0'
+change_utxo='0c05cea88d0fca7d16ed6a26d622e7ea477f2e2ff25b9c023b8f06de08e4941a:1'
+funding_outpoint='79d0191dab03ffbccc27500a740f20a75cb175e77346244a567011d3c86d2b0b:0'
+```
+
 ### Create a BTC channel
 
 Our first task will be to connect the two nodes as peers and create a lightning channel between them.
@@ -124,10 +131,10 @@ Once the connection is established, either of them can propose a channel to the 
 ```bash=
 lnp1_cli propose "$node0_uri" 1000
 lnp1_cli info
-temp_channel_id=$(lnp1_cli info |grep -A1 '^channels:' |tail -1 |awk '{print $2}')
+temp_channel_id=$(lnp1_cli info |grep -A1 '^channels:' |tail -1 | tr -d '\r' |awk '{print $2}')
 lnp1_cli info "$temp_channel_id"
 # lnp1_cli fund <temp_channel_id> <funding_outpoint>
-lnp1_cli fund "$temp_channel_id" 79d0191dab03ffbccc27500a740f20a75cb175e77346244a567011d3c86d2b0b:0
+lnp1_cli fund "$temp_channel_id" "$funding_outpoint"
 ```
 *Note: Once the channel gets funded, the `channel_id` changes to its permanent value, though you should still use the temporary ID for the purpose of the demo.*
 
@@ -150,27 +157,30 @@ In order to demonstrate RGB functionality over the Lightning Network, we need to
 To issue an asset, run:
 ```bash=
 # rgb_cli fungible issue <ticker> <name> <amt>@<issuance_utxo>
-rgb_cli fungible issue USDT "USD Tether" 1000@5aa2d0a8098371ee12b4b59f43ffe6a2de637341258af65936a5baa01da49e9b:0
+rgb_cli fungible issue USDT "USD Tether" 1000@"$issuance_utxo"
 ```
 This will create a new genesis that includes asset metadata and the allocation of the initial amount to the `<issuance_utxo>`. You can look into it by running:
 ```bash=
 # retrieve <contract-id> with:
-rgb_cli genesis list
+contract_id=$(rgb_cli genesis list | grep -A1 '^---' |tail -1 | tr -d '\r' | awk '{print $2}')
 # export the genesis contract (use -f to select output format)
-rgb_cli genesis export <contract-id>
+rgb_cli genesis export "$contract_id"
 ```
 You can list known fungible assets with:
 ```bash=
 rgb_cli fungible list
 ```
-which also outputs its `asset-id-bech32`, that is needed to create invoices.
+Now you can store the `bech32` id of the new asset to use it later on
+```bash=
+asset_id=$(rgb_cli fungible list |grep 'id:' |tail -1 | tr -d '\r-' | awk '{print $2}')
+```
 
 #### Generate invoice
 
 In order to assign some of the new USDT to the channel, `rgb-node` needs to generate an invoice towards the funding outpoint:
 ```bash=
-# rgb_cli fungible invoice <asset-id-bech32> 100 <funding_outpoint>
-rgb_cli fungible invoice <asset-id-bech32> 100 79d0191dab03ffbccc27500a740f20a75cb175e77346244a567011d3c86d2b0b:0
+# rgb_cli fungible invoice <asset-id> 100 <funding_outpoint>
+rgb_cli fungible invoice "$asset_id" 100 "$funding_outpoint"
 ```
 This outputs `invoice` and `blinding_factor`.
 
@@ -183,9 +193,7 @@ To transfer asset to the `funding_outpoint`, `rgb-node` needs to create a consig
 ```bash=
 # NB: pass the invoice between quotes to avoid misinterpretation of the & character into it
 # rgb_cli fungible transfer '<invoice>' </path/to/source.psbt> </where/to/store/consignment.rgb> </where/to/store/witness.psbt> -i <issuance_utxo> -a 900@<change_utxo>
-rgb_cli fungible transfer '<invoice>' samples/source_tx.psbt samples/consignment.rgb samples/witness.psbt \
--i 5aa2d0a8098371ee12b4b59f43ffe6a2de637341258af65936a5baa01da49e9b:0 \
--a 900@0c05cea88d0fca7d16ed6a26d622e7ea477f2e2ff25b9c023b8f06de08e4941a:1
+rgb_cli fungible transfer '<invoice>' samples/source_tx.psbt samples/consignment.rgb samples/witness.psbt -i "$issuance_utxo" -a 900@"$change_utxo"
 ```
 This will write the consignment file and the PSBT including the tweak (which is called *witness transaction*) at the provided paths.
 
@@ -198,7 +206,7 @@ At this point, in a real setting, the witness transaction should be signed and b
 Once the asset transfer is completed, we need the two parties of the channel to acknowledge this new asset and commit to it at the LN level. This is done via `lnp_cli refill` subcommand; this requires the `temp_channel_id`, the consigment file we stored into the `samples` directory, the `funding_outpoint` and the `blinding_factor` which was obtained at invoice creation.
 ```bash=
 # lnp1_cli refill <temp_channel_id> </path/to/consignment.rgb> <funding_outpoint> <blinding_factor>
-lnp1_cli refill "$temp_channel_id" samples/consignment.rgb 79d0191dab03ffbccc27500a740f20a75cb175e77346244a567011d3c86d2b0b:0 <blinding_factor>
+lnp1_cli refill "$temp_channel_id" samples/consignment.rgb "$funding_outpoint" <blinding_factor>
 ```
 
 #### Transfer asset
@@ -207,7 +215,7 @@ We are finally ready for our first RGB asset transfer over the lightning network
 ```bash=
 # get asset-id-hex from here
 rgb_cli genesis list
-lnp1_cli transfer --asset <asset-id-hex> "$temp_channel_id" 10
+lnp1_cli transfer --asset "$asset_id" "$temp_channel_id" 10
 ```
 Although the call to lnp-cli create remains hanging (use ctrl-c to exit), the transfer happens correctly as you can see in:
 ```bash=
