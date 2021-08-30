@@ -29,20 +29,20 @@ use crate::rpc::{request, Client, Request};
 use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
-    type Runtime = Client;
+    type Client = Client;
     type Error = Error;
 
-    fn exec(&self, runtime: &mut Self::Runtime) -> Result<(), Self::Error> {
+    fn exec(self, runtime: &mut Self::Client) -> Result<(), Self::Error> {
         debug!("Performing {:?}: {}", self, self);
         match self {
             Command::Info { subject } => {
                 if let Some(subj) = subject {
-                    if let Ok(node_addr) = NodeAddr::from_str(subj) {
+                    if let Ok(node_addr) = NodeAddr::from_str(&subj) {
                         runtime.request(
                             ServiceId::Peer(node_addr),
                             Request::GetInfo,
                         )?;
-                    } else if let Ok(channel_id) = ChannelId::from_str(subj) {
+                    } else if let Ok(channel_id) = ChannelId::from_str(&subj) {
                         runtime.request(
                             ServiceId::Channel(channel_id),
                             Request::GetInfo,
@@ -86,7 +86,7 @@ impl Exec for Command {
                 overlay,
             } => {
                 let socket =
-                    RemoteSocketAddr::with_ip_addr(*overlay, *ip_addr, *port);
+                    RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
                 runtime.request(ServiceId::Lnpd, Request::Listen(socket))?;
                 runtime.report_progress()?;
             }
@@ -121,7 +121,7 @@ impl Exec for Command {
                     ServiceId::Lnpd,
                     Request::OpenChannelWith(request::CreateChannel {
                         channel_req: message::OpenChannel {
-                            funding_satoshis: *funding_satoshis,
+                            funding_satoshis,
                             // The rest of parameters will be filled in by the
                             // daemon
                             ..dumb!()
@@ -182,7 +182,7 @@ impl Exec for Command {
             } => {
                 runtime.request(
                     channel.clone().into(),
-                    Request::FundChannel(*funding_outpoint),
+                    Request::FundChannel(funding_outpoint),
                 )?;
                 runtime.report_progress()?;
             }
@@ -196,7 +196,7 @@ impl Exec for Command {
                     channel.clone().into(),
                     Request::Transfer(request::Transfer {
                         channeld: channel.clone().into(),
-                        amount: *amount,
+                        amount,
                         asset: asset.map(|id| id.into()),
                     }),
                 )?;
@@ -224,8 +224,8 @@ impl Exec for Command {
                     channel.clone().into(),
                     Request::RefillChannel(request::RefillChannel {
                         consignment,
-                        outpoint: *outpoint,
-                        blinding: *blinding_factor,
+                        outpoint,
+                        blinding: blinding_factor,
                     }),
                 )?;
                 runtime.report_progress()?;

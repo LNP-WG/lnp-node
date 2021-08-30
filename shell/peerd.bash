@@ -20,7 +20,7 @@ _peerd() {
 
     case "${cmd}" in
         peerd)
-            opts=" -L -C -p -o -k -r -d -c -v -T -m -x -n -h -V  --listen --connect --port --overlay --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  "
+            opts=" -h -V -L -C -p -o -k -r -d -c -v -T -m -x -n  --help --version --listen --connect --port --overlay --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -31,7 +31,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -L)
+                -L)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -39,7 +39,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -C)
+                -C)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -47,7 +47,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -p)
+                -p)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -55,7 +55,7 @@ _peerd() {
                     COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
                     return 0
                     ;;
-                    -o)
+                -o)
                     COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
                     return 0
                     ;;
@@ -63,7 +63,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -k)
+                -k)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -71,7 +71,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -r)
+                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -79,7 +79,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -87,7 +87,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -95,7 +95,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -103,7 +103,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -111,7 +111,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -119,7 +119,7 @@ _peerd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

@@ -18,7 +18,7 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 
 use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr};
-use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
+use strict_encoding::{StrictDecode, StrictEncode};
 
 use crate::opts::LNP_NODE_KEY_FILE;
 

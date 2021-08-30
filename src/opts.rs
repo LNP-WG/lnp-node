@@ -18,7 +18,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use internet2::PartialNodeAddr;
-use lnpbp::Chain;
+use lnpbp::chain::Chain;
 use microservices::shell::LogLevel;
 
 #[cfg(any(target_os = "linux"))]

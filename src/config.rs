@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use internet2::NodeAddr;
-use lnpbp::Chain;
+use lnpbp::chain::Chain;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;

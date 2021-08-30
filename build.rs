@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 #[macro_use]
-extern crate amplify_derive;
+extern crate amplify;
 
 use clap::IntoApp;
 use clap_generate::{generate_to, generators::*};
@@ -55,9 +55,9 @@ fn main() -> Result<(), configure_me_codegen::Error> {
     .iter_mut()
     {
         let name = app.get_name().to_string();
-        generate_to::<Bash, _, _>(app, &name, &outdir);
-        generate_to::<PowerShell, _, _>(app, &name, &outdir);
-        generate_to::<Zsh, _, _>(app, &name, &outdir);
+        generate_to::<Bash, _, _>(app, &name, &outdir)?;
+        generate_to::<PowerShell, _, _>(app, &name, &outdir)?;
+        generate_to::<Zsh, _, _>(app, &name, &outdir)?;
     }
 
     configure_me_codegen::build_script_auto()

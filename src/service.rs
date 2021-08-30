@@ -19,10 +19,10 @@ use std::str::FromStr;
 use bitcoin::hashes::hex::{self, ToHex};
 use internet2::{zmqsocket, NodeAddr, ZmqType};
 use lnp::{ChannelId, TempChannelId};
-use lnpbp::strict_encoding::{strict_deserialize, strict_serialize};
 #[cfg(feature = "node")]
 use microservices::node::TryService;
 use microservices::{esb, rpc};
+use strict_encoding::{strict_deserialize, strict_serialize};
 
 use crate::rpc::{Request, ServiceBus};
 use crate::Config;
@@ -43,7 +43,6 @@ use crate::Error;
     StrictEncode,
     StrictDecode,
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub struct ClientName([u8; 32]);
 
 impl Display for ClientName {
@@ -81,7 +80,6 @@ impl FromStr for ClientName {
 #[derive(
     Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode,
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub enum ServiceId {
     #[display("loopback")]
     Loopback,

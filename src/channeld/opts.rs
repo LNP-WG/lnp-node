@@ -14,7 +14,7 @@
 
 use clap::{AppSettings, Clap, ValueHint};
 
-use bitcoin::hashes::hex::FromHex;
+use amplify::hex::FromHex;
 use internet2::PartialNodeAddr;
 use lnp::ChannelId;
 

@@ -20,6 +20,7 @@ use bitcoin::hashes::{sha256, Hash, HashEngine};
 use bitcoin::secp256k1;
 use bitcoin::util::bip143::SigHashCache;
 use bitcoin::{OutPoint, SigHashType, Transaction};
+use bp::seals::OutpointReveal;
 use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 use internet2::{
     session, CreateUnmarshaller, LocalNode, NodeAddr, Session, TypedEnum,
@@ -29,10 +30,9 @@ use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnp::{message, ChannelId, Messages, TempChannelId};
-use lnpbp::seals::OutpointReveal;
-use lnpbp::{chain::AssetId, Chain};
+use lnpbp::chain::{AssetId, Chain};
 use microservices::esb::{self, Handler};
-use wallet::{HashPreimage, PubkeyScript};
+use wallet::{hlc::HashPreimage, scripts::PubkeyScript};
 
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
@@ -951,6 +951,7 @@ impl Runtime {
             cltv_expiry: htlc.cltv_expiry,
             onion_routing_packet: dumb!(), // TODO: Generate proper onion packet
             asset_id: transfer_req.asset,
+            unknown_tlvs: Default::default(),
         };
         self.total_payments += 1;
         match transfer_req.asset {

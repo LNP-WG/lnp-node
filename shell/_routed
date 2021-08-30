@@ -21,29 +21,27 @@ _routed() {
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 && ret=0
     
 }
 
 (( $+functions[_routed_commands] )) ||
 _routed_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'routed commands' commands "$@"
 }
 

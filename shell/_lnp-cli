@@ -19,20 +19,20 @@ _lnp-cli() {
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ":: :_lnp-cli_commands" \
 "*::: :->lnp-cli" \
 && ret=0
@@ -54,20 +54,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 && ret=0
 ;;
 (connect)
@@ -76,20 +76,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
@@ -99,20 +99,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 && ret=0
 ;;
@@ -122,20 +122,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 '::subject -- Remote peer address or temporary/permanent/short channel id. If absent, returns information about the node itself:' \
 && ret=0
 ;;
@@ -145,20 +145,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 && ret=0
 ;;
 (channels)
@@ -167,20 +167,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 && ret=0
 ;;
 (propose)
@@ -189,20 +189,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
 ':funding-satoshis -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
 && ret=0
@@ -213,20 +213,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':channel -- Accepted channel to which the funding must be added:' \
 ':funding-outpoint -- Outpoint (in form of <txid>\:<output_no>) which will be used as a channel funding. Output `scriptPubkey` must be equal to the one provided by the `propose` command:' \
 && ret=0
@@ -237,20 +237,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':channel -- Channel to which the funding must be added:' \
 ':consignment -- Consignment file to read containing information about transfer of RGB20 asset to the funding transaction output:' \
 ':outpoint -- Locally-controlled outpoint (specified when the invoice was created):' \
@@ -265,20 +265,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':channel -- Channel to which the funding must be added:' \
 ':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
 && ret=0
@@ -289,20 +289,20 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
 '::asset -- Asset ticker in which the invoice should be issued:' \
 && ret=0
@@ -313,30 +313,44 @@ _arguments "${_arguments_options[@]}" \
 '--data-dir=[Data directory path]: :_files -/' \
 '-c+[Path to the configuration file]: :_files' \
 '--config=[Path to the configuration file]: :_files' \
-'*-T+[Use Tor]: :_hosts' \
-'*--tor-proxy=[Use Tor]: :_hosts' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
 '-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
 '-x+[ZMQ socket name/address for daemon control interface]: :_files' \
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
 '-n+[Blockchain to use]' \
 '--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
 ':invoice -- Invoice bech32 string:' \
 ':channel -- Channel from which the payment should happen:' \
 && ret=0
 ;;
 (help)
 _arguments "${_arguments_options[@]}" \
-'-h[Prints help information]' \
-'--help[Prints help information]' \
-'-V[Prints version information]' \
-'--version[Prints version information]' \
+'-d+[Data directory path]: :_files -/' \
+'--data-dir=[Data directory path]: :_files -/' \
+'-c+[Path to the configuration file]: :_files' \
+'--config=[Path to the configuration file]: :_files' \
+'-T+[Use Tor]: :_hosts' \
+'--tor-proxy=[Use Tor]: :_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
+'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
+'-n+[Blockchain to use]' \
+'--chain=[Blockchain to use]' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'-V[Print version information]' \
+'--version[Print version information]' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
 && ret=0
 ;;
         esac
@@ -347,111 +361,85 @@ esac
 (( $+functions[_lnp-cli_commands] )) ||
 _lnp-cli_commands() {
     local commands; commands=(
-        "listen:Bind to a socket and start listening for incoming LN peer connections" \
-"connect:Connect to the remote lightning network peer" \
-"ping:Ping remote peer (must be already connected)" \
-"info:General information about the running node" \
-"peers:Lists existing peer connections" \
-"channels:Lists existing channels" \
-"propose:Proposes a new channel to the remote peer, which must be already connected" \
-"fund:Fund new channel (which must be already accepted by the remote peer) with bitcoins" \
-"refill:Adds RGB assets to an existing channel" \
-"transfer:Do an invoiceless direct payment" \
-"invoice:Create an invoice" \
-"pay:Pay the invoice" \
-"help:Prints this message or the help of the given subcommand(s)" \
+'listen:Bind to a socket and start listening for incoming LN peer connections' \
+'connect:Connect to the remote lightning network peer' \
+'ping:Ping remote peer (must be already connected)' \
+'info:General information about the running node' \
+'peers:Lists existing peer connections' \
+'channels:Lists existing channels' \
+'propose:Proposes a new channel to the remote peer, which must be already connected' \
+'fund:Fund new channel (which must be already accepted by the remote peer) with bitcoins' \
+'refill:Adds RGB assets to an existing channel' \
+'transfer:Do an invoiceless direct payment' \
+'invoice:Create an invoice' \
+'pay:Pay the invoice' \
+'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
 }
 (( $+functions[_lnp-cli__channels_commands] )) ||
 _lnp-cli__channels_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli channels commands' commands "$@"
 }
 (( $+functions[_lnp-cli__connect_commands] )) ||
 _lnp-cli__connect_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli connect commands' commands "$@"
 }
 (( $+functions[_lnp-cli__fund_commands] )) ||
 _lnp-cli__fund_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli fund commands' commands "$@"
 }
 (( $+functions[_lnp-cli__help_commands] )) ||
 _lnp-cli__help_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli help commands' commands "$@"
 }
 (( $+functions[_lnp-cli__info_commands] )) ||
 _lnp-cli__info_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli info commands' commands "$@"
 }
 (( $+functions[_lnp-cli__invoice_commands] )) ||
 _lnp-cli__invoice_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli invoice commands' commands "$@"
 }
 (( $+functions[_lnp-cli__listen_commands] )) ||
 _lnp-cli__listen_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli listen commands' commands "$@"
 }
 (( $+functions[_lnp-cli__pay_commands] )) ||
 _lnp-cli__pay_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli pay commands' commands "$@"
 }
 (( $+functions[_lnp-cli__peers_commands] )) ||
 _lnp-cli__peers_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli peers commands' commands "$@"
 }
 (( $+functions[_lnp-cli__ping_commands] )) ||
 _lnp-cli__ping_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli ping commands' commands "$@"
 }
 (( $+functions[_lnp-cli__propose_commands] )) ||
 _lnp-cli__propose_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli propose commands' commands "$@"
 }
 (( $+functions[_lnp-cli__refill_commands] )) ||
 _lnp-cli__refill_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli refill commands' commands "$@"
 }
 (( $+functions[_lnp-cli__transfer_commands] )) ||
 _lnp-cli__transfer_commands() {
-    local commands; commands=(
-        
-    )
+    local commands; commands=()
     _describe -t commands 'lnp-cli transfer commands' commands "$@"
 }
 

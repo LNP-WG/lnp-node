@@ -17,7 +17,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use internet2::ZmqType;
-use lnpbp::Chain;
+use lnpbp::chain::Chain;
 use microservices::esb;
 
 use crate::rpc::request::OptionDetails;

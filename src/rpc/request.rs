@@ -26,134 +26,133 @@ use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnp::{message, ChannelId, Messages, TempChannelId};
 use lnpbp::chain::AssetId;
-use lnpbp::strict_encoding::{StrictDecode, StrictEncode};
 use microservices::rpc::Failure;
 use microservices::rpc_connection;
-use wallet::PubkeyScript;
+use strict_encoding::{StrictDecode, StrictEncode};
+use wallet::scripts::PubkeyScript;
 
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 
 use crate::ServiceId;
 
-#[derive(Clone, Debug, Display, From, LnpApi)]
-#[encoding_crate(lnpbp::strict_encoding)]
-#[lnp_api(encoding = "strict")]
+#[derive(Clone, Debug, Display, From, Api)]
+#[api(encoding = "strict")]
 #[non_exhaustive]
 pub enum Request {
-    #[lnp_api(type = 0)]
+    #[api(type = 0)]
     #[display("hello()")]
     Hello,
 
-    #[lnp_api(type = 1)]
+    #[api(type = 1)]
     #[display("update_channel_id({0})")]
     UpdateChannelId(ChannelId),
 
-    #[lnp_api(type = 2)]
+    #[api(type = 2)]
     #[display("send_message({0})")]
     PeerMessage(Messages),
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 100)]
+    #[api(type = 100)]
     #[display("get_info()")]
     GetInfo,
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 101)]
+    #[api(type = 101)]
     #[display("list_peers()")]
     ListPeers,
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 102)]
+    #[api(type = 102)]
     #[display("list_channels()")]
     ListChannels,
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 200)]
+    #[api(type = 200)]
     #[display("listen({0})")]
     Listen(RemoteSocketAddr),
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 201)]
+    #[api(type = 201)]
     #[display("connect({0})")]
     ConnectPeer(NodeAddr),
 
     // Can be issued from `cli` to a specific `peerd`
-    #[lnp_api(type = 202)]
+    #[api(type = 202)]
     #[display("ping_peer()")]
     PingPeer,
 
     // Can be issued from `cli` to `lnpd`
-    #[lnp_api(type = 203)]
+    #[api(type = 203)]
     #[display("create_channel_with(...)")]
     OpenChannelWith(CreateChannel),
 
-    #[lnp_api(type = 204)]
+    #[api(type = 204)]
     #[display("accept_channel_from(...)")]
     AcceptChannelFrom(CreateChannel),
 
-    #[lnp_api(type = 205)]
+    #[api(type = 205)]
     #[display("fund_channel({0})")]
     FundChannel(OutPoint),
 
     // Can be issued from `cli` to a specific `peerd`
     #[cfg(feature = "rgb")]
-    #[lnp_api(type = 206)]
+    #[api(type = 206)]
     #[display("refill_channel({0})")]
     RefillChannel(RefillChannel),
 
     // Can be issued from `cli` to a specific `peerd`
-    #[lnp_api(type = 207)]
+    #[api(type = 207)]
     #[display("transfer({0})")]
     Transfer(Transfer),
 
     /* TODO: Activate after lightning-invoice library update
     // Can be issued from `cli` to a specific `peerd`
-    #[lnp_api(type = 208)]
+    #[api(type = 208)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
      */
     // Responses to CLI
     // ----------------
-    #[lnp_api(type = 1002)]
+    #[api(type = 1002)]
     #[display("progress({0})")]
     Progress(String),
 
-    #[lnp_api(type = 1001)]
+    #[api(type = 1001)]
     #[display("success({0})")]
     Success(OptionDetails),
 
-    #[lnp_api(type = 1000)]
+    #[api(type = 1000)]
     #[display("failure({0:#})")]
     #[from]
     Failure(Failure),
 
-    #[lnp_api(type = 1100)]
+    #[api(type = 1100)]
     #[display("node_info({0})", alt = "{0:#}")]
     #[from]
     NodeInfo(NodeInfo),
 
-    #[lnp_api(type = 1101)]
+    #[api(type = 1101)]
     #[display("node_info({0})", alt = "{0:#}")]
     #[from]
     PeerInfo(PeerInfo),
 
-    #[lnp_api(type = 1102)]
+    #[api(type = 1102)]
     #[display("channel_info({0})", alt = "{0:#}")]
     #[from]
     ChannelInfo(ChannelInfo),
 
-    #[lnp_api(type = 1103)]
+    #[api(type = 1103)]
     #[display("peer_list({0})", alt = "{0:#}")]
     #[from]
     PeerList(List<NodeAddr>),
 
-    #[lnp_api(type = 1104)]
+    #[api(type = 1104)]
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
     ChannelList(List<ChannelId>),
 
-    #[lnp_api(type = 1203)]
+    #[api(type = 1203)]
     #[display("channel_funding({0})", alt = "{0:#}")]
     #[from]
     ChannelFunding(PubkeyScript),
@@ -162,7 +161,6 @@ pub enum Request {
 impl rpc_connection::Request for Request {}
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{peerd}, ...")]
 pub struct CreateChannel {
     pub channel_req: message::OpenChannel,
@@ -171,7 +169,6 @@ pub struct CreateChannel {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{amount} {asset:?} to {channeld}")]
 pub struct Transfer {
     pub channeld: ServiceId,
@@ -181,7 +178,6 @@ pub struct Transfer {
 
 #[cfg(feature = "rgb")]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display("{outpoint}, {blinding}, ...")]
 pub struct RefillChannel {
     pub consignment: Consignment,
@@ -196,7 +192,6 @@ pub struct RefillChannel {
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(NodeInfo::to_yaml_string)]
 pub struct NodeInfo {
     pub node_id: secp256k1::PublicKey,
@@ -217,7 +212,6 @@ pub struct NodeInfo {
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(PeerInfo::to_yaml_string)]
 pub struct PeerInfo {
     pub local_id: secp256k1::PublicKey,
@@ -247,7 +241,6 @@ pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
     derive(Serialize, Deserialize),
     serde(crate = "serde_crate")
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
     #[serde_as(as = "Option<DisplayFromStr>")]
@@ -292,7 +285,6 @@ impl ToYamlString for ChannelInfo {}
 #[derive(
     Wrapper, Clone, PartialEq, Eq, Debug, From, StrictEncode, StrictDecode,
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 #[wrapper(IndexRange)]
 pub struct List<T>(Vec<T>)
 where
@@ -368,7 +360,6 @@ where
     StrictEncode,
     StrictDecode,
 )]
-#[strict_encoding_crate(lnpbp::strict_encoding)]
 pub struct OptionDetails(pub Option<String>);
 
 impl Display for OptionDetails {

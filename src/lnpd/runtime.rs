@@ -25,7 +25,7 @@ use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::{message, ChannelId, Messages, TempChannelId};
-use lnpbp::Chain;
+use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use microservices::rpc::Failure;
 

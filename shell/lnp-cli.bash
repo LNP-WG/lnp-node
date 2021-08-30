@@ -59,7 +59,7 @@ _lnp-cli() {
 
     case "${cmd}" in
         lnp__cli)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  listen connect ping info peers channels propose fund refill transfer invoice pay help"
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  listen connect ping info peers channels propose fund refill transfer invoice pay help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -70,7 +70,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -78,7 +78,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -86,7 +86,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -94,7 +94,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -102,7 +102,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -110,7 +110,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -123,7 +123,7 @@ _lnp-cli() {
             ;;
         
         lnp__cli__channels)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -134,7 +134,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -142,7 +142,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -150,7 +150,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -158,7 +158,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -166,7 +166,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -174,7 +174,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -186,7 +186,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__connect)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <peer> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <PEER> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -197,7 +197,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -205,7 +205,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -213,7 +213,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -221,7 +221,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -229,7 +229,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -237,7 +237,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -249,7 +249,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__fund)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <channel> <funding-outpoint> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <CHANNEL> <FUNDING_OUTPOINT> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -260,7 +260,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -268,7 +268,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -276,7 +276,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -284,7 +284,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -292,7 +292,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -300,7 +300,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -312,22 +312,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__help)
-            opts=" -h -V  --help --version  "
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        lnp__cli__info)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <subject> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -338,7 +323,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -346,7 +331,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -354,7 +339,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -362,7 +347,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -370,7 +355,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -378,7 +363,70 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        lnp__cli__info)
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <SUBJECT> "
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                
+                --data-dir)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -d)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -c)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --tor-proxy)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -T)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --msg-socket)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -m)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --ctl-socket)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -x)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --chain)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -390,7 +438,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__invoice)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <amount> <asset> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <AMOUNT> <ASSET> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -401,7 +449,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -409,7 +457,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -417,7 +465,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -425,7 +473,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -433,7 +481,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -441,7 +489,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -453,7 +501,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__listen)
-            opts=" -i -p -o -d -c -v -T -m -x -n -h -V  --ip --port --overlay --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  "
+            opts=" -i -p -o -h -V -d -c -v -T -m -x -n  --ip --port --overlay --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -464,7 +512,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -i)
+                -i)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -472,7 +520,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -p)
+                -p)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -480,7 +528,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -o)
+                -o)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -488,7 +536,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -496,7 +544,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -504,7 +552,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -512,7 +560,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -520,7 +568,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -528,7 +576,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -540,7 +588,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__pay)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <invoice> <channel> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <INVOICE> <CHANNEL> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -551,7 +599,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -559,7 +607,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -567,7 +615,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -575,7 +623,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -583,7 +631,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -591,7 +639,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -603,7 +651,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__peers)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -614,7 +662,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -622,7 +670,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -630,7 +678,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -638,7 +686,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -646,7 +694,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -654,7 +702,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -666,7 +714,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__ping)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <peer> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <PEER> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -677,7 +725,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -685,7 +733,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -693,7 +741,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -701,7 +749,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -709,7 +757,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -717,7 +765,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -729,7 +777,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__propose)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <peer> <funding-satoshis> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <PEER> <FUNDING_SATOSHIS> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -740,7 +788,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -748,7 +796,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -756,7 +804,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -764,7 +812,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -772,7 +820,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -780,7 +828,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -792,7 +840,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__refill)
-            opts=" -d -c -v -T -m -x -n -h -V  --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <channel> <consignment> <outpoint> <blinding-factor> "
+            opts=" -h -V -d -c -v -T -m -x -n  --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <CHANNEL> <CONSIGNMENT> <OUTPOINT> <BLINDING_FACTOR> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -803,7 +851,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -811,7 +859,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -819,7 +867,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -827,7 +875,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -835,7 +883,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -843,7 +891,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -855,7 +903,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__transfer)
-            opts=" -a -d -c -v -T -m -x -n -h -V  --asset --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --help --version  <channel> <amount> "
+            opts=" -a -h -V -d -c -v -T -m -x -n  --asset --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  <CHANNEL> <AMOUNT> "
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -866,7 +914,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -a)
+                -a)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -874,7 +922,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -d)
+                -d)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -882,7 +930,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -c)
+                -c)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -890,7 +938,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -T)
+                -T)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -898,7 +946,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -m)
+                -m)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -906,7 +954,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -x)
+                -x)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -914,7 +962,7 @@ _lnp-cli() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                    -n)
+                -n)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
