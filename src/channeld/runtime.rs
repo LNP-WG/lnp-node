@@ -994,7 +994,7 @@ impl Runtime {
 
         debug!("Adding consignment to stash via RGB Node ...");
         self.request_rbg20(rgb_node::rpc::fungible::Request::Accept(
-            rgb_node::rpc::fungible::AcceptApi {
+            rgb_node::rpc::fungible::AcceptReq {
                 consignment: consignment.clone(),
                 reveal_outpoints: vec![OutpointReveal {
                     blinding: blinding,
@@ -1008,7 +1008,7 @@ impl Runtime {
         match self
             .request_rbg20(rgb_node::rpc::fungible::Request::Assets(outpoint))?
         {
-            rgb_node::rpc::Reply::Assets(balances) => {
+            rgb_node::rpc::Reply::OutpointAssets(balances) => {
                 for (id, balances) in balances {
                     let asset_id = AssetId::from(id);
                     let balance: u64 = balances.into_iter().sum();

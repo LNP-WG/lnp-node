@@ -187,6 +187,7 @@ impl Exec for Command {
                 runtime.report_progress()?;
             }
 
+            #[cfg(feature = "rgb")]
             Command::Transfer {
                 channel,
                 amount,

@@ -91,7 +91,7 @@
 #[macro_use]
 extern crate log;
 #[macro_use]
-extern crate amplify_derive;
+extern crate amplify;
 
 use clap::Clap;
 use internet2::addr::InetSocketAddr;

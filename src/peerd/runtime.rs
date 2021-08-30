@@ -21,8 +21,8 @@ use bitcoin::secp256k1::rand::{self, Rng};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{
-    presentation, transport, zmqsocket, NodeAddr, TypedEnum, ZmqType,
-    ZMQ_CONTEXT,
+    presentation, transport, zmqsocket, CreateUnmarshaller, NodeAddr,
+    TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
 use lnp::{message, Messages};
 use microservices::esb::{self, Handler};
@@ -31,6 +31,7 @@ use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
 use crate::rpc::{request::PeerInfo, Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Service, ServiceId};
+use std::sync::Arc;
 
 pub fn run(
     config: Config,
@@ -68,7 +69,11 @@ pub fn run(
             ZmqType::Rep,
         )?,
     };
-    let listener = peer::Listener::with(receiver, bridge_handler);
+    let listener = peer::Listener::with(
+        receiver,
+        bridge_handler,
+        Messages::create_unmarshaller(),
+    );
     spawn(move || listener.run_or_panic("peerd-listener"));
     // TODO: Use the handle returned by spawn to track the child process
 
@@ -135,13 +140,14 @@ impl ListenerRuntime {
     }
 }
 
-impl peer::Handler for ListenerRuntime {
+impl peer::Handler<Messages> for ListenerRuntime {
     type Error = crate::Error;
 
-    fn handle(&mut self, message: Messages) -> Result<(), Self::Error> {
+    // TODO: Update microservices not to take Arc type
+    fn handle(&mut self, message: Arc<Messages>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         trace!("LNPWP message details: {:?}", message);
-        self.send_over_bridge(Request::PeerMessage(message))
+        self.send_over_bridge(Request::PeerMessage((*message).clone()))
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
@@ -426,8 +432,17 @@ impl Runtime {
             ))
             | Request::PeerMessage(Messages::UpdateFailMalformedHtlc(
                 message::UpdateFailMalformedHtlc { channel_id, .. },
-            ))
-            | Request::PeerMessage(Messages::AssignFunds(
+            )) => {
+                let channeld: ServiceId = channel_id.clone().into();
+                senders.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
+                    request,
+                )?;
+            }
+            #[cfg(feature = "rgb")]
+            Request::PeerMessage(Messages::AssignFunds(
                 message::AssignFunds { channel_id, .. },
             )) => {
                 let channeld: ServiceId = channel_id.clone().into();
