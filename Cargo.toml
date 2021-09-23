@@ -47,7 +47,7 @@ lnpbp = "0.5.0-beta.3"
 bp-core = "0.5.0-beta.5"
 lnp-core = "0.4.0-beta.1"
 rgb-core = { version = "0.5.0-alpha.1", optional = true }
-rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node" }
+# rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node", git = "https://github.com/" }
 internet2 = "0.5.0-alpha.2"
 microservices = { version = "0.5.0-beta.1", default-features = false, features = ["peer"] }
 # Bitcoin
@@ -101,7 +101,7 @@ configure_me_codegen = "0.4"
 # 5. Simple cli utility app: `shell`
 [features]
 default = ["server", "cli"]
-all = ["server", "cli", "rgb", "serde", "tor"]
+all = ["server", "cli", "serde", "tor"] # "rgb"
 
 # Server is a standalone application that runs daemon
 server = ["node", "shell", "microservices/server", "nix"]
@@ -133,12 +133,12 @@ shell = [
 _config = ["serde_yaml", "toml"]
 _rpc = []
 
-rgb = ["lnp-core/rgb", "rgb-core", "rgb_node"]
+# rgb = ["lnp-core/rgb", "rgb-core", "rgb_node"]
 serde = ["serde_crate", "serde_with", "serde_yaml", "serde_json", "toml",
     "chrono/serde", "bitcoin/use-serde", "slip132/serde",
     "amplify/serde", "internet2/serde", "microservices/serde",
-    "lnpbp/serde", "descriptor-wallet/serde", "rgb-core/serde", "lnp-core/serde", "rgb_node/serde" ]
-tor = ["microservices/tor", "internet2/tor", "rgb_node/tor"]
+    "lnpbp/serde", "descriptor-wallet/serde", "lnp-core/serde"] #, "rgb-core/serde",  "rgb_node/serde" ]
+tor = ["microservices/tor", "internet2/tor"] #, "rgb_node/tor"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"

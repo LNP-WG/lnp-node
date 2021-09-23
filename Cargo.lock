@@ -1081,7 +1081,6 @@ dependencies = [
  "descriptor-wallet",
  "lightning_encoding_derive",
  "lnpbp",
- "rgb-core",
  "strict_encoding",
 ]
 
@@ -1127,7 +1126,6 @@ dependencies = [
  "lazy_static",
  "lightning_encoding",
  "lnpbp",
- "rgb-core",
  "secp256k1",
  "serde 1.0.130",
  "serde_with",
@@ -1162,7 +1160,6 @@ dependencies = [
  "microservices",
  "nix",
  "rgb-core",
- "rgb_node",
  "serde 1.0.130",
  "serde_json",
  "serde_with",
@@ -1773,53 +1770,6 @@ dependencies = [
  "serde_with",
  "serde_yaml",
  "strict_encoding",
-]
-
-[[package]]
-name = "rgb20"
-version = "0.5.0-alpha.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f6ebf491959a48d4f582ed03a7b84c3e712c5f03ffb3208574de0b925c47116"
-dependencies = [
- "amplify",
- "bitcoin 0.27.0",
- "chrono",
- "lnpbp",
- "rgb-core",
- "serde 1.0.130",
- "serde_with",
- "strict_encoding",
- "url",
-]
-
-[[package]]
-name = "rgb_node"
-version = "0.5.0-alpha.1"
-dependencies = [
- "amplify",
- "base64 0.12.3",
- "bech32 0.8.1",
- "bitcoin 0.27.0",
- "bp-core",
- "chrono",
- "clap",
- "commit_verify",
- "descriptor-wallet",
- "electrum-client 0.8.0",
- "env_logger",
- "internet2",
- "lazy_static",
- "lnpbp",
- "log",
- "microservices",
- "rgb-core",
- "rgb20",
- "serde 1.0.130",
- "serde_json",
- "serde_with",
- "serde_yaml",
- "strict_encoding",
- "toml 0.5.8",
 ]
 
 [[package]]
