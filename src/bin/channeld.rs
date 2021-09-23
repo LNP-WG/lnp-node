@@ -30,6 +30,7 @@
 extern crate log;
 
 use clap::Clap;
+#[cfg(feature = "rgb")]
 use std::convert::TryInto;
 
 use lnp_node::channeld::{self, Opts};
@@ -48,6 +49,7 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
+    #[cfg(feature = "rgb")]
     let rgb20_socket_addr = opts
         .rgb_opts
         .rgb20_socket
@@ -72,6 +74,7 @@ fn main() {
         opts.key_opts.local_node(),
         opts.channel_id,
         opts.shared.chain,
+        #[cfg(feature = "rgb")]
         rgb20_socket_addr,
     )
     .expect("Error running channeld runtime");

@@ -14,6 +14,7 @@
 
 use clap::{AppSettings, Clap};
 use std::net::IpAddr;
+#[cfg(feature = "rgb")]
 use std::path::PathBuf;
 use std::str::FromStr;
 

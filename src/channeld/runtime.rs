@@ -20,17 +20,22 @@ use bitcoin::hashes::{sha256, Hash, HashEngine};
 use bitcoin::secp256k1;
 use bitcoin::util::bip143::SigHashCache;
 use bitcoin::{OutPoint, SigHashType, Transaction};
+#[cfg(feature = "rgb")]
 use bp::seals::OutpointReveal;
+#[cfg(feature = "rgb")]
 use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
+#[cfg(feature = "rgb")]
 use internet2::{
-    session, CreateUnmarshaller, LocalNode, NodeAddr, Session, TypedEnum,
-    Unmarshall, Unmarshaller,
+    session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller,
 };
+use internet2::{LocalNode, NodeAddr, TypedEnum};
 use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnp::{message, ChannelId, Messages, TempChannelId};
-use lnpbp::chain::{AssetId, Chain};
+#[cfg(feature = "rgb")]
+use lnpbp::chain::AssetId;
+use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use wallet::{hlc::HashPreimage, scripts::PubkeyScript};
 
@@ -47,8 +52,9 @@ pub fn run(
     local_node: LocalNode,
     channel_id: ChannelId,
     chain: Chain,
-    rgb20_socket_addr: ZmqSocketAddr,
+    #[cfg(feature = "rgb")] rgb20_socket_addr: ZmqSocketAddr,
 ) -> Result<(), Error> {
+    #[cfg(feature = "rgb")]
     let rgb20_rpc = session::Raw::with_zmq_unencrypted(
         ZmqType::Req,
         &rgb20_socket_addr,
