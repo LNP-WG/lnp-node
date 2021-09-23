@@ -55,6 +55,7 @@ pub fn run(
         None,
         None,
     )?;
+    #[cfg(feature = "rgb")]
     let rgb_unmarshaller = rgb_node::rpc::Reply::create_unmarshaller();
 
     let runtime = Runtime {
@@ -83,7 +84,9 @@ pub fn run(
         is_originator: false,
         obscuring_factor: 0,
         enquirer: None,
+        #[cfg(feature = "rgb")]
         rgb20_rpc,
+        #[cfg(feature = "rgb")]
         rgb_unmarshaller,
         storage: Box::new(storage::DiskDriver::init(
             channel_id,
@@ -126,7 +129,9 @@ pub struct Runtime {
     obscuring_factor: u64,
 
     enquirer: Option<ServiceId>,
+    #[cfg(feature = "rgb")]
     rgb20_rpc: session::Raw<session::PlainTranscoder, zmqsocket::Connection>,
+    #[cfg(feature = "rgb")]
     rgb_unmarshaller: Unmarshaller<rgb_node::rpc::Reply>,
 
     #[allow(dead_code)]
@@ -195,6 +200,7 @@ impl Runtime {
         Ok(())
     }
 
+    #[cfg(feature = "rgb")]
     fn request_rbg20(
         &mut self,
         request: rgb_node::rpc::fungible::Request,
