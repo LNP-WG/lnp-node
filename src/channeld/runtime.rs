@@ -18,6 +18,7 @@ use std::time::{Duration, SystemTime};
 
 use bitcoin::hashes::{sha256, Hash, HashEngine};
 use bitcoin::secp256k1;
+use bitcoin::secp256k1::{All, Secp256k1};
 use bitcoin::util::bip143::SigHashCache;
 use bitcoin::{OutPoint, SigHashType, Transaction};
 #[cfg(feature = "rgb")]
@@ -72,6 +73,7 @@ pub fn run(
         peer_service: ServiceId::Loopback,
         local_node,
         chain,
+        secp: Secp256k1::new(),
         channel_id: zero!(),
         temporary_channel_id: channel_id.into(),
         state: default!(),
@@ -113,6 +115,8 @@ pub struct Runtime {
     peer_service: ServiceId,
     local_node: LocalNode,
     chain: Chain,
+
+    secp: Secp256k1<All>,
 
     channel_id: ChannelId,
     temporary_channel_id: TempChannelId,
@@ -901,7 +905,7 @@ impl Runtime {
         );
         let sign_msg = secp256k1::Message::from_slice(&sighash[..])
             .expect("Sighash size always match requirements");
-        let signature = self.local_node.sign(&sign_msg);
+        let signature = self.local_node.sign(&self.secp, &sign_msg);
         trace!("Commitment transaction signature created");
         // .serialize_der();
         // let mut with_hashtype = signature.to_vec();

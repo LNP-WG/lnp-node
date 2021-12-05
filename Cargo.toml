@@ -52,8 +52,8 @@ bp-core = "0.5.0"
 lnp-core = "0.5.2"
 rgb-core = { version = "0.5.0", optional = true }
 # rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node", git = "https://github.com/" }
-internet2 = "0.5.0"
-microservices = { version = "0.5.0", default-features = false, features = ["peer"] }
+internet2 = "0.5.2"
+microservices = { version = "0.5.2", default-features = false, features = ["peer"] }
 # Bitcoin
 bitcoin = "0.27.1"
 electrum-client = { version = "0.8", optional = true }

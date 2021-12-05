@@ -973,17 +973,18 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f18bcfe6603b718d1f81deb4a5a6256abbb57a8c2d1048a3aaa68f623b01da5"
+checksum = "282e1a0d44ccc509a1e4faf183e177c9de5c325ccf2639bdee25c253a404116f"
 dependencies = [
  "amplify",
- "bitcoin",
+ "bitcoin_hashes 0.10.0",
  "chacha20poly1305",
  "inet2_addr",
  "inet2_derive",
  "lazy_static",
  "lightning_encoding",
+ "secp256k1",
  "serde 1.0.130",
  "serde_with",
  "strict_encoding",
@@ -1248,9 +1249,9 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "161c97fc91da2f87cdab470075d2a496aa777504c4079b5f51352d8764b8a538"
+checksum = "9e78d5a8c375653382af8fa1be5cf5b24e096b0ca301ec44b8f632259064b3c2"
 dependencies = [
  "amplify",
  "clap",
@@ -1443,9 +1444,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.32"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba508cc11742c0dc5c1659771673afbab7a0efab23aa17e854cbab0837ed0b43"
+checksum = "fb37d2df5df740e582f28f8560cf425f52bb267d872fe58358eadb554909f07a"
 dependencies = [
  "unicode-xid",
 ]

@@ -16,6 +16,7 @@ use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
 
+use bitcoin::secp256k1::Secp256k1;
 use clap::{ArgGroup, ValueHint};
 use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr};
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -134,7 +135,8 @@ impl KeyOpts {
             ))
             .expect("Unable to read node code file format")
         } else {
-            let local_node = LocalNode::new();
+            let secp = Secp256k1::new();
+            let local_node = LocalNode::new(&secp);
             let key_file = fs::File::create(&self.key_file).expect(&format!(
                 "Unable to create key file '{}'; please check that the path exists",
                 self.key_file
