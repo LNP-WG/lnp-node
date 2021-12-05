@@ -17,7 +17,7 @@ use std::thread::spawn;
 use std::time::{Duration, SystemTime};
 
 use amplify::Bipolar;
-use bitcoin::secp256k1::rand::{self, Rng};
+use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{
@@ -214,8 +214,10 @@ impl esb::Handler<ServiceBus> for Runtime {
             self.sender.send_message(Messages::Init(Init {
                 global_features: none!(),
                 local_features: none!(),
+                /*
                 assets: none!(),
                 unknown_tlvs: none!(),
+                 */
             }))?;
 
             self.connect = false;
@@ -487,9 +489,7 @@ impl Runtime {
         let mut rng = rand::thread_rng();
         let len: u16 = rng.gen_range(4, 32);
         let mut noise = vec![0u8; len as usize];
-        for i in 0..noise.len() {
-            noise[i] = rng.gen();
-        }
+        rng.fill_bytes(&mut noise);
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
         self.sender.send_message(Messages::Ping(Ping {
