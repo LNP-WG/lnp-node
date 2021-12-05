@@ -459,10 +459,11 @@ mod test {
         let node_id = secp256k1::PublicKey::from_str(
             "022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af"
         ).unwrap();
-        let peerd = ServiceId::Peer(NodeAddr::Remote(RemoteNodeAddr {
+        let node_addr = NodeAddr::Remote(RemoteNodeAddr {
             node_id,
             remote_addr: "lnp://127.0.0.1:9735".parse().unwrap(),
-        }));
+        });
+        let peerd = ServiceId::Peer(node_addr.clone());
         let data = Vec::<u8>::from_hex(
             "0401022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ff\
             d1af000000000000000000000000000000000000000000000000000000000000007\
@@ -473,7 +474,7 @@ mod test {
 
         let open_channel = CreateChannel {
             channel_req,
-            peerd,
+            peerd: node_addr,
             report_to: None,
         };
 
@@ -487,7 +488,7 @@ mod test {
             70b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce87\
             0b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870\
             b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b\
-            07029bfcdb2dce28d959f2815b16f817980000000000000401022e58afe51f9ed8a\
+            07029bfcdb2dce28d959f2815b16f8179800000000000001022e58afe51f9ed8a\
             d3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af000000000000000000\
             000000000000000000000000000000000000000000007f00000126070000",
         )
