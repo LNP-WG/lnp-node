@@ -425,3 +425,73 @@ impl IntoSuccessOrFalure for Result<(), crate::Error> {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use amplify::hex::FromHex;
+    use amplify::DumbDefault;
+    use bitcoin::secp256k1;
+    use internet2::RemoteNodeAddr;
+    use std::str::FromStr;
+    use strict_encoding::strict_deserialize;
+    use strict_encoding_test::test_encoding_roundtrip;
+
+    #[test]
+    fn strict_encoding() {
+        let channel_req = OpenChannel::dumb_default();
+        let data = Vec::<u8>::from_hex(
+            "000000000000000000000000000000000000000000000000000000000000000000\
+            0000000000000000000000000000000000000000000000000000000000000000000\
+            0000000000000000000000000000000000000000000000000000000000000000000\
+            00000000000000000000000000000000000000000279be667ef9dcbbac55a06295c\
+            e870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce\
+            870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce8\
+            70b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce87\
+            0b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870\
+            b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b\
+            07029bfcdb2dce28d959f2815b16f81798000000000000"
+        ).unwrap();
+        // Checking that the data are entirely consumed
+        let _: OpenChannel = strict_deserialize(&data).unwrap();
+        test_encoding_roundtrip(&channel_req, data).unwrap();
+
+        let node_id = secp256k1::PublicKey::from_str(
+            "022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af"
+        ).unwrap();
+        let peerd = ServiceId::Peer(NodeAddr::Remote(RemoteNodeAddr {
+            node_id,
+            remote_addr: "lnp://127.0.0.1:9735".parse().unwrap(),
+        }));
+        let data = Vec::<u8>::from_hex(
+            "0401022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ff\
+            d1af000000000000000000000000000000000000000000000000000000000000007\
+            f000001260700"
+        ).unwrap();
+        let _: ServiceId = strict_deserialize(&data).unwrap();
+        test_encoding_roundtrip(&peerd, data).unwrap();
+
+        let open_channel = CreateChannel {
+            channel_req,
+            peerd,
+            report_to: None,
+        };
+
+        let data = Vec::<u8>::from_hex(
+            "000000000000000000000000000000000000000000000000000000000000000000\
+            0000000000000000000000000000000000000000000000000000000000000000000\
+            0000000000000000000000000000000000000000000000000000000000000000000\
+            00000000000000000000000000000000000000000279be667ef9dcbbac55a06295c\
+            e870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce\
+            870b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce8\
+            70b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce87\
+            0b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870\
+            b07029bfcdb2dce28d959f2815b16f817980279be667ef9dcbbac55a06295ce870b\
+            07029bfcdb2dce28d959f2815b16f817980000000000000401022e58afe51f9ed8a\
+            d3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af000000000000000000\
+            000000000000000000000000000000000000000000007f00000126070000",
+        )
+        .unwrap();
+        test_encoding_roundtrip(&open_channel, data).unwrap();
+    }
+}

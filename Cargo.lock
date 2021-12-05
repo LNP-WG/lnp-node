@@ -745,9 +745,9 @@ dependencies = [
 
 [[package]]
 name = "encoding_derive_helpers"
-version = "1.7.4"
+version = "1.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8af9b20816ac9126945a6ecc1e248c4a1edfeada329839cdca9c96581174bebb"
+checksum = "df85c511a2f01954d1fad7d7d20eeae1af35157fbaec35261c91fab53d76bb58"
 dependencies = [
  "amplify",
  "proc-macro2",
@@ -1156,6 +1156,7 @@ dependencies = [
  "shellexpand",
  "slip132",
  "strict_encoding",
+ "strict_encoding_test",
  "toml 0.5.8",
  "zmq",
 ]
@@ -2059,9 +2060,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.7.4"
+version = "1.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "441080358b7382cf0b4766e4253a77e1ee7ad17139a4f0b950993074acfb63dc"
+checksum = "dbaf948106af4d241175fc5b4e64d63bea622430894c21fc72e4254be2e277ec"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -2075,14 +2076,24 @@ dependencies = [
 
 [[package]]
 name = "strict_encoding_derive"
-version = "1.7.4"
+version = "1.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cf87ccd517175354f494683b69b7703664cf49e6b82e78ff53e42bea0c17401"
+checksum = "77af01d535c6668a1386dcf8e8b090a1456574cfd564dad059c2e497e4930764"
 dependencies = [
  "amplify_syn",
  "encoding_derive_helpers",
  "proc-macro2",
  "syn",
+]
+
+[[package]]
+name = "strict_encoding_test"
+version = "1.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adbc8dacf48120f716eb205cff27ce662af4e4f53f72ca139b50eade05640de0"
+dependencies = [
+ "amplify",
+ "strict_encoding",
 ]
 
 [[package]]
