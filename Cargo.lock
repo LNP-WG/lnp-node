@@ -1083,9 +1083,9 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
 name = "lnp-core"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4938dce5ce00f058b732081fa7a31a7523fa7bab3d1d6f1e69124c312209df84"
+checksum = "bba1506b0d246edabdec6564abeef08862d008803d1cd65fc79f007a3ac59928"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1103,9 +1103,9 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c65114b0f7967c8c3299aabf6760ba0ec9d8e63a5cf0385b2b2cc907df5aad5b"
+checksum = "6e0f2e76fd892056e5acf6486ccb1a4072a841a27ef621f6b61cb2f7f8ee4446"
 dependencies = [
  "amplify",
  "bitcoin",
