@@ -103,19 +103,13 @@ impl Runtime {
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
-        match request {
+        let message = match request {
             Request::Hello => {
                 // Ignoring; this is used to set remote identity at ZMQ level
+                return Ok(());
             }
 
-            Request::PeerMessage(Messages::OpenChannel(open_channel)) => {
-                info!("Creating channel by peer request from {}", source);
-                self.create_channel(source, None, open_channel, true)?;
-            }
-
-            Request::PeerMessage(_) => {
-                // Ignore the rest of LN peer messages
-            }
+            Request::PeerMessage(message) => message,
 
             _ => {
                 error!(
@@ -126,6 +120,22 @@ impl Runtime {
                     request.get_type(),
                 ));
             }
+        };
+
+        let _ = match source {
+            ServiceId::Peer(ref node_addr) => node_addr,
+            service => unreachable!(
+                "lnpd received peer message not from a peerd but from {}",
+                service
+            ),
+        };
+
+        match message {
+            Messages::OpenChannel(open_channel) => {
+                info!("Creating channel by peer request from {}", source);
+                self.create_channel(source, None, open_channel, true)?;
+            }
+            _ => {} // nothing to do
         }
         Ok(())
     }
