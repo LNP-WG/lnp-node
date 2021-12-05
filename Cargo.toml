@@ -69,7 +69,6 @@ base64 = { version = "0.12", optional = true }
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 env_logger = "0.7"
 clap = { version = "=3.0.0-beta.5", optional = true }
-clap_derive = "=3.0.0-beta.5" # Temporary, remove after beta-5 adoption in microservices crate
 settings = { version = "0.10", package = "config", optional = true }
 configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }

@@ -1132,7 +1132,6 @@ dependencies = [
  "bp-core",
  "chrono",
  "clap",
- "clap_derive",
  "clap_generate",
  "colored",
  "config",
