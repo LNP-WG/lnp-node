@@ -136,7 +136,9 @@ pub struct ListenerRuntime {
 
 impl ListenerRuntime {
     fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
-        debug!("Forwarding LNPWP message over BRIDGE interface to the runtime");
+        debug!(
+            "Forwarding LN P2P message over BRIDGE interface to the runtime"
+        );
         self.bridge
             .send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
         Ok(())
@@ -149,7 +151,7 @@ impl peer::Handler<Messages> for ListenerRuntime {
     // TODO: Update microservices not to take Arc type
     fn handle(&mut self, message: Arc<Messages>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
-        trace!("LNPWP message details: {:?}", message);
+        trace!("LN P2P message details: {:?}", message);
         self.send_over_bridge(Request::PeerMessage((*message).clone()))
     }
 
@@ -275,7 +277,7 @@ impl Runtime {
             }
             _ => {
                 error!(
-                    "MSG RPC can be only used for forwarding LNPWP messages"
+                    "MSG RPC can be only used for forwarding LN P2P messages"
                 );
                 return Err(Error::NotSupported(
                     ServiceBus::Msg,
@@ -464,7 +466,7 @@ impl Runtime {
             Request::PeerMessage(message) => {
                 // 1. Check permissions
                 // 2. Forward to the corresponding daemon
-                debug!("Got peer LNPWP message {}", message);
+                debug!("Got peer LN P2P message {}", message);
             }
 
             _ => {

@@ -407,7 +407,7 @@ impl Runtime {
 
             _ => {
                 error!(
-                    "MSG RPC can be only used for forwarding LNPWP messages"
+                    "MSG RPC can be only used for forwarding LN P2P messages"
                 );
                 return Err(Error::NotSupported(
                     ServiceBus::Msg,
