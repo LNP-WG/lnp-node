@@ -85,11 +85,11 @@ pub enum Request {
 
     // Can be issued from `cli` to `lnpd`
     #[api(type = 203)]
-    #[display("create_channel_with(...)")]
+    #[display("open_channel_with({0})")]
     OpenChannelWith(CreateChannel),
 
     #[api(type = 204)]
-    #[display("accept_channel_from(...)")]
+    #[display("accept_channel_from({0})")]
     AcceptChannelFrom(CreateChannel),
 
     #[api(type = 205)]
@@ -166,7 +166,7 @@ pub enum Request {
 impl rpc_connection::Request for Request {}
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[display("{peerd}, ...")]
+#[display("{peerd}, {channel_req}")]
 pub struct CreateChannel {
     pub channel_req: OpenChannel,
     pub peerd: ServiceId,
