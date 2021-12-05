@@ -116,7 +116,7 @@ pub enum Request {
     // Responses to CLI
     // ----------------
     #[api(type = 1002)]
-    #[display("progress({0})")]
+    #[display("progress(\"{0}\")")]
     Progress(String),
 
     #[api(type = 1001)]
@@ -371,7 +371,7 @@ impl Display for OptionDetails {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self.as_inner() {
             None => Ok(()),
-            Some(msg) => f.write_str(&msg),
+            Some(msg) => write!(f, "\"{}\"", msg),
         }
     }
 }

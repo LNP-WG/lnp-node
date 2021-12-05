@@ -34,6 +34,10 @@ name = "channeld"
 required-features = ["server"]
 
 [[bin]]
+name = "signd"
+required-features = ["server"]
+
+[[bin]]
 name = "lnp-cli"
 required-features = ["cli"]
 

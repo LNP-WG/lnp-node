@@ -12,4 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#[cfg(feature = "shell")]
+mod opts;
 mod runtime;
+
+#[cfg(feature = "shell")]
+pub use opts::Opts;
+pub use runtime::run;
