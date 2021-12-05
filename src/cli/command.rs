@@ -126,7 +126,7 @@ impl Exec for Command {
                             // daemon
                             ..dumb!()
                         },
-                        peerd: ServiceId::Peer(node_addr),
+                        peerd: node_addr,
                         report_to: Some(runtime.identity()),
                     }),
                 )?;

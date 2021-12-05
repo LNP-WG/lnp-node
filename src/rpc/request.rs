@@ -169,7 +169,7 @@ impl rpc_connection::Request for Request {}
 #[display("{peerd}, {channel_req}")]
 pub struct CreateChannel {
     pub channel_req: OpenChannel,
-    pub peerd: ServiceId,
+    pub peerd: NodeAddr,
     pub report_to: Option<ServiceId>,
 }
 

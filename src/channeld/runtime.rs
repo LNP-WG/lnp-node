@@ -430,12 +430,9 @@ impl Runtime {
                 peerd,
                 report_to,
             }) => {
-                self.peer_service = peerd.clone();
+                self.peer_service = ServiceId::Peer(peerd.clone());
                 self.enquirer = report_to.clone();
-
-                if let ServiceId::Peer(ref addr) = peerd {
-                    self.remote_peer = Some(addr.clone());
-                }
+                self.remote_peer = Some(peerd);
 
                 self.open_channel(senders, &channel_req).map_err(|err| {
                     self.report_failure_to(
@@ -458,15 +455,13 @@ impl Runtime {
                 peerd,
                 report_to,
             }) => {
-                self.peer_service = peerd.clone();
+                let peer_service = ServiceId::Peer(peerd.clone());
+                self.peer_service = peer_service.clone();
                 self.state = Lifecycle::Proposed;
-
-                if let ServiceId::Peer(ref addr) = peerd {
-                    self.remote_peer = Some(addr.clone());
-                }
+                self.remote_peer = Some(peerd);
 
                 let accept_channel = self
-                    .accept_channel(senders, &channel_req, &peerd)
+                    .accept_channel(senders, &channel_req, &peer_service)
                     .map_err(|err| {
                         self.report_failure_to(
                             senders,

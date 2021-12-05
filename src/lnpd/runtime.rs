@@ -122,8 +122,8 @@ impl Runtime {
             }
         };
 
-        let _ = match source {
-            ServiceId::Peer(ref node_addr) => node_addr,
+        let node_addr = match source {
+            ServiceId::Peer(node_addr) => node_addr,
             service => unreachable!(
                 "lnpd received peer message not from a peerd but from {}",
                 service
@@ -132,8 +132,8 @@ impl Runtime {
 
         match message {
             Messages::OpenChannel(open_channel) => {
-                info!("Creating channel by peer request from {}", source);
-                self.create_channel(source, None, open_channel, true)?;
+                info!("Creating channel by peer request from {}", node_addr);
+                self.create_channel(node_addr, None, open_channel, true)?;
             }
             _ => {} // nothing to do
         }
@@ -380,8 +380,9 @@ impl Runtime {
                 report_to,
             }) => {
                 info!(
-                    "{} by request from {}",
+                    "{} with {} by request from {}",
                     "Creating channel".promo(),
+                    peerd.promoter(),
                     source.promoter()
                 );
                 let resp =
@@ -468,7 +469,7 @@ impl Runtime {
 
     fn create_channel(
         &mut self,
-        source: ServiceId,
+        source: NodeAddr,
         report_to: Option<ServiceId>,
         mut channel_req: OpenChannel,
         accept: bool,
