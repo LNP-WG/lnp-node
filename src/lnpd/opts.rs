@@ -12,8 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, Clap};
-
 use crate::channeld::RgbOpts;
 use crate::peerd::KeyOpts;
 
@@ -21,14 +19,8 @@ use crate::peerd::KeyOpts;
 ///
 /// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
 /// description)
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
-#[clap(
-    name = "lnpd",
-    bin_name = "lnpd",
-    author,
-    version,
-    setting = AppSettings::ColoredHelp
-)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
+#[clap(name = "lnpd", bin_name = "lnpd", author, version)]
 pub struct Opts {
     /// RGB configuration
     #[clap(flatten)]

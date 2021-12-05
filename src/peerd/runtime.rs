@@ -24,7 +24,10 @@ use internet2::{
     presentation, transport, zmqsocket, CreateUnmarshaller, NodeAddr,
     TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
-use lnp::{message, Messages};
+use lnp::p2p::legacy::{
+    FundingCreated, FundingLocked, FundingSigned, Init, Messages, Ping,
+    UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
+};
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
@@ -206,7 +209,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".promo());
 
-            self.sender.send_message(Messages::Init(message::Init {
+            self.sender.send_message(Messages::Init(Init {
                 global_features: none!(),
                 local_features: none!(),
                 assets: none!(),
@@ -249,9 +252,10 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match &request {
-            Request::PeerMessage(Messages::FundingSigned(
-                message::FundingSigned { channel_id, .. },
-            )) => {
+            Request::PeerMessage(Messages::FundingSigned(FundingSigned {
+                channel_id,
+                ..
+            })) => {
                 debug!(
                     "Renaming channeld service from temporary id {:#} to channel id #{:#}", 
                     source, channel_id
@@ -362,9 +366,8 @@ impl Runtime {
                 self.ping()?;
             }
 
-            Request::PeerMessage(Messages::Ping(message::Ping {
-                pong_size,
-                ..
+            Request::PeerMessage(Messages::Ping(Ping {
+                pong_size, ..
             })) => {
                 self.pong(*pong_size)?;
             }
@@ -402,7 +405,7 @@ impl Runtime {
             }
 
             Request::PeerMessage(Messages::FundingCreated(
-                message::FundingCreated {
+                FundingCreated {
                     temporary_channel_id,
                     ..
                 },
@@ -415,23 +418,26 @@ impl Runtime {
                 )?;
             }
 
-            Request::PeerMessage(Messages::FundingSigned(
-                message::FundingSigned { channel_id, .. },
-            ))
-            | Request::PeerMessage(Messages::FundingLocked(
-                message::FundingLocked { channel_id, .. },
-            ))
-            | Request::PeerMessage(Messages::UpdateAddHtlc(
-                message::UpdateAddHtlc { channel_id, .. },
-            ))
+            Request::PeerMessage(Messages::FundingSigned(FundingSigned {
+                channel_id,
+                ..
+            }))
+            | Request::PeerMessage(Messages::FundingLocked(FundingLocked {
+                channel_id,
+                ..
+            }))
+            | Request::PeerMessage(Messages::UpdateAddHtlc(UpdateAddHtlc {
+                channel_id,
+                ..
+            }))
             | Request::PeerMessage(Messages::UpdateFulfillHtlc(
-                message::UpdateFulfillHtlc { channel_id, .. },
+                UpdateFulfillHtlc { channel_id, .. },
             ))
             | Request::PeerMessage(Messages::UpdateFailHtlc(
-                message::UpdateFailHtlc { channel_id, .. },
+                UpdateFailHtlc { channel_id, .. },
             ))
             | Request::PeerMessage(Messages::UpdateFailMalformedHtlc(
-                message::UpdateFailMalformedHtlc { channel_id, .. },
+                UpdateFailMalformedHtlc { channel_id, .. },
             )) => {
                 let channeld: ServiceId = channel_id.clone().into();
                 senders.send_to(
@@ -442,9 +448,10 @@ impl Runtime {
                 )?;
             }
             #[cfg(feature = "rgb")]
-            Request::PeerMessage(Messages::AssignFunds(
-                message::AssignFunds { channel_id, .. },
-            )) => {
+            Request::PeerMessage(Messages::AssignFunds(AssignFunds {
+                channel_id,
+                ..
+            })) => {
                 let channeld: ServiceId = channel_id.clone().into();
                 senders.send_to(
                     ServiceBus::Msg,
@@ -484,7 +491,7 @@ impl Runtime {
         }
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
-        self.sender.send_message(Messages::Ping(message::Ping {
+        self.sender.send_message(Messages::Ping(Ping {
             ignored: noise,
             pong_size,
         }))?;

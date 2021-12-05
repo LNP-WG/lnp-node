@@ -93,7 +93,7 @@ extern crate log;
 #[macro_use]
 extern crate amplify;
 
-use clap::Clap;
+use clap::Parser;
 use internet2::addr::InetSocketAddr;
 use nix::unistd::{fork, ForkResult};
 use std::convert::TryFrom;

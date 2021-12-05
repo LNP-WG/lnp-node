@@ -29,8 +29,7 @@
 #[macro_use]
 extern crate log;
 
-use clap::Clap;
-
+use clap::Parser;
 use lnp_node::lnpd::{self, Opts};
 use lnp_node::{Config, LogStyle};
 

@@ -29,10 +29,13 @@ use internet2::{
     session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller,
 };
 use internet2::{LocalNode, NodeAddr, TypedEnum};
+use lnp::p2p::legacy::{
+    AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned,
+    Messages, OpenChannel, TempChannelId, UpdateAddHtlc,
+};
 use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
-use lnp::{message, ChannelId, Messages, TempChannelId};
 #[cfg(feature = "rgb")]
 use lnpbp::chain::AssetId;
 use lnpbp::chain::Chain;
@@ -327,7 +330,7 @@ impl Runtime {
                 info!("{}", msg);
                 let _ = self.report_progress_to(senders, &enquirer, msg);
 
-                let funding_locked = message::FundingLocked {
+                let funding_locked = FundingLocked {
                     channel_id: self.channel_id,
                     next_per_commitment_point: self
                         .local_keys
@@ -635,7 +638,7 @@ impl Runtime {
     pub fn open_channel(
         &mut self,
         senders: &mut Senders,
-        channel_req: &message::OpenChannel,
+        channel_req: &OpenChannel,
     ) -> Result<(), payment::channel::NegotiationError> {
         info!(
             "{} remote peer to {} with temp id {:#}",
@@ -662,10 +665,9 @@ impl Runtime {
     pub fn accept_channel(
         &mut self,
         senders: &mut Senders,
-        channel_req: &message::OpenChannel,
+        channel_req: &OpenChannel,
         peerd: &ServiceId,
-    ) -> Result<message::AcceptChannel, payment::channel::NegotiationError>
-    {
+    ) -> Result<AcceptChannel, payment::channel::NegotiationError> {
         let msg = format!(
             "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
@@ -684,7 +686,7 @@ impl Runtime {
         self.remote_keys = payment::channel::Keyset::from(channel_req);
 
         let dumb_key = self.node_id();
-        let accept_channel = message::AcceptChannel {
+        let accept_channel = AcceptChannel {
             temporary_channel_id: channel_req.temporary_channel_id,
             dust_limit_satoshis: channel_req.dust_limit_satoshis,
             max_htlc_value_in_flight_msat: channel_req
@@ -700,8 +702,8 @@ impl Runtime {
             delayed_payment_basepoint: dumb_key,
             htlc_basepoint: dumb_key,
             first_per_commitment_point: dumb_key,
-            /* shutdown_scriptpubkey: None,
-             * unknown_tlvs: none!(), */
+            shutdown_scriptpubkey: None,
+            unknown_tlvs: none!(),
         };
 
         self.params.updated(&accept_channel, None)?;
@@ -722,7 +724,7 @@ impl Runtime {
     pub fn channel_accepted(
         &mut self,
         senders: &mut Senders,
-        accept_channel: &message::AcceptChannel,
+        accept_channel: &AcceptChannel,
         peerd: &ServiceId,
     ) -> Result<(), payment::channel::NegotiationError> {
         info!(
@@ -766,7 +768,7 @@ impl Runtime {
         &mut self,
         senders: &mut Senders,
         funding_outpoint: OutPoint,
-    ) -> Result<message::FundingCreated, Error> {
+    ) -> Result<FundingCreated, Error> {
         let enquirer = self.enquirer.clone();
 
         info!(
@@ -784,7 +786,7 @@ impl Runtime {
         self.funding_update(senders)?;
 
         let signature = self.sign_funding();
-        let funding_created = message::FundingCreated {
+        let funding_created = FundingCreated {
             temporary_channel_id: self.temporary_channel_id,
             funding_txid: self.funding_outpoint.txid,
             funding_output_index: self.funding_outpoint.vout as u16,
@@ -806,8 +808,8 @@ impl Runtime {
     pub fn funding_created(
         &mut self,
         senders: &mut Senders,
-        funding_created: message::FundingCreated,
-    ) -> Result<message::FundingSigned, Error> {
+        funding_created: FundingCreated,
+    ) -> Result<FundingSigned, Error> {
         let enquirer = self.enquirer.clone();
 
         info!(
@@ -832,7 +834,7 @@ impl Runtime {
         self.funding_update(senders)?;
 
         let signature = self.sign_funding();
-        let funding_signed = message::FundingSigned {
+        let funding_signed = FundingSigned {
             channel_id: self.channel_id,
             signature,
         };
@@ -917,7 +919,7 @@ impl Runtime {
         &mut self,
         senders: &mut Senders,
         transfer_req: request::Transfer,
-    ) -> Result<message::UpdateAddHtlc, Error> {
+    ) -> Result<UpdateAddHtlc, Error> {
         let enquirer = self.enquirer.clone();
 
         let available = if let Some(asset_id) = transfer_req.asset {
@@ -955,7 +957,7 @@ impl Runtime {
         trace!("Generated HTLC: {:?}", htlc);
         self.offered_htlc.push(htlc);
 
-        let update_add_htlc = message::UpdateAddHtlc {
+        let update_add_htlc = UpdateAddHtlc {
             channel_id: self.channel_id,
             htlc_id: htlc.id,
             amount_msat: transfer_req.amount,
@@ -1060,7 +1062,7 @@ impl Runtime {
     pub fn htlc_receive(
         &mut self,
         _senders: &mut Senders,
-        update_add_htlc: message::UpdateAddHtlc,
+        update_add_htlc: UpdateAddHtlc,
     ) -> Result</* message::CommitmentSigned */ (), Error> {
         trace!("Updating HTLCs with {:?}", update_add_htlc);
         // TODO: Use From/To for message <-> Htlc conversion in LNP/BP

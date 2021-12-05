@@ -12,11 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, Clap, ValueHint};
-
 use amplify::hex::FromHex;
+use clap::ValueHint;
 use internet2::PartialNodeAddr;
-use lnp::ChannelId;
+use lnp::p2p::legacy::ChannelId;
 
 use crate::opts::FUNGIBLED_RPC_ENDPOINT;
 
@@ -26,14 +25,8 @@ use crate::peerd::KeyOpts;
 ///
 /// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
 /// description)
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
-#[clap(
-    name = "channeld",
-    bin_name = "channeld",
-    author,
-    version,
-    setting = AppSettings::ColoredHelp
-)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
+#[clap(name = "channeld", bin_name = "channeld", author, version)]
 pub struct Opts {
     /// Node key configuration
     #[clap(flatten)]
@@ -54,7 +47,7 @@ pub struct Opts {
 }
 
 /// RGB configuration
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct RgbOpts {
     /// ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)
     #[clap(

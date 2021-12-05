@@ -15,20 +15,20 @@ _gossipd() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-r+[RGB configuration: ignored by this daemon]' \
-'--rgb20-rpc=[RGB configuration: ignored by this daemon]' \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-r+[RGB configuration: ignored by this daemon]:R: ' \
+'--rgb20-rpc=[RGB configuration: ignored by this daemon]:R: ' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -36,7 +36,6 @@ _gossipd() {
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0
-    
 }
 
 (( $+functions[_gossipd_commands] )) ||

@@ -18,7 +18,7 @@ use std::str::FromStr;
 
 use bitcoin::hashes::hex::{self, ToHex};
 use internet2::{zmqsocket, NodeAddr, ZmqType};
-use lnp::{ChannelId, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, TempChannelId};
 #[cfg(feature = "node")]
 use microservices::node::TryService;
 use microservices::{esb, rpc};
@@ -104,6 +104,9 @@ pub enum ServiceId {
 
     #[display("client<{0}>")]
     Client(u64),
+
+    #[display("signer")]
+    Signer,
 
     #[display("other<{0}>")]
     Other(ClientName),

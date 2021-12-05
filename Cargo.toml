@@ -1,7 +1,7 @@
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.2.0-beta.1"
+version = "0.5.0"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rgb"]
@@ -40,19 +40,19 @@ required-features = ["cli"]
 [dependencies]
 # LNP/BP crates
 amplify = "3.9.1"
-strict_encoding = "1.7.2"
-descriptor-wallet = { version = "0.5.0-alpha.3", features = ["keygen"] }
-slip132 = "0.5.0-alpha.2"
-lnpbp = "0.5.0-beta.3"
-bp-core = "0.5.0-beta.5"
-lnp-core = "0.4.0-beta.1"
-rgb-core = { version = "0.5.0-alpha.1", optional = true }
+strict_encoding = "1.7.4"
+descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
+slip132 = "0.5.0"
+lnpbp = "0.5.0"
+bp-core = "0.5.0"
+lnp-core = "0.5.1"
+rgb-core = { version = "0.5.0", optional = true }
 # rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node", git = "https://github.com/" }
-internet2 = "0.5.0-alpha.2"
-microservices = { version = "0.5.0-beta.1", default-features = false, features = ["peer"] }
+internet2 = "0.5.0"
+microservices = { version = "0.5.0", default-features = false, features = ["peer"] }
 # Bitcoin
-bitcoin = "0.27.0"
-electrum-client = { version = "0.7", optional = true }
+bitcoin = "0.27.1"
+electrum-client = { version = "0.8", optional = true }
 # Rust language
 lazy_static = "1.4"
 chrono = "0.4"
@@ -68,7 +68,8 @@ base64 = { version = "0.12", optional = true }
 # Congig & logging
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 env_logger = "0.7"
-clap = { version = "3.0.0-beta.4", optional = true }
+clap = { version = "=3.0.0-beta.5", optional = true }
+clap_derive = "=3.0.0-beta.5" # Temporary, remove after beta-5 adoption in microservices crate
 settings = { version = "0.10", package = "config", optional = true }
 configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -80,14 +81,14 @@ zmq = "0.9.2"
 [build-dependencies]
 amplify = "3.9.1"
 strict_encoding = "1.7.2"
-lnpbp = "0.5.0-beta.3"
-bitcoin = "0.27.0"
-lnp-core =  "0.4.0-beta.1"
-rgb-core = { version = "0.5.0-alpha.1", optional = true }
-internet2 = "0.5.0-alpha.2"
-microservices = { version = "0.5.0-beta.1", default-features = false, features = ["peer"] }
+lnpbp = "0.5.0"
+bitcoin = "0.27.1"
+lnp-core = "0.5.1"
+rgb-core = { version = "0.5.0", optional = true }
+internet2 = "0.5.0"
+microservices = { version = "0.5.0", default-features = false, features = ["peer"] }
 lazy_static = "1.4"
-clap = "3.0.0-beta.4"
+clap = "3.0.0-beta.5"
 clap_generate = "3.0.0-beta.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 shellexpand = "2"

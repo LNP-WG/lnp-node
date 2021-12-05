@@ -29,10 +29,10 @@
 #[macro_use]
 extern crate log;
 
-use clap::Clap;
 #[cfg(feature = "rgb")]
 use std::convert::TryInto;
 
+use clap::Parser;
 use lnp_node::channeld::{self, Opts};
 use lnp_node::{Config, LogStyle};
 

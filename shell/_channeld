@@ -15,22 +15,22 @@ _channeld() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-k+[Node key file]: :_files' \
-'--key-file=[Node key file]: :_files' \
-'-r+[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
-'--rgb20-rpc=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]: :_files' \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-k+[Node key file]:KEY_FILE:_files' \
+'--key-file=[Node key file]:KEY_FILE:_files' \
+'-r+[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]:RGB20_SOCKET:_files' \
+'--rgb20-rpc=[ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)]:RGB20_SOCKET:_files' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -39,7 +39,6 @@ _channeld() {
 '*--verbose[Set verbosity level]' \
 ':channel-id -- Channel id:' \
 && ret=0
-    
 }
 
 (( $+functions[_channeld_commands] )) ||

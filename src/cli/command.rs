@@ -16,7 +16,7 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr};
-use lnp::{message, ChannelId, LIGHTNING_P2P_DEFAULT_PORT};
+use lnp::p2p::legacy::{ChannelId, OpenChannel, LNP2P_LEGACY_PORT};
 use microservices::shell::Exec;
 
 #[cfg(feature = "rgb")]
@@ -93,7 +93,7 @@ impl Exec for Command {
 
             Command::Connect { peer: node_locator } => {
                 let peer = node_locator
-                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .to_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
                 runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))?;
@@ -102,7 +102,7 @@ impl Exec for Command {
 
             Command::Ping { peer } => {
                 let node_addr = peer
-                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .to_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
                 runtime
@@ -114,13 +114,13 @@ impl Exec for Command {
                 funding_satoshis,
             } => {
                 let node_addr = peer
-                    .to_node_addr(LIGHTNING_P2P_DEFAULT_PORT)
+                    .to_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
                 runtime.request(
                     ServiceId::Lnpd,
                     Request::OpenChannelWith(request::CreateChannel {
-                        channel_req: message::OpenChannel {
+                        channel_req: OpenChannel {
                             funding_satoshis,
                             // The rest of parameters will be filled in by the
                             // daemon

@@ -24,7 +24,7 @@ use std::time::{Duration, SystemTime};
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
-use lnp::{message, ChannelId, Messages, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use microservices::rpc::Failure;
@@ -460,7 +460,7 @@ impl Runtime {
         &mut self,
         source: ServiceId,
         report_to: Option<ServiceId>,
-        mut channel_req: message::OpenChannel,
+        mut channel_req: OpenChannel,
         accept: bool,
     ) -> Result<String, Error> {
         debug!("Instantiating channeld...");
@@ -485,7 +485,7 @@ impl Runtime {
 
         // Construct channel creation request
         let node_key = self.node_id;
-        let channel_req = message::OpenChannel {
+        let channel_req = OpenChannel {
             chain_hash: self.chain.clone().chain_params().genesis_hash.into(),
             // TODO: Take these parameters from configuration
             push_msat: 0,

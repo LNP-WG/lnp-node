@@ -12,11 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, ArgGroup, Clap, ValueHint};
 use std::fs;
 use std::net::IpAddr;
 use std::path::PathBuf;
 
+use clap::{ArgGroup, ValueHint};
 use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr};
 use strict_encoding::{StrictDecode, StrictEncode};
 
@@ -33,14 +33,13 @@ use crate::opts::LNP_NODE_KEY_FILE;
 ///
 /// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
 /// description)
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(
     name = "peerd",
     bin_name = "peerd",
     author,
     version,
     group = ArgGroup::new("action").required(true),
-    setting = AppSettings::ColoredHelp
 )]
 pub struct Opts {
     // These params are passed through command-line argument or environment
@@ -96,7 +95,7 @@ pub struct Opts {
 }
 
 /// Node key configuration
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct KeyOpts {
     /// Node key file
     ///

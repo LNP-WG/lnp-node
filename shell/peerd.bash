@@ -12,7 +12,6 @@ _peerd() {
             peerd)
                 cmd="peerd"
                 ;;
-            
             *)
                 ;;
         esac
@@ -20,13 +19,12 @@ _peerd() {
 
     case "${cmd}" in
         peerd)
-            opts=" -h -V -L -C -p -o -k -r -d -c -v -T -m -x -n  --help --version --listen --connect --port --overlay --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
+            opts="-h -V -L -C -p -o -k -r -d -c -v -T -m -x -n --help --version --listen --connect --port --overlay --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                
                 --listen)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -130,7 +128,6 @@ _peerd() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        
     esac
 }
 

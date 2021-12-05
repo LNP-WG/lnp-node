@@ -23,8 +23,8 @@ use std::time::Duration;
 
 use bitcoin::{secp256k1, OutPoint};
 use internet2::{NodeAddr, RemoteSocketAddr};
+use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
-use lnp::{message, ChannelId, Messages, TempChannelId};
 use lnpbp::chain::AssetId;
 use microservices::rpc::Failure;
 use microservices::rpc_connection;
@@ -33,6 +33,7 @@ use wallet::scripts::PubkeyScript;
 
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
+use wallet::psbt::Psbt;
 
 use crate::ServiceId;
 
@@ -156,6 +157,10 @@ pub enum Request {
     #[display("channel_funding({0})", alt = "{0:#}")]
     #[from]
     ChannelFunding(PubkeyScript),
+
+    #[api(type = 9000)]
+    #[display("sign(...)")]
+    Sign(Psbt),
 }
 
 impl rpc_connection::Request for Request {}
@@ -163,7 +168,7 @@ impl rpc_connection::Request for Request {}
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 #[display("{peerd}, ...")]
 pub struct CreateChannel {
-    pub channel_req: message::OpenChannel,
+    pub channel_req: OpenChannel,
     pub peerd: ServiceId,
     pub report_to: Option<ServiceId>,
 }

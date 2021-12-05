@@ -15,18 +15,18 @@ _lnp-cli() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -44,50 +44,46 @@ _lnp-cli() {
         case $line[1] in
             (listen)
 _arguments "${_arguments_options[@]}" \
-'-i+[IPv4 or IPv6 address to bind to]' \
-'--ip=[IPv4 or IPv6 address to bind to]' \
-'-p+[Port to use; defaults to the native LN port]' \
-'--port=[Port to use; defaults to the native LN port]' \
-'-o+[Use overlay protocol (http, websocket etc)]' \
-'--overlay=[Use overlay protocol (http, websocket etc)]' \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-i+[IPv4 or IPv6 address to bind to]:IP_ADDR: ' \
+'--ip=[IPv4 or IPv6 address to bind to]:IP_ADDR: ' \
+'-p+[Port to use; defaults to the native LN port]:PORT: ' \
+'--port=[Port to use; defaults to the native LN port]:PORT: ' \
+'-o+[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
+'--overlay=[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0
 ;;
 (connect)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
@@ -95,22 +91,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (ping)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
@@ -118,22 +112,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (info)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 '::subject -- Remote peer address or temporary/permanent/short channel id. If absent, returns information about the node itself:' \
@@ -141,66 +133,60 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (peers)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0
 ;;
 (channels)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0
 ;;
 (propose)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
@@ -209,22 +195,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (fund)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':channel -- Accepted channel to which the funding must be added:' \
@@ -233,22 +217,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (transfer)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':channel -- Channel to which the funding must be added:' \
@@ -257,22 +239,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (invoice)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
@@ -281,22 +261,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (pay)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':invoice -- Invoice bech32 string:' \
@@ -305,22 +283,20 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]: :_files -/' \
-'--data-dir=[Data directory path]: :_files -/' \
-'-c+[Path to the configuration file]: :_files' \
-'--config=[Path to the configuration file]: :_files' \
-'-T+[Use Tor]: :_hosts' \
-'--tor-proxy=[Use Tor]: :_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]: :_files' \
-'-x+[ZMQ socket name/address for daemon control interface]: :_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]: :_files' \
-'-n+[Blockchain to use]' \
-'--chain=[Blockchain to use]' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-c+[Path to the configuration file]:CONFIG:_files' \
+'--config=[Path to the configuration file]:CONFIG:_files' \
+'-T+[Use Tor]:TOR_PROXY:_hosts' \
+'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
+'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
+'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-n+[Blockchain to use]:CHAIN: ' \
+'--chain=[Blockchain to use]:CHAIN: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
-'-V[Print version information]' \
-'--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0

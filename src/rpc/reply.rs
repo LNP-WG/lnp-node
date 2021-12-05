@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use microservices::{rpc, rpc_connection};
+use wallet::psbt::Psbt;
 
 use crate::Error;
 
@@ -27,6 +28,10 @@ pub enum Reply {
     #[api(type = 0x0001)]
     #[from]
     Failure(rpc::Failure),
+
+    #[api(type = 0x9002)]
+    #[display("signed({0})")]
+    Signed(PsbtSigned),
 }
 
 impl rpc_connection::Reply for Reply {}
@@ -44,4 +49,18 @@ impl From<rpc::Failure> for Error {
     fn from(fail: rpc::Failure) -> Self {
         Error::Other(fail.to_string())
     }
+}
+
+#[cfg_attr(feature = "serde", serde_as)]
+#[derive(Clone, PartialEq, Debug, Display, StrictEncode, StrictDecode)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(crate = "serde_crate")
+)]
+#[display("")] // TODO: implement display
+pub struct PsbtSigned {
+    pub psbt: Psbt,
+    pub new_sigs: Vec<(u32, u16)>,
+    pub pending: Vec<(u32, u16)>,
 }

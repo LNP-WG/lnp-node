@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, Clap};
 use std::net::IpAddr;
 #[cfg(feature = "rgb")]
 use std::path::PathBuf;
@@ -20,19 +19,13 @@ use std::str::FromStr;
 
 use bitcoin::OutPoint;
 use internet2::{FramingProtocol, PartialNodeAddr};
-use lnp::{ChannelId, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, TempChannelId};
 #[cfg(feature = "rgb")]
 use rgb::ContractId;
 
 /// Command-line tool for working with LNP node
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
-#[clap(
-    name = "lnp-cli",
-    bin_name = "lnp-cli",
-    author,
-    version,
-    setting = AppSettings::ColoredHelp
-)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
+#[clap(name = "lnp-cli", bin_name = "lnp-cli", author, version)]
 pub struct Opts {
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
@@ -51,7 +44,7 @@ impl Opts {
 }
 
 /// Command-line commands:
-#[derive(Clap, Clone, PartialEq, Eq, Debug, Display)]
+#[derive(Subcommand, Clone, PartialEq, Eq, Debug, Display)]
 pub enum Command {
     /// Bind to a socket and start listening for incoming LN peer connections
     #[display("listen<{overlay}://{ip_addr}:{port}>")]

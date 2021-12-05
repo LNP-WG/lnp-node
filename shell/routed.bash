@@ -12,7 +12,6 @@ _routed() {
             routed)
                 cmd="routed"
                 ;;
-            
             *)
                 ;;
         esac
@@ -20,13 +19,12 @@ _routed() {
 
     case "${cmd}" in
         routed)
-            opts=" -h -V -r -d -c -v -T -m -x -n  --help --version --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain  "
+            opts="-h -V -r -d -c -v -T -m -x -n --help --version --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                
                 --rgb20-rpc)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -90,7 +88,6 @@ _routed() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        
     esac
 }
 

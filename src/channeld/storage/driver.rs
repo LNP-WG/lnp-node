@@ -14,7 +14,7 @@
 
 use std::any::Any;
 
-use lnp::ChannelId;
+use lnp::p2p::legacy::ChannelId;
 
 use crate::Error;
 

@@ -12,20 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::{AppSettings, Clap};
-
 /// Lightning peer network gossip daemon; part of LNP Node
 ///
 /// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
 /// description)
-#[derive(Clap, Clone, PartialEq, Eq, Debug)]
-#[clap(
-    name = "gossipd",
-    bin_name = "gossipd",
-    author,
-    version,
-    setting = AppSettings::ColoredHelp
-)]
+#[derive(Parser, Clone, PartialEq, Eq, Debug)]
+#[clap(name = "gossipd", bin_name = "gossipd", author, version)]
 pub struct Opts {
     /// RGB configuration: ignored by this daemon
     #[clap(short, long = "rgb20-rpc")]
