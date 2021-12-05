@@ -108,9 +108,7 @@ impl Runtime {
                 // Ignoring; this is used to set remote identity at ZMQ level
                 return Ok(());
             }
-
             Request::PeerMessage(message) => message,
-
             _ => {
                 error!(
                     "MSG RPC can be only used for forwarding LN P2P messages"
@@ -149,7 +147,6 @@ impl Runtime {
         let mut notify_cli = None;
         match request {
             Request::Hello => {
-                // Ignoring; this is used to set remote identity at ZMQ level
                 info!("{} daemon is {}", source.ended(), "connected".ended());
 
                 match &source {

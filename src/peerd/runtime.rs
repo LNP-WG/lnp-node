@@ -215,8 +215,7 @@ impl esb::Handler<ServiceBus> for Runtime {
                 global_features: none!(),
                 local_features: none!(),
                 assets: none!(),
-                // unknown_tlvs: none!(),
-                unknown_tlvs: Default::default(),
+                unknown_tlvs: none!(),
             }))?;
 
             self.connect = false;
