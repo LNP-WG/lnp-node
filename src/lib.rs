@@ -65,6 +65,8 @@ pub mod peerd;
 pub mod routed;
 #[cfg(feature = "_rpc")]
 mod service;
+#[cfg(feature = "node")]
+pub mod signd;
 
 #[cfg(feature = "_rpc")]
 pub use config::Config;
