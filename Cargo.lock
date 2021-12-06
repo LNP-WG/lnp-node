@@ -745,9 +745,9 @@ dependencies = [
 
 [[package]]
 name = "encoding_derive_helpers"
-version = "1.7.5"
+version = "1.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df85c511a2f01954d1fad7d7d20eeae1af35157fbaec35261c91fab53d76bb58"
+checksum = "dc4ba8a88067b85c8714922db6e5f2af47b894d63b771dbb0c4d31d6607e9057"
 dependencies = [
  "amplify",
  "proc-macro2",
@@ -952,9 +952,9 @@ dependencies = [
 
 [[package]]
 name = "inet2_derive"
-version = "0.5.0"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "201344e790fc6c65a5e4fbb6529d4c19340409804b2807a2157b6dea6f28ec20"
+checksum = "7f5127f112999259dc33e31e14b4f38b055ac92e73c7d0a52b6aeb97282f0aa2"
 dependencies = [
  "amplify",
  "proc-macro2",
@@ -973,9 +973,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.5.2"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282e1a0d44ccc509a1e4faf183e177c9de5c325ccf2639bdee25c253a404116f"
+checksum = "11bcbc18bc8d6d3dae3a9596553f5957d6c30d708b1ea827a49a24c0af0f2585"
 dependencies = [
  "amplify",
  "bitcoin_hashes 0.10.0",
@@ -1040,9 +1040,9 @@ checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
 
 [[package]]
 name = "lightning_encoding"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc2ac8dea200c1b50332883b4c1c0695754f285fe51ec767122869487cdab3d1"
+checksum = "958827d3484c6986b2abbead07ca44b9d209c696355aa3ea3759afb808f50722"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1055,9 +1055,9 @@ dependencies = [
 
 [[package]]
 name = "lightning_encoding_derive"
-version = "0.5.0"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cc5449b552f69a6cf6f1c580c0444018f9b592edf0119cf66cc3fc3caf62744"
+checksum = "da2093982a69f3230186cc918f377804bc59a47560a1763cba0ecd16e9d0d6a0"
 dependencies = [
  "amplify_syn",
  "encoding_derive_helpers",
@@ -1084,8 +1084,8 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
 name = "lnp-core"
-version = "0.5.2"
-source = "git+https://github.com/LNP-BP/lnp-core#b25aca009e7bde08ee39ba8cd0c28b0a02ce7ab0"
+version = "0.5.3"
+source = "git+https://github.com/LNP-BP/lnp-core#7cf8cf5aa699ab84cd7a82f7d6ad3197a4fd9f64"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1103,8 +1103,8 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.5.2"
-source = "git+https://github.com/LNP-BP/lnp-core#b25aca009e7bde08ee39ba8cd0c28b0a02ce7ab0"
+version = "0.5.3"
+source = "git+https://github.com/LNP-BP/lnp-core#7cf8cf5aa699ab84cd7a82f7d6ad3197a4fd9f64"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1820,9 +1820,9 @@ dependencies = [
 
 [[package]]
 name = "rustversion"
-version = "1.0.5"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61b3909d758bb75c79f23d4736fac9433868679d3ad2ea7a61e3c25cfda9a088"
+checksum = "f2cc38e8fa666e2de3c4aba7edeb5ffc5246c1c2ed0e3d17e560aeeba736b23f"
 
 [[package]]
 name = "ryu"
@@ -2059,9 +2059,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.7.5"
+version = "1.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbaf948106af4d241175fc5b4e64d63bea622430894c21fc72e4254be2e277ec"
+checksum = "b902832c1b2e32263327690284517021aa80ac999d4eef88ca549e9ccf47870c"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -2075,9 +2075,9 @@ dependencies = [
 
 [[package]]
 name = "strict_encoding_derive"
-version = "1.7.5"
+version = "1.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77af01d535c6668a1386dcf8e8b090a1456574cfd564dad059c2e497e4930764"
+checksum = "3bc7b868cb00c8861784b7f463c984c4b2ad20d1f23cec5997ad9cb41e559239"
 dependencies = [
  "amplify_syn",
  "encoding_derive_helpers",
@@ -2087,9 +2087,9 @@ dependencies = [
 
 [[package]]
 name = "strict_encoding_test"
-version = "1.7.4"
+version = "1.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adbc8dacf48120f716eb205cff27ce662af4e4f53f72ca139b50eade05640de0"
+checksum = "d7bd0bdf8da419af27970c9e16e99e23ec67b5c8b6896db950c93a6ba1827b2a"
 dependencies = [
  "amplify",
  "strict_encoding",

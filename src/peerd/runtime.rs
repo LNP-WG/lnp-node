@@ -214,10 +214,8 @@ impl esb::Handler<ServiceBus> for Runtime {
             self.sender.send_message(Messages::Init(Init {
                 global_features: none!(),
                 local_features: none!(),
-                /*
                 assets: none!(),
                 unknown_tlvs: none!(),
-                 */
             }))?;
 
             self.connect = false;
