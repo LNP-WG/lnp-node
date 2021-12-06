@@ -30,15 +30,15 @@ channels (mesh/satellite networks) with end-to-end encryption. It is 100% LN
 compatible (and in these terms Lightning Network runs on this protocol de-facto)
 but allows much more than current LN uses. The protocol is defined as a set of
 LNPBP15-19 standards, which are strict extensions of BOLTs. In other words, with 
-this protocol you can do an arbitrary messaging (and build complex distrubuted 
+this protocol you can do an arbitrary messaging (and build complex distributed
 systems without central authorities like DNS, SSL, IP addresses), so at LNP/BP
 Association we use it everywhere, even for internal communications between 
 microservices.
 
 **Bifrost** is a way of defining payment channels in a modular and extensible 
 way such that you can easily add new transaction outputs to the commitment 
-transaction, switch from HTLCs to PTLCs payments, use taparoot & do a lot of 
-experimenttion without inventing new messages and standards each time: peers are
+transaction, switch from HTLCs to PTLCs payments, use taproot & do a lot of
+experimentation without inventing new messages and standards each time: peers are
 using Bifrost to negotiate channel and transaction structure with 
 partially-signed transactions.
 
@@ -57,13 +57,13 @@ avaliable:
 The problem with the existing Lightning node implementations is their very 
 limited extensibility for such things as:
 
-* future LN upgrades ([channel factories](https://tik-old.ee.ethz.ch/file//a20a865ce40d40c8f942cf206a7cba96/Scalable_Funding_Of_Blockchain_Micropayment_Networks%20(1).pdf), 
+* Future LN upgrades ([channel factories](https://tik-old.ee.ethz.ch/file//a20a865ce40d40c8f942cf206a7cba96/Scalable_Funding_Of_Blockchain_Micropayment_Networks%20(1).pdf),
   [payment points](https://suredbits.com/payment-points-part-1/), Taproot),
   since they do not separate network communication, channel operation and 
   channel parameters from each other in a well manner, such that it will be 
   possible, for instance, to replace HTLCs with payment points using some 
   extension/module.
-* protocols on top of LN (layer 3), like DLCs or proposed 
+* Protocols on top of LN (layer 3), like DLCs or proposed
   [Lightspeed protocol](https://github.com/LNP-BP/lnpbps/issues/24), which 
   require modification on the structure of the commitment transaction.
 
