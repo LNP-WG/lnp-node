@@ -1,14 +1,30 @@
-# lnp-node: Lightning Network Protocol Node
+# LNP Node: Lightning Network Protocol Node
 
-`lnp-node` is a new Lightning Network node written from scratch in Rust. 
+LNP Node is a new Lightning Network node written from scratch in Rust. 
 Actually, it's a suite of daemons/microservices able to run both Lightning 
-Network Protocol (LNP) and Generalized Lightning Channels (GLC).
+Network (LN) as it is defined in BOLT standards - and generalized lightning 
+codenamed "Bifrost": a full refactoring of the lightning network protocols
+supporting Taproot, Schnorr signatures, RGB assets, DLCs, multi-peer channels,
+channel factories/channel composability and many other advanced features.
+LNP Node operates using Internet2 networking protocols and specially-designed
+microservice architecture.
 
-One may ask: another LN node? Why we need it? And what is "Lightning network
-protocol" and "Generalized Lightning Channels"?
+One may ask: another LN node? Why we need it? And what is this lightning 
+network protocol (LNP), and Internet2 networking and generalization of lightning
+channels coming with Bifrost?
 
-**Lightning Network Protocol** is normal Lightning messaging protocol extracted
-from BOLTs and extended to support arbitrary messaging, RPC, P2P and publish/
+**Lightning Network Protocol** is unification of both "normal" (or "legacy")
+Lightning network and Bifrost: a family of protocols operating on top of
+bitcoin protocols (BP) and together composing family of LNP/BP tech stack.
+
+**Internet2** is a set of best practices to use existing protocols in network 
+communications preserving most of privacy and anonymity. It supports both P2P
+and RCP (client-server) operations and represents lightning-styled Noise_XK
+encrypted communications (instead of SSL/TLS) for P2P and encrypted ZeroMQ
+for client-server communications. This allows to avoid most common pitfalls
+with centralized certificate authorities or plain-text low-efficiency JSON/XML
+RPC or web service protocols. P2P layer is an extract from BOLT-8 and, 
+partially, BOLT-1, extended to support arbitrary messaging, RPC, P2P and publish/
 subscribe APIs over TCP/IP, TCP/Tor, UDP, ZeroMQ and high latency communication
 channels (mesh/satellite networks) with end-to-end encryption. It is 100% LN
 compatible (and in these terms Lightning Network runs on this protocol de-facto)
@@ -16,18 +32,19 @@ but allows much more than current LN uses. The protocol is defined as a set of
 LNPBP15-19 standards, which are strict extensions of BOLTs. In other words, with 
 this protocol you can do an arbitrary messaging (and build complex distrubuted 
 systems without central authorities like DNS, SSL, IP addresses), so at LNP/BP
-we use it everywhere, even for internal communications between microservices.
+Association we use it everywhere, even for internal communications between 
+microservices.
 
-**Generalized Lightning Channels** is a way of defining payment channels in a
-modular and extensible way such that you can easily add new transaction outputs 
-to the commitment transaction, switch from HTLCs to PTLCs payments, use eltoo &
-do a lot of experimenttion without inventing new messages and standards each 
-time: peers are using LNP to negotiate channel and transaction structure with
+**Bifrost** is a way of defining payment channels in a modular and extensible 
+way such that you can easily add new transaction outputs to the commitment 
+transaction, switch from HTLCs to PTLCs payments, use taparoot & do a lot of 
+experimenttion without inventing new messages and standards each time: peers are
+using Bifrost to negotiate channel and transaction structure with 
 partially-signed transactions.
 
 Idea for both protocols came from Dr Maxim Orlovsky, Dr Christian Decker and
 Giacomo Zucco discussions in 2019-2020 and implemented by Maxim Orlovsky as a 
-part of [LNP/BP Core Library](https://github.com/LNP-BP/rust-lnpbp).
+part of [LNP Core Library](https://github.com/LNP-BP/lnp-core).
 We recommend to watch to [Potzblitz about LNP Node](https://www.youtube.com/watch?v=YmmNsWS5wiM&t=5s&ab_channel=Fulmo%E2%9A%A1)
 and [LNP/BP networking presentation](https://www.youtube.com/watch?v=kTwZKsbIPbc&t=2123s&ab_channel=LNPBPStandardsAssociation)
 to get a deeper insight into these topics. Presentations slides are also 
@@ -51,7 +68,7 @@ limited extensibility for such things as:
   require modification on the structure of the commitment transaction.
 
 We name the extensions to Lightning network required to build this rich 
-functionality a "Generalized Lightning Network". With this project 
+functionality "Bifrost". With this project 
 [LNP/BP Standards Association](https://github.com/LNP-BP) is trying to build an 
 LN node with extensible and highly-modular architecture, utilizing state of the 
 art Rust approaches like:
@@ -78,16 +95,8 @@ This new node will be used to implement:
 * Future [Prometheus](https://github.com/pandoracore/prometheus-spec/blob/master/prometheus.pdf) 
   (high-load computing) edition for LN
 * [Lightspeed payment protocol](https://github.com/LNP-BP/lnpbps/issues/24)
-
-The node must maintain simple/modular upgradability for:
-
 * RGB smart contracts (client-validated smart contract system)
-* Discrete log contracts (DLCs)
 * Schnorr's/Taproot
-* Pay-to-elliptic curve point lock contracts (PTLC) - replacement for HTLCs
-* eltoo
-
-See [here](/doc/demo-alpha.4) for a demo of the node capabilities as for version `v0.1.0-alpha.4`.
 
 ## Design
 
@@ -95,7 +104,7 @@ See [here](/doc/demo-alpha.4) for a demo of the node capabilities as for version
 
 The node (as other nodes maitained by LNP/BP Standards Association and Pandora
 Core company subsidiaries) consists of multiple microservices, communicating
-with each other via LNP ZMQ RPC interface.
+with each other via ZMQ RPC interfaces.
 
 ![Node architacture](doc/node_arch.jpeg)
 
@@ -114,8 +123,6 @@ same architecture include:
   over bitcoin and lightning network
 * [BP Node](https://github.com/LNP-BP/bp-node) for indexing bitcoin blockchain
   (you may think of it as a more efficient Electrum server alternative)
-* Bifrost – node for storing/passing client-side-validated data with watchtower 
-  functionality and used for Storm/RGB/DEX infrastructure
 
 Other third parties provide their own nodes:
 * [Keyring](https://github.com/pandoracore/keyring) for managing private key
@@ -139,7 +146,6 @@ More information on the service buses used in the node:
 * [`src/bin/`](src/bin/) – binaries for daemons & CLI launching main process
 * [`src/cli/`](src/cli/) – CLAP-based command line API talking to message bus
 * [`src/rpc/`](src/rpc/) – RPC commands for all daemons used for message bus
-* [`src/i8n/`](src/i8n/) – functions exposed to FFI talking to message bus
 * `src/<name>/` – service/daemon-specific code:
   - [`src/peerd/`](src/peerd) – daemon managing peer connections 
     within Lightning peer network using LNP (Lightning network protocol). 
@@ -151,7 +157,9 @@ More information on the service buses used in the node:
     connections
   - [`src/routed`](src/routed) – daemon managing routing information
   - [`src/gossip`](src/gossip) – daemon managing gossip data
-  - [`src/keyd`](src/keyd) - key managing daemon
+  - [`src/signd`](src/signd) - key managing daemon producing signatures over
+    PSBTs using 
+    [Descriptor Wallet library](https://github.com/LNP-BP/descriptor-wallet)
 
 Each daemon (more correctly "microservice", as it can run as a thread, not 
 necessary a process) or other binary (like CLI tool) follows the same
@@ -173,7 +181,7 @@ then run the following commands:
 ```bash
 sudo apt install -y libsqlite3-dev libssl-dev libzmq3-dev pkg-config
 cargo install --path . --bins --all-features
-cargo run --color=always --bin peerd --features=server -- --listen -vvvv
+cargo run --color=always --bin lnpd --features=server -- -vvvv
 ```
 
 ### In docker
