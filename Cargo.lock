@@ -219,6 +219,8 @@ dependencies = [
  "amplify",
  "bitcoin",
  "miniscript",
+ "serde 1.0.130",
+ "serde_with",
  "slip132 0.6.0-alpha.1",
  "strict_encoding",
 ]
@@ -234,6 +236,7 @@ dependencies = [
  "bitcoin_hd 0.6.0-alpha.1",
  "chrono",
  "descriptors 0.6.0-alpha.1",
+ "electrum-client",
  "miniscript",
  "strict_encoding",
 ]
@@ -2114,6 +2117,8 @@ checksum = "b08e48cebe02c7f08ee26ab94d28ad49461c055a8b395667163c52620cb0041a"
 dependencies = [
  "amplify",
  "bitcoin",
+ "serde 1.0.130",
+ "serde_with",
 ]
 
 [[package]]

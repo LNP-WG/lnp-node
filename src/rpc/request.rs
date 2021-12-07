@@ -34,6 +34,7 @@ use wallet::scripts::PubkeyScript;
 use psbt::Psbt;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
+use wallet::address::AddressCompat;
 
 use crate::ServiceId;
 
@@ -303,7 +304,8 @@ pub struct ChannelInfo {
 )]
 #[display(FundsInfo::to_yaml_string)]
 pub struct FundsInfo {
-    pub bitcoin_funds: u64,
+    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
+    pub bitcoin_funds: Vec<(AddressCompat, u64)>,
     pub asset_funds: AssetsBalance,
     pub next_address: Address,
 }

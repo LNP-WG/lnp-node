@@ -47,7 +47,7 @@ amplify = "3.9.1"
 strict_encoding = "1.7.5"
 descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
 psbt = { version = "0.6.0-alpha.1", features = ["sign"] }
-bitcoin_onchain = "0.6.0-alpha.4"
+bitcoin_onchain = { version = "0.6.0-alpha.4", features = ["electrum"] }
 bitcoin_hd = "0.6.0-alpha.1"
 slip132 = "0.5.0"
 lnpbp = "0.5.0"
@@ -148,6 +148,7 @@ _rpc = []
 serde = ["serde_crate", "serde_with", "serde_yaml", "serde_json", "toml",
     "chrono/serde", "bitcoin/use-serde", "slip132/serde",
     "amplify/serde", "internet2/serde", "microservices/serde",
+    "bitcoin_hd/serde",
     "lnpbp/serde", "descriptor-wallet/serde", "lnp-core/serde"] #, "rgb-core/serde",  "rgb_node/serde" ]
 tor = ["microservices/tor", "internet2/tor"] #, "rgb_node/tor"]
 

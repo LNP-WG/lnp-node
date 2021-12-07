@@ -14,6 +14,7 @@
 
 use std::io;
 
+use crate::lnpd::funding_wallet;
 use amplify::IoError;
 #[cfg(feature = "_rpc")]
 use internet2::TypeId;
@@ -49,11 +50,12 @@ pub enum Error {
 
     /// Encoding error: {0}
     #[from]
-    StrictEncoding(strict_encoding::Error),
-
-    /// Encoding error: {0}
-    #[from]
     BitcoinEncoding(bitcoin::consensus::encode::Error),
+
+    /// Error during funding wallet operation
+    #[from]
+    #[display(inner)]
+    FundingWallet(funding_wallet::Error),
 
     /// Error signing PSBT: {0}
     #[from]
@@ -77,10 +79,6 @@ pub enum Error {
 
     /// unrecoverable error "{0}"
     Terminate(String),
-
-    /// electrum server error {0}
-    #[from]
-    Electrum(electrum_client::Error),
 
     /// Other error type with string explanation
     #[display(inner)]
