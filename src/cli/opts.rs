@@ -83,17 +83,11 @@ pub enum Command {
         subject: Option<String>,
     },
 
-    /*
-    /// Lists all funds available for channel creation for given list of assets
+    /// Lists all funds available for channel creation with the list of assets
     /// and provides information about funding points (bitcoin address or UTXO
     /// for RGB assets)
-    Funds {
-        /// Space-separated list of asset identifiers or tickers. If none are
-        /// given lists all avaliable assets
-        #[clap()]
-        asset: Vec<String>,
-    },
-     */
+    Funds,
+
     /// Lists existing peer connections
     Peers,
 

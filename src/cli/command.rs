@@ -80,6 +80,11 @@ impl Exec for Command {
                 runtime.report_response()?;
             }
 
+            Command::Funds => {
+                runtime.request(ServiceId::Lnpd, Request::ListFunds)?;
+                runtime.report_response()?;
+            }
+
             Command::Listen {
                 ip_addr,
                 port,

@@ -36,16 +36,38 @@ pub struct Config {
 
     /// ZMQ socket for internal service control bus
     pub ctl_endpoint: NodeAddr,
+
+    /// URL for the electrum server connection
+    pub electrum_url: String,
+}
+
+fn default_electrum_port(chain: &Chain) -> u16 {
+    match chain {
+        Chain::Mainnet => 50001,
+        Chain::Testnet3 | Chain::Regtest(_) => 60001,
+        Chain::Signet | Chain::SignetCustom(_) => 60601,
+        Chain::LiquidV1 => 50501,
+        Chain::Other(_) => 60001,
+        _ => 60001,
+    }
 }
 
 #[cfg(feature = "shell")]
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
+        let electrum_url = format!(
+            "{}:{}",
+            opts.electrum_server,
+            opts.electrum_port
+                .unwrap_or_else(|| default_electrum_port(&opts.chain))
+        );
+
         Config {
             chain: opts.chain,
             data_dir: opts.data_dir,
             msg_endpoint: opts.msg_socket.into(),
             ctl_endpoint: opts.ctl_socket.into(),
+            electrum_url,
         }
     }
 }

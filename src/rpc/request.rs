@@ -21,7 +21,7 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::FromIterator;
 use std::time::Duration;
 
-use bitcoin::{secp256k1, OutPoint};
+use bitcoin::{secp256k1, Address, OutPoint};
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
@@ -67,6 +67,11 @@ pub enum Request {
     #[api(type = 102)]
     #[display("list_channels()")]
     ListChannels,
+
+    // Can be issued from `cli` to `lnpd`
+    #[api(type = 103)]
+    #[display("list_funds()")]
+    ListFunds,
 
     // Can be issued from `cli` to `lnpd`
     #[api(type = 200)]
@@ -152,6 +157,11 @@ pub enum Request {
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
     ChannelList(List<ChannelId>),
+
+    #[api(type = 1105)]
+    #[display("funds_info({0})", alt = "{0:#}")]
+    #[from]
+    FundsInfo(FundsInfo),
 
     #[api(type = 1203)]
     #[display("channel_funding({0})", alt = "{0:#}")]
@@ -284,12 +294,28 @@ pub struct ChannelInfo {
     pub remote_keys: BTreeMap<NodeAddr, payment::channel::Keyset>,
 }
 
+#[cfg_attr(feature = "serde", serde_as)]
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Serialize, Deserialize),
+    serde(crate = "serde_crate")
+)]
+#[display(FundsInfo::to_yaml_string)]
+pub struct FundsInfo {
+    pub bitcoin_funds: u64,
+    pub asset_funds: AssetsBalance,
+    pub next_address: Address,
+}
+
 #[cfg(feature = "serde")]
 impl ToYamlString for NodeInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for PeerInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for ChannelInfo {}
+#[cfg(feature = "serde")]
+impl ToYamlString for FundsInfo {}
 
 #[derive(
     Wrapper, Clone, PartialEq, Eq, Debug, From, StrictEncode, StrictDecode,

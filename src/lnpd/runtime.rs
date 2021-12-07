@@ -16,30 +16,46 @@ use amplify::Wrapper;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ffi::OsStr;
-use std::io;
 use std::net::SocketAddr;
 use std::process;
 use std::time::{Duration, SystemTime};
+use std::{fs, io};
 
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
+use bitcoin_hd::TrackingAccount;
+use electrum_client::Client as ElectrumClient;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use microservices::rpc::Failure;
+use miniscript::descriptor::Wpkh;
+use miniscript::Descriptor;
+use strict_encoding::StrictDecode;
 
 use crate::rpc::request::{IntoProgressOrFalure, NodeInfo, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
 
 pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
+    let mut wallet_path = config.data_dir.clone();
+    wallet_path.push("funding");
+    wallet_path.set_extension("wallet");
+    let wallet_file = fs::File::open(wallet_path)?;
+    let wallet = TrackingAccount::strict_decode(wallet_file)?;
+
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         node_id,
         chain: config.chain.clone(),
         listens: none!(),
         started: SystemTime::now(),
+        resolver: ElectrumClient::new(&config.electrum_url)?,
+        funding_wallet: Descriptor::Wpkh(
+            Wpkh::new(wallet)
+                .expect("TrackingAccount always produces compressed keys"),
+        ),
         connections: none!(),
         channels: none!(),
         spawning_services: none!(),
@@ -56,6 +72,8 @@ pub struct Runtime {
     chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
+    resolver: ElectrumClient,
+    funding_wallet: Descriptor<TrackingAccount>,
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_services: HashMap<ServiceId, ServiceId>,
@@ -312,6 +330,8 @@ impl Runtime {
                     ),
                 )?;
             }
+
+            Request::ListFunds => {}
 
             Request::Listen(addr) => {
                 let addr_str = addr.addr();

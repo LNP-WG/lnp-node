@@ -39,6 +39,8 @@ _peerd() {
 '--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
+'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \

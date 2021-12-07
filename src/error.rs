@@ -49,6 +49,10 @@ pub enum Error {
 
     /// Encoding error: {0}
     #[from]
+    StrictEncoding(strict_encoding::Error),
+
+    /// Encoding error: {0}
+    #[from]
     BitcoinEncoding(bitcoin::consensus::encode::Error),
 
     /// Error signing PSBT: {0}
@@ -73,6 +77,10 @@ pub enum Error {
 
     /// unrecoverable error "{0}"
     Terminate(String),
+
+    /// electrum server error {0}
+    #[from]
+    Electrum(electrum_client::Error),
 
     /// Other error type with string explanation
     #[display(inner)]

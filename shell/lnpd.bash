@@ -19,7 +19,7 @@ _lnpd() {
 
     case "${cmd}" in
         lnpd)
-            opts="-h -V -r -k -d -c -v -T -m -x -n --help --version --rgb20-rpc --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain"
+            opts="-h -V -r -k -d -c -v -T -m -x -n --help --version --rgb20-rpc --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -86,6 +86,14 @@ _lnpd() {
                     return 0
                     ;;
                 -n)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --electrum-server)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --electrum-port)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

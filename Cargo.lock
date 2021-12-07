@@ -225,12 +225,17 @@ dependencies = [
 
 [[package]]
 name = "bitcoin_onchain"
-version = "0.6.0-alpha.1"
+version = "0.6.0-alpha.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bf80b93552fc11515da1d27663643ac78b2c0bc50f06dcdd916f70f2c19574b"
+checksum = "0370569f53be686827e4228b6ca534671f35c213e8e837daa9f2539fc722ab26"
 dependencies = [
  "amplify",
  "bitcoin",
+ "bitcoin_hd 0.6.0-alpha.1",
+ "chrono",
+ "descriptors 0.6.0-alpha.1",
+ "miniscript",
+ "strict_encoding",
 ]
 
 [[package]]
@@ -1177,6 +1182,8 @@ dependencies = [
  "base64 0.12.3",
  "bech32 0.7.3",
  "bitcoin",
+ "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_onchain",
  "bp-core",
  "chrono",
  "clap",
@@ -1195,6 +1202,7 @@ dependencies = [
  "lnpbp",
  "log",
  "microservices",
+ "miniscript",
  "nix",
  "psbt 0.6.0-alpha.1",
  "rgb-core",

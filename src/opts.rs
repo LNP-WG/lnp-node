@@ -151,12 +151,25 @@ pub struct Opts {
         long,
         global = true,
         alias = "network",
-        default_value = "testnet",
+        default_value = "signet",
         env = "LNP_NODE_NETWORK"
     )]
-    // TODO: Put it back to `signet` default network once rust-bitcoin will
-    //       release signet support
     pub chain: Chain,
+
+    /// Electrum server to use.
+    /// `extract` command
+    #[clap(
+        long,
+        global = true,
+        default_value("pandora.network"),
+        env = "LNP_NODE_ELECTRUM_SERVER"
+    )]
+    pub electrum_server: String,
+
+    /// Customize Electrum server port number. By default the wallet will use
+    /// port matching the selected network.
+    #[clap(long, global = true, env = "LNP_NODE_ELECTRUM_PORT")]
+    pub electrum_port: Option<u16>,
 }
 
 impl Opts {
