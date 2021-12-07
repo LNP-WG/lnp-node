@@ -40,6 +40,13 @@ use crate::{Config, Error, LogStyle, Service, ServiceId};
 pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let mut wallet_path = config.data_dir.clone();
     wallet_path.push(LNP_NODE_FUNDING_WALLET);
+    debug!("Loading funding wallet from '{}'", wallet_path.display());
+    let funding_wallet =
+        FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
+    info!(
+        "Funding wallet: {}",
+        funding_wallet.wallet_data().descriptor
+    );
 
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
@@ -47,11 +54,7 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
         chain: config.chain.clone(),
         listens: none!(),
         started: SystemTime::now(),
-        funding_wallet: FundingWallet::with(
-            &config.chain,
-            wallet_path,
-            &config.electrum_url,
-        )?,
+        funding_wallet,
         connections: none!(),
         channels: none!(),
         spawning_services: none!(),

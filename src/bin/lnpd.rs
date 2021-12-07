@@ -72,9 +72,7 @@ fn main() -> Result<(), Error> {
 
 fn init(config: &Config) -> Result<(), Error> {
     use bitcoin::secp256k1::Secp256k1;
-    use bitcoin::util::bip32::{
-        DerivationPath, ExtendedPrivKey, ExtendedPubKey,
-    };
+    use bitcoin::util::bip32::{DerivationPath, ExtendedPrivKey};
     use bitcoin_hd::{
         SegmentIndexes, TerminalStep, TrackingAccount, UnhardenedIndex,
     };
@@ -121,15 +119,6 @@ fn init(config: &Config) -> Result<(), Error> {
             .expect("hardcoded derivation path");
         let xpriv_account = xpriv.derive_priv(&secp, &derivation)?;
         let fingerprint = xpriv.identifier(&secp);
-        println!(
-            "Signing account: {}",
-            format!(
-                "m=[{}]/10046h=[{}]",
-                fingerprint,
-                ExtendedPubKey::from_private(&secp, &xpriv_account)
-            )
-            .promo()
-        );
         let signing_account = MemorySigningAccount::with(
             &secp,
             fingerprint,
@@ -147,10 +136,19 @@ fn init(config: &Config) -> Result<(), Error> {
         );
         MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?
     };
+    println!(
+        "Signing account: {}",
+        format!(
+            "m=[{}]/10046h=[{}]",
+            signing_account.master_fingerprint(),
+            signing_account.account_xpub(),
+        )
+        .promo()
+    );
 
     let mut wallet_path = config.data_dir.clone();
     wallet_path.push(LNP_NODE_FUNDING_WALLET);
-    if !wallet_path.exists() {
+    let funding_wallet = if !wallet_path.exists() {
         println!(
             "Funding wallet '{}' ... {}",
             LNP_NODE_FUNDING_WALLET,
@@ -168,21 +166,24 @@ fn init(config: &Config) -> Result<(), Error> {
             last_change_index: UnhardenedIndex::zero(),
             last_rgb_index: Default::default(),
         };
-        println!("Funding wallet: {}", wallet_data.descriptor.promo());
         FundingWallet::new(
             &config.chain,
             wallet_path,
             wallet_data,
             &config.electrum_url,
-        )?;
+        )?
     } else {
         println!(
             "Funding wallet '{}' ... {}",
             LNP_NODE_FUNDING_WALLET,
             "found".progress()
         );
-        FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
+        FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?
     };
+    println!(
+        "Funding wallet: {}",
+        funding_wallet.wallet_data().descriptor.promo()
+    );
 
     println!("{}", "Node initialization complete\n".ended());
 

@@ -62,6 +62,9 @@ pub enum Error {
     #[from(ConversionImpossibleError)]
     ChainNotSupported,
 
+    /// chain network mismatches funding wallet network
+    ChainMismatch,
+
     /// Unable to derive an address for the descriptor; potentially funding
     /// wallet descriptor is incorrect
     #[from]
@@ -82,6 +85,7 @@ impl std::error::Error for Error {
             Error::Resolver(err) => Some(err),
             Error::Derivation(err) => Some(err),
             Error::OutOfIndexes => None,
+            Error::ChainMismatch => None,
         }
     }
 }
@@ -113,10 +117,14 @@ pub struct WalletData {
 #[cfg(feature = "serde")]
 impl ToYamlString for WalletData {}
 
+#[derive(Getters)]
 pub struct FundingWallet {
+    #[getter(skip)]
     secp: Secp256k1<secp256k1::All>,
     network: bitcoin::Network,
+    #[getter(skip)]
     resolver: ElectrumClient,
+    #[getter(skip)]
     wallet_file: fs::File,
     wallet_data: WalletData,
 }
@@ -151,9 +159,14 @@ impl FundingWallet {
             .open(wallet_path)?;
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
 
+        let network = chain.try_into()?;
+        if wallet_data.descriptor.network()? != network {
+            return Err(Error::ChainMismatch);
+        }
+
         Ok(FundingWallet {
             secp: Secp256k1::new(),
-            network: chain.try_into()?,
+            network,
             resolver: ElectrumClient::new(electrum_url)?,
             wallet_data,
             wallet_file,
