@@ -155,7 +155,8 @@ fn init(config: &Config) -> Result<(), Error> {
             "creating".action()
         );
         let account = TrackingAccount::with(
-            secp,
+            &secp,
+            *signing_account.master_id(),
             *signing_account.account_xpriv(),
             &[10046, 0, 2],
             vec![TerminalStep::range(0u16, 1u16), TerminalStep::Wildcard],

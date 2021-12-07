@@ -34,60 +34,45 @@ use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
 /// Errors working with funding wallet
-#[derive(Debug, Display, From)]
+#[derive(Debug, Display, Error, From)]
 #[display(doc_comments)]
 #[non_exhaustive]
 pub enum Error {
-    /// Error accessing funding wallet file
+    /// error accessing funding wallet file. Details: {0}
     #[from(io::Error)]
     Io(IoError),
 
-    /// Error reading or writing funding wallet data
+    /// error reading or writing funding wallet data. Details: {0}
     #[from]
     StrictEncoding(strict_encoding::Error),
 
-    /// Error resolving funding wallet transactions with Electrum server
+    /// error resolving funding wallet transactions with Electrum server.
+    /// Details: {0}
     #[from]
     Electrum(electrum_client::Error),
 
-    /// Error resolving funding wallet transactions
+    /// error resolving funding wallet transactions. Details: {0}
     #[from]
     Resolver(UtxoResolverError),
 
-    /// Funding wallet uses custom descriptor which can't be represented as a
+    /// funding wallet uses custom descriptor which can't be represented as a
     /// valid bitcoin addresses, making channel funding impossible
     NoAddressRepresentation,
 
-    /// Chain is not supported for funding
+    /// chain is not supported for funding
     #[from(ConversionImpossibleError)]
     ChainNotSupported,
 
     /// chain network mismatches funding wallet network
     ChainMismatch,
 
-    /// Unable to derive an address for the descriptor; potentially funding
-    /// wallet descriptor is incorrect
+    /// unable to derive an address for the descriptor; potentially funding
+    /// wallet descriptor is incorrect. Details: {0}
     #[from]
     Derivation(DeriveError),
 
-    /// Wallet has run out of funding addresses
+    /// wallet has run out of funding addresses
     OutOfIndexes,
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Io(err) => Some(err),
-            Error::StrictEncoding(err) => Some(err),
-            Error::Electrum(err) => Some(err),
-            Error::NoAddressRepresentation => None,
-            Error::ChainNotSupported => None,
-            Error::Resolver(err) => Some(err),
-            Error::Derivation(err) => Some(err),
-            Error::OutOfIndexes => None,
-            Error::ChainMismatch => None,
-        }
-    }
 }
 
 #[derive(
@@ -209,6 +194,7 @@ impl FundingWallet {
                     last_index + 20,
                 )?
                 .into_iter()
+                .filter(|(_, (_, set))| !set.is_empty())
                 .map(map)
                 .collect()
         };

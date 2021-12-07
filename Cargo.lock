@@ -212,9 +212,9 @@ dependencies = [
 
 [[package]]
 name = "bitcoin_hd"
-version = "0.6.0-alpha.2"
+version = "0.6.0-alpha.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c4d0c5699bf2bb9fa44f4abdf2594ce09436ce6fc1e60f90f41a554b6653d0e"
+checksum = "8206002515eaef0d49aa7048c75517dd4d237539483eb0173c7bd0ee25ba8041"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -233,7 +233,7 @@ checksum = "0370569f53be686827e4228b6ca534671f35c213e8e837daa9f2539fc722ab26"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.2",
+ "bitcoin_hd 0.6.0-alpha.4",
  "chrono",
  "descriptors 0.6.0-alpha.1",
  "electrum-client",
@@ -613,9 +613,9 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "757c0ded2af11d8e739c4daea1ac623dd1624b06c844cf3f5a39f1bdbd99bb12"
+checksum = "d0d720b8683f8dd83c65155f0530560cba68cd2bf395f6513a483caee57ff7f4"
 dependencies = [
  "darling_core",
  "darling_macro",
@@ -623,9 +623,9 @@ dependencies = [
 
 [[package]]
 name = "darling_core"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c34d8efb62d0c2d7f60ece80f75e5c63c1588ba68032740494b0b9a996466e3"
+checksum = "7a340f241d2ceed1deb47ae36c4144b2707ec7dd0b649f894cb39bb595986324"
 dependencies = [
  "fnv",
  "ident_case",
@@ -637,9 +637,9 @@ dependencies = [
 
 [[package]]
 name = "darling_macro"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ade7bff147130fe5e6d39f089c6bd49ec0250f35d70b2eebf72afdfc919f15cc"
+checksum = "72c41b3b7352feb3211a0d743dc5700a4e3b60f51bd2b368892d1e0f9a95f44b"
 dependencies = [
  "darling_core",
  "quote",
@@ -713,7 +713,7 @@ checksum = "2b0fc00de4bbda8411ec2d224e86a56926f075535a9f8537747d69ae8e6133a6"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.2",
+ "bitcoin_hd 0.6.0-alpha.4",
  "bitcoin_scripts 0.6.0-alpha.1",
  "miniscript",
  "strict_encoding",
@@ -1097,9 +1097,9 @@ checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
 
 [[package]]
 name = "lightning_encoding"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "958827d3484c6986b2abbead07ca44b9d209c696355aa3ea3759afb808f50722"
+checksum = "653527d9baca87185463e33104099cc30234e86dd210e4e57f2d770ba038665e"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1142,7 +1142,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#7cf8cf5aa699ab84cd7a82f7d6ad3197a4fd9f64"
+source = "git+https://github.com/LNP-BP/lnp-core#00cbbb9bdc0ac8b41dadaa6495a3850cc750932d"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1161,7 +1161,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#7cf8cf5aa699ab84cd7a82f7d6ad3197a4fd9f64"
+source = "git+https://github.com/LNP-BP/lnp-core#00cbbb9bdc0ac8b41dadaa6495a3850cc750932d"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1185,7 +1185,7 @@ dependencies = [
  "base64 0.12.3",
  "bech32 0.7.3",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.2",
+ "bitcoin_hd 0.6.0-alpha.4",
  "bitcoin_onchain",
  "bp-core",
  "chrono",
@@ -1207,7 +1207,7 @@ dependencies = [
  "microservices",
  "miniscript",
  "nix",
- "psbt 0.6.0-alpha.1",
+ "psbt 0.6.0-alpha.2",
  "rgb-core",
  "rpassword",
  "serde 1.0.130",
@@ -1525,13 +1525,13 @@ dependencies = [
 
 [[package]]
 name = "psbt"
-version = "0.6.0-alpha.1"
+version = "0.6.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30d1e7b6ca6aecabdf3115a42f5197ce83f6278dd34cf4ceea0e55ce47951c87"
+checksum = "25ead24da48946a473b51cc794a7301b41b5d2ded0013e7ddd96d21e38c043de"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.2",
+ "bitcoin_hd 0.6.0-alpha.4",
  "bitcoin_onchain",
  "bitcoin_scripts 0.6.0-alpha.1",
  "descriptors 0.6.0-alpha.1",
