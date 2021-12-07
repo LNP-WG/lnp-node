@@ -206,8 +206,31 @@ dependencies = [
  "miniscript",
  "serde 1.0.130",
  "serde_with",
- "slip132",
+ "slip132 0.5.0",
  "strict_encoding",
+]
+
+[[package]]
+name = "bitcoin_hd"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9310dd40bf088b2e72b8ee76dca6bc782ef59d4d2bba950a88dd509752f0e37"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "miniscript",
+ "slip132 0.6.0-alpha.1",
+ "strict_encoding",
+]
+
+[[package]]
+name = "bitcoin_onchain"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8bf80b93552fc11515da1d27663643ac78b2c0bc50f06dcdd916f70f2c19574b"
+dependencies = [
+ "amplify",
+ "bitcoin",
 ]
 
 [[package]]
@@ -221,6 +244,18 @@ dependencies = [
  "miniscript",
  "serde 1.0.130",
  "serde_with",
+ "strict_encoding",
+]
+
+[[package]]
+name = "bitcoin_scripts"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "add8d9768d78cab3e6bf89b94ef281483b20f0132ce448a17427a4c8eeda5c76"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "miniscript",
  "strict_encoding",
 ]
 
@@ -271,9 +306,9 @@ checksum = "934ace6f04cbce3f360456c124ebbd1fd3ea41e14d4f5e22cef86e7f1d743ce1"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_scripts",
+ "bitcoin_scripts 0.5.0",
  "commit_verify",
- "descriptors",
+ "descriptors 0.5.0",
  "miniscript",
  "secp256k1",
  "serde 1.0.130",
@@ -634,17 +669,17 @@ checksum = "20744ada9383b8fbd21bca52d06c783ef1331eeb2a75769afc6150749889188c"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd",
- "bitcoin_scripts",
+ "bitcoin_hd 0.5.0",
+ "bitcoin_scripts 0.5.0",
  "chrono",
  "commit_verify",
- "descriptors",
+ "descriptors 0.5.0",
  "electrum-client",
  "miniscript",
- "psbt",
+ "psbt 0.5.0",
  "serde 1.0.130",
  "serde_with",
- "slip132",
+ "slip132 0.5.0",
  "strict_encoding",
 ]
 
@@ -656,8 +691,22 @@ checksum = "7ebdd179385feefd5c0c7bc0034e7ebcf5aa21cc1b9d945751efb977a0b3b37f"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd",
- "bitcoin_scripts",
+ "bitcoin_hd 0.5.0",
+ "bitcoin_scripts 0.5.0",
+ "miniscript",
+ "strict_encoding",
+]
+
+[[package]]
+name = "descriptors"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b0fc00de4bbda8411ec2d224e86a56926f075535a9f8537747d69ae8e6133a6"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_scripts 0.6.0-alpha.1",
  "miniscript",
  "strict_encoding",
 ]
@@ -1147,13 +1196,14 @@ dependencies = [
  "log",
  "microservices",
  "nix",
+ "psbt 0.6.0-alpha.1",
  "rgb-core",
  "serde 1.0.130",
  "serde_json",
  "serde_with",
  "serde_yaml",
  "shellexpand",
- "slip132",
+ "slip132 0.5.0",
  "strict_encoding",
  "strict_encoding_test",
  "toml 0.5.8",
@@ -1396,9 +1446,9 @@ checksum = "8d31d11c69a6b52a174b42bdc0c30e5e11670f90788b2c471c31c1d17d449443"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.22"
+version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12295df4f294471248581bc09bef3c38a5e46f1e36d6a37353621a0c6c357e1f"
+checksum = "d1a3ea4f0dd7f1f3e512cf97bf100819aa547f36a6eccac8dbaae839eb92363e"
 
 [[package]]
 name = "poly1305"
@@ -1457,8 +1507,23 @@ checksum = "9d9f7878a14fb3168bda0cef2886bc0f10b71a012403456fcb50aaebd5b1c76f"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_scripts",
- "descriptors",
+ "bitcoin_scripts 0.5.0",
+ "descriptors 0.5.0",
+]
+
+[[package]]
+name = "psbt"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30d1e7b6ca6aecabdf3115a42f5197ce83f6278dd34cf4ceea0e55ce47951c87"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_onchain",
+ "bitcoin_scripts 0.6.0-alpha.1",
+ "descriptors 0.6.0-alpha.1",
+ "miniscript",
 ]
 
 [[package]]
@@ -2034,6 +2099,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "slip132"
+version = "0.6.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b08e48cebe02c7f08ee26ab94d28ad49461c055a8b395667163c52620cb0041a"
+dependencies = [
+ "amplify",
+ "bitcoin",
+]
+
+[[package]]
 name = "socks"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2059,9 +2134,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.7.6"
+version = "1.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b902832c1b2e32263327690284517021aa80ac999d4eef88ca549e9ccf47870c"
+checksum = "bf7db5f818134da2336186e7249b4c5027af4bc07ba50b9d154e07702a7c1add"
 dependencies = [
  "amplify",
  "bitcoin",

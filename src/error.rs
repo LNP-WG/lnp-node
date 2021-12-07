@@ -20,11 +20,12 @@ use internet2::TypeId;
 use internet2::{presentation, transport};
 #[cfg(feature = "_rpc")]
 use microservices::{esb, rpc};
+use psbt::sign::SignError;
 
 #[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
 
-#[derive(Clone, Debug, Display, From, Error)]
+#[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]
 #[non_exhaustive]
 pub enum Error {
@@ -45,6 +46,14 @@ pub enum Error {
     /// Peer interface error: {0}
     #[from]
     Peer(presentation::Error),
+
+    /// Encoding error: {0}
+    #[from]
+    BitcoinEncoding(bitcoin::consensus::encode::Error),
+
+    /// Error signing PSBT: {0}
+    #[from]
+    Signing(SignError),
 
     /// Bridge interface error: {0}
     #[cfg(any(feature = "node", feature = "client"))]

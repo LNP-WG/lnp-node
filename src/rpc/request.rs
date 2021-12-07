@@ -31,9 +31,9 @@ use microservices::rpc_connection;
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::scripts::PubkeyScript;
 
+use psbt::Psbt;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
-use wallet::psbt::Psbt;
 
 use crate::ServiceId;
 
@@ -161,6 +161,10 @@ pub enum Request {
     #[api(type = 9000)]
     #[display("sign(...)")]
     Sign(Psbt),
+
+    #[api(type = 9002)]
+    #[display("signed(...)")]
+    Signed(Psbt),
 }
 
 impl rpc_connection::Request for Request {}

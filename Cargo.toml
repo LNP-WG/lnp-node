@@ -46,6 +46,7 @@ required-features = ["cli"]
 amplify = "3.9.1"
 strict_encoding = "1.7.5"
 descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
+psbt = { version = "0.6.0-alpha.1", features = ["sign"] }
 slip132 = "0.5.0"
 lnpbp = "0.5.0"
 bp-core = "0.5.0"

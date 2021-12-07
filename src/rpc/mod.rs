@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 mod client;
-mod reply;
+pub mod reply;
 pub mod request;
 
 pub use client::Client;

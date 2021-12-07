@@ -14,6 +14,7 @@
 
 use internet2::NodeAddr;
 use lnpbp::chain::Chain;
+use std::path::PathBuf;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;
@@ -27,6 +28,9 @@ pub struct Config {
     /// Bitcoin blockchain to use (mainnet, testnet, signet, liquid etc)
     pub chain: Chain,
 
+    /// Directory for data files, like signing keys etc
+    pub data_dir: PathBuf,
+
     /// ZMQ socket for lightning peer network message bus
     pub msg_endpoint: NodeAddr,
 
@@ -39,6 +43,7 @@ impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         Config {
             chain: opts.chain,
+            data_dir: opts.data_dir,
             msg_endpoint: opts.msg_socket.into(),
             ctl_endpoint: opts.ctl_socket.into(),
         }
