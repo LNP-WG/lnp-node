@@ -178,9 +178,9 @@ pub struct Opts {
 impl Opts {
     pub fn process(&mut self) {
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
-        let mut me = self.clone();
+        let me = self.clone();
 
-        me.data_dir = PathBuf::from(
+        self.data_dir = PathBuf::from(
             shellexpand::tilde(&me.data_dir.to_string_lossy().to_string())
                 .to_string(),
         );
