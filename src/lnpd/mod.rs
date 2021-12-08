@@ -16,6 +16,7 @@ pub mod funding_wallet;
 #[cfg(feature = "shell")]
 mod opts;
 mod runtime;
+pub(self) mod state_machines;
 
 #[cfg(feature = "shell")]
 pub use opts::{Command, Opts};

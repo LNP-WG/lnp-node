@@ -64,7 +64,7 @@ pub struct Runtime {
     chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
-    funding_wallet: FundingWallet,
+    pub(super) funding_wallet: FundingWallet,
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_services: HashMap<ServiceId, ServiceId>,

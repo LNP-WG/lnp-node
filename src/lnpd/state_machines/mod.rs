@@ -12,13 +12,4 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "shell")]
-mod opts;
-mod runtime;
-pub(self) mod state_machines;
-#[allow(dead_code)]
-pub(self) mod storage;
-
-#[cfg(feature = "shell")]
-pub use opts::{Opts, RgbOpts};
-pub use runtime::run;
+mod channel_launch;
