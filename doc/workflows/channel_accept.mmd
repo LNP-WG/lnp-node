@@ -1,0 +1,36 @@
+sequenceDiagram
+
+participant remote
+participant lnpd
+participant channeld
+participant signd
+participant onchaind
+
+remote -) +lnpd: open_channel
+lnpd -) +channeld: <launch>
+deactivate lnpd
+channeld -) -lnpd: hello
+activate lnpd
+note over channeld: Initial
+lnpd -) +channeld: OpenChannel
+deactivate lnpd
+note over lnpd: Negotiating
+channeld -) -remote: accept_channel
+note over channeld: Accepted
+
+remote -) +channeld: funding_created
+channeld -) -signd: SignPsbt(refund)
+signd -) +channeld: Signed
+channeld -) -remote: funding_created
+note over channeld: Signed
+
+remote -) +channeld: funding_signed
+channeld -) -onchaind: Track(funding)
+note over channeld: Funded
+
+onchaind -) +channeld: Mined(funding)
+channeld -) -remote: funding_locked
+note over channeld: Locked
+
+remote -) channeld: funding_locked
+note over channeld: Active

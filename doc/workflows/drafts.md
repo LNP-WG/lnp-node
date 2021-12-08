@@ -37,7 +37,7 @@
 1. Local flow
 	- user->cli: `create channel <peer>` command
 	- cli->lnpd: `OpenChannelWith`
-	- lnpd: launches `channeld` and waits for it's connection
+	- lnpd: launches `channeld` and waits for its connection
 	- channeld->lnpd: `Hello`
 	- lnpd: registers channeld
 	- lnpd->channeld: `OpenChannelWith`
@@ -46,7 +46,7 @@
 2. Remote flow
 	- peerd: receives `OpenChannel` message
 	- peerd->lnpd: forwards `OpenChannel` message
-	- lnpd: launches `channeld` and waits for it's connection
+	- lnpd: launches `channeld` and waits for its connection
 	- channeld->lnpd: `Hello`
 	- lnpd: registers channeld
 	- lnpd->channeld: `AcceptChannelFrom`
