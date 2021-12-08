@@ -402,7 +402,7 @@ impl Runtime {
                 self.state = Lifecycle::Accepted;
             }
 
-            Request::FundChannel(funding_outpoint) => {
+            Request::FundingConstructed(funding_outpoint) => {
                 self.enquirer = source.into();
 
                 let funding_created = self.fund_channel(senders, funding_outpoint)?;

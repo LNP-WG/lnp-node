@@ -12,7 +12,7 @@ deactivate lnpd
 channeld -) -lnpd: hello
 activate lnpd
 note over channeld: Initial
-lnpd -) +channeld: OpenChannel
+lnpd -) +channeld: AcceptChannelFrom
 deactivate lnpd
 note over lnpd: Negotiating
 channeld -) -remote: accept_channel

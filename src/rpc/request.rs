@@ -18,7 +18,8 @@ use std::iter::FromIterator;
 use std::time::Duration;
 
 use amplify::{ToYamlString, Wrapper};
-use bitcoin::{secp256k1, Address, OutPoint};
+use bitcoin::{secp256k1, Address, OutPoint, Txid};
+use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
@@ -37,6 +38,7 @@ use wallet::scripts::PubkeyScript;
 
 use crate::ServiceId;
 
+/// RPC API requests over CTL message bus between LNP Node daemons and from/to clients.
 #[derive(Clone, Debug, Display, From, Api)]
 #[api(encoding = "strict")]
 #[non_exhaustive]
@@ -78,6 +80,9 @@ pub enum Request {
     #[display("listen({0})")]
     Listen(RemoteSocketAddr),
 
+    // Node connectivity API
+    // ---------------------
+
     // Can be issued from `cli` to `lnpd`
     #[api(type = 201)]
     #[display("connect({0})")]
@@ -88,27 +93,73 @@ pub enum Request {
     #[display("ping_peer()")]
     PingPeer,
 
-    // Can be issued from `cli` to `lnpd`
+    // Channel creation API
+    // --------------------
+    /// Initiates creation of a new channel by a local node. Sent from clients to lnpd, and then to
+    /// a newly instantiated channeld
     #[api(type = 203)]
     #[display("open_channel_with({0})")]
     OpenChannelWith(CreateChannel),
 
+    /// Initiates creation of a new channel by a remote node. Sent from lnpd to a newly
+    /// instantiated channeld.
     #[api(type = 204)]
     #[display("accept_channel_from({0})")]
     AcceptChannelFrom(CreateChannel),
 
+    /// Constructs funding transaction PSBT to fund a locally-created new channel. Sent from peerd
+    /// to lnpd.
     #[api(type = 205)]
-    #[display("fund_channel({0})")]
-    FundChannel(OutPoint),
+    #[display("construct_funding({0})")]
+    ConstructFunding(FundChannel),
+
+    /// Provides channeld with the information about funding transaction output used to fund the
+    /// newly created channel. Sent from lnpd to channeld.
+    #[api(type = 206)]
+    #[display("funding_constructed({0})")]
+    FundingConstructed(OutPoint),
+
+    /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
+    /// from channeld to lnpd upon receival of `funding_sighned` message from a remote peer.
+    #[api(type = 207)]
+    #[display("publish_funding()")]
+    PublishFunding,
+
+    /// Reports back to channeld that the funding transaction was published and its mining status
+    /// should be monitored onchain.
+    #[api(type = 208)]
+    #[display("funding_published()")]
+    FundingPublished,
+
+    // On-chain tracking API
+    // ---------------------
+    /// Asks on-chain tracking service to send updates on the transaction mining status
+    #[api(type = 301)]
+    #[display("track({0})")]
+    Track(Txid),
+
+    /// Asks on-chain tracking service to stop sending updates on the transaction mining status
+    #[api(type = 302)]
+    #[display("untrack({0})")]
+    Untrack(Txid),
+
+    /// Reports changes in the mining status for previously requested transaction tracked by an
+    /// on-chain service
+    #[api(type = 303)]
+    #[display("mined({0})")]
+    Mined(MiningInfo),
+
+    // Non-standard API
+    // ----------------
 
     // Can be issued from `cli` to a specific `peerd`
     #[cfg(feature = "rgb")]
-    #[api(type = 206)]
+    #[api(type = 401)]
     #[display("refill_channel({0})")]
     RefillChannel(RefillChannel),
 
     // Can be issued from `cli` to a specific `peerd`
-    #[api(type = 207)]
+    #[api(type = 402)]
     #[display("transfer({0})")]
     Transfer(Transfer),
 
@@ -185,6 +236,29 @@ pub struct CreateChannel {
     pub channel_req: OpenChannel,
     pub peerd: NodeAddr,
     pub report_to: Option<ServiceId>,
+}
+
+/// Request information about constructing funding transaction
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{address}, {amount}")]
+pub struct FundChannel {
+    /// Address for the channel funding
+    pub address: AddressCompat,
+
+    /// Amount of funds to be sent to the funding address
+    pub amount: u64,
+}
+
+/// Update on a transaction mining status
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
+#[derive(StrictEncode, StrictDecode)]
+#[display("{txid}, {status}")]
+pub struct MiningInfo {
+    /// Id of a transaction previously requested to be tracked
+    pub txid: Txid,
+
+    /// Updated on-chain status of the transaction
+    pub status: MiningStatus,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]

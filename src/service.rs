@@ -27,21 +27,8 @@ use strict_encoding::{strict_deserialize, strict_serialize};
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error};
 
-#[derive(
-    Wrapper,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    Debug,
-    From,
-    Default,
-    StrictEncode,
-    StrictDecode
-)]
+#[derive(Wrapper, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, From, Default)]
+#[derive(StrictEncode, StrictDecode)]
 pub struct ClientName([u8; 32]);
 
 impl Display for ClientName {

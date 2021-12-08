@@ -2,9 +2,9 @@ sequenceDiagram
 
 participant cli
 participant lnpd
+participant channeld
 participant onchaind
 participant signd
-participant channeld
 participant remote
 
 cli -) +lnpd: CreateChannel
@@ -14,7 +14,7 @@ note over lnpd: Launching
 channeld -) -lnpd: hello
 activate lnpd
 note over channeld: Initial
-lnpd -) +channeld: CreateChannel
+lnpd -) +channeld: OpenChannelWith
 deactivate lnpd
 note over lnpd: Negotiating
 channeld -) -remote: open_channel
@@ -24,7 +24,7 @@ remote -) +channeld: accept_channel
 channeld -) -lnpd: ConstructFunding
 activate lnpd
 note over channeld: Accepted
-lnpd -) +channeld: FundingCreated
+lnpd -) +channeld: FundingConstrcuted
 deactivate lnpd
 note over lnpd: Comitting
 channeld -) -signd: SignPsbt(refund)

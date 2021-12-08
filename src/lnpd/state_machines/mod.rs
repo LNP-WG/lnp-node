@@ -12,4 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod channel_launch;
+//! State machines orgistrating complex workflows by lnpd daemon
+
+pub mod channel_launch;
+
+pub use channel_launch::ChannelLauncher;

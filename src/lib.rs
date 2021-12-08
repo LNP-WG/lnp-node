@@ -52,6 +52,8 @@ mod error;
 pub mod opts;
 #[cfg(feature = "_rpc")]
 pub mod rpc;
+#[cfg(feature = "_rpc")]
+pub mod state_machine;
 
 #[cfg(feature = "node")]
 pub mod channeld;
