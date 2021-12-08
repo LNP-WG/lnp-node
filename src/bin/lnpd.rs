@@ -72,7 +72,7 @@ fn main() -> Result<(), Error> {
 
 fn init(config: &Config) -> Result<(), Error> {
     use bitcoin::secp256k1::Secp256k1;
-    use bitcoin::util::bip32::{DerivationPath, ExtendedPrivKey};
+    use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
     use bitcoin_hd::{
         SegmentIndexes, TerminalStep, TrackingAccount, UnhardenedIndex,
     };
@@ -154,11 +154,23 @@ fn init(config: &Config) -> Result<(), Error> {
             LNP_NODE_FUNDING_WALLET,
             "creating".action()
         );
+        let account_path = &[10046_u16, 0, 2][..];
+        let node_xpriv = signing_account.account_xpriv();
+        let account_xpriv = node_xpriv.derive_priv(
+            &secp,
+            &account_path
+                .iter()
+                .copied()
+                .map(u32::from)
+                .map(ChildNumber::from_hardened_idx)
+                .collect::<Result<Vec<_>, _>>()
+                .expect("hardcoded derivation indexes"),
+        )?;
         let account = TrackingAccount::with(
             &secp,
             *signing_account.master_id(),
-            *signing_account.account_xpriv(),
-            &[10046, 0, 2],
+            account_xpriv,
+            account_path,
             vec![TerminalStep::range(0u16, 1u16), TerminalStep::Wildcard],
         );
         let wallet_data = WalletData {
