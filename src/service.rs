@@ -365,6 +365,10 @@ pub trait LogStyle: ToString {
         self.to_string().italic().bright_blue()
     }
 
+    fn action(&self) -> colored::ColoredString {
+        self.to_string().bold().yellow()
+    }
+
     fn progress(&self) -> colored::ColoredString {
         self.to_string().bold().green()
     }

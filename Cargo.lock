@@ -212,9 +212,9 @@ dependencies = [
 
 [[package]]
 name = "bitcoin_hd"
-version = "0.6.0-alpha.1"
+version = "0.6.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9310dd40bf088b2e72b8ee76dca6bc782ef59d4d2bba950a88dd509752f0e37"
+checksum = "2c4d0c5699bf2bb9fa44f4abdf2594ce09436ce6fc1e60f90f41a554b6653d0e"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -233,7 +233,7 @@ checksum = "0370569f53be686827e4228b6ca534671f35c213e8e837daa9f2539fc722ab26"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_hd 0.6.0-alpha.2",
  "chrono",
  "descriptors 0.6.0-alpha.1",
  "electrum-client",
@@ -713,7 +713,7 @@ checksum = "2b0fc00de4bbda8411ec2d224e86a56926f075535a9f8537747d69ae8e6133a6"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_hd 0.6.0-alpha.2",
  "bitcoin_scripts 0.6.0-alpha.1",
  "miniscript",
  "strict_encoding",
@@ -1185,7 +1185,7 @@ dependencies = [
  "base64 0.12.3",
  "bech32 0.7.3",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_hd 0.6.0-alpha.2",
  "bitcoin_onchain",
  "bp-core",
  "chrono",
@@ -1209,6 +1209,7 @@ dependencies = [
  "nix",
  "psbt 0.6.0-alpha.1",
  "rgb-core",
+ "rpassword",
  "serde 1.0.130",
  "serde_json",
  "serde_with",
@@ -1530,7 +1531,7 @@ checksum = "30d1e7b6ca6aecabdf3115a42f5197ce83f6278dd34cf4ceea0e55ce47951c87"
 dependencies = [
  "amplify",
  "bitcoin",
- "bitcoin_hd 0.6.0-alpha.1",
+ "bitcoin_hd 0.6.0-alpha.2",
  "bitcoin_onchain",
  "bitcoin_scripts 0.6.0-alpha.1",
  "descriptors 0.6.0-alpha.1",
@@ -1850,6 +1851,16 @@ name = "roff"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e33e4fb37ba46888052c763e4ec2acfedd8f00f62897b630cadb6298b833675e"
+
+[[package]]
+name = "rpassword"
+version = "5.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffc936cf8a7ea60c58f030fd36a612a48f440610214dc54bc36431f9ea0c3efb"
+dependencies = [
+ "libc",
+ "winapi 0.3.9",
+]
 
 [[package]]
 name = "rust-ini"

@@ -18,5 +18,5 @@ mod opts;
 mod runtime;
 
 #[cfg(feature = "shell")]
-pub use opts::Opts;
+pub use opts::{Command, Opts};
 pub use runtime::run;

@@ -30,10 +30,10 @@
 extern crate log;
 
 use clap::Parser;
-use lnp_node::lnpd::{self, Opts};
-use lnp_node::{Config, LogStyle};
+use lnp_node::lnpd::{self, Command, Opts};
+use lnp_node::{Config, Error, LogStyle};
 
-fn main() {
+fn main() -> Result<(), Error> {
     println!("lnpd: lightning node management microservice");
 
     let mut opts = Opts::parse();
@@ -45,6 +45,12 @@ fn main() {
     trace!("Daemon configuration: {:?}", &config);
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
+
+    if let Some(command) = opts.command {
+        match command {
+            Command::Init => init(&config)?,
+        }
+    }
 
     let node_id = opts.key_opts.local_node().node_id();
     info!("{}: {}", "Local node id".ended(), node_id.addr());
@@ -59,7 +65,126 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    lnpd::run(config, node_id).expect("Error running lnpd runtime");
+    lnpd::run(config, node_id).expect("running lnpd runtime");
 
     unreachable!()
+}
+
+fn init(config: &Config) -> Result<(), Error> {
+    use bitcoin::secp256k1::Secp256k1;
+    use bitcoin::util::bip32::{
+        DerivationPath, ExtendedPrivKey, ExtendedPubKey,
+    };
+    use bitcoin_hd::{
+        SegmentIndexes, TerminalStep, TrackingAccount, UnhardenedIndex,
+    };
+    use lnp_node::lnpd::funding_wallet::{FundingWallet, WalletData};
+    use lnp_node::opts::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_WALLET};
+    use miniscript::descriptor::{Descriptor, Wpkh};
+    use psbt::sign::MemorySigningAccount;
+    use std::fs;
+    use std::process::exit;
+    use std::str::FromStr;
+
+    let secp = Secp256k1::new();
+
+    println!("\n{}", "Initializing node data".progress());
+
+    if !config.data_dir.exists() {
+        println!(
+            "Data directory '{}' ... {}",
+            config.data_dir.display(),
+            "creating".action()
+        );
+        fs::create_dir_all(&config.data_dir)?;
+    } else {
+        println!(
+            "Data directory '{}' ... {}",
+            config.data_dir.display(),
+            "found".progress()
+        );
+    }
+
+    let mut wallet_path = config.data_dir.clone();
+    wallet_path.push(LNP_NODE_MASTER_WALLET);
+    let signing_account = if !wallet_path.exists() {
+        println!(
+            "Signing account '{}' ... {}",
+            LNP_NODE_MASTER_WALLET,
+            "creating".action()
+        );
+        let xpriv = rpassword::read_password_from_tty(Some(
+            "Please enter your master xpriv: ",
+        ))?;
+        let xpriv = ExtendedPrivKey::from_str(&xpriv)?;
+        let derivation = DerivationPath::from_str("m/10046h")
+            .expect("hardcoded derivation path");
+        let xpriv_account = xpriv.derive_priv(&secp, &derivation)?;
+        let fingerprint = xpriv.identifier(&secp);
+        println!(
+            "Signing account: {}",
+            format!(
+                "m=[{}]/10046h=[{}]",
+                fingerprint,
+                ExtendedPubKey::from_private(&secp, &xpriv_account)
+            )
+            .promo()
+        );
+        let signing_account = MemorySigningAccount::with(
+            &secp,
+            fingerprint,
+            derivation,
+            xpriv_account,
+        );
+        let file = fs::File::create(wallet_path)?;
+        signing_account.write(file)?;
+        signing_account
+    } else {
+        println!(
+            "Signing account '{}' ... {}",
+            LNP_NODE_MASTER_WALLET,
+            "found".progress()
+        );
+        MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?
+    };
+
+    let mut wallet_path = config.data_dir.clone();
+    wallet_path.push(LNP_NODE_FUNDING_WALLET);
+    if !wallet_path.exists() {
+        println!(
+            "Funding wallet '{}' ... {}",
+            LNP_NODE_FUNDING_WALLET,
+            "creating".action()
+        );
+        let account = TrackingAccount::with(
+            secp,
+            *signing_account.account_xpriv(),
+            &[10046, 0, 2],
+            vec![TerminalStep::range(0u16, 1u16), TerminalStep::Wildcard],
+        );
+        let wallet_data = WalletData {
+            descriptor: Descriptor::Wpkh(Wpkh::new(account)?),
+            last_normal_index: UnhardenedIndex::zero(),
+            last_change_index: UnhardenedIndex::zero(),
+            last_rgb_index: Default::default(),
+        };
+        println!("Funding wallet: {}", wallet_data.descriptor.promo());
+        FundingWallet::new(
+            &config.chain,
+            wallet_path,
+            wallet_data,
+            &config.electrum_url,
+        )?;
+    } else {
+        println!(
+            "Funding wallet '{}' ... {}",
+            LNP_NODE_FUNDING_WALLET,
+            "found".progress()
+        );
+        FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
+    };
+
+    println!("{}", "Node initialization complete\n".ended());
+
+    exit(0);
 }

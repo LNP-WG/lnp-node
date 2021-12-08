@@ -18,6 +18,7 @@ use microservices::esb;
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SignAll};
 use std::fs;
 
+use crate::opts::LNP_NODE_MASTER_WALLET;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, Service, ServiceId};
 
@@ -25,8 +26,7 @@ pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();
 
     let mut wallet_path = config.data_dir.clone();
-    wallet_path.push("wallet");
-    wallet_path.set_extension("dat");
+    wallet_path.push(LNP_NODE_MASTER_WALLET);
     let signing_account =
         MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
     let mut provider = MemoryKeyProvider::with(&secp);

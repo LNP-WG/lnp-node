@@ -34,6 +34,16 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
+
+    /// Optional command to execute and exit
+    #[clap(subcommand)]
+    pub command: Option<Command>,
+}
+
+#[derive(Subcommand, Clone, PartialEq, Eq, Debug)]
+pub enum Command {
+    /// Initialize data directory
+    Init,
 }
 
 impl Opts {

@@ -14,6 +14,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 use std::convert::TryInto;
+use std::io::Seek;
 use std::path::Path;
 use std::{fs, io};
 
@@ -121,6 +122,23 @@ pub struct FundingWallet {
 }
 
 impl FundingWallet {
+    pub fn new(
+        chain: &Chain,
+        wallet_path: impl AsRef<Path>,
+        wallet_data: WalletData,
+        electrum_url: &str,
+    ) -> Result<FundingWallet, Error> {
+        let wallet_file = fs::File::create(wallet_path)?;
+        wallet_data.strict_encode(&wallet_file)?;
+        Ok(FundingWallet {
+            secp: Secp256k1::new(),
+            network: chain.try_into()?,
+            resolver: ElectrumClient::new(electrum_url)?,
+            wallet_file,
+            wallet_data,
+        })
+    }
+
     pub fn with(
         chain: &Chain,
         wallet_path: impl AsRef<Path>,
@@ -142,7 +160,8 @@ impl FundingWallet {
         })
     }
 
-    pub fn save(&self) -> Result<(), Error> {
+    pub fn save(&mut self) -> Result<(), Error> {
+        self.wallet_file.seek(io::SeekFrom::Start(0))?;
         self.wallet_data.strict_encode(&self.wallet_file)?;
         Ok(())
     }

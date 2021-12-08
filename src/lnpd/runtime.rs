@@ -30,6 +30,7 @@ use microservices::esb::{self, Handler};
 use microservices::rpc::Failure;
 
 use crate::lnpd::funding_wallet::FundingWallet;
+use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::rpc::request::{
     FundsInfo, IntoProgressOrFalure, NodeInfo, OptionDetails,
 };
@@ -38,8 +39,7 @@ use crate::{Config, Error, LogStyle, Service, ServiceId};
 
 pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let mut wallet_path = config.data_dir.clone();
-    wallet_path.push("funding");
-    wallet_path.set_extension("wallet");
+    wallet_path.push(LNP_NODE_FUNDING_WALLET);
 
     let runtime = Runtime {
         identity: ServiceId::Lnpd,

@@ -48,7 +48,7 @@ strict_encoding = "1.7.5"
 descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
 psbt = { version = "0.6.0-alpha.1", features = ["sign"] }
 bitcoin_onchain = { version = "0.6.0-alpha.4", features = ["electrum"] }
-bitcoin_hd = "0.6.0-alpha.1"
+bitcoin_hd = "0.6.0-alpha.2"
 slip132 = "0.5.0"
 lnpbp = "0.5.0"
 bp-core = "0.5.0"
@@ -82,6 +82,7 @@ configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
 colored = { version = "2", optional = true }
 shellexpand = { version = "2", optional = true }
+rpassword = { version = "5.0.1", optional = true }
 # IPC
 zmq = "0.9.2"
 
@@ -117,7 +118,7 @@ all = ["server", "cli", "serde", "tor"] # "rgb"
 # Server is a standalone application that runs daemon
 server = ["node", "shell", "microservices/server", "nix"]
 # Command-line application feature
-cli = ["shell", "client", "serde", "microservices/cli"]
+cli = ["shell", "client", "microservices/cli"]
 
 # Embedded is an app that contains embedded node and that talks to it through
 # integration layer
@@ -137,7 +138,7 @@ client = ["internet2/zmq", "microservices/client", "microservices/node", "bitcoi
 # (i.e. both servers and cli)
 shell = [
     "dotenv", "clap", "settings", "configure_me", "serde",
-    "amplify/parse_arg", "microservices/shell", "shellexpand", "colored"
+    "amplify/parse_arg", "microservices/shell", "shellexpand", "colored", "rpassword"
 ]
 
 # Internally used features for convenience

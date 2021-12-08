@@ -16,6 +16,7 @@ use std::io;
 
 use crate::lnpd::funding_wallet;
 use amplify::IoError;
+use bitcoin::util::bip32;
 #[cfg(feature = "_rpc")]
 use internet2::TypeId;
 use internet2::{presentation, transport};
@@ -56,6 +57,14 @@ pub enum Error {
     #[from]
     #[display(inner)]
     FundingWallet(funding_wallet::Error),
+
+    /// Error deriving keys: {0}
+    #[from]
+    Derivation(bip32::Error),
+
+    /// Error constructing descriptor: {0}
+    #[from]
+    Miniscript(miniscript::Error),
 
     /// Error signing PSBT: {0}
     #[from]
