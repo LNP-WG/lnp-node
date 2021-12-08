@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::io::Seek;
 use std::path::Path;
@@ -20,7 +20,7 @@ use std::{fs, io};
 
 use amplify::{IoError, Slice32, ToYamlString};
 use bitcoin::secp256k1::{self, Secp256k1};
-use bitcoin::{Address, Amount, Script};
+use bitcoin::{Address, Amount};
 use bitcoin_hd::{
     DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount,
     UnhardenedIndex,
@@ -164,64 +164,66 @@ impl FundingWallet {
         Ok(())
     }
 
-    pub fn list_funds(&self) -> Result<Vec<(AddressCompat, u64)>, Error> {
-        let map = |(_, (script, utxo_set)): (
-            UnhardenedIndex,
-            (Script, HashSet<Utxo>),
-        )|
-         -> Result<(AddressCompat, u64), Error> {
-            Ok((
-                AddressCompat::from_script(&script, self.network)
-                    .ok_or(Error::NoAddressRepresentation)?,
-                utxo_set
-                    .iter()
-                    .map(Utxo::amount)
-                    .copied()
-                    .map(Amount::as_sat)
-                    .sum(),
-            ))
-        };
-
+    /// Scans blockchain for available funds.
+    /// Updates last derivation index basing on the scanned information.
+    pub fn list_funds(&mut self) -> Result<Vec<(AddressCompat, u64)>, Error> {
         let lookup = |case: UnhardenedIndex,
-                      last_index: u32|
-         -> Result<Vec<(AddressCompat, u64)>, Error> {
+                      last_index: &mut UnhardenedIndex|
+         -> Result<Vec<_>, Error> {
             self.resolver
                 .resolve_descriptor_utxo(
                     &self.secp,
                     &self.wallet_data.descriptor,
                     &[case],
                     UnhardenedIndex::zero(),
-                    last_index + 20,
+                    last_index.last_index().saturating_add(20),
                 )?
                 .into_iter()
                 .filter(|(_, (_, set))| !set.is_empty())
-                .map(map)
+                // Updating last used indexes
+                .map(|data| {
+                    if data.0 >= *last_index {
+                        *last_index =
+                            data.0.checked_inc().ok_or(Error::OutOfIndexes)?;
+                    }
+                    Ok(data)
+                })
                 .collect()
         };
 
         // Collect normal indexes
-        let mut funds = lookup(
-            UnhardenedIndex::zero(),
-            self.wallet_data.last_normal_index.last_index(),
-        )?;
-        funds.extend(lookup(
-            UnhardenedIndex::one(),
-            self.wallet_data.last_change_index.last_index(),
-        )?);
+        let mut last_normal_index = self.wallet_data.last_normal_index;
+        let mut last_change_index = self.wallet_data.last_change_index;
+        let mut funds =
+            lookup(UnhardenedIndex::zero(), &mut last_normal_index)?;
+        funds.extend(lookup(UnhardenedIndex::one(), &mut last_change_index)?);
+        self.wallet_data.last_normal_index = last_normal_index;
+        self.wallet_data.last_change_index = last_change_index;
 
-        Ok(funds)
+        self.save()?;
+
+        funds
+            .into_iter()
+            .map(|(_, (script, utxo_set))| {
+                Ok((
+                    AddressCompat::from_script(&script, self.network)
+                        .ok_or(Error::NoAddressRepresentation)?,
+                    utxo_set
+                        .iter()
+                        .map(Utxo::amount)
+                        .copied()
+                        .map(Amount::as_sat)
+                        .sum(),
+                ))
+            })
+            .collect()
     }
 
-    pub fn next_funding_address(&mut self) -> Result<Address, Error> {
+    pub fn next_funding_address(&self) -> Result<Address, Error> {
         let address = self.wallet_data.descriptor.address(
             &self.secp,
             &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
         )?;
-        self.wallet_data
-            .last_normal_index
-            .checked_inc_assign()
-            .ok_or(Error::OutOfIndexes)?;
-        self.save()?;
         Ok(address)
     }
 }
