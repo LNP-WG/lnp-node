@@ -12,11 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use clap::ValueHint;
 use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
+use clap::ValueHint;
 use internet2::PartialNodeAddr;
 use lnpbp::chain::Chain;
 use microservices::shell::LogLevel;
@@ -26,8 +26,7 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
 pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
 #[cfg(target_os = "macos")]
-pub const LNP_NODE_DATA_DIR: &'static str =
-    "~/Library/Application Support/LNP Node";
+pub const LNP_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node";
 #[cfg(target_os = "windows")]
 pub const LNP_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\LNP Node";
 #[cfg(target_os = "ios")]
@@ -40,8 +39,7 @@ pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
 pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
 #[cfg(target_os = "macos")]
-pub const RGB_NODE_DATA_DIR: &'static str =
-    "~/Library/Application Support/LNP Node";
+pub const RGB_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node";
 #[cfg(target_os = "windows")]
 pub const RGB_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\RGB Node";
 #[cfg(target_os = "ios")]
@@ -49,10 +47,8 @@ pub const RGB_NODE_DATA_DIR: &'static str = "~/Documents";
 #[cfg(target_os = "android")]
 pub const RGB_NODE_DATA_DIR: &'static str = ".";
 
-pub const LNP_NODE_MSG_SOCKET_NAME: &'static str =
-    "lnpz:{data_dir}/msg.rpc?api=esb";
-pub const LNP_NODE_CTL_SOCKET_NAME: &'static str =
-    "lnpz:{data_dir}/ctl.rpc?api=esb";
+pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "lnpz:{data_dir}/msg.rpc?api=esb";
+pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "lnpz:{data_dir}/ctl.rpc?api=esb";
 lazy_static::lazy_static! {
     pub static ref FUNGIBLED_RPC_ENDPOINT: String =
         format!("lnpz://{}/fungibled.rpc?api=rpc", RGB_NODE_DATA_DIR);
@@ -181,16 +177,13 @@ impl Opts {
         let me = self.clone();
 
         self.data_dir = PathBuf::from(
-            shellexpand::tilde(&me.data_dir.to_string_lossy().to_string())
-                .to_string(),
+            shellexpand::tilde(&me.data_dir.to_string_lossy().to_string()).to_string(),
         );
-        fs::create_dir_all(&me.data_dir)
-            .expect("Unable to access data directory");
+        fs::create_dir_all(&me.data_dir).expect("Unable to access data directory");
 
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
-                PartialNodeAddr::ZmqIpc(path, ..)
-                | PartialNodeAddr::Posix(path) => {
+                PartialNodeAddr::ZmqIpc(path, ..) | PartialNodeAddr::Posix(path) => {
                     me.process_dir(path);
                 }
                 _ => {}

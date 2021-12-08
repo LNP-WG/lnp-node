@@ -38,9 +38,7 @@ pub struct Opts {
 }
 
 impl Opts {
-    pub fn process(&mut self) {
-        self.shared.process()
-    }
+    pub fn process(&mut self) { self.shared.process() }
 }
 
 /// Command-line commands:
@@ -181,9 +179,7 @@ pub enum Command {
     },
 }
 
-#[derive(
-    Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, Error, From,
-)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, Error, From)]
 #[display(doc_comments)]
 pub enum AmountOfAssetParseError {
     /// The provided value can't be parsed as a pair of asset name/ticker and
@@ -213,23 +209,15 @@ impl FromStr for AmountOfAsset {
         let (asset, amount);
         if s.contains(':') {
             let mut split = s.split(':');
-            asset = split
-                .next()
-                .ok_or(AmountOfAssetParseError::NeedsValuePair)?;
-            amount = split
-                .next()
-                .ok_or(AmountOfAssetParseError::NeedsValuePair)?;
+            asset = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
+            amount = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             if split.count() > 0 {
                 Err(AmountOfAssetParseError::NeedsValuePair)?
             }
         } else if s.contains(' ') {
             let mut split = s.split(' ');
-            amount = split
-                .next()
-                .ok_or(AmountOfAssetParseError::NeedsValuePair)?;
-            asset = split
-                .next()
-                .ok_or(AmountOfAssetParseError::NeedsValuePair)?;
+            amount = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
+            asset = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             if split.count() > 0 {
                 Err(AmountOfAssetParseError::NeedsValuePair)?
             }

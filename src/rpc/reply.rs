@@ -41,7 +41,5 @@ impl From<Error> for rpc::Failure {
 }
 
 impl From<rpc::Failure> for Error {
-    fn from(fail: rpc::Failure) -> Self {
-        Error::Other(fail.to_string())
-    }
+    fn from(fail: rpc::Failure) -> Self { Error::Other(fail.to_string()) }
 }

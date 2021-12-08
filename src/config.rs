@@ -12,9 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::path::PathBuf;
+
 use internet2::NodeAddr;
 use lnpbp::chain::Chain;
-use std::path::PathBuf;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;
@@ -58,8 +59,7 @@ impl From<Opts> for Config {
         let electrum_url = format!(
             "{}:{}",
             opts.electrum_server,
-            opts.electrum_port
-                .unwrap_or_else(|| default_electrum_port(&opts.chain))
+            opts.electrum_port.unwrap_or_else(|| default_electrum_port(&opts.chain))
         );
 
         Config {

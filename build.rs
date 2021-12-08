@@ -18,7 +18,8 @@ extern crate amplify;
 extern crate clap;
 
 use clap::IntoApp;
-use clap_generate::{generate_to, generators::*};
+use clap_generate::generate_to;
+use clap_generate::generators::*;
 
 pub mod opts {
     include!("src/opts.rs");

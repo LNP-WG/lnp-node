@@ -19,9 +19,7 @@ use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime {
-        identity: ServiceId::Gossip,
-    };
+    let runtime = Runtime { identity: ServiceId::Gossip };
 
     Service::run(config, runtime, false)
 }
@@ -35,9 +33,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -49,9 +45,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         match bus {
             ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
             ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => {
-                Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))
-            }
+            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
         }
     }
 
@@ -75,13 +69,8 @@ impl Runtime {
                 // TODO: Process message
             }
             _ => {
-                error!(
-                    "MSG RPC can be only used for forwarding LN P2P messages"
-                );
-                return Err(Error::NotSupported(
-                    ServiceBus::Msg,
-                    request.get_type(),
-                ));
+                error!("MSG RPC can be only used for forwarding LN P2P messages");
+                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
             }
         }
         Ok(())
@@ -96,10 +85,7 @@ impl Runtime {
         match request {
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(
-                    ServiceBus::Ctl,
-                    request.get_type(),
-                ));
+                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
             }
         }
     }

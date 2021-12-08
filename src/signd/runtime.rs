@@ -12,11 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::fs;
+
 use bitcoin::secp256k1::{self, Secp256k1};
 use internet2::TypedEnum;
 use microservices::esb;
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SignAll};
-use std::fs;
 
 use crate::opts::LNP_NODE_MASTER_WALLET;
 use crate::rpc::{Request, ServiceBus};
@@ -27,15 +28,11 @@ pub fn run(config: Config) -> Result<(), Error> {
 
     let mut wallet_path = config.data_dir.clone();
     wallet_path.push(LNP_NODE_MASTER_WALLET);
-    let signing_account =
-        MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
+    let signing_account = MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
     let mut provider = MemoryKeyProvider::with(&secp);
     provider.add_account(signing_account);
 
-    let runtime = Runtime {
-        identity: ServiceId::Signer,
-        provider,
-    };
+    let runtime = Runtime { identity: ServiceId::Signer, provider };
 
     Service::run(config, runtime, false)
 }
@@ -56,9 +53,7 @@ where
     type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -70,9 +65,7 @@ where
         match bus {
             ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
             ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => {
-                Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))
-            }
+            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
         }
     }
 
@@ -117,10 +110,7 @@ where
             }
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(
-                    ServiceBus::Ctl,
-                    request.get_type(),
-                ));
+                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
             }
         }
     }

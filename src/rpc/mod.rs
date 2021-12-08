@@ -17,11 +17,10 @@ pub mod reply;
 pub mod request;
 
 pub use client::Client;
-pub use reply::Reply;
-pub use request::Request;
-
 use microservices::esb::BusId;
 use microservices::rpc_connection::Api;
+pub use reply::Reply;
+pub use request::Request;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
 pub enum ServiceBus {

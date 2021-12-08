@@ -18,7 +18,6 @@ use internet2::PartialNodeAddr;
 use lnp::p2p::legacy::ChannelId;
 
 use crate::opts::FUNGIBLED_RPC_ENDPOINT;
-
 use crate::peerd::KeyOpts;
 
 /// Lightning peer network channel daemon; part of LNP Node
@@ -71,8 +70,7 @@ impl Opts {
 impl RgbOpts {
     pub fn process(&mut self, shared: &crate::opts::Opts) {
         match &mut self.rgb20_socket {
-            PartialNodeAddr::ZmqIpc(path, ..)
-            | PartialNodeAddr::Posix(path) => {
+            PartialNodeAddr::ZmqIpc(path, ..) | PartialNodeAddr::Posix(path) => {
                 shared.process_dir(path);
             }
             _ => {}

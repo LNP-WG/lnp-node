@@ -37,46 +37,28 @@ impl Client {
         debug!("Setting up RPC client...");
         let identity = ServiceId::client();
         let bus_config = esb::BusConfig::with_locator(
-            config
-                .ctl_endpoint
-                .try_into()
-                .expect("Only ZMQ RPC is currently supported"),
+            config.ctl_endpoint.try_into().expect("Only ZMQ RPC is currently supported"),
             Some(ServiceId::router()),
         );
         let esb = esb::Controller::with(
             map! {
                 ServiceBus::Ctl => bus_config
             },
-            Handler {
-                identity: identity.clone(),
-            },
+            Handler { identity: identity.clone() },
             ZmqType::RouterConnect,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self {
-            identity,
-            chain,
-            response_queue: empty!(),
-            esb,
-        })
+        Ok(Self { identity, chain, response_queue: empty!(), esb })
     }
 
-    pub fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    pub fn identity(&self) -> ServiceId { self.identity.clone() }
 
-    pub fn chain(&self) -> Chain {
-        self.chain.clone()
-    }
+    pub fn chain(&self) -> Chain { self.chain.clone() }
 
-    pub fn request(
-        &mut self,
-        daemon: ServiceId,
-        req: Request,
-    ) -> Result<(), Error> {
+    pub fn request(&mut self, daemon: ServiceId, req: Request) -> Result<(), Error> {
         debug!("Executing {}", req);
         self.esb.send_to(ServiceBus::Ctl, daemon, req)?;
         Ok(())
@@ -88,20 +70,13 @@ impl Client {
                 self.response_queue.push(rep);
             }
         }
-        return Ok(self
-            .response_queue
-            .pop()
-            .expect("We always have at least one element"));
+        return Ok(self.response_queue.pop().expect("We always have at least one element"));
     }
 
     pub fn report_failure(&mut self) -> Result<Request, Error> {
         match self.response()? {
             Request::Failure(fail) => {
-                eprintln!(
-                    "{}: {}",
-                    "Request failure".err(),
-                    fail.err_details()
-                );
+                eprintln!("{}: {}", "Request failure".err(), fail.err_details());
                 Err(Error::from(fail))?
             }
             resp => Ok(resp),
@@ -133,11 +108,7 @@ impl Client {
                     println!("{}", "Success".ended());
                 }
                 other => {
-                    eprintln!(
-                        "{}: {}",
-                        "Unexpected report".err(),
-                        other.err_details()
-                    );
+                    eprintln!("{}: {}", "Unexpected report".err(), other.err_details());
                     Err(Error::Other(s!("Unexpected server response")))?
                 }
             }
@@ -155,9 +126,7 @@ impl esb::Handler<ServiceBus> for Handler {
     type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,

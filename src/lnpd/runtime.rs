@@ -12,15 +12,14 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::Wrapper;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ffi::OsStr;
-use std::io;
 use std::net::SocketAddr;
-use std::process;
 use std::time::{Duration, SystemTime};
+use std::{io, process};
 
+use amplify::Wrapper;
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
@@ -31,9 +30,7 @@ use microservices::rpc::Failure;
 
 use crate::lnpd::funding_wallet::FundingWallet;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
-use crate::rpc::request::{
-    FundsInfo, IntoProgressOrFalure, NodeInfo, OptionDetails,
-};
+use crate::rpc::request::{FundsInfo, IntoProgressOrFalure, NodeInfo, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::{Config, Error, LogStyle, Service, ServiceId};
 
@@ -41,12 +38,8 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let mut wallet_path = config.data_dir.clone();
     wallet_path.push(LNP_NODE_FUNDING_WALLET);
     debug!("Loading funding wallet from '{}'", wallet_path.display());
-    let funding_wallet =
-        FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
-    info!(
-        "Funding wallet: {}",
-        funding_wallet.wallet_data().descriptor
-    );
+    let funding_wallet = FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
+    info!("Funding wallet: {}", funding_wallet.wallet_data().descriptor);
 
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
@@ -84,9 +77,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -98,9 +89,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         match bus {
             ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
             ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => {
-                Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))
-            }
+            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
         }
     }
 
@@ -126,22 +115,16 @@ impl Runtime {
             }
             Request::PeerMessage(message) => message,
             _ => {
-                error!(
-                    "MSG RPC can be only used for forwarding LN P2P messages"
-                );
-                return Err(Error::NotSupported(
-                    ServiceBus::Msg,
-                    request.get_type(),
-                ));
+                error!("MSG RPC can be only used for forwarding LN P2P messages");
+                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
             }
         };
 
         let node_addr = match source {
             ServiceId::Peer(node_addr) => node_addr,
-            service => unreachable!(
-                "lnpd received peer message not from a peerd but from {}",
-                service
-            ),
+            service => {
+                unreachable!("lnpd received peer message not from a peerd but from {}", service)
+            }
         };
 
         match message {
@@ -167,23 +150,19 @@ impl Runtime {
 
                 match &source {
                     ServiceId::Lnpd => {
-                        error!(
-                            "{}",
-                            "Unexpected another lnpd instance connection".err()
-                        );
+                        error!("{}", "Unexpected another lnpd instance connection".err());
                     }
                     ServiceId::Peer(connection_id) => {
                         if self.connections.insert(connection_id.clone()) {
                             info!(
-                                "Connection {} is registered; total {} \
-                                 connections are known",
+                                "Connection {} is registered; total {} connections are known",
                                 connection_id,
                                 self.connections.len()
                             );
                         } else {
                             warn!(
-                                "Connection {} was already registered; the \
-                                 service probably was relaunched",
+                                "Connection {} was already registered; the service probably was \
+                                 relaunched",
                                 connection_id
                             );
                         }
@@ -191,15 +170,14 @@ impl Runtime {
                     ServiceId::Channel(channel_id) => {
                         if self.channels.insert(channel_id.clone()) {
                             info!(
-                                "Channel {} is registered; total {} \
-                                 channels are known",
+                                "Channel {} is registered; total {} channels are known",
                                 channel_id,
                                 self.channels.len()
                             );
                         } else {
                             warn!(
-                                "Channel {} was already registered; the \
-                                 service probably was relaunched",
+                                "Channel {} was already registered; the service probably was \
+                                 relaunched",
                                 channel_id
                             );
                         }
@@ -209,20 +187,17 @@ impl Runtime {
                     }
                 }
 
-                if let Some(channel_params) = self.opening_channels.get(&source)
-                {
+                if let Some(channel_params) = self.opening_channels.get(&source) {
                     // Tell channeld channel options and link it with the
                     // connection daemon
                     debug!(
-                        "Daemon {} is known: we spawned it to create a channel. \
-                         Ordering channel opening", source
+                        "Daemon {} is known: we spawned it to create a channel. Ordering channel \
+                         opening",
+                        source
                     );
                     notify_cli = Some((
                         channel_params.report_to.clone(),
-                        Request::Progress(format!(
-                            "Channel daemon {} operational",
-                            source
-                        )),
+                        Request::Progress(format!("Channel daemon {} operational", source)),
                     ));
                     senders.send_to(
                         ServiceBus::Ctl,
@@ -231,14 +206,13 @@ impl Runtime {
                         Request::OpenChannelWith(channel_params.clone()),
                     )?;
                     self.opening_channels.remove(&source);
-                } else if let Some(channel_params) =
-                    self.accepting_channels.get(&source)
-                {
+                } else if let Some(channel_params) = self.accepting_channels.get(&source) {
                     // Tell channeld channel options and link it with the
                     // connection daemon
                     debug!(
-                        "Daemon {} is known: we spawned it to create a channel. \
-                         Ordering channel acceptance", source
+                        "Daemon {} is known: we spawned it to create a channel. Ordering channel \
+                         acceptance",
+                        source
                     );
                     senders.send_to(
                         ServiceBus::Ctl,
@@ -247,12 +221,10 @@ impl Runtime {
                         Request::AcceptChannelFrom(channel_params.clone()),
                     )?;
                     self.accepting_channels.remove(&source);
-                } else if let Some(enquirer) =
-                    self.spawning_services.get(&source)
-                {
+                } else if let Some(enquirer) = self.spawning_services.get(&source) {
                     debug!(
-                        "Daemon {} is known: we spawned it to create a new peer \
-                         connection by a request from {}",
+                        "Daemon {} is known: we spawned it to create a new peer connection by a \
+                         request from {}",
                         source, enquirer
                     );
                     notify_cli = Some((
@@ -267,10 +239,7 @@ impl Runtime {
             }
 
             Request::UpdateChannelId(new_id) => {
-                debug!(
-                    "Requested to update channel id {} on {}",
-                    source, new_id
-                );
+                debug!("Requested to update channel id {} on {}", source, new_id);
                 if let ServiceId::Channel(old_id) = source {
                     if !self.channels.remove(&old_id) {
                         warn!("Channel daemon {} was unknown", source);
@@ -278,10 +247,7 @@ impl Runtime {
                     self.channels.insert(new_id);
                     debug!("Registered channel daemon id {}", new_id);
                 } else {
-                    error!(
-                        "Chanel id update may be requested only by a channeld, not {}", 
-                        source
-                    );
+                    error!("Chanel id update may be requested only by a channeld, not {}", source);
                 }
             }
 
@@ -312,9 +278,7 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::PeerList(
-                        self.connections.iter().cloned().collect(),
-                    ),
+                    Request::PeerList(self.connections.iter().cloned().collect()),
                 )?;
             }
 
@@ -323,9 +287,7 @@ impl Runtime {
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
                     source,
-                    Request::ChannelList(
-                        self.channels.iter().cloned().collect(),
-                    ),
+                    Request::ChannelList(self.channels.iter().cloned().collect()),
                 )?;
             }
 
@@ -338,9 +300,7 @@ impl Runtime {
                     Request::FundsInfo(FundsInfo {
                         bitcoin_funds: funds,
                         asset_funds: none!(),
-                        next_address: self
-                            .funding_wallet
-                            .next_funding_address()?,
+                        next_address: self.funding_wallet.next_funding_address()?,
                     }),
                 )?;
             }
@@ -348,10 +308,7 @@ impl Runtime {
             Request::Listen(addr) => {
                 let addr_str = addr.addr();
                 if self.listens.contains(&addr) {
-                    let msg = format!(
-                        "Listener on {} already exists, ignoring request",
-                        addr
-                    );
+                    let msg = format!("Listener on {} already exists, ignoring request", addr);
                     warn!("{}", msg.err());
                     notify_cli = Some((
                         Some(source.clone()),
@@ -366,10 +323,13 @@ impl Runtime {
                     );
                     let resp = self.listen(addr);
                     match resp {
-                    Ok(_) => info!("Connection daemon {} for incoming LN peer connections on {}", 
-                                   "listens".ended(), addr_str),
-                    Err(ref err) => error!("{}", err.err())
-                }
+                        Ok(_) => info!(
+                            "Connection daemon {} for incoming LN peer connections on {}",
+                            "listens".ended(),
+                            addr_str
+                        ),
+                        Err(ref err) => error!("{}", err.err()),
+                    }
                     senders.send_to(
                         ServiceBus::Ctl,
                         ServiceId::Lnpd,
@@ -387,64 +347,38 @@ impl Runtime {
             }
 
             Request::ConnectPeer(addr) => {
-                info!(
-                    "{} to remote peer {}",
-                    "Connecting".promo(),
-                    addr.promoter()
-                );
+                info!("{} to remote peer {}", "Connecting".promo(), addr.promoter());
                 let resp = self.connect_peer(source.clone(), addr);
                 match resp {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
                 }
-                notify_cli = Some((
-                    Some(source.clone()),
-                    resp.into_progress_or_failure(),
-                ));
+                notify_cli = Some((Some(source.clone()), resp.into_progress_or_failure()));
             }
 
-            Request::OpenChannelWith(request::CreateChannel {
-                channel_req,
-                peerd,
-                report_to,
-            }) => {
+            Request::OpenChannelWith(request::CreateChannel { channel_req, peerd, report_to }) => {
                 info!(
                     "{} with {} by request from {}",
                     "Creating channel".promo(),
                     peerd.promoter(),
                     source.promoter()
                 );
-                let resp =
-                    self.create_channel(peerd, report_to, channel_req, false);
+                let resp = self.create_channel(peerd, report_to, channel_req, false);
                 match resp {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
                 }
-                notify_cli = Some((
-                    Some(source.clone()),
-                    resp.into_progress_or_failure(),
-                ));
+                notify_cli = Some((Some(source.clone()), resp.into_progress_or_failure()));
             }
 
             _ => {
-                error!(
-                    "{}",
-                    "Request is not supported by the CTL interface".err()
-                );
-                return Err(Error::NotSupported(
-                    ServiceBus::Ctl,
-                    request.get_type(),
-                ));
+                error!("{}", "Request is not supported by the CTL interface".err());
+                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
             }
         }
 
         if let Some((Some(respond_to), resp)) = notify_cli {
-            senders.send_to(
-                ServiceBus::Ctl,
-                ServiceId::Lnpd,
-                respond_to,
-                resp,
-            )?;
+            senders.send_to(ServiceBus::Ctl, ServiceId::Lnpd, respond_to, resp)?;
         }
 
         Ok(())
@@ -459,38 +393,25 @@ impl Runtime {
             debug!("Instantiating peerd...");
 
             // Start channeld
-            let child = launch(
-                "peerd",
-                &["--listen", &ip.to_string(), "--port", &port.to_string()],
-            )?;
-            let msg = format!(
-                "New instance of peerd launched with PID {}",
-                child.id()
-            );
+            let child =
+                launch("peerd", &["--listen", &ip.to_string(), "--port", &port.to_string()])?;
+            let msg = format!("New instance of peerd launched with PID {}", child.id());
             info!("{}", msg);
             Ok(msg)
         } else {
-            Err(Error::Other(s!(
-                "Only TCP is supported for now as an overlay protocol"
-            )))
+            Err(Error::Other(s!("Only TCP is supported for now as an overlay protocol")))
         }
     }
 
-    fn connect_peer(
-        &mut self,
-        source: ServiceId,
-        node_addr: NodeAddr,
-    ) -> Result<String, Error> {
+    fn connect_peer(&mut self, source: ServiceId, node_addr: NodeAddr) -> Result<String, Error> {
         debug!("Instantiating peerd...");
 
         // Start channeld
         let child = launch("peerd", &["--connect", &node_addr.to_string()])?;
-        let msg =
-            format!("New instance of peerd launched with PID {}", child.id());
+        let msg = format!("New instance of peerd launched with PID {}", child.id());
         info!("{}", msg);
 
-        self.spawning_services
-            .insert(ServiceId::Peer(node_addr), source);
+        self.spawning_services.insert(ServiceId::Peer(node_addr), source);
         debug!("Awaiting for peerd to connect...");
 
         Ok(msg)
@@ -508,19 +429,12 @@ impl Runtime {
         // We need to initialize temporary channel id here
         if !accept {
             channel_req.temporary_channel_id = TempChannelId::random();
-            debug!(
-                "Generated {} as a temporary channel id",
-                channel_req.temporary_channel_id
-            );
+            debug!("Generated {} as a temporary channel id", channel_req.temporary_channel_id);
         }
 
         // Start channeld
-        let child =
-            launch("channeld", &[channel_req.temporary_channel_id.to_hex()])?;
-        let msg = format!(
-            "New instance of channeld launched with PID {}",
-            child.id()
-        );
+        let child = launch("channeld", &[channel_req.temporary_channel_id.to_hex()])?;
+        let msg = format!("New instance of channeld launched with PID {}", child.id());
         info!("{}", msg);
 
         // Construct channel creation request
@@ -547,20 +461,12 @@ impl Runtime {
             ..channel_req
         };
 
-        let list = if accept {
-            &mut self.accepting_channels
-        } else {
-            &mut self.opening_channels
-        };
+        let list = if accept { &mut self.accepting_channels } else { &mut self.opening_channels };
         list.insert(
             ServiceId::Channel(ChannelId::from_inner(
                 channel_req.temporary_channel_id.into_inner(),
             )),
-            request::CreateChannel {
-                channel_req,
-                peerd: source,
-                report_to,
-            },
+            request::CreateChannel { channel_req, peerd: source, report_to },
         );
         debug!("Awaiting for channeld to connect...");
 

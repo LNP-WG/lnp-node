@@ -14,7 +14,6 @@
 
 use std::io;
 
-use crate::lnpd::funding_wallet;
 use amplify::IoError;
 use bitcoin::util::bip32;
 #[cfg(feature = "_rpc")]
@@ -24,6 +23,7 @@ use internet2::{presentation, transport};
 use microservices::{esb, rpc};
 use psbt::sign::SignError;
 
+use crate::lnpd::funding_wallet;
 #[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
 
@@ -112,10 +112,7 @@ impl From<Error> for rpc::Error {
     fn from(err: Error) -> Self {
         match err {
             Error::Rpc(err) => err,
-            err => rpc::Error::ServerFailure(rpc::Failure {
-                code: 2000,
-                info: err.to_string(),
-            }),
+            err => rpc::Error::ServerFailure(rpc::Failure { code: 2000, info: err.to_string() }),
         }
     }
 }

@@ -72,6 +72,4 @@ pub mod signd;
 pub use config::Config;
 pub use error::Error;
 #[cfg(feature = "_rpc")]
-pub use service::{
-    CtlServer, LogStyle, Senders, Service, ServiceId, TryToServiceId,
-};
+pub use service::{CtlServer, LogStyle, Senders, Service, ServiceId, TryToServiceId};

@@ -59,11 +59,10 @@
 //! The overall program logic thus is the following:
 //!
 //! In the process starting from `main()`:
-//! - Parse cli arguments into a config. There is no config file, since the
-//!   daemon can be started only from another control process (`lnpd`) or by
-//!   forking itself.
-//! - If `--listen` argument is present, start a listening version as described
-//!   above and open TCP port in listening mode; wait for incoming connections
+//! - Parse cli arguments into a config. There is no config file, since the daemon can be started
+//!   only from another control process (`lnpd`) or by forking itself.
+//! - If `--listen` argument is present, start a listening version as described above and open TCP
+//!   port in listening mode; wait for incoming connections
 //! - If `--connect` argument is present, connect to the remote TCP peer
 //!
 //! In forked/spawned version:
@@ -73,8 +72,7 @@
 //! launched from the control process:
 //! - Split TCP socket and related transcoders into reading and writing parts
 //! - Create bridge ZMQ PAIR socket
-//! - Put both TCP socket reading ZMQ bridge write PAIR parts into a thread
-//!   ("bridge")
+//! - Put both TCP socket reading ZMQ bridge write PAIR parts into a thread ("bridge")
 //! - Open control interface socket
 //! - Create run loop in the main thread for polling three ZMQ sockets:
 //!   * control interface
@@ -93,21 +91,18 @@ extern crate log;
 #[macro_use]
 extern crate amplify;
 
-use clap::Parser;
-use internet2::addr::InetSocketAddr;
-use nix::unistd::{fork, ForkResult};
 use std::convert::TryFrom;
-use std::net::TcpListener;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
 use std::time::Duration;
 
 use bitcoin::secp256k1::PublicKey;
-use internet2::{
-    session, FramingProtocol, NodeAddr, RemoteNodeAddr, RemoteSocketAddr,
-};
+use clap::Parser;
+use internet2::addr::InetSocketAddr;
+use internet2::{session, FramingProtocol, NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lnp_node::peerd::{self, Opts};
 use lnp_node::{Config, LogStyle};
 use microservices::peer::PeerConnection;
+use nix::unistd::{fork, ForkResult};
 
 /*
 mod internal {
@@ -142,21 +137,15 @@ impl From<Opts> for PeerSocket {
             Self::Connect(peer_addr)
         } else if let Some(bind_addr) = opts.listen {
             Self::Listen(match opts.overlay {
-                FramingProtocol::FramedRaw => {
-                    RemoteSocketAddr::Ftcp(InetSocketAddr {
-                        address: bind_addr
-                            .unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED))
-                            .into(),
-                        port: opts.port,
-                    })
-                }
+                FramingProtocol::FramedRaw => RemoteSocketAddr::Ftcp(InetSocketAddr {
+                    address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
+                    port: opts.port,
+                }),
                 // TODO: (v2) implement overlay protocols
                 _ => unimplemented!(),
             })
         } else {
-            unreachable!(
-                "Either `connect` or `listen` must be present due to Clap configuration"
-            )
+            unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
         }
     }
 }
@@ -207,29 +196,24 @@ fn main() {
 
             debug!("Binding TCP socket {}", inet_addr);
             let listener = TcpListener::bind(
-                SocketAddr::try_from(inet_addr)
-                    .expect("Tor is not yet supported"),
+                SocketAddr::try_from(inet_addr).expect("Tor is not yet supported"),
             )
             .expect("Unable to bind to Lightning network peer socket");
 
             debug!("Running TCP listener event loop");
             loop {
                 debug!("Awaiting for incoming connections...");
-                let (stream, remote_socket_addr) = listener
-                    .accept()
-                    .expect("Error accepting incpming peer connection");
+                let (stream, remote_socket_addr) =
+                    listener.accept().expect("Error accepting incpming peer connection");
                 debug!("New connection from {}", remote_socket_addr);
 
                 remote_socket = remote_socket_addr.into();
 
                 // TODO: Support multithread mode
                 debug!("Forking child process");
-                if let ForkResult::Child =
-                    unsafe { fork().expect("Unable to fork child process") }
+                if let ForkResult::Child = unsafe { fork().expect("Unable to fork child process") }
                 {
-                    trace!(
-                        "Child forked; returning into main listener event loop"
-                    );
+                    trace!("Child forked; returning into main listener event loop");
                     continue;
                 }
 
@@ -238,11 +222,8 @@ fn main() {
                     .expect("Unable to set up timeout for TCP connection");
 
                 debug!("Establishing session with the remote");
-                let session =
-                    session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                        .expect(
-                            "Unable to establish session with the remote peer",
-                        );
+                let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
+                    .expect("Unable to establish session with the remote peer");
 
                 debug!("Session successfully established");
                 break PeerConnection::with(session);
@@ -264,17 +245,8 @@ fn main() {
     };
 
     debug!("Starting runtime ...");
-    peerd::run(
-        config,
-        connection,
-        id,
-        local_id,
-        remote_id,
-        local_socket,
-        remote_socket,
-        connect,
-    )
-    .expect("Error running peerd runtime");
+    peerd::run(config, connection, id, local_id, remote_id, local_socket, remote_socket, connect)
+        .expect("Error running peerd runtime");
 
     unreachable!()
 }

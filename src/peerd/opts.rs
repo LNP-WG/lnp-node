@@ -126,13 +126,11 @@ impl KeyOpts {
 
     pub fn local_node(&self) -> LocalNode {
         if PathBuf::from(self.key_file.clone()).exists() {
-            LocalNode::strict_decode(fs::File::open(&self.key_file).expect(
-                &format!(
-                    "Unable to open key file {}; please check that the user \
-                     running the daemon has necessary permissions",
-                    self.key_file
-                ),
-            ))
+            LocalNode::strict_decode(fs::File::open(&self.key_file).expect(&format!(
+                "Unable to open key file {}; please check that the user running the daemon has \
+                 necessary permissions",
+                self.key_file
+            )))
             .expect("Unable to read node code file format")
         } else {
             let secp = Secp256k1::new();
@@ -141,9 +139,7 @@ impl KeyOpts {
                 "Unable to create key file '{}'; please check that the path exists",
                 self.key_file
             ));
-            local_node
-                .strict_encode(key_file)
-                .expect("Unable to save generated node kay");
+            local_node.strict_encode(key_file).expect("Unable to save generated node kay");
             local_node
         }
     }

@@ -25,8 +25,7 @@ use microservices::{esb, rpc};
 use strict_encoding::{strict_deserialize, strict_serialize};
 
 use crate::rpc::{Request, ServiceBus};
-use crate::Config;
-use crate::Error;
+use crate::{Config, Error};
 
 #[derive(
     Wrapper,
@@ -41,19 +40,14 @@ use crate::Error;
     From,
     Default,
     StrictEncode,
-    StrictDecode,
+    StrictDecode
 )]
 pub struct ClientName([u8; 32]);
 
 impl Display for ClientName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if f.alternate() {
-            write!(
-                f,
-                "{}..{}",
-                self.0[..4].to_hex(),
-                self.0[(self.0.len() - 4)..].to_hex()
-            )
+            write!(f, "{}..{}", self.0[..4].to_hex(), self.0[(self.0.len() - 4)..].to_hex())
         } else {
             f.write_str(&String::from_utf8_lossy(&self.0))
         }
@@ -77,9 +71,7 @@ impl FromStr for ClientName {
 }
 
 /// Identifiers of daemons participating in LNP Node
-#[derive(
-    Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode,
-)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode)]
 pub enum ServiceId {
     #[display("loopback")]
     Loopback,
@@ -113,9 +105,7 @@ pub enum ServiceId {
 }
 
 impl ServiceId {
-    pub fn router() -> ServiceId {
-        ServiceId::Lnpd
-    }
+    pub fn router() -> ServiceId { ServiceId::Lnpd }
 
     pub fn client() -> ServiceId {
         use bitcoin::secp256k1::rand;
@@ -127,8 +117,7 @@ impl esb::ServiceAddress for ServiceId {}
 
 impl From<ServiceId> for Vec<u8> {
     fn from(daemon_id: ServiceId) -> Self {
-        strict_serialize(&daemon_id)
-            .expect("Memory-based encoding does not fail")
+        strict_serialize(&daemon_id).expect("Memory-based encoding does not fail")
     }
 }
 
@@ -158,26 +147,14 @@ where
     esb::Error: From<Runtime::Error>,
 {
     #[cfg(feature = "node")]
-    pub fn run(
-        config: Config,
-        runtime: Runtime,
-        broker: bool,
-    ) -> Result<(), Error> {
+    pub fn run(config: Config, runtime: Runtime, broker: bool) -> Result<(), Error> {
         let service = Self::with(config, runtime, broker)?;
         service.run_loop()?;
         unreachable!()
     }
 
-    fn with(
-        config: Config,
-        runtime: Runtime,
-        broker: bool,
-    ) -> Result<Self, esb::Error> {
-        let router = if !broker {
-            Some(ServiceId::router())
-        } else {
-            None
-        };
+    fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error> {
+        let router = if !broker { Some(ServiceId::router()) } else { None };
         let esb = esb::Controller::with(
             map! {
                 ServiceBus::Msg => esb::BusConfig::with_locator(
@@ -192,61 +169,35 @@ where
                 )
             },
             runtime,
-            if broker {
-                ZmqType::RouterBind
-            } else {
-                ZmqType::RouterConnect
-            },
+            if broker { ZmqType::RouterBind } else { ZmqType::RouterConnect },
         )?;
         Ok(Self { esb, broker })
     }
 
-    pub fn broker(
-        config: Config,
-        runtime: Runtime,
-    ) -> Result<Self, esb::Error> {
+    pub fn broker(config: Config, runtime: Runtime) -> Result<Self, esb::Error> {
         Self::with(config, runtime, true)
     }
 
-    pub fn service(
-        config: Config,
-        runtime: Runtime,
-    ) -> Result<Self, esb::Error> {
+    pub fn service(config: Config, runtime: Runtime) -> Result<Self, esb::Error> {
         Self::with(config, runtime, false)
     }
 
-    pub fn is_broker(&self) -> bool {
-        self.broker
-    }
+    pub fn is_broker(&self) -> bool { self.broker }
 
-    pub fn add_loopback(
-        &mut self,
-        socket: zmq::Socket,
-    ) -> Result<(), esb::Error> {
-        self.esb.add_service_bus(
-            ServiceBus::Bridge,
-            esb::BusConfig {
-                carrier: zmqsocket::Carrier::Socket(socket),
-                router: None,
-                queued: true,
-            },
-        )
+    pub fn add_loopback(&mut self, socket: zmq::Socket) -> Result<(), esb::Error> {
+        self.esb.add_service_bus(ServiceBus::Bridge, esb::BusConfig {
+            carrier: zmqsocket::Carrier::Socket(socket),
+            router: None,
+            queued: true,
+        })
     }
 
     #[cfg(feature = "node")]
     pub fn run_loop(mut self) -> Result<(), Error> {
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));
-            self.esb.send_to(
-                ServiceBus::Ctl,
-                ServiceId::Lnpd,
-                Request::Hello,
-            )?;
-            self.esb.send_to(
-                ServiceBus::Msg,
-                ServiceId::Lnpd,
-                Request::Hello,
-            )?;
+            self.esb.send_to(ServiceBus::Ctl, ServiceId::Lnpd, Request::Hello)?;
+            self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, Request::Hello)?;
         }
 
         let identity = self.esb.handler().identity();
@@ -265,21 +216,15 @@ pub trait TryToServiceId {
 }
 
 impl TryToServiceId for ServiceId {
-    fn try_to_service_id(&self) -> Option<ServiceId> {
-        Some(self.clone())
-    }
+    fn try_to_service_id(&self) -> Option<ServiceId> { Some(self.clone()) }
 }
 
 impl TryToServiceId for &Option<ServiceId> {
-    fn try_to_service_id(&self) -> Option<ServiceId> {
-        (*self).clone()
-    }
+    fn try_to_service_id(&self) -> Option<ServiceId> { (*self).clone() }
 }
 
 impl TryToServiceId for Option<ServiceId> {
-    fn try_to_service_id(&self) -> Option<ServiceId> {
-        self.clone()
-    }
+    fn try_to_service_id(&self) -> Option<ServiceId> { self.clone() }
 }
 
 pub trait CtlServer
@@ -357,45 +302,25 @@ where
 use colored::Colorize;
 
 pub trait LogStyle: ToString {
-    fn promo(&self) -> colored::ColoredString {
-        self.to_string().bold().bright_blue()
-    }
+    fn promo(&self) -> colored::ColoredString { self.to_string().bold().bright_blue() }
 
-    fn promoter(&self) -> colored::ColoredString {
-        self.to_string().italic().bright_blue()
-    }
+    fn promoter(&self) -> colored::ColoredString { self.to_string().italic().bright_blue() }
 
-    fn action(&self) -> colored::ColoredString {
-        self.to_string().bold().yellow()
-    }
+    fn action(&self) -> colored::ColoredString { self.to_string().bold().yellow() }
 
-    fn progress(&self) -> colored::ColoredString {
-        self.to_string().bold().green()
-    }
+    fn progress(&self) -> colored::ColoredString { self.to_string().bold().green() }
 
-    fn ended(&self) -> colored::ColoredString {
-        self.to_string().bold().bright_green()
-    }
+    fn ended(&self) -> colored::ColoredString { self.to_string().bold().bright_green() }
 
-    fn ender(&self) -> colored::ColoredString {
-        self.to_string().italic().bright_green()
-    }
+    fn ender(&self) -> colored::ColoredString { self.to_string().italic().bright_green() }
 
-    fn amount(&self) -> colored::ColoredString {
-        self.to_string().bold().bright_yellow()
-    }
+    fn amount(&self) -> colored::ColoredString { self.to_string().bold().bright_yellow() }
 
-    fn addr(&self) -> colored::ColoredString {
-        self.to_string().bold().bright_yellow()
-    }
+    fn addr(&self) -> colored::ColoredString { self.to_string().bold().bright_yellow() }
 
-    fn err(&self) -> colored::ColoredString {
-        self.to_string().bold().bright_red()
-    }
+    fn err(&self) -> colored::ColoredString { self.to_string().bold().bright_red() }
 
-    fn err_details(&self) -> colored::ColoredString {
-        self.to_string().bold().red()
-    }
+    fn err_details(&self) -> colored::ColoredString { self.to_string().bold().red() }
 }
 
 impl<T> LogStyle for T where T: ToString {}

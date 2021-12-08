@@ -18,7 +18,6 @@ use std::str::FromStr;
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr};
 use lnp::p2p::legacy::{ChannelId, OpenChannel, LNP2P_LEGACY_PORT};
 use microservices::shell::Exec;
-
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 #[cfg(feature = "rgb")]
@@ -38,20 +37,14 @@ impl Exec for Command {
             Command::Info { subject } => {
                 if let Some(subj) = subject {
                     if let Ok(node_addr) = NodeAddr::from_str(&subj) {
-                        runtime.request(
-                            ServiceId::Peer(node_addr),
-                            Request::GetInfo,
-                        )?;
+                        runtime.request(ServiceId::Peer(node_addr), Request::GetInfo)?;
                     } else if let Ok(channel_id) = ChannelId::from_str(&subj) {
-                        runtime.request(
-                            ServiceId::Channel(channel_id),
-                            Request::GetInfo,
-                        )?;
+                        runtime.request(ServiceId::Channel(channel_id), Request::GetInfo)?;
                     } else {
                         let err = format!(
                             "{}",
-                            "Subject parameter must be either remote node \
-                            address or channel id represented by a hex string"
+                            "Subject parameter must be either remote node address or channel id \
+                             represented by a hex string"
                                 .err()
                         );
                         return Err(Error::Other(err));
@@ -63,10 +56,9 @@ impl Exec for Command {
                     Request::NodeInfo(info) => println!("{}", info),
                     Request::PeerInfo(info) => println!("{}", info),
                     Request::ChannelInfo(info) => println!("{}", info),
-                    _ => Err(Error::Other(format!(
-                        "{}",
-                        "Server returned unrecognizable response"
-                    )))?,
+                    _ => {
+                        Err(Error::Other(format!("{}", "Server returned unrecognizable response")))?
+                    }
                 }
             }
 
@@ -85,13 +77,8 @@ impl Exec for Command {
                 runtime.report_response()?;
             }
 
-            Command::Listen {
-                ip_addr,
-                port,
-                overlay,
-            } => {
-                let socket =
-                    RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
+            Command::Listen { ip_addr, port, overlay } => {
+                let socket = RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
                 runtime.request(ServiceId::Lnpd, Request::Listen(socket))?;
                 runtime.report_progress()?;
             }
@@ -106,21 +93,15 @@ impl Exec for Command {
             }
 
             Command::Ping { peer } => {
-                let node_addr = peer
-                    .to_node_addr(LNP2P_LEGACY_PORT)
-                    .expect("Provided node address is invalid");
+                let node_addr =
+                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("Provided node address is invalid");
 
-                runtime
-                    .request(ServiceId::Peer(node_addr), Request::PingPeer)?;
+                runtime.request(ServiceId::Peer(node_addr), Request::PingPeer)?;
             }
 
-            Command::Propose {
-                peer,
-                funding_satoshis,
-            } => {
-                let node_addr = peer
-                    .to_node_addr(LNP2P_LEGACY_PORT)
-                    .expect("Provided node address is invalid");
+            Command::Propose { peer, funding_satoshis } => {
+                let node_addr =
+                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("Provided node address is invalid");
 
                 runtime.request(
                     ServiceId::Lnpd,
@@ -138,22 +119,19 @@ impl Exec for Command {
                 runtime.report_progress()?;
                 match runtime.response()? {
                     Request::ChannelFunding(pubkey_script) => {
-                        let address =
-                            bitcoin::Network::try_from(runtime.chain())
-                                .ok()
-                                .and_then(|network| {
-                                    pubkey_script.address(network)
-                                });
+                        let address = bitcoin::Network::try_from(runtime.chain())
+                            .ok()
+                            .and_then(|network| pubkey_script.address(network));
                         match address {
                             None => {
                                 eprintln!(
-                                    "{}", 
+                                    "{}",
                                     "Can't generate funding address for a given network".err()
                                 );
                                 println!(
                                     "{}\nAssembly: {}\nHex: {:x}",
-                                    "Please transfer channel funding to an output \
-                                     with the following raw `scriptPubkey`"
+                                    "Please transfer channel funding to an output with the \
+                                     following raw `scriptPubkey`"
                                         .progress(),
                                     pubkey_script,
                                     pubkey_script,
@@ -162,8 +140,7 @@ impl Exec for Command {
                             Some(address) => {
                                 println!(
                                     "{} {}",
-                                    "Please transfer channel funding to "
-                                        .progress(),
+                                    "Please transfer channel funding to ".progress(),
                                     address.ended()
                                 );
                             }
@@ -174,30 +151,19 @@ impl Exec for Command {
                             "{} {} {}",
                             "Unexpected server response".err(),
                             other,
-                            "while waiting for channel funding information"
-                                .err()
+                            "while waiting for channel funding information".err()
                         );
                     }
                 }
             }
 
-            Command::Fund {
-                channel,
-                funding_outpoint,
-            } => {
-                runtime.request(
-                    channel.clone().into(),
-                    Request::FundChannel(funding_outpoint),
-                )?;
+            Command::Fund { channel, funding_outpoint } => {
+                runtime.request(channel.clone().into(), Request::FundChannel(funding_outpoint))?;
                 runtime.report_progress()?;
             }
 
             #[cfg(feature = "rgb")]
-            Command::Transfer {
-                channel,
-                amount,
-                asset,
-            } => {
+            Command::Transfer { channel, amount, asset } => {
                 runtime.request(
                     channel.clone().into(),
                     Request::Transfer(request::Transfer {
@@ -210,19 +176,10 @@ impl Exec for Command {
             }
 
             #[cfg(feature = "rgb")]
-            Command::Refill {
-                channel,
-                consignment,
-                outpoint,
-                blinding_factor,
-            } => {
+            Command::Refill { channel, consignment, outpoint, blinding_factor } => {
                 trace!("Reading consignment from file {:?}", &consignment);
-                let consignment = Consignment::read_file(consignment.clone())
-                    .map_err(|err| {
-                    Error::Other(format!(
-                        "Error in consignment encoding: {}",
-                        err
-                    ))
+                let consignment = Consignment::read_file(consignment.clone()).map_err(|err| {
+                    Error::Other(format!("Error in consignment encoding: {}", err))
                 })?;
                 trace!("Outpoint parsed as {}", outpoint);
 

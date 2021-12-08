@@ -17,22 +17,19 @@ use std::convert::TryFrom;
 use std::time::{Duration, SystemTime};
 
 use bitcoin::hashes::{sha256, Hash, HashEngine};
-use bitcoin::secp256k1;
 use bitcoin::secp256k1::{All, Secp256k1};
 use bitcoin::util::bip143::SigHashCache;
-use bitcoin::{OutPoint, SigHashType, Transaction};
+use bitcoin::{secp256k1, OutPoint, SigHashType, Transaction};
 #[cfg(feature = "rgb")]
 use bp::seals::OutpointReveal;
 #[cfg(feature = "rgb")]
 use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 #[cfg(feature = "rgb")]
-use internet2::{
-    session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller,
-};
+use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
 use internet2::{LocalNode, NodeAddr, TypedEnum};
 use lnp::p2p::legacy::{
-    AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned,
-    Messages, OpenChannel, TempChannelId, UpdateAddHtlc,
+    AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned, Messages, OpenChannel,
+    TempChannelId, UpdateAddHtlc,
 };
 use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
 use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
@@ -41,10 +38,10 @@ use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnpbp::chain::AssetId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
-use wallet::{hlc::HashPreimage, scripts::PubkeyScript};
-
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
+use wallet::hlc::HashPreimage;
+use wallet::scripts::PubkeyScript;
 
 use super::storage::{self, Driver};
 use crate::rpc::request::ChannelInfo;
@@ -59,12 +56,8 @@ pub fn run(
     #[cfg(feature = "rgb")] rgb20_socket_addr: ZmqSocketAddr,
 ) -> Result<(), Error> {
     #[cfg(feature = "rgb")]
-    let rgb20_rpc = session::Raw::with_zmq_unencrypted(
-        ZmqType::Req,
-        &rgb20_socket_addr,
-        None,
-        None,
-    )?;
+    let rgb20_rpc =
+        session::Raw::with_zmq_unencrypted(ZmqType::Req, &rgb20_socket_addr, None, None)?;
     #[cfg(feature = "rgb")]
     let rgb_unmarshaller = rgb_node::rpc::Reply::create_unmarshaller();
 
@@ -101,9 +94,7 @@ pub fn run(
         rgb_unmarshaller,
         storage: Box::new(storage::DiskDriver::init(
             channel_id,
-            Box::new(storage::DiskConfig {
-                path: Default::default(),
-            }),
+            Box::new(storage::DiskConfig { path: Default::default() }),
         )?),
     };
 
@@ -155,14 +146,10 @@ impl CtlServer for Runtime {}
 
 impl Runtime {
     #[inline]
-    pub fn node_id(&self) -> secp256k1::PublicKey {
-        self.local_node.node_id()
-    }
+    pub fn node_id(&self) -> secp256k1::PublicKey { self.local_node.node_id() }
 
     #[inline]
-    pub fn channel_capacity(&self) -> u64 {
-        self.local_capacity + self.remote_capacity
-    }
+    pub fn channel_capacity(&self) -> u64 { self.local_capacity + self.remote_capacity }
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -170,9 +157,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Address = ServiceId;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -184,9 +169,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         match bus {
             ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
             ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => {
-                Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))
-            }
+            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
         }
     }
 
@@ -199,11 +182,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn send_peer(
-        &self,
-        senders: &mut Senders,
-        message: Messages,
-    ) -> Result<(), Error> {
+    fn send_peer(&self, senders: &mut Senders, message: Messages) -> Result<(), Error> {
         senders.send_to(
             ServiceBus::Msg,
             self.identity(),
@@ -240,31 +219,19 @@ impl Runtime {
 
                 let enquirer = self.enquirer.clone();
 
-                self.channel_accepted(senders, &accept_channel, &source)
-                    .map_err(|err| {
-                        self.report_failure_to(
-                            senders,
-                            &enquirer,
-                            microservices::rpc::Failure {
-                                code: 0, // TODO: Create error type system
-                                info: err.to_string(),
-                            },
-                        )
-                    })?;
+                self.channel_accepted(senders, &accept_channel, &source).map_err(|err| {
+                    self.report_failure_to(senders, &enquirer, microservices::rpc::Failure {
+                        code: 0, // TODO: Create error type system
+                        info: err.to_string(),
+                    })
+                })?;
 
                 // Construct funding output scriptPubkey
                 let remote_pk = accept_channel.funding_pubkey;
                 let local_pk = self.local_keys.funding_pubkey;
-                trace!(
-                    "Generating script pubkey from local {} and remote {}",
-                    local_pk,
-                    remote_pk
-                );
-                let script_pubkey = PubkeyScript::ln_funding(
-                    self.channel_capacity(),
-                    local_pk,
-                    remote_pk,
-                );
+                trace!("Generating script pubkey from local {} and remote {}", local_pk, remote_pk);
+                let script_pubkey =
+                    PubkeyScript::ln_funding(self.channel_capacity(), local_pk, remote_pk);
                 trace!("Funding script: {}", script_pubkey);
                 if let Some(addr) = bitcoin::Network::try_from(&self.chain)
                     .ok()
@@ -274,19 +241,14 @@ impl Runtime {
                 } else {
                     error!(
                         "{} {}",
-                        "Unable to generate funding address for the current network "
-                            .err(),
+                        "Unable to generate funding address for the current network ".err(),
                         self.chain.err()
                     )
                 }
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let _ = self.send_ctl(
-                    senders,
-                    &enquirer,
-                    Request::ChannelFunding(script_pubkey),
-                );
+                let _ = self.send_ctl(senders, &enquirer, Request::ChannelFunding(script_pubkey));
             }
 
             Request::PeerMessage(Messages::FundingCreated(funding_created)) => {
@@ -294,22 +256,15 @@ impl Runtime {
 
                 self.state = Lifecycle::Funding;
 
-                let funding_signed =
-                    self.funding_created(senders, funding_created)?;
+                let funding_signed = self.funding_created(senders, funding_created)?;
 
-                self.send_peer(
-                    senders,
-                    Messages::FundingSigned(funding_signed),
-                )?;
+                self.send_peer(senders, Messages::FundingSigned(funding_signed))?;
 
                 self.state = Lifecycle::Funded;
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let msg = format!(
-                    "{} both signatures present",
-                    "Channel funded:".ended()
-                );
+                let msg = format!("{} both signatures present", "Channel funded:".ended());
                 info!("{}", msg);
                 let _ = self.report_progress_to(senders, &enquirer, msg);
             }
@@ -327,34 +282,23 @@ impl Runtime {
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let msg = format!(
-                    "{} both signatures present",
-                    "Channel funded:".ended()
-                );
+                let msg = format!("{} both signatures present", "Channel funded:".ended());
                 info!("{}", msg);
                 let _ = self.report_progress_to(senders, &enquirer, msg);
 
                 let funding_locked = FundingLocked {
                     channel_id: self.channel_id,
-                    next_per_commitment_point: self
-                        .local_keys
-                        .first_per_commitment_point,
+                    next_per_commitment_point: self.local_keys.first_per_commitment_point,
                 };
 
-                self.send_peer(
-                    senders,
-                    Messages::FundingLocked(funding_locked),
-                )?;
+                self.send_peer(senders, Messages::FundingLocked(funding_locked))?;
 
                 self.state = Lifecycle::Active;
                 self.local_capacity = self.params.funding_satoshis;
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let msg = format!(
-                    "{} transaction confirmed",
-                    "Channel active:".ended()
-                );
+                let msg = format!("{} transaction confirmed", "Channel active:".ended());
                 info!("{}", msg);
                 let _ = self.report_success_to(senders, &enquirer, Some(msg));
             }
@@ -373,22 +317,16 @@ impl Runtime {
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let msg = format!(
-                    "{} transaction confirmed",
-                    "Channel active:".ended()
-                );
+                let msg = format!("{} transaction confirmed", "Channel active:".ended());
                 info!("{}", msg);
                 let _ = self.report_success_to(senders, &enquirer, Some(msg));
             }
 
             Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
-                let _commitment_signed =
-                    self.htlc_receive(senders, update_add_htlc)?;
+                let _commitment_signed = self.htlc_receive(senders, update_add_htlc)?;
             }
 
-            Request::PeerMessage(Messages::CommitmentSigned(
-                _commitment_signed,
-            )) => {}
+            Request::PeerMessage(Messages::CommitmentSigned(_commitment_signed)) => {}
 
             Request::PeerMessage(Messages::RevokeAndAck(_revoke_ack)) => {}
 
@@ -410,13 +348,8 @@ impl Runtime {
             }
 
             _ => {
-                error!(
-                    "MSG RPC can be only used for forwarding LN P2P messages"
-                );
-                return Err(Error::NotSupported(
-                    ServiceBus::Msg,
-                    request.get_type(),
-                ));
+                error!("MSG RPC can be only used for forwarding LN P2P messages");
+                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
             }
         }
         Ok(())
@@ -429,24 +362,16 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::OpenChannelWith(request::CreateChannel {
-                channel_req,
-                peerd,
-                report_to,
-            }) => {
+            Request::OpenChannelWith(request::CreateChannel { channel_req, peerd, report_to }) => {
                 self.peer_service = ServiceId::Peer(peerd.clone());
                 self.enquirer = report_to.clone();
                 self.remote_peer = Some(peerd);
 
                 self.open_channel(senders, &channel_req).map_err(|err| {
-                    self.report_failure_to(
-                        senders,
-                        &report_to,
-                        microservices::rpc::Failure {
-                            code: 0, // TODO: Create error type system
-                            info: err.to_string(),
-                        },
-                    )
+                    self.report_failure_to(senders, &report_to, microservices::rpc::Failure {
+                        code: 0, // TODO: Create error type system
+                        info: err.to_string(),
+                    })
                 })?;
 
                 self.send_peer(senders, Messages::OpenChannel(channel_req))?;
@@ -464,23 +389,15 @@ impl Runtime {
                 self.state = Lifecycle::Proposed;
                 self.remote_peer = Some(peerd);
 
-                let accept_channel = self
-                    .accept_channel(senders, &channel_req, &peer_service)
-                    .map_err(|err| {
-                        self.report_failure_to(
-                            senders,
-                            &report_to,
-                            microservices::rpc::Failure {
-                                code: 0, // TODO: Create error type system
-                                info: err.to_string(),
-                            },
-                        )
+                let accept_channel =
+                    self.accept_channel(senders, &channel_req, &peer_service).map_err(|err| {
+                        self.report_failure_to(senders, &report_to, microservices::rpc::Failure {
+                            code: 0, // TODO: Create error type system
+                            info: err.to_string(),
+                        })
                     })?;
 
-                self.send_peer(
-                    senders,
-                    Messages::AcceptChannel(accept_channel),
-                )?;
+                self.send_peer(senders, Messages::AcceptChannel(accept_channel))?;
 
                 self.state = Lifecycle::Accepted;
             }
@@ -488,14 +405,10 @@ impl Runtime {
             Request::FundChannel(funding_outpoint) => {
                 self.enquirer = source.into();
 
-                let funding_created =
-                    self.fund_channel(senders, funding_outpoint)?;
+                let funding_created = self.fund_channel(senders, funding_outpoint)?;
 
                 self.state = Lifecycle::Funding;
-                self.send_peer(
-                    senders,
-                    Messages::FundingCreated(funding_created),
-                )?;
+                self.send_peer(senders, Messages::FundingCreated(funding_created))?;
             }
 
             #[cfg(feature = "rgb")]
@@ -525,17 +438,11 @@ impl Runtime {
 
                 let update_add_htlc = self.transfer(senders, transfer_req)?;
 
-                self.send_peer(
-                    senders,
-                    Messages::UpdateAddHtlc(update_add_htlc),
-                )?;
+                self.send_peer(senders, Messages::UpdateAddHtlc(update_add_htlc))?;
             }
 
             Request::GetInfo => {
-                fn bmap<T>(
-                    remote_peer: &Option<NodeAddr>,
-                    v: &T,
-                ) -> BTreeMap<NodeAddr, T>
+                fn bmap<T>(remote_peer: &Option<NodeAddr>, v: &T) -> BTreeMap<NodeAddr, T>
                 where
                     T: Clone,
                 {
@@ -545,32 +452,19 @@ impl Runtime {
                         .unwrap_or_default()
                 }
 
-                let channel_id = if self.channel_id == zero!() {
-                    None
-                } else {
-                    Some(self.channel_id)
-                };
+                let channel_id =
+                    if self.channel_id == zero!() { None } else { Some(self.channel_id) };
                 let info = ChannelInfo {
                     channel_id,
                     temporary_channel_id: self.temporary_channel_id,
                     state: self.state,
                     local_capacity: self.local_capacity,
-                    remote_capacities: bmap(
-                        &self.remote_peer,
-                        &self.remote_capacity,
-                    ),
+                    remote_capacities: bmap(&self.remote_peer, &self.remote_capacity),
                     assets: self.local_balances.keys().cloned().collect(),
                     local_balances: self.local_balances.clone(),
-                    remote_balances: bmap(
-                        &self.remote_peer,
-                        &self.remote_balances,
-                    ),
+                    remote_balances: bmap(&self.remote_peer, &self.remote_balances),
                     funding_outpoint: self.funding_outpoint,
-                    remote_peers: self
-                        .remote_peer
-                        .clone()
-                        .map(|p| vec![p])
-                        .unwrap_or_default(),
+                    remote_peers: self.remote_peer.clone().map(|p| vec![p]).unwrap_or_default(),
                     uptime: SystemTime::now()
                         .duration_since(self.started)
                         .unwrap_or(Duration::from_secs(0)),
@@ -592,10 +486,7 @@ impl Runtime {
 
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(
-                    ServiceBus::Ctl,
-                    request.get_type(),
-                ));
+                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
             }
         }
         Ok(())
@@ -603,31 +494,20 @@ impl Runtime {
 }
 
 impl Runtime {
-    pub fn update_channel_id(
-        &mut self,
-        senders: &mut Senders,
-    ) -> Result<(), Error> {
+    pub fn update_channel_id(&mut self, senders: &mut Senders) -> Result<(), Error> {
         let enquirer = self.enquirer.clone();
 
         // Update channel id!
         self.channel_id = ChannelId::with(self.funding_outpoint);
         debug!("Updating channel id to {}", self.channel_id);
-        self.send_ctl(
-            senders,
-            ServiceId::Lnpd,
-            Request::UpdateChannelId(self.channel_id),
-        )?;
+        self.send_ctl(senders, ServiceId::Lnpd, Request::UpdateChannelId(self.channel_id))?;
         self.send_ctl(
             senders,
             self.peer_service.clone(),
             Request::UpdateChannelId(self.channel_id),
         )?;
         // self.identity = self.channel_id.into();
-        let msg = format!(
-            "{} set to {}",
-            "Channel ID".ended(),
-            self.channel_id.ender()
-        );
+        let msg = format!("{} set to {}", "Channel ID".ended(), self.channel_id.ender());
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
@@ -688,8 +568,7 @@ impl Runtime {
         let accept_channel = AcceptChannel {
             temporary_channel_id: channel_req.temporary_channel_id,
             dust_limit_satoshis: channel_req.dust_limit_satoshis,
-            max_htlc_value_in_flight_msat: channel_req
-                .max_htlc_value_in_flight_msat,
+            max_htlc_value_in_flight_msat: channel_req.max_htlc_value_in_flight_msat,
             channel_reserve_satoshis: channel_req.channel_reserve_satoshis,
             htlc_minimum_msat: channel_req.htlc_minimum_msat,
             minimum_depth: 3, // TODO: take from config options
@@ -735,11 +614,8 @@ impl Runtime {
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
         let enquirer = self.enquirer.clone();
-        let _ = self.report_progress_to(
-            senders,
-            &enquirer,
-            "Channel was accepted by the remote peer",
-        );
+        let _ =
+            self.report_progress_to(senders, &enquirer, "Channel was accepted by the remote peer");
 
         let msg = format!(
             "{} returned parameters for the channel {:#}",
@@ -770,11 +646,7 @@ impl Runtime {
     ) -> Result<FundingCreated, Error> {
         let enquirer = self.enquirer.clone();
 
-        info!(
-            "{} {}",
-            "Funding channel".promo(),
-            self.temporary_channel_id.promoter()
-        );
+        info!("{} {}", "Funding channel".promo(), self.temporary_channel_id.promoter());
         let _ = self.report_progress_to(
             senders,
             &enquirer,
@@ -811,18 +683,11 @@ impl Runtime {
     ) -> Result<FundingSigned, Error> {
         let enquirer = self.enquirer.clone();
 
-        info!(
-            "{} {}",
-            "Accepting channel funding".promo(),
-            self.temporary_channel_id.promoter()
-        );
+        info!("{} {}", "Accepting channel funding".promo(), self.temporary_channel_id.promoter());
         let _ = self.report_progress_to(
             senders,
             &enquirer,
-            format!(
-                "Accepting channel funding {:#}",
-                self.temporary_channel_id
-            ),
+            format!("Accepting channel funding {:#}", self.temporary_channel_id),
         );
 
         self.funding_outpoint = OutPoint {
@@ -833,10 +698,7 @@ impl Runtime {
         self.funding_update(senders)?;
 
         let signature = self.sign_funding();
-        let funding_signed = FundingSigned {
-            channel_id: self.channel_id,
-            signature,
-        };
+        let funding_signed = FundingSigned { channel_id: self.channel_id, signature };
         trace!("Prepared funding_signed: {:?}", funding_signed);
 
         let msg = format!(
@@ -850,10 +712,7 @@ impl Runtime {
         Ok(funding_signed)
     }
 
-    pub fn funding_update(
-        &mut self,
-        senders: &mut Senders,
-    ) -> Result<(), Error> {
+    pub fn funding_update(&mut self, senders: &mut Senders) -> Result<(), Error> {
         let mut engine = sha256::Hash::engine();
         if self.is_originator {
             engine.input(&self.local_keys.payment_basepoint.serialize());
@@ -928,20 +787,14 @@ impl Runtime {
         };
 
         if available < transfer_req.amount {
-            Err(Error::Other(s!(
-                "You do not have required amount of the asset"
-            )))?
+            Err(Error::Other(s!("You do not have required amount of the asset")))?
         }
 
         info!(
             "{} {} {} to the remote peer",
             "Transferring".promo(),
             transfer_req.amount.promoter(),
-            transfer_req
-                .asset
-                .map(|a| a.to_string())
-                .unwrap_or(s!("msat"))
-                .promoter(),
+            transfer_req.asset.map(|a| a.to_string()).unwrap_or(s!("msat")).promoter(),
         );
 
         let preimage = HashPreimage::random();
@@ -1001,16 +854,14 @@ impl Runtime {
         let enquirer = self.enquirer.clone();
 
         debug!("Validating consignment with RGB Node ...");
-        self.request_rbg20(rgb_node::rpc::fungible::Request::Validate(
-            consignment.clone(),
-        ))?;
+        self.request_rbg20(rgb_node::rpc::fungible::Request::Validate(consignment.clone()))?;
 
         debug!("Adding consignment to stash via RGB Node ...");
         self.request_rbg20(rgb_node::rpc::fungible::Request::Accept(
             rgb_node::rpc::fungible::AcceptReq {
                 consignment: consignment.clone(),
                 reveal_outpoints: vec![OutpointReveal {
-                    blinding: blinding,
+                    blinding,
                     txid: outpoint.txid,
                     vout: outpoint.vout,
                 }],
@@ -1018,9 +869,7 @@ impl Runtime {
         ))?;
 
         debug!("Requesting new balances for {} ...", outpoint);
-        match self
-            .request_rbg20(rgb_node::rpc::fungible::Request::Assets(outpoint))?
-        {
+        match self.request_rbg20(rgb_node::rpc::fungible::Request::Assets(outpoint))? {
             rgb_node::rpc::Reply::OutpointAssets(balances) => {
                 for (id, balances) in balances {
                     let asset_id = AssetId::from(id);
@@ -1031,11 +880,8 @@ impl Runtime {
                         balance.promoter(),
                         asset_id.promoter()
                     );
-                    let msg = format!(
-                        "adding {} of {} to balance",
-                        balance.ender(),
-                        asset_id.ender()
-                    );
+                    let msg =
+                        format!("adding {} of {} to balance", balance.ender(), asset_id.ender());
                     let _ = self.report_progress_to(senders, &enquirer, msg);
 
                     if refill_originator {
@@ -1050,11 +896,7 @@ impl Runtime {
             _ => Err(Error::Other(s!("Unrecognized RGB Node response")))?,
         }
 
-        let _ = self.report_success_to(
-            senders,
-            &enquirer,
-            Some("transfer completed"),
-        );
+        let _ = self.report_success_to(senders, &enquirer, Some("transfer completed"));
         Ok(())
     }
 
@@ -1082,9 +924,7 @@ impl Runtime {
         };
 
         if available < update_add_htlc.amount_msat {
-            Err(Error::Other(s!(
-                "Remote node does not have required amount of the asset"
-            )))?
+            Err(Error::Other(s!("Remote node does not have required amount of the asset")))?
         }
 
         self.total_payments += 1;

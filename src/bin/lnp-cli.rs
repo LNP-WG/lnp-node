@@ -36,11 +36,8 @@ fn main() {
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
 
-    let mut client = Client::with(config, opts.shared.chain)
-        .expect("Error initializing client");
+    let mut client = Client::with(config, opts.shared.chain).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
-    opts.command
-        .exec(&mut client)
-        .unwrap_or_else(|err| eprintln!("{}", err.err()));
+    opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err.err()));
 }

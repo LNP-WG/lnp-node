@@ -12,29 +12,28 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::{ToYamlString, Wrapper};
-use internet2::addr::InetSocketAddr;
-#[cfg(feature = "serde")]
-use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use std::collections::BTreeMap;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::FromIterator;
 use std::time::Duration;
 
+use amplify::{ToYamlString, Wrapper};
 use bitcoin::{secp256k1, Address, OutPoint};
+use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnpbp::chain::AssetId;
 use microservices::rpc::Failure;
 use microservices::rpc_connection;
-use strict_encoding::{StrictDecode, StrictEncode};
-use wallet::scripts::PubkeyScript;
-
 use psbt::Psbt;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
+#[cfg(feature = "serde")]
+use serde_with::{DisplayFromStr, DurationSeconds, Same};
+use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
+use wallet::scripts::PubkeyScript;
 
 use crate::ServiceId;
 
@@ -207,11 +206,7 @@ pub struct RefillChannel {
 
 #[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(NodeInfo::to_yaml_string)]
 pub struct NodeInfo {
     pub node_id: secp256k1::PublicKey,
@@ -227,11 +222,7 @@ pub struct NodeInfo {
 
 #[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(PeerInfo::to_yaml_string)]
 pub struct PeerInfo {
     pub local_id: secp256k1::PublicKey,
@@ -256,11 +247,7 @@ pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
 //#[serde_as]
 #[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
     #[serde_as(as = "Option<DisplayFromStr>")]
@@ -275,9 +262,7 @@ pub struct ChannelInfo {
     pub assets: Vec<AssetId>,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub local_balances: AssetsBalance,
-    #[serde_as(
-        as = "BTreeMap<DisplayFromStr, BTreeMap<DisplayFromStr, Same>>"
-    )]
+    #[serde_as(as = "BTreeMap<DisplayFromStr, BTreeMap<DisplayFromStr, Same>>")]
     pub remote_balances: RemotePeerMap<AssetsBalance>,
     pub funding_outpoint: OutPoint,
     #[serde_as(as = "Vec<DisplayFromStr>")]
@@ -297,11 +282,7 @@ pub struct ChannelInfo {
 
 #[cfg_attr(feature = "serde", serde_as)]
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Serialize, Deserialize),
-    serde(crate = "serde_crate")
-)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(FundsInfo::to_yaml_string)]
 pub struct FundsInfo {
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
@@ -319,9 +300,7 @@ impl ToYamlString for ChannelInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for FundsInfo {}
 
-#[derive(
-    Wrapper, Clone, PartialEq, Eq, Debug, From, StrictEncode, StrictDecode,
-)]
+#[derive(Wrapper, Clone, PartialEq, Eq, Debug, From, StrictEncode, StrictDecode)]
 #[wrapper(IndexRange)]
 pub struct List<T>(Vec<T>)
 where
@@ -330,33 +309,16 @@ where
 #[cfg(feature = "serde")]
 impl<'a, T> Display for List<T>
 where
-    T: Clone
-        + PartialEq
-        + Eq
-        + Debug
-        + Display
-        + serde::Serialize
-        + StrictEncode
-        + StrictDecode,
+    T: Clone + PartialEq + Eq + Debug + Display + serde::Serialize + StrictEncode + StrictDecode,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(
-            &serde_yaml::to_string(self)
-                .expect("internal YAML serialization error"),
-        )
+        f.write_str(&serde_yaml::to_string(self).expect("internal YAML serialization error"))
     }
 }
 
 impl<T> FromIterator<T> for List<T>
 where
-    T: Clone
-        + PartialEq
-        + Eq
-        + Debug
-        + Display
-        + serde::Serialize
-        + StrictEncode
-        + StrictDecode,
+    T: Clone + PartialEq + Eq + Debug + Display + serde::Serialize + StrictEncode + StrictDecode,
 {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Self::from_inner(iter.into_iter().collect())
@@ -366,14 +328,7 @@ where
 #[cfg(feature = "serde")]
 impl<T> serde::Serialize for List<T>
 where
-    T: Clone
-        + PartialEq
-        + Eq
-        + Debug
-        + Display
-        + serde::Serialize
-        + StrictEncode
-        + StrictDecode,
+    T: Clone + PartialEq + Eq + Debug + Display + serde::Serialize + StrictEncode + StrictDecode,
 {
     fn serialize<S>(
         &self,
@@ -386,17 +341,7 @@ where
     }
 }
 
-#[derive(
-    Wrapper,
-    Clone,
-    PartialEq,
-    Eq,
-    Debug,
-    From,
-    Default,
-    StrictEncode,
-    StrictDecode,
-)]
+#[derive(Wrapper, Clone, PartialEq, Eq, Debug, From, Default, StrictEncode, StrictDecode)]
 pub struct OptionDetails(pub Option<String>);
 
 impl Display for OptionDetails {
@@ -409,19 +354,13 @@ impl Display for OptionDetails {
 }
 
 impl OptionDetails {
-    pub fn with(s: impl ToString) -> Self {
-        Self(Some(s.to_string()))
-    }
+    pub fn with(s: impl ToString) -> Self { Self(Some(s.to_string())) }
 
-    pub fn new() -> Self {
-        Self(None)
-    }
+    pub fn new() -> Self { Self(None) }
 }
 
 impl From<crate::Error> for Request {
-    fn from(err: crate::Error) -> Self {
-        Request::Failure(Failure::from(err))
-    }
+    fn from(err: crate::Error) -> Self { Request::Failure(Failure::from(err)) }
 }
 
 pub trait IntoProgressOrFalure {
@@ -460,14 +399,16 @@ impl IntoSuccessOrFalure for Result<(), crate::Error> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use std::str::FromStr;
+
     use amplify::hex::FromHex;
     use amplify::DumbDefault;
     use bitcoin::secp256k1;
     use internet2::RemoteNodeAddr;
-    use std::str::FromStr;
     use strict_encoding::strict_deserialize;
     use strict_encoding_test::test_encoding_roundtrip;
+
+    use super::*;
 
     #[test]
     fn strict_encoding() {
@@ -489,8 +430,9 @@ mod test {
         test_encoding_roundtrip(&channel_req, data).unwrap();
 
         let node_id = secp256k1::PublicKey::from_str(
-            "022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af"
-        ).unwrap();
+            "022e58afe51f9ed8ad3cc7897f634d881fdbe49a81564629ded8156bebd2ffd1af",
+        )
+        .unwrap();
         let node_addr = NodeAddr::Remote(RemoteNodeAddr {
             node_id,
             remote_addr: "lnp://127.0.0.1:9735".parse().unwrap(),
@@ -504,11 +446,7 @@ mod test {
         let _: ServiceId = strict_deserialize(&data).unwrap();
         test_encoding_roundtrip(&peerd, data).unwrap();
 
-        let open_channel = CreateChannel {
-            channel_req,
-            peerd: node_addr,
-            report_to: None,
-        };
+        let open_channel = CreateChannel { channel_req, peerd: node_addr, report_to: None };
 
         let data = Vec::<u8>::from_hex(
             "000000000000000000000000000000000000000000000000000000000000000000\

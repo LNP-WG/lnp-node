@@ -21,10 +21,7 @@ use std::{fs, io};
 use amplify::{IoError, Slice32, ToYamlString};
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::{Address, Amount};
-use bitcoin_hd::{
-    DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount,
-    UnhardenedIndex,
-};
+use bitcoin_hd::{DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount, UnhardenedIndex};
 use bitcoin_onchain::blockchain::Utxo;
 use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
 use electrum_client::Client as ElectrumClient;
@@ -75,17 +72,7 @@ pub enum Error {
     OutOfIndexes,
 }
 
-#[derive(
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Debug,
-    StrictEncode,
-    StrictDecode,
-)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, StrictEncode, StrictDecode)]
 #[cfg_attr(
     feature = "serde",
     derive(Display, Serialize, Deserialize),
@@ -137,11 +124,8 @@ impl FundingWallet {
         wallet_path: impl AsRef<Path>,
         electrum_url: &str,
     ) -> Result<FundingWallet, Error> {
-        let wallet_file = fs::OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(false)
-            .open(wallet_path)?;
+        let wallet_file =
+            fs::OpenOptions::new().read(true).write(true).create(false).open(wallet_path)?;
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
 
         let network = chain.try_into()?;
@@ -167,10 +151,9 @@ impl FundingWallet {
     /// Scans blockchain for available funds.
     /// Updates last derivation index basing on the scanned information.
     pub fn list_funds(&mut self) -> Result<Vec<(AddressCompat, u64)>, Error> {
-        let lookup = |case: UnhardenedIndex,
-                      last_index: &mut UnhardenedIndex|
-         -> Result<Vec<_>, Error> {
-            self.resolver
+        let lookup =
+            |case: UnhardenedIndex, last_index: &mut UnhardenedIndex| -> Result<Vec<_>, Error> {
+                self.resolver
                 .resolve_descriptor_utxo(
                     &self.secp,
                     &self.wallet_data.descriptor,
@@ -189,13 +172,12 @@ impl FundingWallet {
                     Ok(data)
                 })
                 .collect()
-        };
+            };
 
         // Collect normal indexes
         let mut last_normal_index = self.wallet_data.last_normal_index;
         let mut last_change_index = self.wallet_data.last_change_index;
-        let mut funds =
-            lookup(UnhardenedIndex::zero(), &mut last_normal_index)?;
+        let mut funds = lookup(UnhardenedIndex::zero(), &mut last_normal_index)?;
         funds.extend(lookup(UnhardenedIndex::one(), &mut last_change_index)?);
         self.wallet_data.last_normal_index = last_normal_index;
         self.wallet_data.last_change_index = last_change_index;
@@ -208,22 +190,17 @@ impl FundingWallet {
                 Ok((
                     AddressCompat::from_script(&script, self.network)
                         .ok_or(Error::NoAddressRepresentation)?,
-                    utxo_set
-                        .iter()
-                        .map(Utxo::amount)
-                        .copied()
-                        .map(Amount::as_sat)
-                        .sum(),
+                    utxo_set.iter().map(Utxo::amount).copied().map(Amount::as_sat).sum(),
                 ))
             })
             .collect()
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = self.wallet_data.descriptor.address(
-            &self.secp,
-            &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
-        )?;
+        let address = self
+            .wallet_data
+            .descriptor
+            .address(&self.secp, &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index])?;
         Ok(address)
     }
 }
