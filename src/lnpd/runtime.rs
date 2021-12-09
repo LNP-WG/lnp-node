@@ -27,8 +27,9 @@ use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use microservices::rpc::Failure;
+use wallet::address::AddressCompat;
 
-use crate::lnpd::funding_wallet::FundingWallet;
+use crate::lnpd::funding_wallet::{self, FundingWallet};
 use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::rpc::request::{FundsInfo, IntoProgressOrFalure, NodeInfo, OptionDetails};
 use crate::rpc::{request, Request, ServiceBus};
@@ -292,11 +293,20 @@ impl Runtime {
             }
 
             Request::ListFunds => {
-                let funds =
-                    self.funding_wallet.list_funds()?.into_iter().fold(bmap! {}, |mut acc, f| {
-                        *acc.entry(f.script_pubkey.into()).or_insert(0) += f.amount;
-                        acc
-                    });
+                let funds = self.funding_wallet.list_funds()?.into_iter().try_fold(
+                    bmap! {},
+                    |mut acc, f| -> Result<_, Error> {
+                        *acc.entry(
+                            AddressCompat::from_script(
+                                f.script_pubkey.as_inner(),
+                                self.funding_wallet.network(),
+                            )
+                            .ok_or(funding_wallet::Error::NoAddressRepresentation)?,
+                        )
+                        .or_insert(0) += f.amount;
+                        Ok(acc)
+                    },
+                )?;
                 senders.send_to(
                     ServiceBus::Ctl,
                     ServiceId::Lnpd,
@@ -437,9 +447,7 @@ impl Runtime {
         }
 
         // Start channeld
-        let child = launch("channeld", &[channel_req.temporary_channel_id.to_hex()])?;
-        let msg = format!("New instance of channeld launched with PID {}", child.id());
-        info!("{}", msg);
+        let msg = self.launch_channeld(channel_req.temporary_channel_id)?;
 
         // Construct channel creation request
         let node_key = self.node_id;
@@ -474,6 +482,16 @@ impl Runtime {
         );
         debug!("Awaiting for channeld to connect...");
 
+        Ok(msg)
+    }
+
+    pub(crate) fn launch_channeld(
+        &self,
+        temp_channel_id: TempChannelId,
+    ) -> Result<String, io::Error> {
+        let child = launch("channeld", &[temp_channel_id.to_hex()])?;
+        let msg = format!("New instance of channeld launched with PID {}", child.id());
+        info!("{}", msg);
         Ok(msg)
     }
 }

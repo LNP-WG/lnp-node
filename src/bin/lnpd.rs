@@ -77,8 +77,8 @@ fn init(config: &Config) -> Result<(), Error> {
 
     use bitcoin::secp256k1::Secp256k1;
     use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
-    use bitcoin_hd::{SegmentIndexes, TerminalStep, TrackingAccount, UnhardenedIndex};
-    use lnp_node::lnpd::funding_wallet::{FundingWallet, WalletData};
+    use bitcoin_hd::{TerminalStep, TrackingAccount};
+    use lnp_node::lnpd::funding_wallet::FundingWallet;
     use lnp_node::opts::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_WALLET};
     use miniscript::descriptor::{Descriptor, Wpkh};
     use psbt::sign::MemorySigningAccount;
@@ -145,18 +145,13 @@ fn init(config: &Config) -> Result<(), Error> {
             account_path,
             vec![TerminalStep::range(0u16, 1u16), TerminalStep::Wildcard],
         );
-        let wallet_data = WalletData {
-            descriptor: Descriptor::Wpkh(Wpkh::new(account)?),
-            last_normal_index: UnhardenedIndex::zero(),
-            last_change_index: UnhardenedIndex::zero(),
-            last_rgb_index: Default::default(),
-        };
-        FundingWallet::new(&config.chain, wallet_path, wallet_data, &config.electrum_url)?
+        let descriptor = Descriptor::Wpkh(Wpkh::new(account)?);
+        FundingWallet::new(&config.chain, wallet_path, descriptor, &config.electrum_url)?
     } else {
         println!("Funding wallet '{}' ... {}", LNP_NODE_FUNDING_WALLET, "found".progress());
         FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?
     };
-    println!("Funding wallet: {}", funding_wallet.wallet_data().descriptor.promo());
+    println!("Funding wallet: {}", funding_wallet.descriptor().promo());
 
     println!("{}", "Node initialization complete\n".ended());
 

@@ -28,12 +28,12 @@ use bitcoin_hd::{
 use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
 use descriptors::locks::{LockTime, SeqNo};
 use descriptors::InputDescriptor;
-use electrum_client::Client as ElectrumClient;
+use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::p2p::legacy::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::Descriptor;
 use psbt::construct::Construct;
-use psbt::Psbt;
+use psbt::{Psbt, Tx};
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 use wallet::scripts::PubkeyScript;
@@ -79,8 +79,12 @@ pub enum Error {
     /// wallet has run out of funding addresses
     OutOfIndexes,
 
-    /// Unsufficient funds for the funding transaction
+    /// Insufficient funds for the funding transaction
     InsufficientFunds,
+
+    /// error finalizing transaction, probably not all signatures are present. Details: {0}
+    #[from]
+    Finalizing(miniscript::psbt::Error),
 }
 
 /// Information about funding which is already used in channels pending
@@ -126,7 +130,7 @@ struct WalletData {
     pub last_normal_index: UnhardenedIndex,
     pub last_change_index: UnhardenedIndex,
     pub last_rgb_index: BTreeMap<Slice32, UnhardenedIndex>,
-    pub pending_fundings: Vec<PendingFunding>,
+    pub pending_fundings: BTreeMap<Txid, PendingFunding>,
 }
 
 #[cfg(feature = "serde")]
@@ -144,10 +148,17 @@ impl FundingWallet {
     pub fn new(
         chain: &Chain,
         wallet_path: impl AsRef<Path>,
-        wallet_data: WalletData,
+        descriptor: Descriptor<TrackingAccount>,
         electrum_url: &str,
     ) -> Result<FundingWallet, Error> {
         let wallet_file = fs::File::create(wallet_path)?;
+        let wallet_data = WalletData {
+            descriptor,
+            last_normal_index: UnhardenedIndex::zero(),
+            last_change_index: UnhardenedIndex::zero(),
+            last_rgb_index: bmap! {},
+            pending_fundings: bmap! {},
+        };
         wallet_data.strict_encode(&wallet_file)?;
         Ok(FundingWallet {
             secp: Secp256k1::new(),
@@ -199,8 +210,8 @@ impl FundingWallet {
         let used_outputs: Vec<_> = self
             .wallet_data
             .pending_fundings
-            .iter()
-            .flat_map(|funding| funding.prev_outpoints)
+            .values()
+            .flat_map(|funding| &funding.prev_outpoints)
             .collect();
 
         let lookup =
@@ -215,10 +226,11 @@ impl FundingWallet {
                         last_index.last_index().saturating_add(20),
                     )?
                     .into_iter()
-                    .map(|data @ (_, (_, ref mut utxo_set))| {
+                    .map(|mut data| {
+                        let utxo_set = &mut data.1 .1;
                         *utxo_set = utxo_set
                             .iter()
-                            .filter(|utxo| !used_outputs.contains(utxo.outpoint()))
+                            .filter(|utxo| !used_outputs.contains(&utxo.outpoint()))
                             .cloned()
                             .collect();
                         data
@@ -229,10 +241,11 @@ impl FundingWallet {
                         if index >= *last_index {
                             *last_index = index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
                         }
-                        utxo.into_iter().map(|utxo| Funds {
+                        let script_pubkey = PubkeyScript::from(script.clone());
+                        utxo.into_iter().map(move |utxo| Funds {
                             outpoint: *utxo.outpoint(),
                             terminal: vec![case, index],
-                            script_pubkey: script.into(),
+                            script_pubkey: script_pubkey.clone(),
                             amount: utxo.amount().as_sat(),
                         })
                     })
@@ -262,6 +275,7 @@ impl FundingWallet {
 
     pub fn construct_funding_psbt(
         &mut self,
+        temp_channel_id: TempChannelId,
         address: AddressCompat,
         amount: u64,
         fee: u64,
@@ -273,11 +287,11 @@ impl FundingWallet {
         let sources = funds
             .iter()
             .find(|f| f.amount >= amount_and_fee)
-            .map(|elem| vec![*elem])
+            .map(|elem| vec![elem])
             .or_else(|| {
                 let mut acc = 0u64;
                 let selection: Vec<_> = funds
-                    .into_iter()
+                    .iter()
                     .rev()
                     .filter(|last| {
                         acc += last.amount;
@@ -296,7 +310,7 @@ impl FundingWallet {
             .into_iter()
             .map(|funds| InputDescriptor {
                 outpoint: funds.outpoint,
-                terminal: DerivationSubpath::from(funds.terminal),
+                terminal: DerivationSubpath::from(funds.terminal.clone()),
                 seq_no: SeqNo::with_rbf(0),
                 tweak: None,
                 sighash_type: SigHashType::All,
@@ -315,8 +329,29 @@ impl FundingWallet {
             change_index,
             fee,
             &self.resolver,
-        )?;
+        )
+        .expect("funding PSBT construction is broken");
+        let txid = psbt.to_txid();
+        self.wallet_data.pending_fundings.insert(txid, PendingFunding {
+            temp_channel_id,
+            funding_txid: txid,
+            prev_outpoints: inputs.iter().map(|inp| inp.outpoint).collect(),
+            psbt,
+        });
 
-        Ok(OutPoint::new(psbt.txid(), 0))
+        Ok(OutPoint::new(txid, 0))
+    }
+
+    #[inline]
+    pub fn get_funding_psbt(&self, txid: Txid) -> Option<&Psbt> {
+        self.wallet_data.pending_fundings.get(&txid).map(|funding| &funding.psbt)
+    }
+
+    #[inline]
+    pub fn publish(&self, mut psbt: Psbt) -> Result<(), Error> {
+        miniscript::psbt::finalize(&mut psbt, &self.secp)?;
+        let tx = psbt.extract_tx();
+        self.resolver.transaction_broadcast(&tx)?;
+        Ok(())
     }
 }

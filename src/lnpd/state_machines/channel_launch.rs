@@ -19,17 +19,18 @@
 //! request coming from a remote peer, since this is one-stage process and does not require
 //! dedicated state machine.
 
-use amplify::{Slice32, Wrapper};
+use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::Txid;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
 use microservices::esb;
 
+use crate::lnpd::funding_wallet;
 use crate::lnpd::runtime::Runtime;
 use crate::state_machine::{Event, StateMachine};
 use crate::{rpc, ServiceId};
 
 /// Errors for channel launching workflow
-#[derive(Clone, Debug, Display, From, Error)]
+#[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]
 pub enum Error {
     /// the received message {0} was not expected at the {1} stage of the channel launch workflow
@@ -42,6 +43,14 @@ pub enum Error {
     /// error sending RPC request during state transition. Details: {0}
     #[from]
     Esb(esb::Error),
+
+    /// error during channel funding
+    #[from]
+    #[display(inner)]
+    Funding(funding_wallet::Error),
+
+    /// unable to launch channel daemon. Details: {0}
+    ChannelDaemonLaunch(IoError),
 }
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
@@ -74,11 +83,12 @@ impl StateMachine<rpc::Request, Runtime> for ChannelLauncher {
     type Error = Error;
 
     fn next(
-        mut self,
+        self,
         event: Event<rpc::Request>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
+        let channel_id = self.channel_id();
         let state = match self {
             ChannelLauncher::Launching(temp_channel_id, request) => {
                 finish_launching(event, temp_channel_id, request)
@@ -93,7 +103,7 @@ impl StateMachine<rpc::Request, Runtime> for ChannelLauncher {
                 return Ok(None);
             }
         }?;
-        info!("ChannelLauncher {} switched to {} state", self.channel_id(), state);
+        info!("ChannelLauncher {} switched to {} state", channel_id, state);
         Ok(Some(state))
     }
 }
@@ -125,7 +135,9 @@ impl ChannelLauncher {
                 panic!("channel_launcher workflow inconsistency: starting workflow with {}", msg)
             }
         };
-        runtime.launch(ServiceId::Channel(temp_channel_id.into()));
+        runtime
+            .launch_channeld(temp_channel_id)
+            .map_err(|err| Error::ChannelDaemonLaunch(err.into()))?;
         Ok(ChannelLauncher::Launching(temp_channel_id, request))
     }
 }
@@ -167,7 +179,8 @@ fn finish_negotiating(
         "channel_launcher workflow inconsistency: `ConstructFunding` RPC CTL message originating \
          not from a channel daemon"
     );
-    let funding_outpoint = runtime.funding_wallet.construct_funding_psbt(address, amount, fee)?;
+    let funding_outpoint =
+        runtime.funding_wallet.construct_funding_psbt(temp_channel_id, address, amount, fee)?;
     event.complete(rpc::Request::FundingConstructed(funding_outpoint))?;
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid))
 }
@@ -188,7 +201,11 @@ fn finish_committing(
              originating not from a channel daemon"
         )
     };
-    let psbt = runtime.funding_wallet.get_funding_psbt(txid)?;
+    let psbt = runtime
+        .funding_wallet
+        .get_funding_psbt(txid)
+        .expect("funding construction is broken")
+        .clone();
     event.complete_with_service(ServiceId::Signer, rpc::Request::Sign(psbt))?;
     Ok(ChannelLauncher::Signing(channel_id, txid))
 }
@@ -210,6 +227,6 @@ fn finish_signing(event: Event<rpc::Request>, runtime: &Runtime, txid: Txid) -> 
         "channel_launcher workflow inconsistency: `Signed` RPC CTL message originating not from a \
          signing daemon"
     );
-    runtime.funding_wallet.finalize_publish(psbt)?;
+    runtime.funding_wallet.publish(psbt)?;
     Ok(())
 }
