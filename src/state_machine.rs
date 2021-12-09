@@ -36,7 +36,11 @@ where
 
     /// Move state machine to a next step in response to the provided event.
     /// At the completion of the cycle the state machine is consumed and `Ok(None)` is returned.
-    fn next(self, event: Event<Message>, runtime: &Runtime) -> Result<Option<Self>, Self::Error>
+    fn next(
+        self,
+        event: Event<Message>,
+        runtime: &mut Runtime,
+    ) -> Result<Option<Self>, Self::Error>
     where
         Self: Sized;
 }

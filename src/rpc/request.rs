@@ -247,6 +247,9 @@ pub struct FundChannel {
 
     /// Amount of funds to be sent to the funding address
     pub amount: u64,
+
+    /// Fee to pay for the funding transaction
+    pub fee: u64,
 }
 
 /// Update on a transaction mining status
@@ -360,7 +363,7 @@ pub struct ChannelInfo {
 #[display(FundsInfo::to_yaml_string)]
 pub struct FundsInfo {
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub bitcoin_funds: Vec<(AddressCompat, u64)>,
+    pub bitcoin_funds: BTreeMap<AddressCompat, u64>,
     pub asset_funds: AssetsBalance,
     pub next_address: Address,
 }

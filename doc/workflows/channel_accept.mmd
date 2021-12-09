@@ -19,7 +19,7 @@ channeld -) -remote: accept_channel
 note over channeld: Accepted
 
 remote -) +channeld: funding_created
-channeld -) -signd: SignPsbt(refund)
+channeld -) -signd: Sign(refund)
 signd -) +channeld: Signed
 channeld -) -remote: funding_created
 note over channeld: Signed

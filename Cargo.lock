@@ -1196,6 +1196,7 @@ dependencies = [
  "configure_me",
  "configure_me_codegen",
  "descriptor-wallet",
+ "descriptors 0.6.0-alpha.1",
  "dotenv",
  "electrum-client",
  "env_logger",

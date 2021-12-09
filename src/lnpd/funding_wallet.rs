@@ -20,15 +20,23 @@ use std::{fs, io};
 
 use amplify::{IoError, Slice32, ToYamlString};
 use bitcoin::secp256k1::{self, Secp256k1};
-use bitcoin::{Address, Amount};
-use bitcoin_hd::{DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount, UnhardenedIndex};
-use bitcoin_onchain::blockchain::Utxo;
+use bitcoin::{Address, Network, OutPoint, SigHashType, Txid};
+use bitcoin_hd::{
+    DerivationSubpath, DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount,
+    UnhardenedIndex,
+};
 use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
+use descriptors::locks::{LockTime, SeqNo};
+use descriptors::InputDescriptor;
 use electrum_client::Client as ElectrumClient;
+use lnp::p2p::legacy::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::Descriptor;
+use psbt::construct::Construct;
+use psbt::Psbt;
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
+use wallet::scripts::PubkeyScript;
 
 /// Errors working with funding wallet
 #[derive(Debug, Display, Error, From)]
@@ -70,33 +78,64 @@ pub enum Error {
 
     /// wallet has run out of funding addresses
     OutOfIndexes,
+
+    /// Unsufficient funds for the funding transaction
+    InsufficientFunds,
 }
 
+/// Information about funding which is already used in channels pending
+/// negotiation or signature
+#[derive(Clone, Debug, StrictEncode, StrictDecode)]
+#[cfg_attr(
+    feature = "serde",
+    derive(Display, Serialize, Deserialize),
+    serde(crate = "serde_crate"),
+    display(PendingFunding::to_yaml_string)
+)]
+pub struct PendingFunding {
+    /// Provsionary channel using some of the funding
+    pub temp_channel_id: TempChannelId,
+    /// Funding transaction identifier spending one or more of the of available funding UTXOs
+    pub funding_txid: Txid,
+    /// List of all funding UTXOs which are spent by this prospective channel
+    pub prev_outpoints: Vec<OutPoint>,
+    /// Partially signed transaction using the funding
+    pub psbt: Psbt,
+}
+
+#[cfg(feature = "serde")]
+impl ToYamlString for PendingFunding {}
+
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, StrictEncode, StrictDecode)]
+pub struct Funds {
+    pub outpoint: OutPoint,
+    pub terminal: Vec<UnhardenedIndex>,
+    pub script_pubkey: PubkeyScript,
+    pub amount: u64,
+}
+
+#[derive(Clone, Debug, StrictEncode, StrictDecode)]
 #[cfg_attr(
     feature = "serde",
     derive(Display, Serialize, Deserialize),
     serde(crate = "serde_crate"),
     display(WalletData::to_yaml_string)
 )]
-pub struct WalletData {
+struct WalletData {
     pub descriptor: Descriptor<TrackingAccount>,
     pub last_normal_index: UnhardenedIndex,
     pub last_change_index: UnhardenedIndex,
     pub last_rgb_index: BTreeMap<Slice32, UnhardenedIndex>,
+    pub pending_fundings: Vec<PendingFunding>,
 }
 
 #[cfg(feature = "serde")]
 impl ToYamlString for WalletData {}
 
-#[derive(Getters)]
 pub struct FundingWallet {
-    #[getter(skip)]
     secp: Secp256k1<secp256k1::All>,
     network: bitcoin::Network,
-    #[getter(skip)]
     resolver: ElectrumClient,
-    #[getter(skip)]
     wallet_file: fs::File,
     wallet_data: WalletData,
 }
@@ -148,30 +187,56 @@ impl FundingWallet {
         Ok(())
     }
 
+    #[inline]
+    pub fn network(&self) -> Network { self.network }
+
+    #[inline]
+    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> { &self.wallet_data.descriptor }
+
     /// Scans blockchain for available funds.
     /// Updates last derivation index basing on the scanned information.
-    pub fn list_funds(&mut self) -> Result<Vec<(AddressCompat, u64)>, Error> {
+    pub fn list_funds(&mut self) -> Result<Vec<Funds>, Error> {
+        let used_outputs: Vec<_> = self
+            .wallet_data
+            .pending_fundings
+            .iter()
+            .flat_map(|funding| funding.prev_outpoints)
+            .collect();
+
         let lookup =
             |case: UnhardenedIndex, last_index: &mut UnhardenedIndex| -> Result<Vec<_>, Error> {
-                self.resolver
-                .resolve_descriptor_utxo(
-                    &self.secp,
-                    &self.wallet_data.descriptor,
-                    &[case],
-                    UnhardenedIndex::zero(),
-                    last_index.last_index().saturating_add(20),
-                )?
-                .into_iter()
-                .filter(|(_, (_, set))| !set.is_empty())
-                // Updating last used indexes
-                .map(|data| {
-                    if data.0 >= *last_index {
-                        *last_index =
-                            data.0.checked_inc().ok_or(Error::OutOfIndexes)?;
-                    }
-                    Ok(data)
-                })
-                .collect()
+                Ok(self
+                    .resolver
+                    .resolve_descriptor_utxo(
+                        &self.secp,
+                        &self.wallet_data.descriptor,
+                        &[case],
+                        UnhardenedIndex::zero(),
+                        last_index.last_index().saturating_add(20),
+                    )?
+                    .into_iter()
+                    .map(|data @ (_, (_, ref mut utxo_set))| {
+                        *utxo_set = utxo_set
+                            .iter()
+                            .filter(|utxo| !used_outputs.contains(utxo.outpoint()))
+                            .cloned()
+                            .collect();
+                        data
+                    })
+                    .filter(|(_, (_, set))| !set.is_empty())
+                    .flat_map(|(index, (script, utxo))| {
+                        // Updating last used indexes
+                        if index >= *last_index {
+                            *last_index = index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
+                        }
+                        utxo.into_iter().map(|utxo| Funds {
+                            outpoint: *utxo.outpoint(),
+                            terminal: vec![case, index],
+                            script_pubkey: script.into(),
+                            amount: utxo.amount().as_sat(),
+                        })
+                    })
+                    .collect())
             };
 
         // Collect normal indexes
@@ -184,16 +249,7 @@ impl FundingWallet {
 
         self.save()?;
 
-        funds
-            .into_iter()
-            .map(|(_, (script, utxo_set))| {
-                Ok((
-                    AddressCompat::from_script(&script, self.network)
-                        .ok_or(Error::NoAddressRepresentation)?,
-                    utxo_set.iter().map(Utxo::amount).copied().map(Amount::as_sat).sum(),
-                ))
-            })
-            .collect()
+        Ok(funds)
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
@@ -202,5 +258,65 @@ impl FundingWallet {
             .descriptor
             .address(&self.secp, &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index])?;
         Ok(address)
+    }
+
+    pub fn construct_funding_psbt(
+        &mut self,
+        address: AddressCompat,
+        amount: u64,
+        fee: u64,
+    ) -> Result<OutPoint, Error> {
+        let amount_and_fee = amount + fee;
+        // Do coin selection:
+        let mut funds = self.list_funds()?;
+        funds.sort_by_key(|f| f.amount);
+        let sources = funds
+            .iter()
+            .find(|f| f.amount >= amount_and_fee)
+            .map(|elem| vec![*elem])
+            .or_else(|| {
+                let mut acc = 0u64;
+                let selection: Vec<_> = funds
+                    .into_iter()
+                    .rev()
+                    .filter(|last| {
+                        acc += last.amount;
+                        acc < amount_and_fee
+                    })
+                    .collect();
+                if acc >= amount_and_fee {
+                    Some(selection)
+                } else {
+                    None
+                }
+            })
+            .ok_or(Error::InsufficientFunds)?;
+
+        let inputs = sources
+            .into_iter()
+            .map(|funds| InputDescriptor {
+                outpoint: funds.outpoint,
+                terminal: DerivationSubpath::from(funds.terminal),
+                seq_no: SeqNo::with_rbf(0),
+                tweak: None,
+                sighash_type: SigHashType::All,
+            })
+            .collect::<Vec<_>>();
+
+        let change_index = self.wallet_data.last_change_index;
+        self.wallet_data.last_change_index =
+            change_index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
+        let psbt = Psbt::construct(
+            &self.secp,
+            &self.wallet_data.descriptor,
+            LockTime::default(),
+            &inputs,
+            &[(address.into(), amount)],
+            change_index,
+            fee,
+            &self.resolver,
+        )?;
+
+        Ok(OutPoint::new(psbt.txid(), 0))
     }
 }

@@ -76,7 +76,7 @@ impl StateMachine<rpc::Request, Runtime> for ChannelLauncher {
     fn next(
         mut self,
         event: Event<rpc::Request>,
-        runtime: &Runtime,
+        runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
         let state = match self {
@@ -150,19 +150,24 @@ fn finish_launching(
 
 fn finish_negotiating(
     event: Event<rpc::Request>,
-    runtime: &Runtime,
+    runtime: &mut Runtime,
     temp_channel_id: TempChannelId,
 ) -> Result<ChannelLauncher, Error> {
-    if !matches!(event.message, rpc::Request::ChannelFunding(_)) {
-        return Err(Error::UnexpectedMessage(event.message, "NEGOTIATING"));
-    }
+    let (amount, address, fee) = match event.message {
+        rpc::Request::ConstructFunding(rpc::request::FundChannel { amount, address, fee }) => {
+            (amount, address, fee)
+        }
+        _ => {
+            return Err(Error::UnexpectedMessage(event.message, "SIGNING"));
+        }
+    };
     debug_assert_eq!(
         event.source,
         ServiceId::Channel(temp_channel_id.into()),
-        "channel_launcher workflow inconsistency: `ChannelFunding` RPC CTL message originating \
+        "channel_launcher workflow inconsistency: `ConstructFunding` RPC CTL message originating \
          not from a channel daemon"
     );
-    let funding_outpoint = runtime.funding_wallet.construct_funding_psbt()?;
+    let funding_outpoint = runtime.funding_wallet.construct_funding_psbt(address, amount, fee)?;
     event.complete(rpc::Request::FundingConstructed(funding_outpoint))?;
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid))
 }

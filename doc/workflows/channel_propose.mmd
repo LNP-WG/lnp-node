@@ -27,7 +27,7 @@ note over channeld: Accepted
 lnpd -) +channeld: FundingConstrcuted
 deactivate lnpd
 note over lnpd: Comitting
-channeld -) -signd: SignPsbt(refund)
+channeld -) -signd: Sign(refund)
 signd -) +channeld: Signed
 channeld -) -remote: funding_created
 note over channeld: Funding
@@ -36,7 +36,7 @@ remote -) +channeld: funding_signed
 channeld -) -lnpd: PublishFunding
 activate lnpd
 note over channeld: Signed
-lnpd -) signd: SignPsbt(funding)
+lnpd -) signd: Sign(funding)
 deactivate lnpd
 note over lnpd: Signing
 signd -) +lnpd: Signed
