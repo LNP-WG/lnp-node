@@ -27,13 +27,14 @@ use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 #[cfg(feature = "rgb")]
 use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
 use internet2::{LocalNode, NodeAddr, TypedEnum};
+use lnp::bolt::bolt3::{ScriptGenerators, TxGenerators};
+use lnp::bolt::htlc::{HtlcKnown, HtlcSecret};
+use lnp::bolt::{self, AssetsBalance, Lifecycle};
+use lnp::channel::Channel;
 use lnp::p2p::legacy::{
     AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned, Messages, OpenChannel,
     TempChannelId, UpdateAddHtlc,
 };
-use lnp::payment::bolt3::{ScriptGenerators, TxGenerators};
-use lnp::payment::htlc::{HtlcKnown, HtlcSecret};
-use lnp::payment::{self, AssetsBalance, Lifecycle};
 #[cfg(feature = "rgb")]
 use lnpbp::chain::AssetId;
 use lnpbp::chain::Chain;
@@ -67,6 +68,7 @@ pub fn run(
         local_node,
         chain,
         secp: Secp256k1::new(),
+        channel: Channel::default(),
         channel_id: zero!(),
         temporary_channel_id: channel_id.into(),
         state: default!(),
@@ -109,6 +111,8 @@ pub struct Runtime {
 
     secp: Secp256k1<All>,
 
+    pub(crate) channel: Channel<bolt::ExtensionId>,
+
     channel_id: ChannelId,
     temporary_channel_id: TempChannelId,
     state: Lifecycle,
@@ -122,9 +126,9 @@ pub struct Runtime {
     commitment_number: u64,
     total_payments: u64,
     pending_payments: u16,
-    params: payment::channel::Params,
-    local_keys: payment::channel::Keyset,
-    remote_keys: payment::channel::Keyset,
+    params: bolt::channel::Params,
+    local_keys: bolt::channel::Keyset,
+    remote_keys: bolt::channel::Keyset,
 
     offered_htlc: Vec<HtlcKnown>,
     received_htlc: Vec<HtlcSecret>,
@@ -182,7 +186,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn send_peer(&self, senders: &mut Senders, message: Messages) -> Result<(), Error> {
+    pub fn send_peer(&self, senders: &mut Senders, message: Messages) -> Result<(), Error> {
         senders.send_to(
             ServiceBus::Msg,
             self.identity(),
@@ -423,7 +427,7 @@ impl Runtime {
                     true,
                 )?;
 
-                let assign_funds = message::AssignFunds {
+                let assign_funds = AssignFunds {
                     channel_id: self.channel_id,
                     consignment: refill_req.consignment,
                     outpoint: refill_req.outpoint,
@@ -518,7 +522,7 @@ impl Runtime {
         &mut self,
         senders: &mut Senders,
         channel_req: &OpenChannel,
-    ) -> Result<(), payment::channel::NegotiationError> {
+    ) -> Result<(), bolt::channel::NegotiationError> {
         info!(
             "{} remote peer to {} with temp id {:#}",
             "Proposing".promo(),
@@ -535,8 +539,8 @@ impl Runtime {
         );
 
         self.is_originator = true;
-        self.params = payment::channel::Params::with(&channel_req)?;
-        self.local_keys = payment::channel::Keyset::from(channel_req);
+        self.params = bolt::channel::Params::with(&channel_req)?;
+        self.local_keys = bolt::channel::Keyset::from(channel_req);
 
         Ok(())
     }
@@ -546,7 +550,7 @@ impl Runtime {
         senders: &mut Senders,
         channel_req: &OpenChannel,
         peerd: &ServiceId,
-    ) -> Result<AcceptChannel, payment::channel::NegotiationError> {
+    ) -> Result<AcceptChannel, bolt::channel::NegotiationError> {
         let msg = format!(
             "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
@@ -561,8 +565,8 @@ impl Runtime {
         let _ = self.report_progress_to(senders, &enquirer, msg);
 
         self.is_originator = false;
-        self.params = payment::channel::Params::with(channel_req)?;
-        self.remote_keys = payment::channel::Keyset::from(channel_req);
+        self.params = bolt::channel::Params::with(channel_req)?;
+        self.remote_keys = bolt::channel::Keyset::from(channel_req);
 
         let dumb_key = self.node_id();
         let accept_channel = AcceptChannel {
@@ -581,11 +585,12 @@ impl Runtime {
             htlc_basepoint: dumb_key,
             first_per_commitment_point: dumb_key,
             shutdown_scriptpubkey: None,
+            channel_type: None,
             unknown_tlvs: none!(),
         };
 
         self.params.updated(&accept_channel, None)?;
-        self.local_keys = payment::channel::Keyset::from(&accept_channel);
+        self.local_keys = bolt::channel::Keyset::from(&accept_channel);
 
         let msg = format!(
             "{} channel {:#} from remote peer {}",
@@ -604,7 +609,7 @@ impl Runtime {
         senders: &mut Senders,
         accept_channel: &AcceptChannel,
         peerd: &ServiceId,
-    ) -> Result<(), payment::channel::NegotiationError> {
+    ) -> Result<(), bolt::channel::NegotiationError> {
         info!(
             "Channel {:#} {} by the remote peer {}",
             accept_channel.temporary_channel_id.ender(),
@@ -626,7 +631,7 @@ impl Runtime {
 
         // TODO: Add a reasonable min depth bound
         self.params.updated(accept_channel, None)?;
-        self.remote_keys = payment::channel::Keyset::from(accept_channel);
+        self.remote_keys = bolt::channel::Keyset::from(accept_channel);
 
         let msg = format!(
             "Channel {:#} is {}",

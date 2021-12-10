@@ -22,8 +22,8 @@ use bitcoin::{secp256k1, Address, OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
+use lnp::bolt::{self, AssetsBalance, Lifecycle};
 use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
-use lnp::payment::{self, AssetsBalance, Lifecycle};
 use lnpbp::chain::AssetId;
 use microservices::rpc::Failure;
 use microservices::rpc_connection;
@@ -351,10 +351,10 @@ pub struct ChannelInfo {
     pub total_payments: u64,
     pub pending_payments: u16,
     pub is_originator: bool,
-    pub params: payment::channel::Params,
-    pub local_keys: payment::channel::Keyset,
+    pub params: bolt::channel::Params,
+    pub local_keys: bolt::channel::Keyset,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_keys: BTreeMap<NodeAddr, payment::channel::Keyset>,
+    pub remote_keys: BTreeMap<NodeAddr, bolt::channel::Keyset>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

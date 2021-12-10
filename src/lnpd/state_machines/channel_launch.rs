@@ -129,6 +129,7 @@ impl ChannelLauncher {
         runtime: &Runtime,
         temp_channel_id: TempChannelId,
     ) -> Result<ChannelLauncher, Error> {
+        debug!("ChannelLauncher {} is instantiated with {} event", temp_channel_id, event.message);
         let request = match event.message {
             rpc::Request::OpenChannelWith(request) => request,
             msg => {
@@ -138,6 +139,7 @@ impl ChannelLauncher {
         runtime
             .launch_channeld(temp_channel_id)
             .map_err(|err| Error::ChannelDaemonLaunch(err.into()))?;
+        info!("ChannelLauncher {} entered LAUNCHING state", temp_channel_id);
         Ok(ChannelLauncher::Launching(temp_channel_id, request))
     }
 }
@@ -156,7 +158,7 @@ fn finish_launching(
         "channel_launcher workflow inconsistency: `Hello` RPC CTL message originating not from a \
          channel daemon"
     );
-    event.complete(rpc::Request::OpenChannelWith(request))?;
+    event.complete_ctl(rpc::Request::OpenChannelWith(request))?;
     Ok(ChannelLauncher::Negotiating(temp_channel_id))
 }
 
@@ -181,7 +183,7 @@ fn finish_negotiating(
     );
     let funding_outpoint =
         runtime.funding_wallet.construct_funding_psbt(temp_channel_id, address, amount, fee)?;
-    event.complete(rpc::Request::FundingConstructed(funding_outpoint))?;
+    event.complete_ctl(rpc::Request::FundingConstructed(funding_outpoint))?;
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid))
 }
 
@@ -206,7 +208,7 @@ fn finish_committing(
         .get_funding_psbt(txid)
         .expect("funding construction is broken")
         .clone();
-    event.complete_with_service(ServiceId::Signer, rpc::Request::Sign(psbt))?;
+    event.complete_ctl_service(ServiceId::Signer, rpc::Request::Sign(psbt))?;
     Ok(ChannelLauncher::Signing(channel_id, txid))
 }
 

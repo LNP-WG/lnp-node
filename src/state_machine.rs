@@ -72,18 +72,33 @@ where
         Event { senders, service, source, message }
     }
 
-    /// Finalizes event processing by sending reply message
-    pub fn complete(self, message: Message) -> Result<(), esb::Error> {
+    /// Finalizes event processing by sending reply message via CTL message bus
+    pub fn complete_ctl(self, message: Message) -> Result<(), esb::Error> {
         self.senders.send_to(ServiceBus::Ctl, self.service, self.source, message)
     }
 
-    /// Finalizes event processing by sending reply message to a specific service (different from
-    /// the event originating service).
-    pub fn complete_with_service(
+    /// Finalizes event processing by sending reply message via CTL message bus to a specific
+    /// service (different from the event originating service).
+    pub fn complete_ctl_service(
         self,
         service: ServiceId,
         message: Message,
     ) -> Result<(), esb::Error> {
         self.senders.send_to(ServiceBus::Ctl, self.service, service, message)
+    }
+
+    /// Finalizes event processing by sending reply message via MSG message bus
+    pub fn complete_msg(self, message: Message) -> Result<(), esb::Error> {
+        self.senders.send_to(ServiceBus::Msg, self.service, self.source, message)
+    }
+
+    /// Finalizes event processing by sending reply message via MSG message bus to a specific
+    /// service (different from the event originating service).
+    pub fn complete_msg_service(
+        self,
+        service: ServiceId,
+        message: Message,
+    ) -> Result<(), esb::Error> {
+        self.senders.send_to(ServiceBus::Msg, self.service, service, message)
     }
 }
