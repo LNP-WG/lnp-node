@@ -14,7 +14,7 @@
 
 use amplify::{Slice32, Wrapper};
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
+use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages, TempChannelId};
 use lnp::Extension;
 
 use super::Error;
@@ -28,27 +28,27 @@ use crate::{rpc, ServiceId};
 pub enum ChannelPropose {
     /// asked remote peer to accept a new channel
     #[display("PROPOSED")]
-    Proposed(TempChannelId),
+    Proposed,
 
-    /// remote peer proposed a new channel to accept
+    /// remote peer accepted our channel proposal
     #[display("ACCEPTED")]
-    Accepted(TempChannelId),
+    Accepted,
 
     /// sent funding txid and commitment signature to the remote peer
     #[display("FUNDING")]
-    Funding(ChannelId),
+    Funding,
 
     /// received signed commitment from the remote peer
     #[display("SIGNED")]
-    Signed(ChannelId),
+    Signed,
 
     /// awaiting funding transaction to be mined
     #[display("FUNDED")]
-    Funded(ChannelId),
+    Funded,
 
     /// funding transaction is mined, awaiting for the other peer confirmation of this fact
     #[display("LOCKED")]
-    Locked(ChannelId),
+    Locked,
 }
 
 impl StateMachine<rpc::Request, Runtime> for ChannelPropose {
@@ -59,20 +59,16 @@ impl StateMachine<rpc::Request, Runtime> for ChannelPropose {
         event: Event<rpc::Request>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
-        debug!("ChannelPropose {} received {} event", self.channel_id(), event.message);
-        let channel_id = self.channel_id();
+        let channel_id = runtime.channel.active_channel_id();
+        debug!("ChannelPropose {} received {} event", channel_id, event.message);
         let state = match self {
-            ChannelPropose::Proposed(temp_channel_id) => {
-                finish_proposed(event, runtime, temp_channel_id)
-            }
-            ChannelPropose::Accepted(temp_channel_id) => {
-                finish_accepted(event, runtime, temp_channel_id)
-            }
-            ChannelPropose::Funding(channel_id) => finish_funding(event, runtime, channel_id),
-            ChannelPropose::Signed(channel_id) => finish_signed(event, runtime, channel_id),
-            ChannelPropose::Funded(channel_id) => finish_funded(event, runtime, channel_id),
-            ChannelPropose::Locked(channel_id) => {
-                finish_locked(event, runtime, channel_id)?;
+            ChannelPropose::Proposed => finish_proposed(event, runtime),
+            ChannelPropose::Accepted => finish_accepted(event, runtime),
+            ChannelPropose::Funding => finish_funding(event, runtime),
+            ChannelPropose::Signed => finish_signed(event, runtime),
+            ChannelPropose::Funded => finish_funded(event, runtime),
+            ChannelPropose::Locked => {
+                finish_locked(event, runtime)?;
                 info!("ChannelPropose {} has completed its work", channel_id);
                 return Ok(None);
             }
@@ -83,27 +79,15 @@ impl StateMachine<rpc::Request, Runtime> for ChannelPropose {
 }
 
 impl ChannelPropose {
-    /// Computes current channel id
-    pub fn channel_id(&self) -> Slice32 {
-        match self {
-            ChannelPropose::Proposed(temp_channel_id)
-            | ChannelPropose::Accepted(temp_channel_id) => temp_channel_id.into_inner(),
-            ChannelPropose::Funding(channel_id)
-            | ChannelPropose::Signed(channel_id)
-            | ChannelPropose::Funded(channel_id)
-            | ChannelPropose::Locked(channel_id) => channel_id.into_inner(),
-        }
-    }
-
     /// Computes channel lifecycle stage for the current channel proposal workflow stage
     pub fn lifecycle(&self) -> Lifecycle {
         match self {
-            ChannelPropose::Proposed(_) => Lifecycle::Proposed,
-            ChannelPropose::Accepted(_) => Lifecycle::Accepted,
-            ChannelPropose::Funding(_) => Lifecycle::Funding,
-            ChannelPropose::Signed(_) => Lifecycle::Signed,
-            ChannelPropose::Funded(_) => Lifecycle::Funded,
-            ChannelPropose::Locked(_) => Lifecycle::Locked,
+            ChannelPropose::Proposed => Lifecycle::Proposed,
+            ChannelPropose::Accepted => Lifecycle::Accepted,
+            ChannelPropose::Funding => Lifecycle::Funding,
+            ChannelPropose::Signed => Lifecycle::Signed,
+            ChannelPropose::Funded => Lifecycle::Funded,
+            ChannelPropose::Locked => Lifecycle::Locked,
         }
     }
 }
@@ -133,18 +117,18 @@ impl ChannelPropose {
             rpc::Request::PeerMessage(open_channel),
         )?;
 
-        Ok(ChannelPropose::Proposed(temp_channel_id))
+        Ok(ChannelPropose::Proposed)
     }
 
     /// Construct information message for error and client reporting
-    pub fn info_message(&self) -> String {
+    pub fn info_message(&self, channel_id: ActiveChannelId) -> String {
         match self {
-            ChannelPropose::Proposed(temp_channel_id) => {
+            ChannelPropose::Proposed => {
                 format!(
                     "{} remote peer to {} with temp id {:#}",
                     "Proposing".promo(),
                     "open a channel".promo(),
-                    temp_channel_id.promoter()
+                    channel_id.promoter()
                 )
             }
             _ => todo!(),
@@ -155,7 +139,6 @@ impl ChannelPropose {
 fn finish_proposed(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-    temp_channel_id: TempChannelId,
 ) -> Result<ChannelPropose, Error> {
     todo!()
 }
@@ -163,7 +146,6 @@ fn finish_proposed(
 fn finish_accepted(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-    temp_channel_id: TempChannelId,
 ) -> Result<ChannelPropose, Error> {
     todo!()
 }
@@ -171,7 +153,6 @@ fn finish_accepted(
 fn finish_funding(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-    channel_id: ChannelId,
 ) -> Result<ChannelPropose, Error> {
     todo!()
 }
@@ -179,7 +160,6 @@ fn finish_funding(
 fn finish_signed(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-    channel_id: ChannelId,
 ) -> Result<ChannelPropose, Error> {
     todo!()
 }
@@ -187,15 +167,8 @@ fn finish_signed(
 fn finish_funded(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-    channel_id: ChannelId,
 ) -> Result<ChannelPropose, Error> {
     todo!()
 }
 
-fn finish_locked(
-    event: Event<rpc::Request>,
-    runtime: &mut Runtime,
-    channel_id: ChannelId,
-) -> Result<(), Error> {
-    todo!()
-}
+fn finish_locked(event: Event<rpc::Request>, runtime: &mut Runtime) -> Result<(), Error> { todo!() }

@@ -378,7 +378,7 @@ impl Runtime {
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
-        // RPC control requests are sent by either clients or lnpd daemoin and used to initiate one
+        // RPC control requests are sent by either clients or lnpd daemon and used to initiate one
         // of channel workflows and to request information about the channel state.
         match request {
             // Proposing remote peer to open a channel

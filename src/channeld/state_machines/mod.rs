@@ -16,6 +16,7 @@ pub mod channel_accept;
 pub mod channel_propose;
 
 use lnp::bolt::Lifecycle;
+use lnp::p2p::legacy::ActiveChannelId;
 use microservices::esb;
 use microservices::esb::Handler;
 
@@ -111,10 +112,10 @@ impl ChannelStateMachine {
         }
     }
 
-    pub(self) fn info_message(&self) -> String {
+    pub(self) fn info_message(&self, channel_id: ActiveChannelId) -> String {
         match self {
             ChannelStateMachine::Launch => s!("Launching channel daemon"),
-            ChannelStateMachine::Propose(state_machine) => state_machine.info_message(),
+            ChannelStateMachine::Propose(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Accept => todo!(),
             ChannelStateMachine::Active => todo!(),
             ChannelStateMachine::Reestablishing => todo!(),
@@ -135,11 +136,12 @@ impl Runtime {
         request: rpc::Request,
     ) -> Result<bool, Error> {
         let event = Event::with(senders, self.identity(), source, request);
+        let channel_id = self.channel.active_channel_id();
         let updated_state = match self.process_event(event) {
             Ok(_) => {
                 // Ignoring possible reporting errors here and after: do not want to
                 // halt the channel just because the client disconnected
-                let _ = self.report_progress(senders, self.state_machine.info_message());
+                let _ = self.report_progress(senders, self.state_machine.info_message(channel_id));
                 true
             }
             // We pass ESB errors forward such that they can fail the channel.
