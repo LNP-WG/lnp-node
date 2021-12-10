@@ -12,9 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::{Slice32, Wrapper};
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages, TempChannelId};
+use lnp::p2p::legacy::{ActiveChannelId, Messages};
 use lnp::Extension;
 
 use super::Error;
@@ -24,7 +23,7 @@ use crate::state_machine::{Event, StateMachine};
 use crate::{rpc, ServiceId};
 
 /// Channel proposal workflow
-#[derive(Debug, Display)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
 pub enum ChannelPropose {
     /// asked remote peer to accept a new channel
     #[display("PROPOSED")]
@@ -106,7 +105,6 @@ impl ChannelPropose {
                 panic!("channel_propose workflow inconsistency: starting workflow with {}", msg)
             }
         };
-        let temp_channel_id = request.channel_req.temporary_channel_id;
 
         let open_channel = Messages::OpenChannel(request.channel_req.clone());
         runtime.channel.update_from_peer(&open_channel)?;

@@ -351,7 +351,9 @@ pub struct ChannelInfo {
     pub total_payments: u64,
     pub pending_payments: u16,
     pub is_originator: bool,
-    pub params: bolt::channel::Params,
+    pub common_params: bolt::channel::CommonParams,
+    pub local_params: bolt::channel::PeerParams,
+    pub remote_params: bolt::channel::PeerParams,
     pub local_keys: bolt::channel::Keyset,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
     pub remote_keys: BTreeMap<NodeAddr, bolt::channel::Keyset>,

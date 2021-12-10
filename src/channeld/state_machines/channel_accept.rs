@@ -12,9 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::{Slice32, Wrapper};
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages, TempChannelId};
+use lnp::p2p::legacy::{ActiveChannelId, Messages};
 use lnp::Extension;
 
 use super::Error;
@@ -24,7 +23,7 @@ use crate::state_machine::{Event, StateMachine};
 use crate::{rpc, ServiceId};
 
 /// Channel proposal workflow
-#[derive(Debug, Display)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
 pub enum ChannelAccept {
     /// remote peer proposed a new channel to accept
     #[display("ACCEPTED")]
@@ -52,7 +51,7 @@ impl StateMachine<rpc::Request, Runtime> for ChannelAccept {
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
-        debug!("ChannelPropose {} received {} event", channel_id, event.message);
+        debug!("ChannelAccept {} received {} event", channel_id, event.message);
         let state = match self {
             ChannelAccept::Accepted => finish_accepted(event, runtime),
             ChannelAccept::Signed => finish_signed(event, runtime),
@@ -63,7 +62,7 @@ impl StateMachine<rpc::Request, Runtime> for ChannelAccept {
                 return Ok(None);
             }
         }?;
-        info!("ChannelPropose {} switched to {} state", channel_id, state);
+        info!("ChannelAccept {} switched to {} state", channel_id, state);
         Ok(Some(state))
     }
 }
@@ -86,9 +85,9 @@ impl ChannelAccept {
     /// Constructs channel acceptance state machine
     pub fn with(event: Event<rpc::Request>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
         let request = match event.message {
-            rpc::Request::OpenChannelWith(ref request) => request,
+            rpc::Request::AcceptChannelFrom(ref request) => request,
             msg => {
-                panic!("channel_propose workflow inconsistency: starting workflow with {}", msg)
+                panic!("channel_accept workflow inconsistency: starting workflow with {}", msg)
             }
         };
 
@@ -107,6 +106,11 @@ impl ChannelAccept {
     /// Construct information message for error and client reporting
     pub fn info_message(&self, channel_id: ActiveChannelId) -> String {
         match self {
+            ChannelAccept::Accepted => format!(
+                "{} channel {:#} from a remote peer",
+                "Accepted".ended(),
+                channel_id.ender(),
+            ),
             _ => todo!(),
         }
     }

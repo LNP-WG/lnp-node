@@ -71,7 +71,7 @@ pub fn run(
         chain,
         secp: Secp256k1::new(),
         state_machine: default!(),
-        channel: default!(),
+        channel: default!(), // TODO: use node configuration to provide custom policy & parameters
         channel_id: zero!(),
         temporary_channel_id: channel_id.into(),
         state: default!(),
@@ -85,7 +85,9 @@ pub fn run(
         commitment_number: 0,
         total_payments: 0,
         pending_payments: 0,
-        params: default!(),
+        common_params: default!(),
+        local_params: default!(),
+        remote_params: default!(),
         local_keys: dumb!(),
         remote_keys: dumb!(),
         offered_htlc: empty!(),
@@ -132,7 +134,9 @@ pub struct Runtime {
     commitment_number: u64,
     total_payments: u64,
     pending_payments: u16,
-    params: bolt::channel::Params,
+    common_params: bolt::channel::CommonParams,
+    local_params: bolt::channel::PeerParams,
+    remote_params: bolt::channel::PeerParams,
     local_keys: bolt::channel::Keyset,
     remote_keys: bolt::channel::Keyset,
 
@@ -228,6 +232,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         match request {
             Request::PeerMessage(Messages::OpenChannel(_)) => {
+                // TODO: Support repeated messages as according to BOLT-2 requirements
                 warn!(
                     "Got `open_channel` P2P message from {}, which is unexpected: the channel \
                      creation was already requested before",
@@ -313,7 +318,7 @@ impl Runtime {
                 self.send_peer(senders, Messages::FundingLocked(funding_locked))?;
 
                 self.state = Lifecycle::Active;
-                self.local_capacity = self.params.funding_satoshis;
+                self.local_capacity = *self.channel.as_bolt3().local_amount();
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -330,7 +335,7 @@ impl Runtime {
                 //      2. Do something with per-commitment point
 
                 self.state = Lifecycle::Active;
-                self.remote_capacity = self.params.funding_satoshis;
+                self.remote_capacity = *self.channel.as_bolt3().remote_amount();
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -522,7 +527,7 @@ impl Runtime {
         senders: &mut Senders,
         channel_req: &OpenChannel,
         peerd: &ServiceId,
-    ) -> Result<AcceptChannel, bolt::channel::NegotiationError> {
+    ) -> Result<AcceptChannel, bolt::channel::PolicyError> {
         let msg = format!(
             "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
@@ -536,7 +541,7 @@ impl Runtime {
         let _ = self.report_progress(senders, msg);
 
         self.is_originator = false;
-        self.params = bolt::channel::Params::with(channel_req)?;
+        self.local_params = bolt::channel::PeerParams::from(channel_req);
         self.remote_keys = bolt::channel::Keyset::from(channel_req);
 
         let dumb_key = self.node_id();
@@ -560,17 +565,7 @@ impl Runtime {
             unknown_tlvs: none!(),
         };
 
-        self.params.updated(&accept_channel, None)?;
         self.local_keys = bolt::channel::Keyset::from(&accept_channel);
-
-        let msg = format!(
-            "{} channel {:#} from remote peer {}",
-            "Accepted".ended(),
-            channel_req.temporary_channel_id.ender(),
-            peerd.ender()
-        );
-        info!("{}", msg);
-        let _ = self.report_success(senders, Some(msg));
 
         Ok(accept_channel)
     }
@@ -580,7 +575,7 @@ impl Runtime {
         senders: &mut Senders,
         accept_channel: &AcceptChannel,
         peerd: &ServiceId,
-    ) -> Result<(), bolt::channel::NegotiationError> {
+    ) -> Result<(), bolt::channel::PolicyError> {
         info!(
             "Channel {:#} {} by the remote peer {}",
             accept_channel.temporary_channel_id.ender(),
@@ -599,7 +594,7 @@ impl Runtime {
         info!("{}", msg);
 
         // TODO: Add a reasonable min depth bound
-        self.params.updated(accept_channel, None)?;
+        self.remote_params = bolt::channel::PeerParams::from(accept_channel);
         self.remote_keys = bolt::channel::Keyset::from(accept_channel);
 
         let msg = format!(
@@ -712,7 +707,7 @@ impl Runtime {
             self.local_keys.payment_basepoint,
             self.local_keys.revocation_basepoint,
             self.remote_keys.delayed_payment_basepoint,
-            self.params.to_self_delay,
+            self.local_params.to_self_delay,
         );
         trace!("Counterparty's commitment tx: {:?}", cmt_tx);
 

@@ -51,6 +51,7 @@ impl Error {
             Error::UnexpectedMessage(_, _) => 1001,
             Error::Channel(lnp::channel::Error::Extension(_)) => 2001,
             Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
+            Error::Channel(lnp::channel::Error::Policy(_)) => 2003,
             Error::Esb(_) => 3001,
         }
     }
@@ -68,7 +69,7 @@ pub enum ChannelStateMachine {
 
     /// accepting channel proposed by a remote peer
     #[display("ACCEPT")]
-    Accept,
+    Accept(channel_accept::ChannelAccept),
 
     /// active channel operations
     #[display("ACTIVE")]
@@ -102,7 +103,7 @@ impl ChannelStateMachine {
         match self {
             ChannelStateMachine::Launch => Lifecycle::Initial,
             ChannelStateMachine::Propose(state_machine) => state_machine.lifecycle(),
-            ChannelStateMachine::Accept => Lifecycle::Accepted, // TODO: use state machine,
+            ChannelStateMachine::Accept(state_machine) => state_machine.lifecycle(),
             ChannelStateMachine::Active => Lifecycle::Active,
             ChannelStateMachine::Reestablishing => Lifecycle::Reestablishing,
             // TODO: use state machine
@@ -116,7 +117,7 @@ impl ChannelStateMachine {
         match self {
             ChannelStateMachine::Launch => s!("Launching channel daemon"),
             ChannelStateMachine::Propose(state_machine) => state_machine.info_message(channel_id),
-            ChannelStateMachine::Accept => todo!(),
+            ChannelStateMachine::Accept(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Active => todo!(),
             ChannelStateMachine::Reestablishing => todo!(),
             ChannelStateMachine::Closing => todo!(),

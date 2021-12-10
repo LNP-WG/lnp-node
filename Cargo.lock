@@ -930,9 +930,9 @@ dependencies = [
 
 [[package]]
 name = "hermit-abi"
-version = "0.1.20"
+version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7a30908dbce072eca83216eab939d2290080e00ca71611b96a09e5cdce5f3fa"
+checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
 ]
@@ -1091,9 +1091,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.110"
+version = "0.2.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b58a4469763e4e3a906c4ed786e1c70512d16aa88f84dded826da42640fc6a1c"
+checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
 
 [[package]]
 name = "lightning_encoding"
@@ -1142,7 +1142,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#b706901284a5db6b3de9fcf5a1049311bb5cc588"
+source = "git+https://github.com/LNP-BP/lnp-core#59e7e0ecc20d3bd3a311d0367a7b18be4edfdce3"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1160,7 +1160,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#b706901284a5db6b3de9fcf5a1049311bb5cc588"
+source = "git+https://github.com/LNP-BP/lnp-core#59e7e0ecc20d3bd3a311d0367a7b18be4edfdce3"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -2158,9 +2158,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.7.7"
+version = "1.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf7db5f818134da2336186e7249b4c5027af4bc07ba50b9d154e07702a7c1add"
+checksum = "bf183380b9928b1b14476f8b1aac0beee9f9920537a0025feffc49d10277db03"
 dependencies = [
  "amplify",
  "bitcoin",
