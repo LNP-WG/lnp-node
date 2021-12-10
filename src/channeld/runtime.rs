@@ -45,8 +45,10 @@ use wallet::hlc::HashPreimage;
 use wallet::scripts::PubkeyScript;
 
 use super::storage::{self, Driver};
+use crate::channeld::state_machines::ChannelStateMachine;
 use crate::rpc::request::ChannelInfo;
 use crate::rpc::{request, Request, ServiceBus};
+use crate::state_machine::{Event, StateMachine};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(
@@ -68,7 +70,8 @@ pub fn run(
         local_node,
         chain,
         secp: Secp256k1::new(),
-        channel: Channel::default(),
+        state_machine: default!(),
+        channel: default!(),
         channel_id: zero!(),
         temporary_channel_id: channel_id.into(),
         state: default!(),
@@ -111,8 +114,11 @@ pub struct Runtime {
 
     secp: Secp256k1<All>,
 
+    pub(crate) state_machine: ChannelStateMachine,
     pub(crate) channel: Channel<bolt::ExtensionId>,
 
+    // From here till the `enqueror` all parameters should be removed since they are part of
+    // `channel` now
     channel_id: ChannelId,
     temporary_channel_id: TempChannelId,
     state: Lifecycle,
@@ -366,21 +372,34 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
-            Request::OpenChannelWith(request::CreateChannel { channel_req, peerd, report_to }) => {
+            Request::OpenChannelWith(request::CreateChannel {
+                ref channel_req,
+                ref peerd,
+                ref report_to,
+            }) => {
                 self.peer_service = ServiceId::Peer(peerd.clone());
                 self.enquirer = report_to.clone();
-                self.remote_peer = Some(peerd);
+                self.remote_peer = Some(peerd.clone());
 
-                self.open_channel(senders, &channel_req).map_err(|err| {
-                    self.report_failure_to(senders, &report_to, microservices::rpc::Failure {
-                        code: 0, // TODO: Create error type system
-                        info: err.to_string(),
-                    })
+                // Ignoring possible reporting errors here and after: do not want to
+                // halt the channel just because the client disconnected
+                let enquirer = self.enquirer.clone();
+                let _ = self.report_progress_to(
+                    senders,
+                    &self.enquirer.clone(),
+                    format!("Proposing remote peer to open a channel"),
+                );
+
+                self.process(senders, source, request).map_err(|err| {
+                    self.report_failure_to(
+                        senders,
+                        &self.enquirer.clone(),
+                        microservices::rpc::Failure {
+                            code: 0, // TODO: Create error type system
+                            info: err.to_string(),
+                        },
+                    )
                 })?;
-
-                self.send_peer(senders, Messages::OpenChannel(channel_req))?;
-
-                self.state = Lifecycle::Proposed;
             }
 
             Request::AcceptChannelFrom(request::CreateChannel {
@@ -400,10 +419,6 @@ impl Runtime {
                             info: err.to_string(),
                         })
                     })?;
-
-                self.send_peer(senders, Messages::AcceptChannel(accept_channel))?;
-
-                self.state = Lifecycle::Accepted;
             }
 
             Request::FundingConstructed(funding_outpoint) => {
@@ -502,7 +517,8 @@ impl Runtime {
         let enquirer = self.enquirer.clone();
 
         // Update channel id!
-        self.channel_id = ChannelId::with(self.funding_outpoint);
+        self.channel_id =
+            ChannelId::with(self.funding_outpoint.txid, self.funding_outpoint.vout as u16);
         debug!("Updating channel id to {}", self.channel_id);
         self.send_ctl(senders, ServiceId::Lnpd, Request::UpdateChannelId(self.channel_id))?;
         self.send_ctl(
@@ -514,33 +530,6 @@ impl Runtime {
         let msg = format!("{} set to {}", "Channel ID".ended(), self.channel_id.ender());
         info!("{}", msg);
         let _ = self.report_progress_to(senders, &enquirer, msg);
-
-        Ok(())
-    }
-
-    pub fn open_channel(
-        &mut self,
-        senders: &mut Senders,
-        channel_req: &OpenChannel,
-    ) -> Result<(), bolt::channel::NegotiationError> {
-        info!(
-            "{} remote peer to {} with temp id {:#}",
-            "Proposing".promo(),
-            "open a channel".promo(),
-            channel_req.temporary_channel_id.promoter()
-        );
-        // Ignoring possible reporting errors here and after: do not want to
-        // halt the channel just because the client disconnected
-        let enquirer = self.enquirer.clone();
-        let _ = self.report_progress_to(
-            senders,
-            &enquirer,
-            format!("Proposing remote peer to open a channel"),
-        );
-
-        self.is_originator = true;
-        self.params = bolt::channel::Params::with(&channel_req)?;
-        self.local_keys = bolt::channel::Keyset::from(channel_req);
 
         Ok(())
     }

@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::{Slice32, Wrapper};
+use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
 use lnp::{channel, Extension};
 use microservices::esb;
@@ -39,23 +40,30 @@ pub enum Error {
     Channel(channel::Error),
 }
 
+/// Channel proposal workflow
 #[derive(Debug, Display)]
 pub enum ChannelPropose {
+    /// asked remote peer to accept a new channel
     #[display("PROPOSED")]
     Proposed(TempChannelId),
 
+    /// remote peer proposed a new channel to accept
     #[display("ACCEPTED")]
     Accepted(TempChannelId),
 
+    /// sent funding txid and commitment signature to the remote peer
     #[display("FUNDING")]
     Funding(ChannelId),
 
+    /// received signed commitment from the remote peer
     #[display("SIGNED")]
     Signed(ChannelId),
 
+    /// awaiting funding transaction to be mined
     #[display("FUNDED")]
     Funded(ChannelId),
 
+    /// funding transaction is mined, awaiting for the other peer confirmation of this fact
     #[display("LOCKED")]
     Locked(ChannelId),
 }
@@ -103,6 +111,18 @@ impl ChannelPropose {
             | ChannelPropose::Locked(channel_id) => channel_id.into_inner(),
         }
     }
+
+    /// Computes channel lifecycle stage for the current channel proposal workflow stage
+    pub fn lifecycle(&self) -> Lifecycle {
+        match self {
+            ChannelPropose::Proposed(_) => Lifecycle::Proposed,
+            ChannelPropose::Accepted(_) => Lifecycle::Accepted,
+            ChannelPropose::Funding(_) => Lifecycle::Funding,
+            ChannelPropose::Signed(_) => Lifecycle::Signed,
+            ChannelPropose::Funded(_) => Lifecycle::Funded,
+            ChannelPropose::Locked(_) => Lifecycle::Locked,
+        }
+    }
 }
 
 // State transitions:
@@ -112,7 +132,6 @@ impl ChannelPropose {
     pub fn with(
         event: Event<rpc::Request>,
         runtime: &mut Runtime,
-        temp_channel_id: TempChannelId,
     ) -> Result<ChannelPropose, Error> {
         let request = match event.message {
             rpc::Request::OpenChannelWith(ref request) => request,
@@ -120,12 +139,13 @@ impl ChannelPropose {
                 panic!("channel_propose workflow inconsistency: starting workflow with {}", msg)
             }
         };
+        let temp_channel_id = request.channel_req.temporary_channel_id;
 
         info!(
             "{} remote peer to {} with temp id {:#}",
             "Proposing".promo(),
             "open a channel".promo(),
-            request.channel_req.temporary_channel_id.promoter()
+            temp_channel_id.promoter()
         );
 
         let open_channel = Messages::OpenChannel(request.channel_req.clone());
