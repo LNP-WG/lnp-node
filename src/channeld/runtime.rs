@@ -152,7 +152,10 @@ pub struct Runtime {
     storage: Box<dyn storage::Driver>,
 }
 
-impl CtlServer for Runtime {}
+impl CtlServer for Runtime {
+    #[inline]
+    fn enquirer(&self) -> Option<ServiceId> { self.enquirer.clone() }
+}
 
 impl Runtime {
     #[inline]
@@ -224,13 +227,19 @@ impl Runtime {
         request: Request,
     ) -> Result<(), Error> {
         match request {
+            Request::PeerMessage(Messages::OpenChannel(_)) => {
+                warn!(
+                    "Got `open_channel` P2P message from {}, which is unexpected: the channel \
+                     creation was already requested before",
+                    source
+                );
+            }
+
             Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
                 self.state = Lifecycle::Accepted;
 
-                let enquirer = self.enquirer.clone();
-
                 self.channel_accepted(senders, &accept_channel, &source).map_err(|err| {
-                    self.report_failure_to(senders, &enquirer, microservices::rpc::Failure {
+                    self.report_failure(senders, microservices::rpc::Failure {
                         code: 0, // TODO: Create error type system
                         info: err.to_string(),
                     })
@@ -258,12 +267,14 @@ impl Runtime {
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
-                let _ = self.send_ctl(senders, &enquirer, Request::ChannelFunding(script_pubkey));
+                let _ = self.send_ctl(
+                    senders,
+                    &self.enquirer.clone(),
+                    Request::ChannelFunding(script_pubkey),
+                );
             }
 
             Request::PeerMessage(Messages::FundingCreated(funding_created)) => {
-                let enquirer = self.enquirer.clone();
-
                 self.state = Lifecycle::Funding;
 
                 let funding_signed = self.funding_created(senders, funding_created)?;
@@ -276,7 +287,7 @@ impl Runtime {
                 // halt the channel just because the client disconnected
                 let msg = format!("{} both signatures present", "Channel funded:".ended());
                 info!("{}", msg);
-                let _ = self.report_progress_to(senders, &enquirer, msg);
+                let _ = self.report_progress(senders, msg);
             }
 
             Request::PeerMessage(Messages::FundingSigned(_funding_signed)) => {
@@ -286,15 +297,13 @@ impl Runtime {
                 //      3. Save signature/commitment tx
                 //      4. Send funding locked request
 
-                let enquirer = self.enquirer.clone();
-
                 self.state = Lifecycle::Funded;
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
                 let msg = format!("{} both signatures present", "Channel funded:".ended());
                 info!("{}", msg);
-                let _ = self.report_progress_to(senders, &enquirer, msg);
+                let _ = self.report_progress(senders, msg);
 
                 let funding_locked = FundingLocked {
                     channel_id: self.channel_id,
@@ -310,12 +319,10 @@ impl Runtime {
                 // halt the channel just because the client disconnected
                 let msg = format!("{} transaction confirmed", "Channel active:".ended());
                 info!("{}", msg);
-                let _ = self.report_success_to(senders, &enquirer, Some(msg));
+                let _ = self.report_success(senders, Some(msg));
             }
 
             Request::PeerMessage(Messages::FundingLocked(_funding_locked)) => {
-                let enquirer = self.enquirer.clone();
-
                 self.state = Lifecycle::Locked;
 
                 // TODO:
@@ -329,7 +336,7 @@ impl Runtime {
                 // halt the channel just because the client disconnected
                 let msg = format!("{} transaction confirmed", "Channel active:".ended());
                 info!("{}", msg);
-                let _ = self.report_success_to(senders, &enquirer, Some(msg));
+                let _ = self.report_success(senders, Some(msg));
             }
 
             Request::PeerMessage(Messages::UpdateAddHtlc(update_add_htlc)) => {
@@ -371,61 +378,39 @@ impl Runtime {
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
+        // RPC control requests are sent by either clients or lnpd daemoin and used to initiate one
+        // of channel workflows and to request information about the channel state.
         match request {
+            // Proposing remote peer to open a channel
             Request::OpenChannelWith(request::CreateChannel {
-                ref channel_req,
-                ref peerd,
-                ref report_to,
+                ref peerd, ref report_to, ..
             }) => {
-                self.peer_service = ServiceId::Peer(peerd.clone());
+                let peerd = peerd.clone();
                 self.enquirer = report_to.clone();
-                self.remote_peer = Some(peerd.clone());
-
-                // Ignoring possible reporting errors here and after: do not want to
-                // halt the channel just because the client disconnected
-                let enquirer = self.enquirer.clone();
-                let _ = self.report_progress_to(
-                    senders,
-                    &self.enquirer.clone(),
-                    format!("Proposing remote peer to open a channel"),
-                );
-
-                self.process(senders, source, request).map_err(|err| {
-                    self.report_failure_to(
-                        senders,
-                        &self.enquirer.clone(),
-                        microservices::rpc::Failure {
-                            code: 0, // TODO: Create error type system
-                            info: err.to_string(),
-                        },
-                    )
-                })?;
+                if self.process(senders, source, request)? {
+                    // Updating state only if the request was processed
+                    self.peer_service = ServiceId::Peer(peerd.clone());
+                    self.remote_peer = Some(peerd);
+                }
             }
 
+            // Processing remote request to open a channel
             Request::AcceptChannelFrom(request::CreateChannel {
-                channel_req,
-                peerd,
-                report_to,
+                ref peerd, ref report_to, ..
             }) => {
-                let peer_service = ServiceId::Peer(peerd.clone());
-                self.peer_service = peer_service.clone();
-                self.state = Lifecycle::Proposed;
-                self.remote_peer = Some(peerd);
-
-                let accept_channel =
-                    self.accept_channel(senders, &channel_req, &peer_service).map_err(|err| {
-                        self.report_failure_to(senders, &report_to, microservices::rpc::Failure {
-                            code: 0, // TODO: Create error type system
-                            info: err.to_string(),
-                        })
-                    })?;
+                self.enquirer = None;
+                let peerd = peerd.clone();
+                if self.process(senders, source, request)? {
+                    // Updating state only if the request was processed
+                    self.peer_service = ServiceId::Peer(peerd.clone());
+                    self.remote_peer = Some(peerd);
+                }
             }
 
+            /*
+            // TODO: delete
             Request::FundingConstructed(funding_outpoint) => {
-                self.enquirer = source.into();
-
                 let funding_created = self.fund_channel(senders, funding_outpoint)?;
-
                 self.state = Lifecycle::Funding;
                 self.send_peer(senders, Messages::FundingCreated(funding_created))?;
             }
@@ -502,7 +487,7 @@ impl Runtime {
                 };
                 self.send_ctl(senders, source, Request::ChannelInfo(info))?;
             }
-
+             */
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
@@ -514,8 +499,6 @@ impl Runtime {
 
 impl Runtime {
     pub fn update_channel_id(&mut self, senders: &mut Senders) -> Result<(), Error> {
-        let enquirer = self.enquirer.clone();
-
         // Update channel id!
         self.channel_id =
             ChannelId::with(self.funding_outpoint.txid, self.funding_outpoint.vout as u16);
@@ -529,7 +512,7 @@ impl Runtime {
         // self.identity = self.channel_id.into();
         let msg = format!("{} set to {}", "Channel ID".ended(), self.channel_id.ender());
         info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress(senders, msg);
 
         Ok(())
     }
@@ -550,8 +533,7 @@ impl Runtime {
 
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
-        let enquirer = self.enquirer.clone();
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress(senders, msg);
 
         self.is_originator = false;
         self.params = bolt::channel::Params::with(channel_req)?;
@@ -588,7 +570,7 @@ impl Runtime {
             peerd.ender()
         );
         info!("{}", msg);
-        let _ = self.report_success_to(senders, &enquirer, Some(msg));
+        let _ = self.report_success(senders, Some(msg));
 
         Ok(accept_channel)
     }
@@ -607,9 +589,7 @@ impl Runtime {
         );
         // Ignoring possible reporting errors here and after: do not want to
         // halt the channel just because the client disconnected
-        let enquirer = self.enquirer.clone();
-        let _ =
-            self.report_progress_to(senders, &enquirer, "Channel was accepted by the remote peer");
+        let _ = self.report_progress(senders, "Channel was accepted by the remote peer");
 
         let msg = format!(
             "{} returned parameters for the channel {:#}",
@@ -628,7 +608,7 @@ impl Runtime {
             "ready for funding".ended()
         );
         info!("{}", msg);
-        let _ = self.report_success_to(senders, &enquirer, Some(msg));
+        let _ = self.report_success(senders, Some(msg));
 
         Ok(())
     }
@@ -638,14 +618,9 @@ impl Runtime {
         senders: &mut Senders,
         funding_outpoint: OutPoint,
     ) -> Result<FundingCreated, Error> {
-        let enquirer = self.enquirer.clone();
-
         info!("{} {}", "Funding channel".promo(), self.temporary_channel_id.promoter());
-        let _ = self.report_progress_to(
-            senders,
-            &enquirer,
-            format!("Funding channel {:#}", self.temporary_channel_id),
-        );
+        let _ = self
+            .report_progress(senders, format!("Funding channel {:#}", self.temporary_channel_id));
 
         self.funding_outpoint = funding_outpoint;
         self.funding_update(senders)?;
@@ -665,7 +640,7 @@ impl Runtime {
             self.channel_id.ender()
         );
         info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress(senders, msg);
 
         Ok(funding_created)
     }
@@ -675,12 +650,9 @@ impl Runtime {
         senders: &mut Senders,
         funding_created: FundingCreated,
     ) -> Result<FundingSigned, Error> {
-        let enquirer = self.enquirer.clone();
-
         info!("{} {}", "Accepting channel funding".promo(), self.temporary_channel_id.promoter());
-        let _ = self.report_progress_to(
+        let _ = self.report_progress(
             senders,
-            &enquirer,
             format!("Accepting channel funding {:#}", self.temporary_channel_id),
         );
 
@@ -701,7 +673,7 @@ impl Runtime {
             self.channel_id.ender()
         );
         info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress(senders, msg);
 
         Ok(funding_signed)
     }
@@ -772,8 +744,6 @@ impl Runtime {
         senders: &mut Senders,
         transfer_req: request::Transfer,
     ) -> Result<UpdateAddHtlc, Error> {
-        let enquirer = self.enquirer.clone();
-
         let available = if let Some(asset_id) = transfer_req.asset {
             self.local_balances.get(&asset_id).copied().unwrap_or(0)
         } else {
@@ -831,7 +801,7 @@ impl Runtime {
 
         let msg = format!("{}", "Funding transferred".ended());
         info!("{}", msg);
-        let _ = self.report_progress_to(senders, &enquirer, msg);
+        let _ = self.report_progress(senders, msg);
 
         Ok(update_add_htlc)
     }
@@ -845,8 +815,6 @@ impl Runtime {
         blinding: u64,
         refill_originator: bool,
     ) -> Result<(), Error> {
-        let enquirer = self.enquirer.clone();
-
         debug!("Validating consignment with RGB Node ...");
         self.request_rbg20(rgb_node::rpc::fungible::Request::Validate(consignment.clone()))?;
 
@@ -876,7 +844,7 @@ impl Runtime {
                     );
                     let msg =
                         format!("adding {} of {} to balance", balance.ender(), asset_id.ender());
-                    let _ = self.report_progress_to(senders, &enquirer, msg);
+                    let _ = self.report_progress(senders, msg);
 
                     if refill_originator {
                         self.local_balances.insert(asset_id, balance);
@@ -890,7 +858,7 @@ impl Runtime {
             _ => Err(Error::Other(s!("Unrecognized RGB Node response")))?,
         }
 
-        let _ = self.report_success_to(senders, &enquirer, Some("transfer completed"));
+        let _ = self.report_success(senders, Some("transfer completed"));
         Ok(())
     }
 

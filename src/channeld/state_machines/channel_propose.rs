@@ -15,30 +15,13 @@
 use amplify::{Slice32, Wrapper};
 use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
-use lnp::{channel, Extension};
-use microservices::esb;
+use lnp::Extension;
 
+use super::Error;
 use crate::channeld::runtime::Runtime;
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
 use crate::{rpc, ServiceId};
-
-/// Errors for channel proposal workflow
-#[derive(Debug, Display, From, Error)]
-#[display(doc_comments)]
-pub enum Error {
-    /// the received message {0} was not expected at the {1} stage of the channel launch workflow
-    UnexpectedMessage(rpc::Request, &'static str),
-
-    /// error sending RPC request during state transition. Details: {0}
-    #[from]
-    Esb(esb::Error),
-
-    /// generic LNP channel error
-    #[from]
-    #[display(inner)]
-    Channel(channel::Error),
-}
 
 /// Channel proposal workflow
 #[derive(Debug, Display)]
@@ -141,13 +124,6 @@ impl ChannelPropose {
         };
         let temp_channel_id = request.channel_req.temporary_channel_id;
 
-        info!(
-            "{} remote peer to {} with temp id {:#}",
-            "Proposing".promo(),
-            "open a channel".promo(),
-            temp_channel_id.promoter()
-        );
-
         let open_channel = Messages::OpenChannel(request.channel_req.clone());
         runtime.channel.update_from_peer(&open_channel)?;
 
@@ -158,6 +134,21 @@ impl ChannelPropose {
         )?;
 
         Ok(ChannelPropose::Proposed(temp_channel_id))
+    }
+
+    /// Construct information message for error and client reporting
+    pub fn info_message(&self) -> String {
+        match self {
+            ChannelPropose::Proposed(temp_channel_id) => {
+                format!(
+                    "{} remote peer to {} with temp id {:#}",
+                    "Proposing".promo(),
+                    "open a channel".promo(),
+                    temp_channel_id.promoter()
+                )
+            }
+            _ => todo!(),
+        }
     }
 }
 

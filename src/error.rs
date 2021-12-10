@@ -23,6 +23,7 @@ use internet2::{presentation, transport};
 use microservices::{esb, rpc};
 use psbt::sign::SignError;
 
+use crate::channeld;
 use crate::lnpd::funding_wallet;
 #[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
@@ -48,6 +49,10 @@ pub enum Error {
     /// Peer interface error: {0}
     #[from]
     Peer(presentation::Error),
+
+    /// Channel operations error: {0}
+    #[from]
+    Channel(channeld::Error),
 
     /// Encoding error: {0}
     #[from]

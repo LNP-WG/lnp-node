@@ -16,20 +16,43 @@ pub mod channel_accept;
 pub mod channel_propose;
 
 use lnp::bolt::Lifecycle;
+use microservices::esb;
 use microservices::esb::Handler;
 
 use self::channel_propose::ChannelPropose;
 use crate::channeld::runtime::Runtime;
+use crate::service::LogStyle;
 use crate::state_machine::Event;
-use crate::{rpc, Senders, ServiceId};
+use crate::{rpc, CtlServer, Senders, ServiceId};
 
-/// Errors for channel state machine
+/// Errors for channel proposal workflow
 #[derive(Debug, Display, From, Error)]
-#[display(inner)]
+#[display(doc_comments)]
 pub enum Error {
-    /// Error during channel propose workflow
+    /// unexpected message for a channel state {1}. Message details: {0}
+    UnexpectedMessage(rpc::Request, Lifecycle),
+
+    /// generic LNP channel error
     #[from]
-    ChannelPropose(channel_propose::Error),
+    #[display(inner)]
+    Channel(lnp::channel::Error),
+
+    /// error sending RPC request during state transition. Details: {0}
+    #[from]
+    Esb(esb::Error),
+}
+
+impl Error {
+    /// Returns unique error number sent to the client alongside text message to help run
+    /// client-side diagnostics
+    pub fn errno(&self) -> u16 {
+        match self {
+            Error::UnexpectedMessage(_, _) => 1001,
+            Error::Channel(lnp::channel::Error::Extension(_)) => 2001,
+            Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
+            Error::Esb(_) => 3001,
+        }
+    }
 }
 
 #[derive(Debug, Display)]
@@ -87,11 +110,24 @@ impl ChannelStateMachine {
             ChannelStateMachine::Penalize => Lifecycle::Penalize,
         }
     }
+
+    pub(self) fn info_message(&self) -> String {
+        match self {
+            ChannelStateMachine::Launch => s!("Launching channel daemon"),
+            ChannelStateMachine::Propose(state_machine) => state_machine.info_message(),
+            ChannelStateMachine::Accept => todo!(),
+            ChannelStateMachine::Active => todo!(),
+            ChannelStateMachine::Reestablishing => todo!(),
+            ChannelStateMachine::Closing => todo!(),
+            ChannelStateMachine::Abort => todo!(),
+            ChannelStateMachine::Penalize => todo!(),
+        }
+    }
 }
 
 impl Runtime {
     /// Processes incoming RPC or peer requests updating state - and switching to a new state, if
-    /// necessary. Returns bool indicating whether state switch had happened
+    /// necessary. Returns bool indicating whether a successful state update happened
     pub fn process(
         &mut self,
         senders: &mut Senders,
@@ -99,21 +135,51 @@ impl Runtime {
         request: rpc::Request,
     ) -> Result<bool, Error> {
         let event = Event::with(senders, self.identity(), source, request);
-        let switched_state = match self.state_machine {
-            ChannelStateMachine::Launch => {
-                self.state_machine =
-                    ChannelStateMachine::Propose(ChannelPropose::with(event, self)?);
+        let updated_state = match self.process_event(event) {
+            Ok(_) => {
+                // Ignoring possible reporting errors here and after: do not want to
+                // halt the channel just because the client disconnected
+                let _ = self.report_progress(senders, self.state_machine.info_message());
                 true
             }
-            _ => false, // TODO: implement
+            // We pass ESB errors forward such that they can fail the channel.
+            // In the future they can be caught here and used to re-iterate sending of the same
+            // message later without channel halting.
+            Err(err @ Error::Esb(_)) => {
+                error!("{} due to ESB failure: {}", "Failing channel".err(), err.err_details());
+                self.report_failure(senders, microservices::rpc::Failure {
+                    code: err.errno(),
+                    info: err.to_string(),
+                });
+                return Err(err);
+            }
+            Err(other_err) => {
+                error!("{}: {}", "Channel error".err(), other_err.err_details());
+                self.report_failure(senders, microservices::rpc::Failure {
+                    code: other_err.errno(),
+                    info: other_err.to_string(),
+                });
+                false
+            }
         };
-        if switched_state {
+        if updated_state {
             info!(
                 "ChannelStateMachine {} switched to {} state",
                 self.channel.active_channel_id(),
                 self.state_machine
             );
         }
-        Ok(switched_state)
+        Ok(updated_state)
+    }
+
+    fn process_event(&mut self, event: Event<rpc::Request>) -> Result<(), Error> {
+        match self.state_machine {
+            ChannelStateMachine::Launch => {
+                self.state_machine =
+                    ChannelStateMachine::Propose(ChannelPropose::with(event, self)?);
+            }
+            _ => {} // TODO: implement
+        }
+        Ok(())
     }
 }

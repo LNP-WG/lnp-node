@@ -219,13 +219,19 @@ where
     Self: esb::Handler<ServiceBus, Address = ServiceId>,
     esb::Error: From<Self::Error>,
 {
-    fn report_success_to(
+    /// Returns client which should receive status update reports
+    #[inline]
+    fn enquirer(&self) -> Option<ServiceId> { return None }
+
+    fn report_success(
         &mut self,
         senders: &mut Senders,
-        dest: impl TryToServiceId,
         msg: Option<impl ToString>,
     ) -> Result<(), Error> {
-        if let Some(dest) = dest.try_to_service_id() {
+        if let Some(ref message) = msg {
+            info!("{}", message.to_string());
+        }
+        if let Some(dest) = self.enquirer() {
             senders.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
@@ -236,31 +242,18 @@ where
         Ok(())
     }
 
-    fn report_progress_to(
-        &mut self,
-        senders: &mut Senders,
-        dest: impl TryToServiceId,
-        msg: impl ToString,
-    ) -> Result<(), Error> {
-        if let Some(dest) = dest.try_to_service_id() {
-            senders.send_to(
-                ServiceBus::Ctl,
-                self.identity(),
-                dest,
-                Request::Progress(msg.to_string()),
-            )?;
+    fn report_progress(&mut self, senders: &mut Senders, msg: impl ToString) -> Result<(), Error> {
+        let msg = msg.to_string();
+        info!("{}", msg);
+        if let Some(dest) = self.enquirer() {
+            senders.send_to(ServiceBus::Ctl, self.identity(), dest, Request::Progress(msg))?;
         }
         Ok(())
     }
 
-    fn report_failure_to(
-        &mut self,
-        senders: &mut Senders,
-        dest: impl TryToServiceId,
-        failure: impl Into<rpc::Failure>,
-    ) -> Error {
+    fn report_failure(&mut self, senders: &mut Senders, failure: impl Into<rpc::Failure>) -> Error {
         let failure = failure.into();
-        if let Some(dest) = dest.try_to_service_id() {
+        if let Some(dest) = self.enquirer() {
             // Even if we fail, we still have to terminate :)
             let _ = senders.send_to(
                 ServiceBus::Ctl,
