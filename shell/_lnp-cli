@@ -207,8 +207,18 @@ _arguments "${_arguments_options[@]}" \
 '*--verbose[Set verbosity level]' \
 && ret=0
 ;;
-(propose)
+(open)
 _arguments "${_arguments_options[@]}" \
+'--pay=[Amount of millisatoshis to pay to the remote peer at channel opening]:PUSH_MSAT: ' \
+'--fee-rate=[Sets fee rate for the channel transacitons]:FEE_RATE: ' \
+'--announce-channel=[Make channel public and route payments]:ANNOUNCE_CHANNEL: ' \
+'--channel-type=[Channel type as defined in BOLT-2]:CHANNEL_TYPE: ' \
+'--dust-limit=[The threshold below which outputs on transactions broadcast by sender will be omitted]:DUST_LIMIT: ' \
+'--to-self-delay=[The number of blocks which the counterparty will have to wait to claim on-chain funds if they broadcast a commitment transaction]:TO_SELF_DELAY: ' \
+'--htlc-max-count=[The maximum number of the received HTLCs]:HTLC_MAX_COUNT: ' \
+'--htlc-min-value=[Indicates the smallest value of an HTLC this node will accept, in milli-satoshi]:HTLC_MIN_VALUE: ' \
+'--htlc-max-total-value=[The maximum inbound HTLC value in flight towards this node, in milli-satoshi]:HTLC_MAX_TOTAL_VALUE: ' \
+'--channel-reserve=[The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis]:CHANNEL_RESERVE: ' \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
 '-c+[Path to the configuration file]:CONFIG:_files' \
@@ -228,31 +238,7 @@ _arguments "${_arguments_options[@]}" \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 ':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
-':funding-satoshis -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
-&& ret=0
-;;
-(fund)
-_arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
-'-h[Print help information]' \
-'--help[Print help information]' \
-'*-v[Set verbosity level]' \
-'*--verbose[Set verbosity level]' \
-':channel -- Accepted channel to which the funding must be added:' \
-':funding-outpoint -- Outpoint (in form of <txid>\:<output_no>) which will be used as a channel funding. Output `scriptPubkey` must be equal to the one provided by the `propose` command:' \
+':funding-sat -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
 && ret=0
 ;;
 (transfer)
@@ -364,8 +350,7 @@ _lnp-cli_commands() {
 'funds:Lists all funds available for channel creation with the list of assets and provides information about funding points (bitcoin address or UTXO for RGB assets)' \
 'peers:Lists existing peer connections' \
 'channels:Lists existing channels' \
-'propose:Proposes a new channel to the remote peer, which must be already connected' \
-'fund:Fund new channel (which must be already accepted by the remote peer) with bitcoins' \
+'open:Opens a new channel with a remote peer, which must be already connected' \
 'transfer:Do an invoiceless direct payment' \
 'invoice:Create an invoice' \
 'pay:Pay the invoice' \
@@ -382,11 +367,6 @@ _lnp-cli__channels_commands() {
 _lnp-cli__connect_commands() {
     local commands; commands=()
     _describe -t commands 'lnp-cli connect commands' commands "$@"
-}
-(( $+functions[_lnp-cli__fund_commands] )) ||
-_lnp-cli__fund_commands() {
-    local commands; commands=()
-    _describe -t commands 'lnp-cli fund commands' commands "$@"
 }
 (( $+functions[_lnp-cli__funds_commands] )) ||
 _lnp-cli__funds_commands() {
@@ -413,6 +393,11 @@ _lnp-cli__listen_commands() {
     local commands; commands=()
     _describe -t commands 'lnp-cli listen commands' commands "$@"
 }
+(( $+functions[_lnp-cli__open_commands] )) ||
+_lnp-cli__open_commands() {
+    local commands; commands=()
+    _describe -t commands 'lnp-cli open commands' commands "$@"
+}
 (( $+functions[_lnp-cli__pay_commands] )) ||
 _lnp-cli__pay_commands() {
     local commands; commands=()
@@ -427,11 +412,6 @@ _lnp-cli__peers_commands() {
 _lnp-cli__ping_commands() {
     local commands; commands=()
     _describe -t commands 'lnp-cli ping commands' commands "$@"
-}
-(( $+functions[_lnp-cli__propose_commands] )) ||
-_lnp-cli__propose_commands() {
-    local commands; commands=()
-    _describe -t commands 'lnp-cli propose commands' commands "$@"
 }
 (( $+functions[_lnp-cli__transfer_commands] )) ||
 _lnp-cli__transfer_commands() {

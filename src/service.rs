@@ -19,11 +19,12 @@ use std::str::FromStr;
 use bitcoin::hashes::hex::{self, ToHex};
 use internet2::{zmqsocket, NodeAddr, ZmqType};
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
+use microservices::esb;
 #[cfg(feature = "node")]
 use microservices::node::TryService;
-use microservices::{esb, rpc};
 use strict_encoding::{strict_deserialize, strict_serialize};
 
+use crate::rpc::request::Failure;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error};
 
@@ -251,7 +252,7 @@ where
         Ok(())
     }
 
-    fn report_failure(&mut self, senders: &mut Senders, failure: impl Into<rpc::Failure>) -> Error {
+    fn report_failure(&mut self, senders: &mut Senders, failure: impl Into<Failure>) -> Error {
         let failure = failure.into();
         if let Some(dest) = self.enquirer() {
             // Even if we fail, we still have to terminate :)

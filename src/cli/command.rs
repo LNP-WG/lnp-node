@@ -12,11 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryFrom;
 use std::str::FromStr;
 
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr};
-use lnp::p2p::legacy::{ChannelId, OpenChannel, LNP2P_LEGACY_PORT};
+use lnp::p2p::legacy::{ChannelId, LNP2P_LEGACY_PORT};
 use microservices::shell::Exec;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
@@ -94,73 +93,45 @@ impl Exec for Command {
 
             Command::Ping { peer } => {
                 let node_addr =
-                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("Provided node address is invalid");
+                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
 
                 runtime.request(ServiceId::Peer(node_addr), Request::PingPeer)?;
             }
 
-            Command::Propose { peer, funding_satoshis } => {
+            Command::Open {
+                peer,
+                funding_sat,
+                push_msat,
+                fee_rate,
+                announce_channel,
+                channel_type,
+                dust_limit,
+                to_self_delay,
+                htlc_max_count,
+                htlc_min_value,
+                htlc_max_total_value,
+                channel_reserve,
+            } => {
                 let node_addr =
-                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("Provided node address is invalid");
+                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
 
                 runtime.request(
                     ServiceId::Lnpd,
-                    Request::OpenChannelWith(request::CreateChannel {
-                        channel_req: OpenChannel {
-                            funding_satoshis,
-                            // The rest of parameters will be filled in by the
-                            // daemon
-                            ..dumb!()
-                        },
+                    Request::CreateChannel(request::CreateChannel {
+                        funding_sat,
+                        push_msat: push_msat.unwrap_or_default(),
+                        fee_rate,
+                        announce_channel,
+                        channel_type,
+                        dust_limit,
+                        to_self_delay,
+                        htlc_max_count,
+                        htlc_min_value,
+                        htlc_max_total_value,
                         peerd: node_addr,
                         report_to: Some(runtime.identity()),
+                        channel_reserve,
                     }),
-                )?;
-                runtime.report_progress()?;
-                match runtime.response()? {
-                    Request::ChannelFunding(pubkey_script) => {
-                        let address = bitcoin::Network::try_from(runtime.chain())
-                            .ok()
-                            .and_then(|network| pubkey_script.address(network));
-                        match address {
-                            None => {
-                                eprintln!(
-                                    "{}",
-                                    "Can't generate funding address for a given network".err()
-                                );
-                                println!(
-                                    "{}\nAssembly: {}\nHex: {:x}",
-                                    "Please transfer channel funding to an output with the \
-                                     following raw `scriptPubkey`"
-                                        .progress(),
-                                    pubkey_script,
-                                    pubkey_script,
-                                );
-                            }
-                            Some(address) => {
-                                println!(
-                                    "{} {}",
-                                    "Please transfer channel funding to ".progress(),
-                                    address.ended()
-                                );
-                            }
-                        }
-                    }
-                    other => {
-                        eprintln!(
-                            "{} {} {}",
-                            "Unexpected server response".err(),
-                            other,
-                            "while waiting for channel funding information".err()
-                        );
-                    }
-                }
-            }
-
-            Command::Fund { channel, funding_outpoint } => {
-                runtime.request(
-                    channel.clone().into(),
-                    Request::FundingConstructed(funding_outpoint),
                 )?;
                 runtime.report_progress()?;
             }
@@ -197,7 +168,7 @@ impl Exec for Command {
                 runtime.report_progress()?;
             }
 
-            _ => unimplemented!(),
+            _ => todo!(),
         }
         Ok(())
     }

@@ -22,10 +22,9 @@ use bitcoin::{secp256k1, Address, OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
-use lnp::bolt::{self, AssetsBalance, Lifecycle};
-use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
+use lnp::bolt::{self, AssetsBalance, CommonParams, Keyset, Lifecycle, PeerParams, Policy};
+use lnp::p2p::legacy::{ChannelId, ChannelType, Messages, OpenChannel, TempChannelId};
 use lnpbp::chain::AssetId;
-use microservices::rpc::Failure;
 use microservices::rpc_connection;
 use psbt::Psbt;
 #[cfg(feature = "rgb")]
@@ -95,39 +94,43 @@ pub enum Request {
 
     // Channel creation API
     // --------------------
-    /// Initiates creation of a new channel by a local node. Sent from clients to lnpd, and then to
-    /// a newly instantiated channeld
+    /// Requests creation of a new outbound channel by a client.
     #[api(type = 203)]
-    #[display("open_channel_with({0})")]
-    OpenChannelWith(CreateChannel),
+    #[display("create_channel({0})")]
+    CreateChannel(CreateChannel),
 
-    /// Initiates creation of a new channel by a remote node. Sent from lnpd to a newly
-    /// instantiated channeld.
+    /// Initiates creation of a new channel by a local node. Sent from lnpd to a newly instantiated
+    /// channeld.
     #[api(type = 204)]
-    #[display("accept_channel_from({0})")]
-    AcceptChannelFrom(CreateChannel),
+    #[display("open_channel_with({0})")]
+    OpenChannelWith(OpenChannelWith),
 
-    /// Constructs funding transaction PSBT to fund a locally-created new channel. Sent from peerd
-    /// to lnpd.
+    /// Initiates acceptance of a new channel proposed by a remote node. Sent from lnpd to a newly
+    /// instantiated channeld.
     #[api(type = 205)]
+    #[display("accept_channel_from({0})")]
+    AcceptChannelFrom(AcceptChannelFrom),
+
+    /// Constructs funding PSBT to fund a locally-created new channel. Sent from peerd to lnpd.
+    #[api(type = 206)]
     #[display("construct_funding({0})")]
     ConstructFunding(FundChannel),
 
     /// Provides channeld with the information about funding transaction output used to fund the
     /// newly created channel. Sent from lnpd to channeld.
-    #[api(type = 206)]
+    #[api(type = 207)]
     #[display("funding_constructed({0})")]
     FundingConstructed(OutPoint),
 
     /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
-    /// from channeld to lnpd upon receival of `funding_sighned` message from a remote peer.
-    #[api(type = 207)]
+    /// from channeld to lnpd upon receival of `funding_signed` message from a remote peer.
+    #[api(type = 208)]
     #[display("publish_funding()")]
     PublishFunding,
 
     /// Reports back to channeld that the funding transaction was published and its mining status
     /// should be monitored onchain.
-    #[api(type = 208)]
+    #[api(type = 209)]
     #[display("funding_published()")]
     FundingPublished,
 
@@ -173,6 +176,7 @@ pub enum Request {
     // ----------------
     #[api(type = 1002)]
     #[display("progress(\"{0}\")")]
+    #[from]
     Progress(String),
 
     #[api(type = 1001)]
@@ -186,37 +190,30 @@ pub enum Request {
 
     #[api(type = 1100)]
     #[display("node_info({0})", alt = "{0:#}")]
-    #[from]
     NodeInfo(NodeInfo),
 
     #[api(type = 1101)]
     #[display("node_info({0})", alt = "{0:#}")]
-    #[from]
     PeerInfo(PeerInfo),
 
     #[api(type = 1102)]
     #[display("channel_info({0})", alt = "{0:#}")]
-    #[from]
     ChannelInfo(ChannelInfo),
 
     #[api(type = 1103)]
     #[display("peer_list({0})", alt = "{0:#}")]
-    #[from]
     PeerList(List<NodeAddr>),
 
     #[api(type = 1104)]
     #[display("channel_list({0})", alt = "{0:#}")]
-    #[from]
     ChannelList(List<ChannelId>),
 
     #[api(type = 1105)]
     #[display("funds_info({0})", alt = "{0:#}")]
-    #[from]
     FundsInfo(FundsInfo),
 
     #[api(type = 1203)]
     #[display("channel_funding({0})", alt = "{0:#}")]
-    #[from]
     ChannelFunding(PubkeyScript),
 
     #[api(type = 9000)]
@@ -230,12 +227,144 @@ pub enum Request {
 
 impl rpc_connection::Request for Request {}
 
+/// Request to create channel originating from a client
 #[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
-#[display("{peerd}, {channel_req}")]
+#[display("{peerd}, {funding_sat}, ...")]
 pub struct CreateChannel {
-    pub channel_req: OpenChannel,
+    /// Node to open a channel with
     pub peerd: NodeAddr,
+
+    /// Client identifier to report about the progress
     pub report_to: Option<ServiceId>,
+
+    /// Amount of satoshis for channel funding
+    pub funding_sat: u64,
+
+    /// Amount of millisatoshis to pay to the remote peer at the channel opening
+    pub push_msat: u64,
+
+    // The following are the customization of the channel parameters which should override node
+    // settings
+    /// Initial fee rate in satoshi per 1000-weight (i.e. 1/4 the more normally-used 'satoshi
+    /// per 1000 vbytes') that this side will pay for commitment and HTLC transactions, as
+    /// described in BOLT #3 (this can be adjusted later with an `Fee` message).
+    pub fee_rate: Option<u32>,
+
+    /// Should the channel be announced to the lightning network. Required for the node to earn
+    /// routing fees. Setting this flag results in the channel and node becoming
+    /// public.
+    pub announce_channel: Option<bool>,
+
+    /// Channel type as defined in BOLT-2.
+    pub channel_type: Option<ChannelType>,
+
+    /// The threshold below which outputs on transactions broadcast by sender will be omitted.
+    pub dust_limit: Option<u64>,
+
+    /// The number of blocks which the counterparty will have to wait to claim on-chain funds
+    /// if they broadcast a commitment transaction
+    pub to_self_delay: Option<u16>,
+
+    /// The maximum number of the received HTLCs.
+    pub htlc_max_count: Option<u16>,
+
+    /// Indicates the smallest value of an HTLC this node will accept, in milli-satoshi.
+    pub htlc_min_value: Option<u64>,
+
+    /// The maximum inbound HTLC value in flight towards this node, in milli-satoshi
+    pub htlc_max_total_value: Option<u64>,
+
+    /// The minimum value unencumbered by HTLCs for the counterparty to keep in
+    /// the channel, in satoshis.
+    pub channel_reserve: Option<u64>,
+}
+
+impl CreateChannel {
+    /// Applies customized parameters from the request to a given parameter objects
+    pub fn apply_params(&self, common: &mut CommonParams, local: &mut PeerParams) {
+        if let Some(fee_rate) = self.fee_rate {
+            common.feerate_per_kw = fee_rate;
+        }
+        if let Some(announce_channel) = self.announce_channel {
+            common.announce_channel = announce_channel;
+        }
+        if let Some(channel_type) = self.channel_type {
+            common.channel_type = channel_type;
+        }
+        if let Some(dust_limit) = self.dust_limit {
+            local.dust_limit_satoshis = dust_limit;
+        }
+        if let Some(to_self_delay) = self.to_self_delay {
+            local.to_self_delay = to_self_delay
+        }
+        if let Some(htlc_max_count) = self.htlc_max_count {
+            local.max_accepted_htlcs = htlc_max_count
+        }
+        if let Some(htlc_min_value) = self.htlc_min_value {
+            local.htlc_minimum_msat = htlc_min_value
+        }
+        if let Some(htlc_max_total_value) = self.htlc_max_total_value {
+            local.max_htlc_value_in_flight_msat = htlc_max_total_value
+        }
+        if let Some(channel_reserve) = self.channel_reserve {
+            local.channel_reserve_satoshis = channel_reserve
+        }
+    }
+}
+
+/// Request configuring newly launched channeld instance
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{remote_peer}, {funding_sat}, ...")]
+pub struct OpenChannelWith {
+    /// Node to open a channel with
+    pub remote_peer: NodeAddr,
+
+    /// Client identifier to report about the progress
+    pub report_to: Option<ServiceId>,
+
+    /// Amount of satoshis for channel funding
+    pub funding_sat: u64,
+
+    /// Amount of millisatoshis to pay to the remote peer at the channel opening
+    pub push_msat: u64,
+
+    /// Channel policies
+    pub policy: Policy,
+
+    /// Channel common parameters
+    pub common_params: CommonParams,
+
+    /// Channel local parameters
+    pub local_params: PeerParams,
+
+    /// Channel local keyset
+    pub local_keys: Keyset,
+}
+
+/// Request configuring newly launched channeld instance
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{remote_peer}, {channel_req}, ...")]
+pub struct AcceptChannelFrom {
+    /// Node to open a channel with
+    pub remote_peer: NodeAddr,
+
+    /// Client identifier to report about the progress
+    pub report_to: Option<ServiceId>,
+
+    /// Request received from a remote peer to open channel
+    pub channel_req: OpenChannel,
+
+    /// Channel policies
+    pub policy: Policy,
+
+    /// Channel common parameters
+    pub common_params: CommonParams,
+
+    /// Channel local parameters
+    pub local_params: PeerParams,
+
+    /// Channel local keyset
+    pub local_keys: Keyset,
 }
 
 /// Request information about constructing funding transaction
@@ -351,12 +480,12 @@ pub struct ChannelInfo {
     pub total_payments: u64,
     pub pending_payments: u16,
     pub is_originator: bool,
-    pub common_params: bolt::channel::CommonParams,
-    pub local_params: bolt::channel::PeerParams,
-    pub remote_params: bolt::channel::PeerParams,
-    pub local_keys: bolt::channel::Keyset,
+    pub common_params: bolt::CommonParams,
+    pub local_params: bolt::PeerParams,
+    pub remote_params: bolt::PeerParams,
+    pub local_keys: bolt::Keyset,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_keys: BTreeMap<NodeAddr, bolt::channel::Keyset>,
+    pub remote_keys: BTreeMap<NodeAddr, bolt::Keyset>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]
@@ -420,6 +549,24 @@ where
     }
 }
 
+/// Information about server-side failure returned through RPC API
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Display, StrictEncode, StrictDecode)]
+#[display("{info}", alt = "Server returned failure #{code}: {info}")]
+pub struct Failure {
+    /// Failure code
+    pub code: u16,
+
+    /// Detailed information about the failure
+    pub info: String,
+}
+
+impl Failure {
+    pub fn into_microservice_failure(self) -> microservices::rpc::Failure {
+        microservices::rpc::Failure { code: self.code, info: self.info }
+    }
+}
+
 #[derive(Wrapper, Clone, PartialEq, Eq, Debug, From, Default, StrictEncode, StrictDecode)]
 pub struct OptionDetails(pub Option<String>);
 
@@ -439,21 +586,37 @@ impl OptionDetails {
 }
 
 impl From<crate::Error> for Request {
-    fn from(err: crate::Error) -> Self { Request::Failure(Failure::from(err)) }
+    fn from(err: crate::Error) -> Self { Request::Failure(Failure::from(&err)) }
 }
 
-pub trait IntoProgressOrFalure {
-    fn into_progress_or_failure(self) -> Request;
+impl From<&str> for Request {
+    fn from(s: &str) -> Self { Request::Progress(s.to_owned()) }
+}
+
+impl<E: std::error::Error> From<&E> for Failure {
+    fn from(err: &E) -> Self {
+        Failure {
+            code: 9000, // TODO: do code types
+            info: err.to_string(),
+        }
+    }
+}
+
+pub trait ToProgressOrFalure {
+    fn to_progress_or_failure(&self) -> Request;
 }
 pub trait IntoSuccessOrFalure {
     fn into_success_or_failure(self) -> Request;
 }
 
-impl IntoProgressOrFalure for Result<String, crate::Error> {
-    fn into_progress_or_failure(self) -> Request {
+impl<E> ToProgressOrFalure for Result<String, E>
+where
+    E: std::error::Error,
+{
+    fn to_progress_or_failure(&self) -> Request {
         match self {
-            Ok(val) => Request::Progress(val),
-            Err(err) => Request::from(err),
+            Ok(val) => Request::Progress(val.clone()),
+            Err(err) => Request::Failure(Failure::from(err)),
         }
     }
 }
@@ -478,6 +641,7 @@ impl IntoSuccessOrFalure for Result<(), crate::Error> {
 
 #[cfg(test)]
 mod test {
+    /*
     use std::str::FromStr;
 
     use amplify::hex::FromHex;
@@ -544,4 +708,5 @@ mod test {
         .unwrap();
         test_encoding_roundtrip(&open_channel, data).unwrap();
     }
+     */
 }

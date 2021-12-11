@@ -87,6 +87,21 @@ where
         self.senders.send_to(ServiceBus::Ctl, self.service, service, message)
     }
 
+    /// Sends a reply message via CTL message bus
+    pub fn send_ctl(&mut self, message: Message) -> Result<(), esb::Error> {
+        self.senders.send_to(ServiceBus::Ctl, self.service.clone(), self.source.clone(), message)
+    }
+
+    /// Sends reply message via CTL message bus to a specific service (different from the event
+    /// originating service).
+    pub fn send_ctl_service(
+        &mut self,
+        service: ServiceId,
+        message: Message,
+    ) -> Result<(), esb::Error> {
+        self.senders.send_to(ServiceBus::Ctl, self.service.clone(), service, message)
+    }
+
     /// Finalizes event processing by sending reply message via MSG message bus
     pub fn complete_msg(self, message: Message) -> Result<(), esb::Error> {
         self.senders.send_to(ServiceBus::Msg, self.service, self.source, message)

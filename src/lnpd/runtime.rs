@@ -19,21 +19,23 @@ use std::net::SocketAddr;
 use std::time::{Duration, SystemTime};
 use std::{io, process};
 
-use amplify::Wrapper;
+use amplify::{DumbDefault, Wrapper};
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
-use lnp::p2p::legacy::{ChannelId, Messages, OpenChannel, TempChannelId};
+use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
+use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
-use microservices::rpc::Failure;
 use wallet::address::AddressCompat;
 
 use crate::lnpd::funding_wallet::{self, FundingWallet};
+use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
-use crate::rpc::request::{FundsInfo, IntoProgressOrFalure, NodeInfo, OptionDetails};
+use crate::rpc::request::{Failure, FundsInfo, NodeInfo, OptionDetails, ToProgressOrFalure};
 use crate::rpc::{request, Request, ServiceBus};
-use crate::{Config, Error, LogStyle, Service, ServiceId};
+use crate::state_machine::{Event, StateMachine};
+use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let mut wallet_path = config.data_dir.clone();
@@ -49,11 +51,13 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
         listens: none!(),
         started: SystemTime::now(),
         funding_wallet,
+        // TODO: Read params from config
+        channel_params: (Policy::default(), CommonParams::default(), PeerParams::default()),
         connections: none!(),
         channels: none!(),
-        spawning_services: none!(),
-        opening_channels: none!(),
-        accepting_channels: none!(),
+        spawning_peers: none!(),
+        creating_channels: none!(),
+        accepting_channels: Default::default(),
     };
 
     Service::run(config, runtime, true)
@@ -66,11 +70,12 @@ pub struct Runtime {
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
     pub(super) funding_wallet: FundingWallet,
+    pub(super) channel_params: (Policy, CommonParams, PeerParams),
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
-    spawning_services: HashMap<ServiceId, ServiceId>,
-    opening_channels: HashMap<ServiceId, request::CreateChannel>,
-    accepting_channels: HashMap<ServiceId, request::CreateChannel>,
+    spawning_peers: HashMap<ServiceId, ServiceId>,
+    creating_channels: HashMap<ServiceId, ChannelLauncher>,
+    accepting_channels: HashMap<ServiceId, request::AcceptChannelFrom>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -105,7 +110,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_rpc_msg(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _senders: &mut Senders,
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
@@ -121,7 +126,7 @@ impl Runtime {
             }
         };
 
-        let node_addr = match source {
+        let remote_peer = match source {
             ServiceId::Peer(node_addr) => node_addr,
             service => {
                 unreachable!("lnpd received peer message not from a peerd but from {}", service)
@@ -130,8 +135,19 @@ impl Runtime {
 
         match message {
             Messages::OpenChannel(open_channel) => {
-                info!("Creating channel by peer request from {}", node_addr);
-                self.create_channel(node_addr, None, open_channel, true)?;
+                info!("Creating channel by peer request from {}", remote_peer);
+                self.launch_channeld(open_channel.temporary_channel_id)?;
+                let channeld_id = ServiceId::Channel(open_channel.temporary_channel_id.into());
+                let accept_channel = request::AcceptChannelFrom {
+                    remote_peer,
+                    report_to: None,
+                    channel_req: open_channel,
+                    policy: self.channel_params.0.clone(),
+                    common_params: self.channel_params.1,
+                    local_params: self.channel_params.2,
+                    local_keys: self.new_channel_keyset(),
+                };
+                self.accepting_channels.insert(channeld_id, accept_channel);
             }
             _ => {} // nothing to do
         }
@@ -140,7 +156,7 @@ impl Runtime {
 
     fn handle_rpc_ctl(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        senders: &mut Senders,
         source: ServiceId,
         request: Request,
     ) -> Result<(), Error> {
@@ -188,28 +204,20 @@ impl Runtime {
                     }
                 }
 
-                if let Some(channel_params) = self.opening_channels.get(&source) {
-                    // Tell channeld channel options and link it with the
-                    // connection daemon
+                if let Some(channel_launcher) = self.creating_channels.remove(&source) {
+                    // Tell channeld channel options and link it with the peer daemon
                     debug!(
                         "Daemon {} is known: we spawned it to create a channel. Ordering channel \
                          opening",
                         source
                     );
-                    notify_cli = Some((
-                        channel_params.report_to.clone(),
-                        Request::Progress(format!("Channel daemon {} operational", source)),
-                    ));
-                    senders.send_to(
-                        ServiceBus::Ctl,
-                        self.identity(),
-                        source.clone(),
-                        Request::OpenChannelWith(channel_params.clone()),
-                    )?;
-                    self.opening_channels.remove(&source);
-                } else if let Some(channel_params) = self.accepting_channels.get(&source) {
-                    // Tell channeld channel options and link it with the
-                    // connection daemon
+                    let event =
+                        Event::with(senders, self.identity(), source.clone(), Request::Hello);
+                    if let Some(channel_launcher) = channel_launcher.next(event, self)? {
+                        self.creating_channels.insert(source, channel_launcher);
+                    }
+                } else if let Some(accept_channel) = self.accepting_channels.get(&source) {
+                    // Tell channeld channel options and link it with the peer daemon
                     debug!(
                         "Daemon {} is known: we spawned it to create a channel. Ordering channel \
                          acceptance",
@@ -219,10 +227,10 @@ impl Runtime {
                         ServiceBus::Ctl,
                         self.identity(),
                         source.clone(),
-                        Request::AcceptChannelFrom(channel_params.clone()),
+                        Request::AcceptChannelFrom(accept_channel.clone()),
                     )?;
                     self.accepting_channels.remove(&source);
-                } else if let Some(enquirer) = self.spawning_services.get(&source) {
+                } else if let Some(enquirer) = self.spawning_peers.get(&source) {
                     debug!(
                         "Daemon {} is known: we spawned it to create a new peer connection by a \
                          request from {}",
@@ -235,7 +243,7 @@ impl Runtime {
                             source
                         ))),
                     ));
-                    self.spawning_services.remove(&source);
+                    self.spawning_peers.remove(&source);
                 }
             }
 
@@ -348,7 +356,7 @@ impl Runtime {
                         ServiceBus::Ctl,
                         ServiceId::Lnpd,
                         source.clone(),
-                        resp.into_progress_or_failure(),
+                        resp.to_progress_or_failure(),
                     )?;
                     notify_cli = Some((
                         Some(source.clone()),
@@ -367,22 +375,16 @@ impl Runtime {
                     Ok(_) => {}
                     Err(ref err) => error!("{}", err.err()),
                 }
-                notify_cli = Some((Some(source.clone()), resp.into_progress_or_failure()));
+                notify_cli = Some((Some(source.clone()), resp.to_progress_or_failure()));
             }
 
-            Request::OpenChannelWith(request::CreateChannel { channel_req, peerd, report_to }) => {
-                info!(
-                    "{} with {} by request from {}",
-                    "Creating channel".promo(),
-                    peerd.promoter(),
-                    source.promoter()
-                );
-                let resp = self.create_channel(peerd, report_to, channel_req, false);
-                match resp {
-                    Ok(_) => {}
-                    Err(ref err) => error!("{}", err.err()),
-                }
-                notify_cli = Some((Some(source.clone()), resp.into_progress_or_failure()));
+            request @ Request::CreateChannel(_) => {
+                let launcher = ChannelLauncher::with(
+                    Event::with(senders, self.identity(), source, request),
+                    self,
+                )?;
+                let channeld_id = ServiceId::Channel(launcher.channel_id().into());
+                self.creating_channels.insert(channeld_id, launcher);
             }
 
             _ => {
@@ -425,74 +427,26 @@ impl Runtime {
         let msg = format!("New instance of peerd launched with PID {}", child.id());
         info!("{}", msg);
 
-        self.spawning_services.insert(ServiceId::Peer(node_addr), source);
+        self.spawning_peers.insert(ServiceId::Peer(node_addr), source);
         debug!("Awaiting for peerd to connect...");
 
         Ok(msg)
     }
 
-    fn create_channel(
-        &mut self,
-        source: NodeAddr,
-        report_to: Option<ServiceId>,
-        mut channel_req: OpenChannel,
-        accept: bool,
-    ) -> Result<String, Error> {
-        debug!("Instantiating channeld...");
-
-        // We need to initialize temporary channel id here
-        if !accept {
-            channel_req.temporary_channel_id = TempChannelId::random();
-            debug!("Generated {} as a temporary channel id", channel_req.temporary_channel_id);
-        }
-
-        // Start channeld
-        let msg = self.launch_channeld(channel_req.temporary_channel_id)?;
-
-        // Construct channel creation request
-        let node_key = self.node_id;
-        let channel_req = OpenChannel {
-            chain_hash: self.chain.clone().chain_params().genesis_hash.into(),
-            // TODO: Take these parameters from configuration
-            push_msat: 0,
-            dust_limit_satoshis: 0,
-            max_htlc_value_in_flight_msat: 10000,
-            channel_reserve_satoshis: 0,
-            htlc_minimum_msat: 0,
-            feerate_per_kw: 1,
-            to_self_delay: 1,
-            max_accepted_htlcs: 1000,
-            funding_pubkey: node_key,
-            revocation_basepoint: node_key,
-            payment_point: node_key,
-            delayed_payment_basepoint: node_key,
-            htlc_basepoint: node_key,
-            first_per_commitment_point: node_key,
-            channel_flags: 1, // Announce the channel
-            // shutdown_scriptpubkey: None,
-            ..channel_req
-        };
-
-        let list = if accept { &mut self.accepting_channels } else { &mut self.opening_channels };
-        list.insert(
-            ServiceId::Channel(ChannelId::from_inner(
-                channel_req.temporary_channel_id.into_inner(),
-            )),
-            request::CreateChannel { channel_req, peerd: source, report_to },
-        );
-        debug!("Awaiting for channeld to connect...");
-
-        Ok(msg)
+    pub(super) fn new_channel_keyset(&self) -> Keyset {
+        // TODO: Derive proper channel keys
+        Keyset::dumb_default()
     }
 
-    pub(crate) fn launch_channeld(
+    pub(super) fn launch_channeld(
         &self,
         temp_channel_id: TempChannelId,
     ) -> Result<String, io::Error> {
+        debug!("Instantiating channeld...");
         let child = launch("channeld", &[temp_channel_id.to_hex()])?;
-        let msg = format!("New instance of channeld launched with PID {}", child.id());
-        info!("{}", msg);
-        Ok(msg)
+        let report = format!("New instance of channeld launched with PID {}", child.id());
+        info!("{}", report);
+        Ok(report)
     }
 }
 

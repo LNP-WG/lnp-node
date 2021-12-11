@@ -14,13 +14,13 @@
 
 use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, Messages};
-use lnp::Extension;
 
-use super::Error;
 use crate::channeld::runtime::Runtime;
+use crate::channeld::state_machines;
+use crate::rpc::request::OpenChannelWith;
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
-use crate::{rpc, ServiceId};
+use crate::{rpc, Senders};
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
@@ -51,7 +51,7 @@ pub enum ChannelPropose {
 }
 
 impl StateMachine<rpc::Request, Runtime> for ChannelPropose {
-    type Error = Error;
+    type Error = state_machines::Error;
 
     fn next(
         self,
@@ -96,24 +96,15 @@ impl ChannelPropose {
 impl ChannelPropose {
     /// Constructs channel proposal state machine
     pub fn with(
-        event: Event<rpc::Request>,
         runtime: &mut Runtime,
-    ) -> Result<ChannelPropose, Error> {
-        let request = match event.message {
-            rpc::Request::OpenChannelWith(ref request) => request,
-            msg => {
-                panic!("channel_propose workflow inconsistency: starting workflow with {}", msg)
-            }
-        };
+        senders: &mut Senders,
+        request: OpenChannelWith,
+    ) -> Result<ChannelPropose, state_machines::Error> {
+        let open_channel = Messages::OpenChannel(
+            runtime.channel.open_channel_compose(request.funding_sat, request.push_msat)?,
+        );
 
-        let open_channel = Messages::OpenChannel(request.channel_req.clone());
-        runtime.channel.update_from_peer(&open_channel)?;
-
-        let peerd = request.peerd.clone();
-        event.complete_msg_service(
-            ServiceId::Peer(peerd),
-            rpc::Request::PeerMessage(open_channel),
-        )?;
+        runtime.send_peer(senders, open_channel)?;
 
         Ok(ChannelPropose::Proposed)
     }
@@ -137,36 +128,41 @@ impl ChannelPropose {
 fn finish_proposed(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, Error> {
+) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_accepted(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, Error> {
+) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funding(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, Error> {
+) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_signed(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, Error> {
+) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funded(
     event: Event<rpc::Request>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, Error> {
+) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_locked(event: Event<rpc::Request>, runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(
+    event: Event<rpc::Request>,
+    runtime: &mut Runtime,
+) -> Result<(), state_machines::Error> {
+    todo!()
+}

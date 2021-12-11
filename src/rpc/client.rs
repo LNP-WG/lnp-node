@@ -77,7 +77,7 @@ impl Client {
         match self.response()? {
             Request::Failure(fail) => {
                 eprintln!("{}: {}", "Request failure".err(), fail.err_details());
-                Err(Error::from(fail))?
+                Err(Error::from(fail.into_microservice_failure()))?
             }
             resp => Ok(resp),
         }

@@ -22,6 +22,7 @@ use microservices::esb::Handler;
 
 use self::channel_propose::ChannelPropose;
 use crate::channeld::runtime::Runtime;
+use crate::rpc::request::{Failure, OpenChannelWith};
 use crate::service::LogStyle;
 use crate::state_machine::Event;
 use crate::{rpc, CtlServer, Senders, ServiceId};
@@ -41,6 +42,9 @@ pub enum Error {
     /// error sending RPC request during state transition. Details: {0}
     #[from]
     Esb(esb::Error),
+
+    /// unable to {operation} during {current_state} channel state
+    InvalidState { operation: &'static str, current_state: Lifecycle },
 }
 
 impl Error {
@@ -52,7 +56,9 @@ impl Error {
             Error::Channel(lnp::channel::Error::Extension(_)) => 2001,
             Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
             Error::Channel(lnp::channel::Error::Policy(_)) => 2003,
+            Error::Channel(lnp::channel::Error::LifecycleMismatch { .. }) => 2004,
             Error::Esb(_) => 3001,
+            Error::InvalidState { .. } => 4001,
         }
     }
 }
@@ -128,6 +134,22 @@ impl ChannelStateMachine {
 }
 
 impl Runtime {
+    pub fn propose_channel(
+        &mut self,
+        senders: &mut Senders,
+        request: OpenChannelWith,
+    ) -> Result<(), Error> {
+        if !matches!(self.state_machine, ChannelStateMachine::Launch) {
+            return Err(Error::InvalidState {
+                operation: "open channel",
+                current_state: self.state_machine.lifecycle(),
+            });
+        }
+        self.state_machine =
+            ChannelStateMachine::Propose(ChannelPropose::with(self, senders, request)?);
+        Ok(())
+    }
+
     /// Processes incoming RPC or peer requests updating state - and switching to a new state, if
     /// necessary. Returns bool indicating whether a successful state update happened
     pub fn process(
@@ -150,15 +172,12 @@ impl Runtime {
             // message later without channel halting.
             Err(err @ Error::Esb(_)) => {
                 error!("{} due to ESB failure: {}", "Failing channel".err(), err.err_details());
-                self.report_failure(senders, microservices::rpc::Failure {
-                    code: err.errno(),
-                    info: err.to_string(),
-                });
+                self.report_failure(senders, Failure { code: err.errno(), info: err.to_string() });
                 return Err(err);
             }
             Err(other_err) => {
                 error!("{}: {}", "Channel error".err(), other_err.err_details());
-                self.report_failure(senders, microservices::rpc::Failure {
+                self.report_failure(senders, Failure {
                     code: other_err.errno(),
                     info: other_err.to_string(),
                 });
@@ -177,10 +196,6 @@ impl Runtime {
 
     fn process_event(&mut self, event: Event<rpc::Request>) -> Result<(), Error> {
         match self.state_machine {
-            ChannelStateMachine::Launch => {
-                self.state_machine =
-                    ChannelStateMachine::Propose(ChannelPropose::with(event, self)?);
-            }
             _ => {} // TODO: implement
         }
         Ok(())

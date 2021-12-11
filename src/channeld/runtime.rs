@@ -12,9 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::BTreeMap;
 use std::convert::TryFrom;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use bitcoin::hashes::{sha256, Hash, HashEngine};
 use bitcoin::secp256k1::{All, Secp256k1};
@@ -27,9 +26,8 @@ use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 #[cfg(feature = "rgb")]
 use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
 use internet2::{LocalNode, NodeAddr, TypedEnum};
-use lnp::bolt::bolt3::{ScriptGenerators, TxGenerators};
-use lnp::bolt::htlc::{HtlcKnown, HtlcSecret};
-use lnp::bolt::{self, AssetsBalance, Lifecycle};
+use lnp::bolt::extensions::{HtlcKnown, HtlcSecret};
+use lnp::bolt::{self, AssetsBalance, Lifecycle, ScriptGenerators, TxGenerators};
 use lnp::channel::Channel;
 use lnp::p2p::legacy::{
     AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned, Messages, OpenChannel,
@@ -46,9 +44,8 @@ use wallet::scripts::PubkeyScript;
 
 use super::storage::{self, Driver};
 use crate::channeld::state_machines::ChannelStateMachine;
-use crate::rpc::request::ChannelInfo;
+use crate::rpc::request::Failure;
 use crate::rpc::{request, Request, ServiceBus};
-use crate::state_machine::{Event, StateMachine};
 use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(
@@ -134,11 +131,11 @@ pub struct Runtime {
     commitment_number: u64,
     total_payments: u64,
     pending_payments: u16,
-    common_params: bolt::channel::CommonParams,
-    local_params: bolt::channel::PeerParams,
-    remote_params: bolt::channel::PeerParams,
-    local_keys: bolt::channel::Keyset,
-    remote_keys: bolt::channel::Keyset,
+    common_params: bolt::CommonParams,
+    local_params: bolt::PeerParams,
+    remote_params: bolt::PeerParams,
+    local_keys: bolt::Keyset,
+    remote_keys: bolt::Keyset,
 
     offered_htlc: Vec<HtlcKnown>,
     received_htlc: Vec<HtlcSecret>,
@@ -199,7 +196,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    pub fn send_peer(&self, senders: &mut Senders, message: Messages) -> Result<(), Error> {
+    pub fn send_peer(&self, senders: &mut Senders, message: Messages) -> Result<(), esb::Error> {
         senders.send_to(
             ServiceBus::Msg,
             self.identity(),
@@ -233,6 +230,10 @@ impl Runtime {
         match request {
             Request::PeerMessage(Messages::OpenChannel(_)) => {
                 // TODO: Support repeated messages as according to BOLT-2 requirements
+                // if the connection has been re-established after receiving a previous
+                // open_channel, BUT before receiving a funding_created message:
+                //     accept a new open_channel message.
+                //     discard the previous open_channel message.
                 warn!(
                     "Got `open_channel` P2P message from {}, which is unexpected: the channel \
                      creation was already requested before",
@@ -244,7 +245,7 @@ impl Runtime {
                 self.state = Lifecycle::Accepted;
 
                 self.channel_accepted(senders, &accept_channel, &source).map_err(|err| {
-                    self.report_failure(senders, microservices::rpc::Failure {
+                    self.report_failure(senders, Failure {
                         code: 0, // TODO: Create error type system
                         info: err.to_string(),
                     })
@@ -318,7 +319,7 @@ impl Runtime {
                 self.send_peer(senders, Messages::FundingLocked(funding_locked))?;
 
                 self.state = Lifecycle::Active;
-                self.local_capacity = *self.channel.as_bolt3().local_amount();
+                self.local_capacity = self.channel.constructor().local_amount();
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -335,7 +336,7 @@ impl Runtime {
                 //      2. Do something with per-commitment point
 
                 self.state = Lifecycle::Active;
-                self.remote_capacity = *self.channel.as_bolt3().remote_amount();
+                self.remote_capacity = self.channel.constructor().remote_amount();
 
                 // Ignoring possible error here: do not want to
                 // halt the channel just because the client disconnected
@@ -387,28 +388,23 @@ impl Runtime {
         // of channel workflows and to request information about the channel state.
         match request {
             // Proposing remote peer to open a channel
-            Request::OpenChannelWith(request::CreateChannel {
-                ref peerd, ref report_to, ..
-            }) => {
-                let peerd = peerd.clone();
-                self.enquirer = report_to.clone();
-                if self.process(senders, source, request)? {
-                    // Updating state only if the request was processed
-                    self.peer_service = ServiceId::Peer(peerd.clone());
-                    self.remote_peer = Some(peerd);
-                }
+            Request::OpenChannelWith(open_channel_with) => {
+                let remote_peer = open_channel_with.remote_peer.clone();
+                self.enquirer = open_channel_with.report_to.clone();
+                self.propose_channel(senders, open_channel_with)?;
+                // Updating state only if the request was processed
+                self.peer_service = ServiceId::Peer(remote_peer.clone());
+                self.remote_peer = Some(remote_peer);
             }
 
             // Processing remote request to open a channel
-            Request::AcceptChannelFrom(request::CreateChannel {
-                ref peerd, ref report_to, ..
-            }) => {
+            Request::AcceptChannelFrom(request::AcceptChannelFrom { ref remote_peer, .. }) => {
                 self.enquirer = None;
-                let peerd = peerd.clone();
+                let remote_peer = remote_peer.clone();
                 if self.process(senders, source, request)? {
                     // Updating state only if the request was processed
-                    self.peer_service = ServiceId::Peer(peerd.clone());
-                    self.remote_peer = Some(peerd);
+                    self.peer_service = ServiceId::Peer(remote_peer.clone());
+                    self.remote_peer = Some(remote_peer);
                 }
             }
 
@@ -527,7 +523,7 @@ impl Runtime {
         senders: &mut Senders,
         channel_req: &OpenChannel,
         peerd: &ServiceId,
-    ) -> Result<AcceptChannel, bolt::channel::PolicyError> {
+    ) -> Result<AcceptChannel, bolt::PolicyError> {
         let msg = format!(
             "{} with temp id {:#} from remote peer {}",
             "Accepting channel".promo(),
@@ -541,8 +537,8 @@ impl Runtime {
         let _ = self.report_progress(senders, msg);
 
         self.is_originator = false;
-        self.local_params = bolt::channel::PeerParams::from(channel_req);
-        self.remote_keys = bolt::channel::Keyset::from(channel_req);
+        self.local_params = bolt::PeerParams::from(channel_req);
+        self.remote_keys = bolt::Keyset::from(channel_req);
 
         let dumb_key = self.node_id();
         let accept_channel = AcceptChannel {
@@ -565,7 +561,7 @@ impl Runtime {
             unknown_tlvs: none!(),
         };
 
-        self.local_keys = bolt::channel::Keyset::from(&accept_channel);
+        self.local_keys = bolt::Keyset::from(&accept_channel);
 
         Ok(accept_channel)
     }
@@ -575,7 +571,7 @@ impl Runtime {
         senders: &mut Senders,
         accept_channel: &AcceptChannel,
         peerd: &ServiceId,
-    ) -> Result<(), bolt::channel::PolicyError> {
+    ) -> Result<(), bolt::PolicyError> {
         info!(
             "Channel {:#} {} by the remote peer {}",
             accept_channel.temporary_channel_id.ender(),
@@ -594,8 +590,8 @@ impl Runtime {
         info!("{}", msg);
 
         // TODO: Add a reasonable min depth bound
-        self.remote_params = bolt::channel::PeerParams::from(accept_channel);
-        self.remote_keys = bolt::channel::Keyset::from(accept_channel);
+        self.remote_params = bolt::PeerParams::from(accept_channel);
+        self.remote_keys = bolt::Keyset::from(accept_channel);
 
         let msg = format!(
             "Channel {:#} is {}",

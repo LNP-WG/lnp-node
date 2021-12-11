@@ -17,9 +17,8 @@ use std::net::IpAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use bitcoin::OutPoint;
 use internet2::{FramingProtocol, PartialNodeAddr};
-use lnp::p2p::legacy::{ChannelId, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, ChannelType};
 #[cfg(feature = "rgb")]
 use rgb::ContractId;
 
@@ -92,13 +91,9 @@ pub enum Command {
     /// Lists existing channels
     Channels,
 
-    /// Proposes a new channel to the remote peer, which must be already
+    /// Opens a new channel with a remote peer, which must be already
     /// connected.
-    ///
-    /// Bitcoins will be added after the channel acceptance with `fund`
-    /// command. RGB assets are added to the channel later with `refill``
-    /// command
-    Propose {
+    Open {
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
         peer: PartialNodeAddr,
@@ -106,19 +101,87 @@ pub enum Command {
         /// Amount of satoshis to allocate to the channel (the actual
         /// allocation will happen later using `fund` command after the
         /// channel acceptance)
-        funding_satoshis: u64,
-    },
+        funding_sat: u64,
 
-    /// Fund new channel (which must be already accepted by the remote peer)
-    /// with bitcoins.
-    Fund {
-        /// Accepted channel to which the funding must be added
-        channel: TempChannelId,
+        /// Amount of millisatoshis to pay to the remote peer at channel opening
+        #[clap(long = "pay")]
+        push_msat: Option<u64>,
 
-        /// Outpoint (in form of <txid>:<output_no>) which will be used as a
-        /// channel funding. Output `scriptPubkey` must be equal to the one
-        /// provided by the `propose` command.
-        funding_outpoint: OutPoint,
+        // The following are the customization of the channel parameters which should override node
+        // settings
+        /// Sets fee rate for the channel transacitons.
+        ///
+        /// If used, overrides default node settings.
+        ///
+        /// Initial fee rate in satoshi per 1000-weight (i.e. 1/4 the more normally-used 'satoshi
+        /// per 1000 vbytes') that this side will pay for commitment and HTLC transactions, as
+        /// described in BOLT #3 (this can be adjusted later with an `fee` command).
+        #[clap(long)]
+        fee_rate: Option<u32>,
+
+        /// Make channel public and route payments.
+        ///
+        /// If used, overrides default node settings.
+        ///
+        /// Should the channel be announced to the lightning network. Required for the node to earn
+        /// routing fees. Setting this flag results in the channel and node becoming
+        /// public.
+        #[clap(long)]
+        announce_channel: Option<bool>,
+
+        /// Channel type as defined in BOLT-2.
+        ///
+        /// If used, overrides default node settings.
+        ///
+        /// Possible values:
+        ///
+        /// - basic
+        ///
+        /// - static_remotekey
+        ///
+        /// - anchored
+        ///
+        /// - anchored_zero_fee
+        #[clap(long)]
+        channel_type: Option<ChannelType>,
+
+        /// The threshold below which outputs on transactions broadcast by sender will be omitted.
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        dust_limit: Option<u64>,
+
+        /// The number of blocks which the counterparty will have to wait to claim on-chain funds
+        /// if they broadcast a commitment transaction
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        to_self_delay: Option<u16>,
+
+        /// The maximum number of the received HTLCs.
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        htlc_max_count: Option<u16>,
+
+        /// Indicates the smallest value of an HTLC this node will accept, in milli-satoshi.
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        htlc_min_value: Option<u64>,
+
+        /// The maximum inbound HTLC value in flight towards this node, in milli-satoshi
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        htlc_max_total_value: Option<u64>,
+
+        /// The minimum value unencumbered by HTLCs for the counterparty to keep in
+        /// the channel, in satoshis.
+        ///
+        /// If used, overrides default node settings.
+        #[clap(long)]
+        channel_reserve: Option<u64>,
     },
 
     /// Adds RGB assets to an existing channel

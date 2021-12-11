@@ -94,7 +94,7 @@ impl ChannelAccept {
         let open_channel = Messages::OpenChannel(request.channel_req.clone());
         runtime.channel.update_from_peer(&open_channel)?;
 
-        let peerd = request.peerd.clone();
+        let peerd = request.remote_peer.clone();
         event.complete_msg_service(
             ServiceId::Peer(peerd),
             rpc::Request::PeerMessage(open_channel),

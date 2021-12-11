@@ -25,6 +25,7 @@ use psbt::sign::SignError;
 
 use crate::channeld;
 use crate::lnpd::funding_wallet;
+use crate::lnpd::state_machines::channel_launch;
 #[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
 
@@ -53,6 +54,10 @@ pub enum Error {
     /// Channel operations error: {0}
     #[from]
     Channel(channeld::Error),
+
+    /// Error launching channel daemon: {0}
+    #[from]
+    ChannelLaunch(channel_launch::Error),
 
     /// Encoding error: {0}
     #[from]
