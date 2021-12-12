@@ -29,6 +29,7 @@ use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
+use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
 use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
@@ -37,22 +38,17 @@ use crate::rpc::{request, Request, ServiceBus};
 use crate::state_machine::{Event, StateMachine};
 use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
 
-pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
-    let mut wallet_path = config.data_dir.clone();
-    wallet_path.push(LNP_NODE_FUNDING_WALLET);
-    debug!("Loading funding wallet from '{}'", wallet_path.display());
-    let funding_wallet = FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?;
-    info!("Funding wallet: {}", funding_wallet.descriptor());
-
+pub fn run(config: Config, node_id: secp256k1::PublicKey, threaded: bool) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         node_id,
         chain: config.chain.clone(),
         listens: none!(),
         started: SystemTime::now(),
-        funding_wallet,
-        // TODO: Read params from config
-        channel_params: (Policy::default(), CommonParams::default(), PeerParams::default()),
+        handles: vec![],
+        threaded,
+        funding_wallet: config.funding_wallet()?,
+        channel_params: config.channel_params()?,
         connections: none!(),
         channels: none!(),
         spawning_peers: none!(),
@@ -63,12 +59,31 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     Service::run(config, runtime, true)
 }
 
+impl Config {
+    fn funding_wallet(&self) -> Result<FundingWallet, funding_wallet::Error> {
+        let mut wallet_path = self.data_dir.clone();
+        wallet_path.push(LNP_NODE_FUNDING_WALLET);
+        debug!("Loading funding wallet from '{}'", wallet_path.display());
+        let funding_wallet = FundingWallet::with(&self.chain, wallet_path, &self.electrum_url)?;
+        info!("Funding wallet: {}", funding_wallet.descriptor());
+        Ok(funding_wallet)
+    }
+
+    fn channel_params(&self) -> Result<(Policy, CommonParams, PeerParams), Error> {
+        // TODO: Read params from config
+        Ok((Policy::default(), CommonParams::default(), PeerParams::default()))
+    }
+}
+
 pub struct Runtime {
     identity: ServiceId,
     node_id: secp256k1::PublicKey,
     chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
+    handles: Vec<DaemonHandle<Daemon>>,
+    /// Indicates whether deamons should be spawned as threads (true) or as child processes (false)
+    pub(super) threaded: bool,
     pub(super) funding_wallet: FundingWallet,
     pub(super) channel_params: (Policy, CommonParams, PeerParams),
     connections: HashSet<NodeAddr>,

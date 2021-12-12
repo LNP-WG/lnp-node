@@ -39,6 +39,7 @@ _lnpd() {
 '--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+'--threaded[Spawn LNP services as threads instead of processes]' \
 '--threaded-daemons[Spawn daemons as threads and not processes]' \
 ":: :_lnpd_commands" \
 "*::: :->lnpd" \

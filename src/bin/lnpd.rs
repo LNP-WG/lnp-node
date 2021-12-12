@@ -65,7 +65,7 @@ fn main() -> Result<(), Error> {
      */
 
     debug!("Starting runtime ...");
-    lnpd::run(config, node_id).expect("running lnpd runtime");
+    lnpd::run(config, node_id, opts.threaded_daemons).expect("running lnpd runtime");
 
     unreachable!()
 }
