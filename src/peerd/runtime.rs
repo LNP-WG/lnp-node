@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
+use std::thread;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
 
@@ -24,8 +25,8 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{
-    presentation, session, transport, zmqsocket, CreateUnmarshaller, LocalNode, NodeAddr,
-    RemoteNodeAddr, RemoteSocketAddr, TypedEnum, ZmqType, ZMQ_CONTEXT,
+    presentation, session, transport, zmqsocket, CreateUnmarshaller, LocalNode, LocalSocketAddr,
+    NodeAddr, RemoteNodeAddr, RemoteSocketAddr, TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
 use lnp::p2p::legacy::{
     FundingCreated, FundingLocked, FundingSigned, Init, Messages, Ping, UpdateAddHtlc,
@@ -41,24 +42,25 @@ use crate::rpc::request::PeerInfo;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, CtlServer, Error, LogStyle, Service, ServiceId};
 
-pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Result<(), Error> {
+pub fn run(
+    config: Config,
+    local_node: LocalNode,
+    peer_socket: PeerSocket,
+    threaded_daemons: bool,
+) -> Result<(), Error> {
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
     let local_id = local_node.node_id();
     info!("{}: {}", "Local node id".ended(), local_id.addr());
 
-    let id: NodeAddr;
-    let mut local_socket: Option<InetSocketAddr> = None;
-    let mut remote_id: Option<PublicKey> = None;
-    let mut remote_socket: InetSocketAddr;
-    let connect: bool;
+    let mut params = RuntimeParams::with(config, local_id);
     let connection = match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");
 
-            connect = false;
-            local_socket = Some(inet_addr);
-            id = NodeAddr::Remote(RemoteNodeAddr {
+            params.connect = false;
+            params.local_socket = Some(inet_addr);
+            params.id = NodeAddr::Remote(RemoteNodeAddr {
                 node_id: local_node.node_id(),
                 remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
             });
@@ -76,16 +78,31 @@ pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Re
                     listener.accept().expect("Error accepting incpming peer connection");
                 debug!("New connection from {}", remote_socket_addr);
 
-                remote_socket = remote_socket_addr.into();
+                params.remote_socket = remote_socket_addr.into();
 
-                // TODO: Support multithread mode
-                debug!("Forking child process");
-                if let ForkResult::Child = unsafe { fork().expect("Unable to fork child process") }
-                {
-                    trace!("Child forked; returning into main listener event loop");
+                if threaded_daemons {
+                    debug!("Spawning child thread");
+                    let child_params = params.clone();
+                    let _ = thread::spawn(move || {
+                        debug!("Establishing session with the remote");
+                        let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
+                            .expect("Unable to establish session with the remote peer");
+                        let connection = PeerConnection::with(session);
+                        run_runtime(connection, child_params)
+                    });
+                    // We have started the thread so awaiting for the next incoming connection
                     continue;
+                } else {
+                    debug!("Forking child process");
+                    if let ForkResult::Parent { .. } =
+                        unsafe { fork().expect("Unable to fork child process") }
+                    {
+                        trace!("Child forked; returning into main listener event loop");
+                        continue;
+                    }
                 }
 
+                // Here we get only in the child process forked from the parent
                 stream
                     .set_read_timeout(Some(Duration::from_secs(30)))
                     .expect("Unable to set up timeout for TCP connection");
@@ -101,10 +118,10 @@ pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Re
         PeerSocket::Connect(remote_node_addr) => {
             debug!("Running in CONNECT mode");
 
-            connect = true;
-            id = NodeAddr::Remote(remote_node_addr.clone());
-            remote_id = Some(remote_node_addr.node_id);
-            remote_socket = remote_node_addr.remote_addr.into();
+            params.connect = true;
+            params.id = NodeAddr::Remote(remote_node_addr.clone());
+            params.remote_id = Some(remote_node_addr.node_id);
+            params.remote_socket = remote_node_addr.remote_addr.into();
 
             info!("Connecting to {}", &remote_node_addr);
             PeerConnection::connect(remote_node_addr, &local_node)
@@ -113,6 +130,35 @@ pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Re
         _ => unimplemented!(),
     };
 
+    run_runtime(connection, params)
+}
+
+#[derive(Clone, Debug)]
+struct RuntimeParams {
+    config: Config,
+    id: NodeAddr,
+    local_id: PublicKey,
+    remote_id: Option<PublicKey>,
+    local_socket: Option<InetSocketAddr>,
+    remote_socket: InetSocketAddr,
+    connect: bool,
+}
+
+impl RuntimeParams {
+    fn with(config: Config, local_id: PublicKey) -> RuntimeParams {
+        RuntimeParams {
+            config,
+            id: NodeAddr::Local(LocalSocketAddr::Posix(s!(""))),
+            local_id,
+            remote_id: None,
+            local_socket: None,
+            remote_socket: Default::default(),
+            connect: false,
+        }
+    }
+}
+
+fn run_runtime(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
@@ -122,7 +168,7 @@ pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Re
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    let identity = ServiceId::Peer(id);
+    let identity = ServiceId::Peer(params.id);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {
@@ -146,19 +192,19 @@ pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Re
     debug!("Staring main service runtime");
     let runtime = Runtime {
         identity,
-        local_id,
-        remote_id,
-        local_socket,
-        remote_socket,
+        local_id: params.local_id,
+        remote_id: params.remote_id,
+        local_socket: params.local_socket,
+        remote_socket: params.remote_socket,
         routing: empty!(),
         sender,
-        connect,
+        connect: params.connect,
         started: SystemTime::now(),
         messages_sent: 0,
         messages_received: 0,
         awaited_pong: None,
     };
-    let mut service = Service::service(config, runtime)?;
+    let mut service = Service::service(params.config, runtime)?;
     service.add_loopback(rx)?;
     service.run_loop()?;
     unreachable!()

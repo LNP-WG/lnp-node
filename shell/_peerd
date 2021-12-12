@@ -45,6 +45,7 @@ _peerd() {
 '--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+'--threaded-daemons[Spawn new `peerd` for incoming connections as threads and not processes]' \
 && ret=0
 }
 

@@ -38,6 +38,10 @@ pub struct Opts {
     /// Optional command to execute and exit
     #[clap(subcommand)]
     pub command: Option<Command>,
+
+    /// Spawn daemons as threads and not processes
+    #[clap(long)]
+    pub threaded_daemons: bool,
 }
 
 #[derive(Subcommand, Clone, PartialEq, Eq, Debug)]

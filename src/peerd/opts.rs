@@ -90,6 +90,10 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
+
+    /// Spawn new `peerd` for incoming connections as threads and not processes
+    #[clap(long)]
+    pub threaded_daemons: bool,
 }
 
 /// Node key configuration

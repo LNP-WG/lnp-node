@@ -19,7 +19,7 @@ _peerd() {
 
     case "${cmd}" in
         peerd)
-            opts="-h -V -L -C -p -o -k -d -c -v -T -m -x -n --help --version --listen --connect --port --overlay --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
+            opts="-h -V -L -C -p -o -k -d -c -v -T -m -x -n --help --version --listen --connect --port --overlay --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port --threaded-daemons"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

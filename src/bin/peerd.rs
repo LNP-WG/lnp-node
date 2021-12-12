@@ -123,10 +123,12 @@ fn main() {
      */
 
     let local_node = opts.key_opts.local_node();
+    let threaded_daemons = opts.threaded_daemons;
     let peer_socket = PeerSocket::from(opts);
 
     debug!("Starting runtime ...");
-    peerd::run(config, local_node, peer_socket).expect("Error running peerd runtime");
+    peerd::run(config, local_node, peer_socket, threaded_daemons)
+        .expect("Error running peerd runtime");
 
     unreachable!()
 }
