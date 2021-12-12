@@ -25,15 +25,7 @@ use crate::{Config, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();
-
-    let mut wallet_path = config.data_dir.clone();
-    wallet_path.push(LNP_NODE_MASTER_WALLET);
-    let signing_account = MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
-    let mut provider = MemoryKeyProvider::with(&secp);
-    provider.add_account(signing_account);
-
-    let runtime = Runtime { identity: ServiceId::Signer, provider };
-
+    let runtime = Runtime::with(&secp, &config)?;
     Service::run(config, runtime, false)
 }
 
@@ -43,6 +35,27 @@ where
 {
     identity: ServiceId,
     provider: MemoryKeyProvider<'secp, secp256k1::All>,
+}
+
+impl<'secp> Runtime<'secp>
+where
+    Self: 'secp,
+{
+    pub fn with(secp: &'secp Secp256k1<secp256k1::All>, config: &Config) -> Result<Self, Error> {
+        Ok(Runtime { identity: ServiceId::Signer, provider: Runtime::provider(secp, config)? })
+    }
+
+    fn provider(
+        secp: &'secp Secp256k1<secp256k1::All>,
+        config: &Config,
+    ) -> Result<MemoryKeyProvider<'secp, secp256k1::All>, Error> {
+        let mut wallet_path = config.data_dir.clone();
+        wallet_path.push(LNP_NODE_MASTER_WALLET);
+        let signing_account = MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
+        let mut provider = MemoryKeyProvider::with(&secp);
+        provider.add_account(signing_account);
+        Ok(provider)
+    }
 }
 
 impl<'secp> esb::Handler<ServiceBus> for Runtime<'secp>
