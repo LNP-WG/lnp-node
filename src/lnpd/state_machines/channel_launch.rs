@@ -121,15 +121,6 @@ impl ChannelLauncher {
             ChannelLauncher::Signing(channel_id, ..) => channel_id.into_inner(),
         }
     }
-
-    fn enquirer(&self) -> ServiceId {
-        match self {
-            ChannelLauncher::Launching(_, _, enquirer)
-            | ChannelLauncher::Negotiating(_, enquirer)
-            | ChannelLauncher::Committing(_, _, enquirer)
-            | ChannelLauncher::Signing(_, _, enquirer) => enquirer.clone(),
-        }
-    }
 }
 
 // State transitions:
@@ -206,7 +197,7 @@ fn finish_launching(
         local_keys: runtime.new_channel_keyset(),
     };
     event.send_ctl(rpc::Request::OpenChannelWith(request)).map_err(|err| {
-        event.complete_ctl_service(enquirer.clone(), Failure::from(&err).into());
+        let _ = event.complete_ctl_service(enquirer.clone(), Failure::from(&err).into());
         err
     })?;
     Ok(ChannelLauncher::Negotiating(temp_channel_id, enquirer))
@@ -241,7 +232,7 @@ fn finish_negotiating(
         .map_err(Error::from)
         .and_then(|funding_outpoint| {
             event.send_ctl(rpc::Request::FundingConstructed(funding_outpoint)).map(|_| {
-                event.send_ctl_service(
+                let _ = event.send_ctl_service(
                     enquirer.clone(),
                     rpc::Request::Progress(format!(
                         "Constructed funding transaction with funding outpoint is {}",
