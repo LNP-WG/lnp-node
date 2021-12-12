@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#[cfg(feature = "node")]
+pub(self) mod daemons;
 pub mod funding_wallet;
 #[cfg(feature = "shell")]
 mod opts;
