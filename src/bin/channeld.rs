@@ -34,7 +34,7 @@ use std::convert::TryInto;
 
 use clap::Parser;
 use lnp_node::channeld::{self, Opts};
-use lnp_node::{Config, LogStyle};
+use lnp_node::Config;
 
 fn main() {
     println!("channeld: lightning channel microservice");
@@ -56,9 +56,6 @@ fn main() {
         .try_into()
         .expect("RPC socket must be a valid ZMQ local file socket");
 
-    let node_id = opts.key_opts.local_node().node_id();
-    info!("{}: {}", "Local node id".ended(), node_id.addr());
-
     /*
     use self::internal::ResultExt;
     let (config_from_file, _) =
@@ -71,9 +68,7 @@ fn main() {
     debug!("Starting runtime ...");
     channeld::run(
         config,
-        opts.key_opts.local_node(),
         opts.channel_id,
-        opts.shared.chain,
         #[cfg(feature = "rgb")]
         rgb20_socket_addr,
     )

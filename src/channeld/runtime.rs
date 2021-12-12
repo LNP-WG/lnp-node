@@ -25,7 +25,7 @@ use bp::seals::OutpointReveal;
 use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
 #[cfg(feature = "rgb")]
 use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
-use internet2::{LocalNode, NodeAddr, TypedEnum};
+use internet2::{NodeAddr, TypedEnum};
 use lnp::bolt::extensions::{HtlcKnown, HtlcSecret};
 use lnp::bolt::{self, AssetsBalance, Lifecycle, ScriptGenerators, TxGenerators};
 use lnp::channel::Channel;
@@ -50,9 +50,7 @@ use crate::{Config, CtlServer, Error, LogStyle, Senders, Service, ServiceId};
 
 pub fn run(
     config: Config,
-    local_node: LocalNode,
     channel_id: ChannelId,
-    chain: Chain,
     #[cfg(feature = "rgb")] rgb20_socket_addr: ZmqSocketAddr,
 ) -> Result<(), Error> {
     #[cfg(feature = "rgb")]
@@ -64,8 +62,7 @@ pub fn run(
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         peer_service: ServiceId::Loopback,
-        local_node,
-        chain,
+        chain: config.chain.clone(),
         secp: Secp256k1::new(),
         state_machine: default!(),
         channel: default!(), // TODO: use node configuration to provide custom policy & parameters
@@ -108,7 +105,6 @@ pub fn run(
 pub struct Runtime {
     identity: ServiceId,
     peer_service: ServiceId,
-    local_node: LocalNode,
     chain: Chain,
 
     secp: Secp256k1<All>,
@@ -159,9 +155,6 @@ impl CtlServer for Runtime {
 }
 
 impl Runtime {
-    #[inline]
-    pub fn node_id(&self) -> secp256k1::PublicKey { self.local_node.node_id() }
-
     #[inline]
     pub fn channel_capacity(&self) -> u64 { self.local_capacity + self.remote_capacity }
 }
@@ -540,7 +533,7 @@ impl Runtime {
         self.local_params = bolt::PeerParams::from(channel_req);
         self.remote_keys = bolt::Keyset::from(channel_req);
 
-        let dumb_key = self.node_id();
+        let dumb_key = secp256k1::PublicKey::from_secret_key(&self.secp, &secp256k1::key::ONE_KEY);
         let accept_channel = AcceptChannel {
             temporary_channel_id: channel_req.temporary_channel_id,
             dust_limit_satoshis: channel_req.dust_limit_satoshis,
@@ -719,15 +712,14 @@ impl Runtime {
             self.channel_capacity(),
             SigHashType::All,
         );
+        todo!()
+        /*
         let sign_msg = secp256k1::Message::from_slice(&sighash[..])
             .expect("Sighash size always match requirements");
         let signature = self.local_node.sign(&self.secp, &sign_msg);
         trace!("Commitment transaction signature created");
-        // .serialize_der();
-        // let mut with_hashtype = signature.to_vec();
-        // with_hashtype.push(SigHashType::All.as_u32() as u8);
 
-        signature
+        signature*/
     }
 
     pub fn transfer(
