@@ -91,18 +91,13 @@ extern crate log;
 #[macro_use]
 extern crate amplify;
 
-use std::convert::TryFrom;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
-use std::time::Duration;
+use std::net::{IpAddr, Ipv4Addr};
 
-use bitcoin::secp256k1::PublicKey;
 use clap::Parser;
 use internet2::addr::InetSocketAddr;
-use internet2::{session, FramingProtocol, NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
-use lnp_node::peerd::{self, Opts};
+use internet2::{FramingProtocol, RemoteSocketAddr};
+use lnp_node::peerd::{self, Opts, PeerSocket};
 use lnp_node::{Config, LogStyle};
-use microservices::peer::PeerConnection;
-use nix::unistd::{fork, ForkResult};
 
 /*
 mod internal {
@@ -110,26 +105,6 @@ mod internal {
     include!(concat!(env!("OUT_DIR"), "/configure_me_config.rs"));
 }
  */
-
-/// Chooses type of service runtime (see `--listen` and `--connect` option
-/// details in [`Opts`] structure.
-#[derive(Clone, PartialEq, Eq, Debug, Display)]
-pub enum PeerSocket {
-    /// The service should listen for incoming connections on a certain
-    /// TCP socket, which may be IPv4- or IPv6-based. For Tor hidden services
-    /// use IPv4 TCP port proxied as a Tor hidden service in `torrc`.
-    #[display("--listen={0}")]
-    Listen(RemoteSocketAddr),
-
-    /// The service should connect to the remote peer residing on the provided
-    /// address, which may be either IPv4/v6 or Onion V2/v3 address (using
-    /// onion hidden services will require
-    /// DNS names, due to a censorship vulnerability issues and for avoiding
-    /// leaking any information about th elocal node to DNS resolvers, are not
-    /// supported.
-    #[display("--connect={0}")]
-    Connect(RemoteNodeAddr),
-}
 
 impl From<Opts> for PeerSocket {
     fn from(opts: Opts) -> Self {
@@ -173,80 +148,10 @@ fn main() {
      */
 
     let local_node = opts.key_opts.local_node();
-    let local_id = local_node.node_id();
-    info!("{}: {}", "Local node id".ended(), local_id.addr());
     let peer_socket = PeerSocket::from(opts);
-    debug!("Peer socket parameter interpreted as {}", peer_socket);
-
-    let id: NodeAddr;
-    let mut local_socket: Option<InetSocketAddr> = None;
-    let mut remote_id: Option<PublicKey> = None;
-    let mut remote_socket: InetSocketAddr;
-    let connect: bool;
-    let connection = match peer_socket {
-        PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
-            debug!("Running in LISTEN mode");
-
-            connect = false;
-            local_socket = Some(inet_addr);
-            id = NodeAddr::Remote(RemoteNodeAddr {
-                node_id: local_node.node_id(),
-                remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
-            });
-
-            debug!("Binding TCP socket {}", inet_addr);
-            let listener = TcpListener::bind(
-                SocketAddr::try_from(inet_addr).expect("Tor is not yet supported"),
-            )
-            .expect("Unable to bind to Lightning network peer socket");
-
-            debug!("Running TCP listener event loop");
-            loop {
-                debug!("Awaiting for incoming connections...");
-                let (stream, remote_socket_addr) =
-                    listener.accept().expect("Error accepting incpming peer connection");
-                debug!("New connection from {}", remote_socket_addr);
-
-                remote_socket = remote_socket_addr.into();
-
-                // TODO: Support multithread mode
-                debug!("Forking child process");
-                if let ForkResult::Child = unsafe { fork().expect("Unable to fork child process") }
-                {
-                    trace!("Child forked; returning into main listener event loop");
-                    continue;
-                }
-
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(30)))
-                    .expect("Unable to set up timeout for TCP connection");
-
-                debug!("Establishing session with the remote");
-                let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                    .expect("Unable to establish session with the remote peer");
-
-                debug!("Session successfully established");
-                break PeerConnection::with(session);
-            }
-        }
-        PeerSocket::Connect(remote_node_addr) => {
-            debug!("Running in CONNECT mode");
-
-            connect = true;
-            id = NodeAddr::Remote(remote_node_addr.clone());
-            remote_id = Some(remote_node_addr.node_id);
-            remote_socket = remote_node_addr.remote_addr.into();
-
-            info!("Connecting to {}", &remote_node_addr);
-            PeerConnection::connect(remote_node_addr, &local_node)
-                .expect("Unable to connect to the remote peer")
-        }
-        _ => unimplemented!(),
-    };
 
     debug!("Starting runtime ...");
-    peerd::run(config, connection, id, local_id, remote_id, local_socket, remote_socket, connect)
-        .expect("Error running peerd runtime");
+    peerd::run(config, local_node, peer_socket).expect("Error running peerd runtime");
 
     unreachable!()
 }
