@@ -13,12 +13,13 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::fs;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
 
 use bitcoin::secp256k1::Secp256k1;
 use clap::{ArgGroup, ValueHint};
-use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr};
+use internet2::addr::InetSocketAddr;
+use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr, RemoteSocketAddr};
 use strict_encoding::{StrictDecode, StrictEncode};
 
 use crate::opts::LNP_NODE_KEY_FILE;
@@ -85,10 +86,6 @@ pub struct Opts {
     #[clap(flatten)]
     pub key_opts: KeyOpts,
 
-    /// RGB configuration: ignored by this daemon
-    #[clap(short, long = "rgb20-rpc")]
-    pub r: Option<String>,
-
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
     #[clap(flatten)]
@@ -141,6 +138,25 @@ impl KeyOpts {
             ));
             local_node.strict_encode(key_file).expect("Unable to save generated node kay");
             local_node
+        }
+    }
+}
+
+impl From<Opts> for crate::peerd::PeerSocket {
+    fn from(opts: Opts) -> Self {
+        if let Some(peer_addr) = opts.connect {
+            Self::Connect(peer_addr)
+        } else if let Some(bind_addr) = opts.listen {
+            Self::Listen(match opts.overlay {
+                FramingProtocol::FramedRaw => RemoteSocketAddr::Ftcp(InetSocketAddr {
+                    address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
+                    port: opts.port,
+                }),
+                // TODO: (v2) implement overlay protocols
+                _ => unimplemented!(),
+            })
+        } else {
+            unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
         }
     }
 }

@@ -88,16 +88,10 @@
 
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate amplify;
-
-use std::net::{IpAddr, Ipv4Addr};
 
 use clap::Parser;
-use internet2::addr::InetSocketAddr;
-use internet2::{FramingProtocol, RemoteSocketAddr};
 use lnp_node::peerd::{self, Opts, PeerSocket};
-use lnp_node::{Config, LogStyle};
+use lnp_node::Config;
 
 /*
 mod internal {
@@ -105,25 +99,6 @@ mod internal {
     include!(concat!(env!("OUT_DIR"), "/configure_me_config.rs"));
 }
  */
-
-impl From<Opts> for PeerSocket {
-    fn from(opts: Opts) -> Self {
-        if let Some(peer_addr) = opts.connect {
-            Self::Connect(peer_addr)
-        } else if let Some(bind_addr) = opts.listen {
-            Self::Listen(match opts.overlay {
-                FramingProtocol::FramedRaw => RemoteSocketAddr::Ftcp(InetSocketAddr {
-                    address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
-                    port: opts.port,
-                }),
-                // TODO: (v2) implement overlay protocols
-                _ => unimplemented!(),
-            })
-        } else {
-            unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
-        }
-    }
-}
 
 fn main() {
     println!("peerd: lightning peer network connection microservice");
