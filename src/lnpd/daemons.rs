@@ -12,13 +12,21 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::convert::TryFrom;
 use std::fmt::{Debug, Display};
-use std::process::ExitStatus;
+use std::net::SocketAddr;
+use std::os::unix::process::ExitStatusExt;
+use std::process::{Child, ExitStatus};
 use std::{process, thread};
 
+use amplify::hex::ToHex;
 use amplify::IoError;
+use internet2::{LocalNode, RemoteSocketAddr};
+use lnp::p2p::legacy::ChannelId;
 
-use crate::Error;
+use crate::lnpd::runtime::Runtime;
+use crate::peerd::PeerSocket;
+use crate::{channeld, peerd, signd, Config, Error};
 
 // TODO: Move `DaemonHandle` to microservices crate
 /// Handle for a daemon launched by LNPd
@@ -83,16 +91,16 @@ impl<DaemonName: Debug + Display + Clone> DaemonHandle<DaemonName> {
 }
 
 /// Daemons that can be launched by lnpd
-#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
+#[derive(Clone, Eq, PartialEq, Debug, Display)]
 pub(super) enum Daemon {
     #[display("signd")]
     Signd,
 
     #[display("peerd")]
-    Peerd,
+    Peerd(PeerSocket, LocalNode),
 
     #[display("channeld")]
-    Channeld,
+    Channeld(ChannelId, #[cfg(feature = "rgb")] internet2::zmqsocket::ZmqSocketAddr),
 
     #[display("routed")]
     Routed,
@@ -102,13 +110,99 @@ pub(super) enum Daemon {
 }
 
 impl Daemon {
-    pub fn bin_name(self) -> &'static str {
+    pub fn bin_name(&self) -> &'static str {
         match self {
             Daemon::Signd => "signd",
-            Daemon::Peerd => "peerd",
-            Daemon::Channeld => "channeld",
+            Daemon::Peerd(..) => "peerd",
+            Daemon::Channeld(..) => "channeld",
             Daemon::Routed => "routed",
             Daemon::Gossipd => "gossipd",
+        }
+    }
+}
+
+impl Runtime {
+    fn thread_daemon(
+        &self,
+        daemon: Daemon,
+        config: Config,
+    ) -> Result<thread::JoinHandle<Result<(), Error>>, DaemonError<Daemon>> {
+        debug!("Spawning {} as a new thread", daemon);
+
+        Ok(match daemon {
+            Daemon::Signd => thread::spawn(move || signd::run(config)),
+            Daemon::Peerd(socket, local_node) => {
+                thread::spawn(move || peerd::supervisor::run(config, local_node, socket, true))
+            }
+            #[cfg(not(feature = "rgb"))]
+            Daemon::Channeld(channel_id) => {
+                thread::spawn(move || channeld::run(config, channel_id))
+            }
+            #[cfg(feature = "rgb")]
+            Daemon::Channeld(channel_id, rgb_socket) => thread::spawn(move || {
+                channeld::run(config, local_node, channel_id, chain, rgb_socket)
+            }),
+            Daemon::Routed => todo!(),
+            Daemon::Gossipd => todo!(),
+        })
+    }
+
+    fn exec_daemon(&self, daemon: Daemon) -> Result<Child, DaemonError<Daemon>> {
+        let mut bin_path = std::env::current_exe().map_err(|err| {
+            error!("Unable to detect binary directory: {}", err);
+            DaemonError::ProcessLaunch(daemon.clone(), err.into())
+        })?;
+        bin_path.pop();
+        bin_path.push(daemon.bin_name());
+        #[cfg(target_os = "windows")]
+        bin_path.set_extension("exe");
+
+        debug!(
+            "Launching {} as a separate process using `{}` as binary",
+            daemon.clone(),
+            bin_path.display()
+        );
+
+        let mut cmd = process::Command::new(bin_path);
+        cmd.args(std::env::args().skip(1));
+
+        match &daemon {
+            Daemon::Peerd(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {
+                let socket_addr =
+                    SocketAddr::try_from(inet.clone()).expect("invalid connection address");
+                let ip = socket_addr.ip();
+                let port = socket_addr.port();
+                cmd.args(&["--listen", &ip.to_string(), "--port", &port.to_string()]);
+            }
+            Daemon::Peerd(PeerSocket::Connect(node_addr), _) => {
+                cmd.args(&["--connect", &node_addr.to_string()]);
+            }
+            Daemon::Peerd(PeerSocket::Listen(_), _) => {
+                // Lightning do not support non-TCP sockets
+                DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101));
+            }
+            Daemon::Channeld(temp_channel_id, ..) => {
+                cmd.args(&[temp_channel_id.to_hex()]);
+            }
+            _ => { /* No additional configuration is required here */ }
+        }
+
+        trace!("Executing `{:?}`", cmd);
+        cmd.spawn().map_err(|err| {
+            error!("Error launching {}: {}", daemon.clone(), err);
+            DaemonError::ProcessLaunch(daemon, err.into())
+        })
+    }
+
+    pub(super) fn launch_daemon(
+        &self,
+        daemon: Daemon,
+        config: Config,
+    ) -> Result<DaemonHandle<Daemon>, DaemonError<Daemon>> {
+        if self.threaded {
+            Ok(DaemonHandle::Thread(daemon.clone(), self.thread_daemon(daemon, config)?))
+        } else {
+            Ok(DaemonHandle::Process(daemon.clone(), self.exec_daemon(daemon)?))
         }
     }
 }
