@@ -15,9 +15,10 @@
 #[cfg(feature = "shell")]
 mod opts;
 mod peer_socket;
-mod runtime;
+pub(self) mod runtime;
+pub mod supervisor;
 
 #[cfg(feature = "shell")]
 pub use opts::{KeyOpts, Opts};
 pub use peer_socket::PeerSocket;
-pub use runtime::run;
+pub(self) use supervisor::RuntimeParams;

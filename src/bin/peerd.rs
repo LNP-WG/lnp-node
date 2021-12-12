@@ -127,7 +127,7 @@ fn main() {
     let peer_socket = PeerSocket::from(opts);
 
     debug!("Starting runtime ...");
-    peerd::run(config, local_node, peer_socket, threaded_daemons)
+    peerd::supervisor::run(config, local_node, peer_socket, threaded_daemons)
         .expect("Error running peerd runtime");
 
     unreachable!()

@@ -13,10 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::collections::HashMap;
-use std::convert::TryFrom;
-use std::net::{SocketAddr, TcpListener};
 use std::sync::Arc;
-use std::thread;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
 
@@ -25,8 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{
-    presentation, session, transport, zmqsocket, CreateUnmarshaller, LocalNode, LocalSocketAddr,
-    NodeAddr, RemoteNodeAddr, RemoteSocketAddr, TypedEnum, ZmqType, ZMQ_CONTEXT,
+    presentation, transport, zmqsocket, CreateUnmarshaller, TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
 use lnp::p2p::legacy::{
     FundingCreated, FundingLocked, FundingSigned, Init, Messages, Ping, UpdateAddHtlc,
@@ -35,130 +31,13 @@ use lnp::p2p::legacy::{
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
-use nix::unistd::{fork, ForkResult};
 
-use crate::peerd::PeerSocket;
+use super::RuntimeParams;
 use crate::rpc::request::PeerInfo;
 use crate::rpc::{Request, ServiceBus};
-use crate::{Config, CtlServer, Error, LogStyle, Service, ServiceId};
+use crate::{CtlServer, Error, LogStyle, Service, ServiceId};
 
-pub fn run(
-    config: Config,
-    local_node: LocalNode,
-    peer_socket: PeerSocket,
-    threaded_daemons: bool,
-) -> Result<(), Error> {
-    debug!("Peer socket parameter interpreted as {}", peer_socket);
-
-    let local_id = local_node.node_id();
-    info!("{}: {}", "Local node id".ended(), local_id.addr());
-
-    let mut params = RuntimeParams::with(config, local_id);
-    let connection = match peer_socket {
-        PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
-            debug!("Running in LISTEN mode");
-
-            params.connect = false;
-            params.local_socket = Some(inet_addr);
-            params.id = NodeAddr::Remote(RemoteNodeAddr {
-                node_id: local_node.node_id(),
-                remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
-            });
-
-            debug!("Binding TCP socket {}", inet_addr);
-            let listener = TcpListener::bind(
-                SocketAddr::try_from(inet_addr).expect("Tor is not yet supported"),
-            )
-            .expect("Unable to bind to Lightning network peer socket");
-
-            debug!("Running TCP listener event loop");
-            loop {
-                debug!("Awaiting for incoming connections...");
-                let (stream, remote_socket_addr) =
-                    listener.accept().expect("Error accepting incpming peer connection");
-                debug!("New connection from {}", remote_socket_addr);
-
-                params.remote_socket = remote_socket_addr.into();
-
-                if threaded_daemons {
-                    debug!("Spawning child thread");
-                    let child_params = params.clone();
-                    let _ = thread::spawn(move || {
-                        debug!("Establishing session with the remote");
-                        let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                            .expect("Unable to establish session with the remote peer");
-                        let connection = PeerConnection::with(session);
-                        run_runtime(connection, child_params)
-                    });
-                    // We have started the thread so awaiting for the next incoming connection
-                    continue;
-                } else {
-                    debug!("Forking child process");
-                    if let ForkResult::Parent { .. } =
-                        unsafe { fork().expect("Unable to fork child process") }
-                    {
-                        trace!("Child forked; returning into main listener event loop");
-                        continue;
-                    }
-                }
-
-                // Here we get only in the child process forked from the parent
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(30)))
-                    .expect("Unable to set up timeout for TCP connection");
-
-                debug!("Establishing session with the remote");
-                let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                    .expect("Unable to establish session with the remote peer");
-
-                debug!("Session successfully established");
-                break PeerConnection::with(session);
-            }
-        }
-        PeerSocket::Connect(remote_node_addr) => {
-            debug!("Running in CONNECT mode");
-
-            params.connect = true;
-            params.id = NodeAddr::Remote(remote_node_addr.clone());
-            params.remote_id = Some(remote_node_addr.node_id);
-            params.remote_socket = remote_node_addr.remote_addr.into();
-
-            info!("Connecting to {}", &remote_node_addr);
-            PeerConnection::connect(remote_node_addr, &local_node)
-                .expect("Unable to connect to the remote peer")
-        }
-        _ => unimplemented!(),
-    };
-
-    run_runtime(connection, params)
-}
-
-#[derive(Clone, Debug)]
-struct RuntimeParams {
-    config: Config,
-    id: NodeAddr,
-    local_id: PublicKey,
-    remote_id: Option<PublicKey>,
-    local_socket: Option<InetSocketAddr>,
-    remote_socket: InetSocketAddr,
-    connect: bool,
-}
-
-impl RuntimeParams {
-    fn with(config: Config, local_id: PublicKey) -> RuntimeParams {
-        RuntimeParams {
-            config,
-            id: NodeAddr::Local(LocalSocketAddr::Posix(s!(""))),
-            local_id,
-            remote_id: None,
-            local_socket: None,
-            remote_socket: Default::default(),
-            connect: false,
-        }
-    }
-}
-
-fn run_runtime(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
+pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
