@@ -15,13 +15,14 @@
 use std::convert::TryFrom;
 use std::net::{SocketAddr, TcpListener};
 use std::thread;
+use std::thread::JoinHandle;
 use std::time::Duration;
 
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{session, LocalNode, LocalSocketAddr, NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use microservices::peer::PeerConnection;
-use nix::unistd::{fork, ForkResult};
+use nix::unistd::{fork, ForkResult, Pid};
 
 use super::runtime;
 use crate::peerd::PeerSocket;
@@ -75,7 +76,7 @@ pub fn run(
                 remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
             });
 
-            tcp_listener(params, inet_addr, threaded_daemons)?;
+            spawner(params, inet_addr, threaded_daemons)?;
         }
         PeerSocket::Connect(remote_node_addr) => {
             debug!("Running in CONNECT mode");
@@ -98,11 +99,19 @@ pub fn run(
     unreachable!()
 }
 
-fn tcp_listener(
+pub enum Handler {
+    Thread(JoinHandle<Result<(), Error>>),
+    Process(Pid),
+}
+
+fn spawner(
     mut params: RuntimeParams,
     inet_addr: InetSocketAddr,
     threaded_daemons: bool,
 ) -> Result<(), Error> {
+    // Handlers for all of our spawned processes and threads
+    let mut handlers = vec![];
+
     debug!("Binding TCP socket {}", inet_addr);
     let listener =
         TcpListener::bind(SocketAddr::try_from(inet_addr).expect("Tor is not yet supported"))
@@ -120,25 +129,28 @@ fn tcp_listener(
         if threaded_daemons {
             debug!("Spawning child thread");
             let child_params = params.clone();
-            let _ = thread::spawn(move || {
+            let handler = thread::spawn(move || {
                 debug!("Establishing session with the remote");
                 let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
                     .expect("Unable to establish session with the remote peer");
                 let connection = PeerConnection::with(session);
                 runtime::run(connection, child_params)
             });
+            handlers.push(Handler::Thread(handler));
             // We have started the thread so awaiting for the next incoming connection
         } else {
             debug!("Forking child process");
-            if let ForkResult::Parent { .. } =
+            if let ForkResult::Parent { child } =
                 unsafe { fork().expect("Unable to fork child process") }
             {
-                trace!("Child forked; returning into main listener event loop");
+                handlers.push(Handler::Process(child));
+                debug!("Child forked with pid {}; returning into main listener event loop", child);
             } else {
                 break stream; // We are in the child process and need to proceed with incoming
                               // connection
             }
         }
+        trace!("Total {} peerd are spawned for the incoming connections", handlers.len());
     };
 
     // Here we get only in the child process forked from the parent
