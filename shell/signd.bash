@@ -1,4 +1,4 @@
-_peerd() {
+_signd() {
     local i cur prev opts cmds
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -9,8 +9,8 @@ _peerd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            peerd)
-                cmd="peerd"
+            signd)
+                cmd="signd"
                 ;;
             *)
                 ;;
@@ -18,53 +18,13 @@ _peerd() {
     done
 
     case "${cmd}" in
-        peerd)
-            opts="-h -V -L -C -p -o -k -d -c -v -T -m -x -n --help --version --listen --connect --port --overlay --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
+        signd)
+            opts="-h -V -d -c -v -T -m -x -n --help --version --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                --listen)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -L)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                --connect)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -C)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                --port)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -p)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                --overlay)
-                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
-                    return 0
-                    ;;
-                -o)
-                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
-                    return 0
-                    ;;
-                --key-file)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -k)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 --data-dir)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -131,4 +91,4 @@ _peerd() {
     esac
 }
 
-complete -F _peerd -o bashdefault -o default peerd
+complete -F _signd -o bashdefault -o default signd

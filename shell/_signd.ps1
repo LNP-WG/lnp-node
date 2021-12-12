@@ -2,12 +2,12 @@
 using namespace System.Management.Automation
 using namespace System.Management.Automation.Language
 
-Register-ArgumentCompleter -Native -CommandName 'peerd' -ScriptBlock {
+Register-ArgumentCompleter -Native -CommandName 'signd' -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
 
     $commandElements = $commandAst.CommandElements
     $command = @(
-        'peerd'
+        'signd'
         for ($i = 1; $i -lt $commandElements.Count; $i++) {
             $element = $commandElements[$i]
             if ($element -isnot [StringConstantExpressionAst] -or
@@ -19,17 +19,7 @@ Register-ArgumentCompleter -Native -CommandName 'peerd' -ScriptBlock {
     }) -join ';'
 
     $completions = @(switch ($command) {
-        'peerd' {
-            [CompletionResult]::new('-L', 'L', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address')
-            [CompletionResult]::new('--listen', 'listen', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address')
-            [CompletionResult]::new('-C', 'C', [CompletionResultType]::ParameterName, 'Connect to a remote peer with the provided address after start')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'Connect to a remote peer with the provided address after start')
-            [CompletionResult]::new('-p', 'p', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
-            [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
-            [CompletionResult]::new('-o', 'o', [CompletionResultType]::ParameterName, 'Overlay peer communications through different transport protocol')
-            [CompletionResult]::new('--overlay', 'overlay', [CompletionResultType]::ParameterName, 'Overlay peer communications through different transport protocol')
-            [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')
-            [CompletionResult]::new('--key-file', 'key-file', [CompletionResultType]::ParameterName, 'Node key file')
+        'signd' {
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path to the configuration file')

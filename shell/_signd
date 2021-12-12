@@ -1,8 +1,8 @@
-#compdef peerd
+#compdef signd
 
 autoload -U is-at-least
 
-_peerd() {
+_signd() {
     typeset -A opt_args
     typeset -a _arguments_options
     local ret=1
@@ -15,16 +15,6 @@ _peerd() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-L+[Start daemon in listening mode binding the provided local address]:LISTEN:_hosts' \
-'--listen=[Start daemon in listening mode binding the provided local address]:LISTEN:_hosts' \
-'-C+[Connect to a remote peer with the provided address after start]:CONNECT: ' \
-'--connect=[Connect to a remote peer with the provided address after start]:CONNECT: ' \
-'-p+[Customize port used by lightning peer network]:PORT: ' \
-'--port=[Customize port used by lightning peer network]:PORT: ' \
-'-o+[Overlay peer communications through different transport protocol]:OVERLAY:(tcp zmq http websocket smtp)' \
-'--overlay=[Overlay peer communications through different transport protocol]:OVERLAY:(tcp zmq http websocket smtp)' \
-'-k+[Node key file]:KEY_FILE:_files' \
-'--key-file=[Node key file]:KEY_FILE:_files' \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
 '-c+[Path to the configuration file]:CONFIG:_files' \
@@ -48,10 +38,10 @@ _peerd() {
 && ret=0
 }
 
-(( $+functions[_peerd_commands] )) ||
-_peerd_commands() {
+(( $+functions[_signd_commands] )) ||
+_signd_commands() {
     local commands; commands=()
-    _describe -t commands 'peerd commands' commands "$@"
+    _describe -t commands 'signd commands' commands "$@"
 }
 
-_peerd "$@"
+_signd "$@"

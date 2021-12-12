@@ -38,6 +38,9 @@ pub mod peerd {
 pub mod channeld {
     include!("src/channeld/opts.rs");
 }
+pub mod signd {
+    include!("src/signd/opts.rs");
+}
 pub mod gossipd {
     include!("src/gossipd/opts.rs");
 }
@@ -54,6 +57,7 @@ fn main() -> Result<(), configure_me_codegen::Error> {
         channeld::Opts::into_app(),
         gossipd::Opts::into_app(),
         routed::Opts::into_app(),
+        signd::Opts::into_app(),
         cli::Opts::into_app(),
     ]
     .iter_mut()
