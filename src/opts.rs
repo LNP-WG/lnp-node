@@ -47,7 +47,8 @@ pub const RGB_NODE_DATA_DIR: &'static str = "~/Documents";
 pub const RGB_NODE_DATA_DIR: &'static str = ".";
 
 pub const LNP_NODE_MSG_SOCKET: &'static str = "{data_dir}/msg";
-pub const LNP_NODE_RPC_SOCKET: &'static str = "{data_dir}/rpc";
+pub const LNP_NODE_CTL_SOCKET: &'static str = "{data_dir}/ctl";
+pub const LNP_NODE_RPC_SOCKET: &'static str = "127.0.0.1:62962";
 lazy_static::lazy_static! {
     pub static ref FUNGIBLED_RPC_ENDPOINT: String =
         format!("{}/fungibled.rpc", RGB_NODE_DATA_DIR);
@@ -110,7 +111,7 @@ pub struct Opts {
     )]
     pub tor_proxy: Option<Option<SocketAddr>>,
 
-    /// ZMQ socket used internally by daemon message bus.
+    /// ZMQ socket for internal message bus.
     ///
     /// A user needs to specify this socket usually if it likes to distribute daemons
     /// over different server instances. In this case all daemons within the same node
@@ -121,10 +122,10 @@ pub struct Opts {
     ///
     /// Defaults to `msg` file inside `--data-dir` directory, unless `--threaded-daemons`
     /// is specified; in that cases uses in-memory communication protocol.
-    #[clap(short = 'm', long = "msg", global = true, env = "LNP_NODE_MSG_SOCKET", value_hint = ValueHint::FilePath)]
+    #[clap(long = "msg", global = true, env = "LNP_NODE_MSG_SOCKET", value_hint = ValueHint::FilePath)]
     pub msg_socket: Option<String>,
 
-    /// ZMQ socket for daemon RPC interface.
+    /// ZMQ socket for internal service bus.
     ///
     /// A user needs to specify this socket usually if it likes to distribute daemons
     /// over different server instances. In this case all daemons within the same node
@@ -133,10 +134,25 @@ pub struct Opts {
     /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
     /// to an IPC file.
     ///
-    /// Defaults to `rpc` file inside `--data-dir` directory, unless `--threaded-daemons`
+    /// Defaults to `ctl` file inside `--data-dir` directory, unless `--threaded-daemons`
     /// is specified; in that cases uses in-memory communication protocol.
-    #[clap(short = 'r', long = "rpc", global = true, env = "LNP_NODE_CTL_SOCKET", value_hint = ValueHint::FilePath)]
-    pub rpc_socket: Option<String>,
+    #[clap(long = "ctl", global = true, env = "LNP_NODE_CTL_SOCKET", value_hint = ValueHint::FilePath)]
+    pub ctl_socket: Option<String>,
+
+    /// ZMQ socket for connecting daemon RPC interface.
+    ///
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
+    /// to an IPC file.
+    ///
+    /// Defaults to `127.0.0.1:62962`.
+    #[clap(
+        short = 'r',
+        long = "rpc",
+        global = true,
+        default_value = "LNP_NODE_RPC_SOCKET",
+        env = "LNP_NODE_RPC_SOCKET"
+    )]
+    pub rpc_socket: String,
 
     /// Blockchain to use
     #[clap(
@@ -179,7 +195,7 @@ impl Opts {
         );
         fs::create_dir_all(&me.data_dir).expect("Unable to access data directory");
 
-        for s in vec![&mut self.msg_socket, &mut self.rpc_socket] {
+        for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
                 Some(path) => {
                     me.process_dir(path);

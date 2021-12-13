@@ -41,6 +41,9 @@ pub struct Config {
     /// ZMQ socket for internal service control bus
     pub ctl_endpoint: ZmqSocketAddr,
 
+    /// ZMQ socket for daemon RCP interface
+    pub rpc_endpoint: ZmqSocketAddr,
+
     /// URL for the electrum server connection
     pub electrum_url: String,
 
@@ -84,10 +87,15 @@ impl From<Opts> for Config {
             Err(_) => format!("ipc://{}", s),
         });
 
-        let ctl_endpoint = opts.rpc_socket.map(|s| match SocketAddr::from_str(&s) {
+        let ctl_endpoint = opts.ctl_socket.map(|s| match SocketAddr::from_str(&s) {
             Ok(_) => format!("tcp://{}", s),
             Err(_) => format!("ipc://{}", s),
         });
+
+        let rpc_endpoint = match SocketAddr::from_str(&opts.rpc_socket) {
+            Ok(_) => format!("tcp://{}", opts.rpc_socket),
+            Err(_) => format!("ipc://{}", opts.rpc_socket),
+        };
 
         Config {
             chain: opts.chain,
@@ -98,6 +106,9 @@ impl From<Opts> for Config {
                 .expect("ZMQ sockets should be either TCP addresses or files"),
             ctl_endpoint: ctl_endpoint
                 .unwrap_or(ctl_default)
+                .parse()
+                .expect("ZMQ sockets should be either TCP addresses or files"),
+            rpc_endpoint: rpc_endpoint
                 .parse()
                 .expect("ZMQ sockets should be either TCP addresses or files"),
             electrum_url,

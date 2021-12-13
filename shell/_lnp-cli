@@ -15,27 +15,14 @@ _lnp-cli() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'--threaded-daemons[Spawn daemons as threads and not processes]' \
 ":: :_lnp-cli_commands" \
 "*::: :->lnp-cli" \
 && ret=0
@@ -53,20 +40,8 @@ _arguments "${_arguments_options[@]}" \
 '--port=[Port to use; defaults to the native LN port]:PORT: ' \
 '-o+[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
 '--overlay=[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -75,20 +50,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (connect)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -98,20 +61,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (ping)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -121,20 +72,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (info)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -144,20 +83,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (funds)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -166,20 +93,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (peers)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -188,20 +103,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (channels)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -220,20 +123,8 @@ _arguments "${_arguments_options[@]}" \
 '--htlc-min-value=[Indicates the smallest value of an HTLC this node will accept, in milli-satoshi]:HTLC_MIN_VALUE: ' \
 '--htlc-max-total-value=[The maximum inbound HTLC value in flight towards this node, in milli-satoshi]:HTLC_MAX_TOTAL_VALUE: ' \
 '--channel-reserve=[The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis]:CHANNEL_RESERVE: ' \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -244,20 +135,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (transfer)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -268,20 +147,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (invoice)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -292,20 +159,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (pay)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -316,20 +171,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path for the configuration file]:CONFIG:_files' \
-'--config=[Path for the configuration file]:CONFIG:_files' \
-'-T+[Use Tor]:TOR_PROXY:_hosts' \
-'--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'-n+[Blockchain to use]:CHAIN: ' \
-'--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
-'--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \

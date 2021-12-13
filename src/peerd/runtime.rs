@@ -213,6 +213,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
             ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
             ServiceBus::Bridge => self.handle_bridge(senders, source, request),
+            ServiceBus::Rpc => unreachable!("peer daemon must not bind to RPC interface"),
         }
     }
 

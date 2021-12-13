@@ -25,7 +25,7 @@ _lnpd() {
 
     case "${cmd}" in
         lnpd)
-            opts="-h -V -k -d -c -v -T -m -r -n -L -p --help --version --key-file --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port --threaded-daemons --listen --port init help"
+            opts="-h -V -k -d -c -v -T -r -n -L -p --help --version --key-file --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons --listen --port init help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -67,7 +67,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -m)
+                --ctl)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -119,7 +119,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__help)
-            opts="-h -d -c -v -T -m -r -n --help --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port"
+            opts="-h -d -c -v -T -r -n --help --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -153,7 +153,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -m)
+                --ctl)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -189,7 +189,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__init)
-            opts="-h -d -c -v -T -m -r -n --help --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port"
+            opts="-h -d -c -v -T -r -n --help --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -223,7 +223,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -m)
+                --ctl)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

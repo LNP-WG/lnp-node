@@ -21,22 +21,17 @@ use clap::Parser;
 use lnp_node::cli::Opts;
 use lnp_node::rpc::Client;
 use lnp_node::{Config, LogStyle};
-use microservices::shell::Exec;
+use microservices::shell::{Exec, LogLevel};
 
 fn main() {
     println!("lnp-cli: command-line tool for working with LNP node");
 
-    let mut opts = Opts::parse();
-    trace!("Command-line arguments: {:?}", &opts);
-    opts.process();
-    trace!("Processed arguments: {:?}", &opts);
+    let opts = Opts::parse();
+    LogLevel::from_verbosity_flag_count(opts.verbose).apply();
 
-    let config: Config = opts.shared.clone().into();
-    trace!("Tool configuration: {:?}", &config);
-    debug!("MSG RPC socket {}", &config.msg_endpoint);
-    debug!("CTL RPC socket {}", &config.ctl_endpoint);
+    trace!("Command-line arguments: {:?}", opts);
 
-    let mut client = Client::with(config, opts.shared.chain).expect("Error initializing client");
+    let mut client = Client::with(&opts.connect).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
     opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err.err()));

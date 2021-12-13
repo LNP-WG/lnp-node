@@ -13,6 +13,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::convert::TryInto;
+use std::net::SocketAddr;
+use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -20,6 +22,7 @@ use internet2::ZmqType;
 use lnpbp::chain::Chain;
 use microservices::esb;
 
+use crate::cli::Opts;
 use crate::rpc::request::OptionDetails;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, LogStyle, ServiceId};
@@ -27,22 +30,27 @@ use crate::{Config, Error, LogStyle, ServiceId};
 #[repr(C)]
 pub struct Client {
     identity: ServiceId,
-    chain: Chain,
     response_queue: Vec<Request>,
     esb: esb::Controller<ServiceBus, Request, Handler>,
 }
 
 impl Client {
-    pub fn with(config: Config, chain: Chain) -> Result<Self, Error> {
+    pub fn with(connect: &str) -> Result<Self, Error> {
+        debug!("RPC socket {}", connect);
+
         debug!("Setting up RPC client...");
         let identity = ServiceId::client();
+        let rpc_endpoint = match SocketAddr::from_str(connect) {
+            Ok(_) => format!("tcp://{}", connect),
+            Err(_) => format!("ipc://{}", connect),
+        };
         let bus_config = esb::BusConfig::with_locator(
-            config.ctl_endpoint.try_into().expect("Only ZMQ RPC is currently supported"),
+            rpc_endpoint.parse().expect("Only ZMQ RPC is currently supported"),
             Some(ServiceId::router()),
         );
         let esb = esb::Controller::with(
             map! {
-                ServiceBus::Ctl => bus_config
+                ServiceBus::Rpc => bus_config
             },
             Handler { identity: identity.clone() },
             ZmqType::RouterConnect,
@@ -51,16 +59,14 @@ impl Client {
         // We have to sleep in order for ZMQ to bootstrap
         sleep(Duration::from_secs_f32(0.1));
 
-        Ok(Self { identity, chain, response_queue: empty!(), esb })
+        Ok(Self { identity, response_queue: empty!(), esb })
     }
 
     pub fn identity(&self) -> ServiceId { self.identity.clone() }
 
-    pub fn chain(&self) -> Chain { self.chain.clone() }
-
     pub fn request(&mut self, daemon: ServiceId, req: Request) -> Result<(), Error> {
         debug!("Executing {}", req);
-        self.esb.send_to(ServiceBus::Ctl, daemon, req)?;
+        self.esb.send_to(ServiceBus::Rpc, daemon, req)?;
         Ok(())
     }
 

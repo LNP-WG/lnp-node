@@ -21,10 +21,10 @@ _routed() {
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
-'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
-'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--msg=[ZMQ socket for internal message bus]:MSG_SOCKET:_files' \
+'--ctl=[ZMQ socket for internal service bus]:CTL_SOCKET:_files' \
+'-r+[ZMQ socket for connecting daemon RPC interface]:RPC_SOCKET: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:RPC_SOCKET: ' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
 '--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \

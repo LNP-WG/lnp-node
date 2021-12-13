@@ -19,7 +19,7 @@ _routed() {
 
     case "${cmd}" in
         routed)
-            opts="-h -V -d -c -v -T -m -r -n --help --version --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port --threaded-daemons"
+            opts="-h -V -d -c -v -T -r -n --help --version --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -53,7 +53,7 @@ _routed() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -m)
+                --ctl)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

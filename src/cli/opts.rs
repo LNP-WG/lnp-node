@@ -26,18 +26,30 @@ use rgb::ContractId;
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "lnp-cli", bin_name = "lnp-cli", author, version)]
 pub struct Opts {
-    /// These params can be read also from the configuration file, not just
-    /// command-line args or environment variables
-    #[clap(flatten)]
-    pub shared: crate::opts::Opts,
+    /// ZMQ socket for connecting daemon RPC interface.
+    ///
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
+    /// to an IPC file.
+    ///
+    /// Defaults to `127.0.0.1:62962`.
+    #[clap(
+        short,
+        long,
+        global = true,
+        default_value = "LNP_NODE_RPC_SOCKET",
+        env = "LNP_NODE_RPC_SOCKET"
+    )]
+    pub connect: String,
+
+    /// Set verbosity level.
+    ///
+    /// Can be used multiple times to increase verbosity.
+    #[clap(short, long, global = true, parse(from_occurrences))]
+    pub verbose: u8,
 
     /// Command to execute
     #[clap(subcommand)]
     pub command: Command,
-}
-
-impl Opts {
-    pub fn process(&mut self) { self.shared.process() }
 }
 
 /// Command-line commands:

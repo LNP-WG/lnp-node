@@ -19,7 +19,7 @@ _channeld() {
 
     case "${cmd}" in
         channeld)
-            opts="-h -V -k -d -c -v -T -m -r -n --help --version --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port --threaded-daemons <CHANNEL_ID>"
+            opts="-h -V -k -d -c -v -T -r -n --help --version --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons <CHANNEL_ID>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -65,7 +65,7 @@ _channeld() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -m)
+                --ctl)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

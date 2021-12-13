@@ -22,12 +22,22 @@ use microservices::rpc_connection::Api;
 pub use reply::Reply;
 pub use request::Request;
 
+/// Service buses used for inter-daemon communication
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
 pub enum ServiceBus {
+    /// RPC interface, from client to node
+    #[display("RPC")]
+    Rpc,
+
+    /// LN P2P message bus
     #[display("MSG")]
     Msg,
+
+    /// Control service bus
     #[display("CTL")]
     Ctl,
+
+    /// Bridge between listening and sending parts of the peer connection
     #[display("BRIDGE")]
     Bridge,
 }
