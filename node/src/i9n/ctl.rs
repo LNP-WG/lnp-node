@@ -115,8 +115,8 @@ pub enum CtlMsg {
 
     /// Error returned back by response-reply type of daemons (like signed) in case if the
     /// operation has failed.
-    #[display("error(\"{error}\")")]
-    Error { request: String, error: String },
+    #[display("error({destination}, \"{error}\")")]
+    Error { destination: ServiceId, request: String, error: String },
 
     #[display("node_info({0})", alt = "{0:#}")]
     PeerInfo(PeerInfo),
@@ -126,8 +126,16 @@ pub enum CtlMsg {
 }
 
 impl CtlMsg {
-    pub fn with_error(message: &CtlMsg, err: &impl std::error::Error) -> CtlMsg {
-        CtlMsg::Error { request: message.to_string(), error: err.to_string() }
+    pub fn with_error(
+        destination: &ServiceId,
+        message: &CtlMsg,
+        err: &impl std::error::Error,
+    ) -> CtlMsg {
+        CtlMsg::Error {
+            destination: destination.clone(),
+            request: message.to_string(),
+            error: err.to_string(),
+        }
     }
 }
 

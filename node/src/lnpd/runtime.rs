@@ -335,6 +335,18 @@ impl Runtime {
                 self.creating_channels.insert(source, launcher);
             }
 
+            CtlMsg::Error { destination, .. } => {
+                let launcher = self
+                    .creating_channels
+                    .remove(&destination)
+                    .expect(&format!("unregistered channel launcher {}", destination));
+                // We swallow `None` here
+                let _ = launcher.next(
+                    Event::with(endpoints, self.identity(), destination.clone(), message),
+                    self,
+                );
+            }
+
             wrong_msg => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, wrong_msg));

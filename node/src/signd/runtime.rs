@@ -90,8 +90,8 @@ where
                     endpoints.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
-                        source,
-                        BusMsg::Ctl(CtlMsg::with_error(&msg, &err)),
+                        source.clone(),
+                        BusMsg::Ctl(CtlMsg::with_error(&source, &msg, &err)),
                     )?;
                     Err(err)
                 } else {

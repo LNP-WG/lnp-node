@@ -132,6 +132,16 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
     ) -> Result<Option<Self>, Self::Error> {
         debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
         let channel_id = self.channel_id();
+        if let CtlMsg::Error { error, .. } = &event.message {
+            let failure = Failure { code: 10000, info: error.clone() };
+            event.endpoints.send_to(
+                ServiceBus::Rpc,
+                ServiceId::Lnpd,
+                self.enquirer(),
+                BusMsg::Rpc(RpcMsg::Failure(failure)),
+            )?;
+            return Ok(None);
+        }
         let state = match self {
             ChannelLauncher::Init(temp_channel_id, request, enquirer) => match event.message {
                 CtlMsg::Hello => complete_launch(event, temp_channel_id, request, enquirer),
@@ -178,6 +188,17 @@ impl ChannelLauncher {
             | ChannelLauncher::Negotiating(temp_channel_id, ..)
             | ChannelLauncher::Committing(temp_channel_id, ..) => temp_channel_id.into_inner(),
             ChannelLauncher::Signing(channel_id, ..) => channel_id.into_inner(),
+        }
+    }
+
+    pub fn enquirer(&self) -> ServiceId {
+        match self {
+            ChannelLauncher::Init(_, _, enquirer)
+            | ChannelLauncher::Launching(_, _, enquirer, _)
+            | ChannelLauncher::Deriving(_, _, enquirer)
+            | ChannelLauncher::Negotiating(_, enquirer)
+            | ChannelLauncher::Committing(_, _, enquirer)
+            | ChannelLauncher::Signing(_, _, enquirer) => ServiceId::Client(*enquirer),
         }
     }
 }
