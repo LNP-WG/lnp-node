@@ -7,13 +7,16 @@ participant onchaind
 participant signd
 participant remote
 
+note over lnpd: Init
 cli -) +lnpd: CreateChannel
 lnpd -) +channeld: <launch>
+lnpd -) +signd: DeriveKeyset
 deactivate lnpd
-note over lnpd: Launching
+note over lnpd: Launching / Deriving
 channeld -) -lnpd: hello
 activate lnpd
 note over channeld: Initial
+signd -) -lnpd: Keyset
 lnpd -) +channeld: OpenChannelWith
 deactivate lnpd
 note over lnpd: Negotiating
