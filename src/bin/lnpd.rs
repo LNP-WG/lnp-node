@@ -30,11 +30,15 @@
 extern crate log;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use bitcoin::secp256k1::PublicKey;
 use clap::Parser;
+use internet2::LocalNode;
 use lnp_node::lnpd::{self, Command, Opts};
+use lnp_node::peerd::supervisor::read_node_key_file;
 use lnp_node::{Config, Error, LogStyle};
+use strict_encoding::StrictEncode;
 
 fn main() -> Result<(), Error> {
     println!("lnpd: lightning node management microservice");
@@ -48,12 +52,6 @@ fn main() -> Result<(), Error> {
     trace!("Daemon configuration: {:?}", &config);
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
-
-    if let Some(command) = opts.command {
-        match command {
-            Command::Init => init(&config)?,
-        }
-    }
 
     /*
     use self::internal::ResultExt;
@@ -71,13 +69,19 @@ fn main() -> Result<(), Error> {
         SocketAddr::new(ip, bind_port)
     });
 
+    if let Some(command) = opts.command {
+        match command {
+            Command::Init => init(&config, &key_file)?,
+        }
+    }
+
     debug!("Starting runtime ...");
     lnpd::run(config, key_file, bind_socket).expect("running lnpd runtime");
 
     unreachable!()
 }
 
-fn init(config: &Config) -> Result<(), Error> {
+fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
     use std::fs;
     use std::process::exit;
     use std::str::FromStr;
@@ -91,6 +95,7 @@ fn init(config: &Config) -> Result<(), Error> {
     use psbt::sign::MemorySigningAccount;
 
     let secp = Secp256k1::new();
+    let chain_index = config.chain.chain_params().is_testnet as u16;
 
     println!("\n{}", "Initializing node data".progress());
 
@@ -107,7 +112,7 @@ fn init(config: &Config) -> Result<(), Error> {
         println!("Signing account '{}' ... {}", LNP_NODE_MASTER_KEY_FILE, "creating".action());
         let xpriv = rpassword::read_password_from_tty(Some("Please enter your master xpriv: "))?;
         let xpriv = ExtendedPrivKey::from_str(&xpriv)?;
-        let derivation = DerivationPath::from_str("m/10046h").expect("hardcoded derivation path");
+        let derivation = DerivationPath::from_str("m/9735h").expect("hardcoded derivation path");
         let xpriv_account = xpriv.derive_priv(&secp, &derivation)?;
         let fingerprint = xpriv.identifier(&secp);
         let signing_account =
@@ -122,8 +127,9 @@ fn init(config: &Config) -> Result<(), Error> {
     println!(
         "Signing account: {}",
         format!(
-            "m=[{}]/10046h=[{}]",
+            "m=[{}]/{}=[{}]",
             signing_account.master_fingerprint(),
+            signing_account.derivation().to_string().trim_start_matches("m/"),
             signing_account.account_xpub(),
         )
         .promo()
@@ -133,7 +139,7 @@ fn init(config: &Config) -> Result<(), Error> {
     wallet_path.push(LNP_NODE_FUNDING_WALLET);
     let funding_wallet = if !wallet_path.exists() {
         println!("Funding wallet '{}' ... {}", LNP_NODE_FUNDING_WALLET, "creating".action());
-        let account_path = &[10046_u16, 0, 2][..];
+        let account_path = &[9735_u16, chain_index, 2][..];
         let node_xpriv = signing_account.account_xpriv();
         let account_xpriv = node_xpriv.derive_priv(
             &secp,
@@ -159,6 +165,26 @@ fn init(config: &Config) -> Result<(), Error> {
         FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?
     };
     println!("Funding wallet: {}", funding_wallet.descriptor().promo());
+
+    let node_key = if !key_path.exists() {
+        println!("Node key file '{}' ... {}", key_path.display(), "creating".action());
+
+        let derivation_path = DerivationPath::from_str(&format!("m/9735h/{}h/0h", chain_index))
+            .expect("hardcoded derivation path");
+        let node_seckey = signing_account.derive_seckey(&secp, &derivation_path);
+        let node_id = PublicKey::from_secret_key(&secp, &node_seckey);
+        let local_node = LocalNode::with(node_seckey, node_id);
+        let key_file = fs::File::create(key_path).expect(&format!(
+            "Unable to create node key file '{}'; please check that the path exists",
+            key_path.display()
+        ));
+        local_node.strict_encode(key_file).expect("Unable to save generated node key file");
+        local_node
+    } else {
+        println!("Node key file '{}' ... {}", key_path.display(), "found".action());
+        read_node_key_file(key_path)
+    };
+    println!("Node key: {}", node_key.node_id().promo());
 
     println!("{}", "Node initialization complete\n".ended());
 
