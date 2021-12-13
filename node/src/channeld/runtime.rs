@@ -500,14 +500,7 @@ impl Runtime {
         // Update channel id!
         self.channel_id =
             ChannelId::with(self.funding_outpoint.txid, self.funding_outpoint.vout as u16);
-        debug!("Updating channel id to {}", self.channel_id);
-        self.send_ctl(senders, ServiceId::Lnpd, CtlMsg::UpdateChannelId(self.channel_id))?;
-        self.send_ctl(
-            senders,
-            self.peer_service.clone(),
-            CtlMsg::UpdateChannelId(self.channel_id),
-        )?;
-        // self.identity = self.channel_id.into();
+        self.identity = self.channel_id.into();
         let msg = format!("{} set to {}", "Channel ID".ended(), self.channel_id.ender());
         info!("{}", msg);
         let _ = self.report_progress(senders, msg);

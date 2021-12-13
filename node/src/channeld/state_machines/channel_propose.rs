@@ -61,13 +61,13 @@ impl StateMachine<CtlMsg, Runtime> for ChannelPropose {
         let channel_id = runtime.channel.active_channel_id();
         debug!("ChannelPropose {} received {} event", channel_id, event.message);
         let state = match self {
-            ChannelPropose::Proposed => finish_proposed(event, runtime),
-            ChannelPropose::Accepted => finish_accepted(event, runtime),
-            ChannelPropose::Funding => finish_funding(event, runtime),
-            ChannelPropose::Signed => finish_signed(event, runtime),
-            ChannelPropose::Funded => finish_funded(event, runtime),
+            ChannelPropose::Proposed => complete_proposed(event, runtime),
+            ChannelPropose::Accepted => complete_accepted(event, runtime),
+            ChannelPropose::Funding => complete_funding(event, runtime),
+            ChannelPropose::Signed => complete_signed(event, runtime),
+            ChannelPropose::Funded => complete_funded(event, runtime),
             ChannelPropose::Locked => {
-                finish_locked(event, runtime)?;
+                complete_locked(event, runtime)?;
                 info!("ChannelPropose {} has completed its work", channel_id);
                 return Ok(None);
             }
@@ -125,42 +125,42 @@ impl ChannelPropose {
     }
 }
 
-fn finish_proposed(
+fn complete_proposed(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_accepted(
+fn complete_accepted(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_funding(
+fn complete_funding(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_signed(
+fn complete_signed(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_funded(
+fn complete_funded(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_locked(
+fn complete_locked(
     _event: Event<CtlMsg>,
     _runtime: &mut Runtime,
 ) -> Result<(), state_machines::Error> {

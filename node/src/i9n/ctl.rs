@@ -17,7 +17,7 @@ use bitcoin::{OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, OpenChannel};
+use lnp::p2p::legacy::OpenChannel;
 use psbt::Psbt;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
@@ -35,9 +35,6 @@ use crate::ServiceId;
 pub enum CtlMsg {
     #[display("hello()")]
     Hello,
-
-    #[display("update_channel_id({0})")]
-    UpdateChannelId(ChannelId),
 
     // Node connectivity API
     // ---------------------

@@ -22,7 +22,7 @@ use bitcoin::secp256k1;
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, Messages as LnMessage};
+use lnp::p2p::legacy::{ChannelId, Messages as LnMessage, TempChannelId};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
@@ -309,22 +309,13 @@ impl Runtime {
         source: ServiceId,
         message: CtlMsg,
     ) -> Result<(), Error> {
-        if let CtlMsg::Hello = message {
-            self.handle_hello(endpoints, source)?;
-        } else if let CtlMsg::UpdateChannelId(new_id) = message {
-            debug!("Requested to update channel id {} on {}", source, new_id);
-            if let ServiceId::Channel(old_id) = source {
-                if !self.channels.remove(&old_id) {
-                    warn!("Channel daemon {} was unknown", source);
-                }
-                self.channels.insert(new_id);
-                debug!("Registered channel daemon id {}", new_id);
-            } else {
-                error!("Chanel id update may be requested only by a channeld, not {}", source);
+        match message {
+            CtlMsg::Hello => self.handle_hello(endpoints, source)?,
+
+            wrong_msg => {
+                error!("Request is not supported by the CTL interface");
+                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &wrong_msg));
             }
-        } else {
-            error!("Request is not supported by the CTL interface");
-            return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &message));
         }
 
         Ok(())
@@ -424,6 +415,17 @@ impl Runtime {
                 Ok(acc)
             },
         )
+    }
+
+    pub fn update_chanel_id(&mut self, old_id: TempChannelId, new_id: ChannelId) -> bool {
+        let mut known = true;
+        if !self.channels.remove(&ChannelId::from(old_id)) {
+            known = false;
+            warn!("Temporary channel id {} was unknown", old_id);
+        }
+        self.channels.insert(new_id);
+        info!("Channel daemon id registered to change from {} to {}", old_id, new_id);
+        known
     }
 
     fn new_channel_keyset(&self) -> Keyset {

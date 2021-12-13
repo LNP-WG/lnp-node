@@ -376,6 +376,18 @@ fn complete_negotiation(
             Ok(funding_outpoint)
         })
         .map_err(|err| report_failure(enquirer, event.endpoints, err).unwrap_err())?;
+
+    let channel_id = ChannelId::with(funding_outpoint.txid, funding_outpoint.vout as u16);
+    runtime.update_chanel_id(temp_channel_id, channel_id);
+    report_progress(
+        enquirer,
+        event.endpoints,
+        format!(
+            "Channel changed id from temporary {} to permanent {}",
+            temp_channel_id, channel_id
+        ),
+    );
+
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid, enquirer))
 }
 

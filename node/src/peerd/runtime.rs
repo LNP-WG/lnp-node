@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
@@ -74,7 +73,6 @@ pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(
         remote_id: params.remote_id,
         local_socket: params.local_socket,
         remote_socket: params.remote_socket,
-        routing: empty!(),
         sender,
         connect: params.connect,
         started: SystemTime::now(),
@@ -163,7 +161,6 @@ pub struct Runtime {
     local_socket: Option<InetSocketAddr>,
     remote_socket: InetSocketAddr,
 
-    routing: HashMap<ServiceId, ServiceId>,
     sender: PeerSender,
     connect: bool,
 
@@ -226,18 +223,10 @@ impl Runtime {
     fn handle_p2p(
         &mut self,
         _: &mut Endpoints,
-        source: ServiceId,
+        _source: ServiceId,
         message: LnMsg,
     ) -> Result<(), Error> {
         match &message {
-            LnMsg::FundingSigned(FundingSigned { channel_id, .. }) => {
-                debug!(
-                    "Renaming channeld service from temporary id {:#} to channel id #{:#}",
-                    source, channel_id
-                );
-                self.routing.remove(&source);
-                self.routing.insert(channel_id.clone().into(), source);
-            }
             _ => {}
         }
         match message {
@@ -259,15 +248,6 @@ impl Runtime {
         request: CtlMsg,
     ) -> Result<(), Error> {
         match request {
-            CtlMsg::UpdateChannelId(channel_id) => {
-                debug!(
-                    "Renaming channeld service from temporary id {:#} to channel id #{:#}",
-                    source, channel_id
-                );
-                self.routing.remove(&source);
-                self.routing.insert(channel_id.clone().into(), source);
-            }
-
             CtlMsg::GetInfo => {
                 let info = PeerInfo {
                     local_id: self.local_id,
@@ -284,17 +264,7 @@ impl Runtime {
                         .as_secs(),
                     messages_sent: self.messages_sent,
                     messages_received: self.messages_received,
-                    channels: self
-                        .routing
-                        .keys()
-                        .filter_map(|id| {
-                            if let ServiceId::Channel(channel_id) = id {
-                                Some(channel_id.clone())
-                            } else {
-                                None
-                            }
-                        })
-                        .collect(),
+                    channels: vec![],
                     connected: !self.connect,
                     awaits_pong: self.awaited_pong.is_some(),
                 };
@@ -342,7 +312,6 @@ impl Runtime {
 
             BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => {
                 let channeld: ServiceId = accept_channel.temporary_channel_id.into();
-                self.routing.insert(channeld.clone(), channeld.clone());
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
@@ -365,12 +334,7 @@ impl Runtime {
                 ..
             })) => {
                 let channeld: ServiceId = channel_id.clone().into();
-                endpoints.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
-                    request,
-                )?;
+                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
             #[cfg(feature = "rgb")]
