@@ -65,8 +65,8 @@ pub const LNP_NODE_FUNDING_WALLET: &'static str = "funding.wallet";
 pub struct Opts {
     /// Data directory path.
     ///
-    /// Path to the directory that contains LNP Node data, and where ZMQ RPC socket files are
-    /// located.
+    /// Path to the directory that contains LNP Node data, and where ZMQ RPC socket files
+    /// are located.
     #[clap(
         short,
         long,
@@ -95,11 +95,11 @@ pub struct Opts {
     #[clap(short, long, global = true, parse(from_occurrences))]
     pub verbose: u8,
 
-    /// Use Tor
+    /// Use Tor.
     ///
-    /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs all network traffic
-    /// through Tor network. If the argument is provided in form of flag, without value, uses
-    /// `127.0.0.1:9050` as default Tor proxy address.
+    /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs all network
+    /// traffic through Tor network. If the argument is provided in form of flag, without
+    /// value, uses `127.0.0.1:9050` as default Tor proxy address.
     #[clap(
         short = 'T',
         long,
@@ -112,29 +112,29 @@ pub struct Opts {
 
     /// ZMQ socket used internally by daemon message bus.
     ///
-    /// A user needs to specify this socket usually if it likes to distribute daemons over
-    /// different server instances. In this case all daemons within the same node must use the same
-    /// socket address.
+    /// A user needs to specify this socket usually if it likes to distribute daemons
+    /// over different server instances. In this case all daemons within the same node
+    /// must use the same socket address.
     ///
-    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path to an IPC
-    /// file.
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
+    /// to an IPC file.
     ///
-    /// Defaults to `msg` file inside `--data-dir` directory, unless `--threaded-daemons` is
-    /// specified; in that cases uses in-memory communication protocol.
+    /// Defaults to `msg` file inside `--data-dir` directory, unless `--threaded-daemons`
+    /// is specified; in that cases uses in-memory communication protocol.
     #[clap(short = 'm', long = "msg", global = true, env = "LNP_NODE_MSG_SOCKET", value_hint = ValueHint::FilePath)]
     pub msg_socket: Option<String>,
 
     /// ZMQ socket for daemon RPC interface.
     ///
-    /// A user needs to specify this socket usually if it likes to distribute daemons over
-    /// different server instances. In this case all daemons within the same node must use the same
-    /// socket address.
+    /// A user needs to specify this socket usually if it likes to distribute daemons
+    /// over different server instances. In this case all daemons within the same node
+    /// must use the same socket address.
     ///
-    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path to an IPC
-    /// file.
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
+    /// to an IPC file.
     ///
-    /// Defaults to `rpc` file inside `--data-dir` directory, unless `--threaded-daemons` is
-    /// specified; in that cases uses in-memory communication protocol.
+    /// Defaults to `rpc` file inside `--data-dir` directory, unless `--threaded-daemons`
+    /// is specified; in that cases uses in-memory communication protocol.
     #[clap(short = 'r', long = "rpc", global = true, env = "LNP_NODE_CTL_SOCKET", value_hint = ValueHint::FilePath)]
     pub rpc_socket: Option<String>,
 
@@ -159,8 +159,8 @@ pub struct Opts {
     )]
     pub electrum_server: String,
 
-    /// Customize Electrum server port number. By default the wallet will use port matching the
-    /// selected network.
+    /// Customize Electrum server port number. By default the wallet will use port
+    /// matching the selected network.
     #[clap(long, global = true, env = "LNP_NODE_ELECTRUM_PORT")]
     pub electrum_port: Option<u16>,
 

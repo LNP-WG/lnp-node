@@ -22,7 +22,7 @@ use crate::peerd::KeyOpts;
 
 /// Lightning node management daemon; part of LNP Node.
 ///
-/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
+/// The daemon is controlled though RPC socket (see `rpc-socket`).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "lnpd", bin_name = "lnpd", author, version)]
 pub struct Opts {
@@ -42,20 +42,20 @@ pub struct Opts {
 
     /// Start daemon in listening mode binding the provided local address.
     ///
-    /// Binds to the specified interface and listens for incoming connections,
-    /// spawning a new thread / forking child process for each new incoming
-    /// client connecting the opened socket. Whether the child is spawned as a
-    /// thread or forked as a child process determined by the presence of
-    /// `--threaded-daemons` flag.
-    /// If the argument is provided in form of flag, without value, uses
-    /// `0.0.0.0` as the bind address.
+    /// Binds to the specified interface and listens for incoming connections, spawning
+    /// a new thread / forking child process for each new incoming client connecting the
+    /// opened socket. Whether the child is spawned as a thread or forked as a child
+    /// process determined by the presence of `--threaded-daemons` flag.
+    ///
+    /// If the argument is provided in form of flag, without value, uses `0.0.0.0` as
+    /// the bind address.
     #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
     pub listen: Option<Option<IpAddr>>,
 
     /// Customize port used by lightning peer network.
     ///
-    /// Optional argument specifying local or remote TCP port to use with the
-    /// address given to `--listen` argument.
+    /// Optional argument specifying local or remote TCP port to use with the address
+    /// given to `--listen` argument.
     #[clap(short, long, default_value = "9735")]
     pub port: u16,
 

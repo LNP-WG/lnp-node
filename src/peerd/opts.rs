@@ -26,14 +26,13 @@ use crate::opts::LNP_NODE_KEY_FILE;
 
 /// Lightning peer network connection daemon; part of LNP Node.
 ///
-/// Daemon listens to incoming connections from the lightning network peers
-/// (if started with `--listen` argument) or connects to the remote peer
-/// (specified with `--connect` argument) and passes all incoming messages into
-/// ZMQ messaging socket (controlled with `--msg-socket` argument, defaulting to
-/// `msg.rpc` file inside the data directory from `--data-dir`). It also
-/// forwards messages from the same socket to the remote peer.
+/// Daemon listens to incoming connections from the lightning network peers (if started
+/// with `--listen` argument) or connects to the remote peer (specified with `--connect`
+/// argument) and passes all incoming messages into ZMQ messaging socket (controlled with
+/// `--msg-socket` argument, defaulting to `msg.rpc` file inside the data directory from
+/// `--data-dir`). It also forwards messages from the same socket to the remote peer.
 ///
-/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
+/// The daemon is controlled though RPC socket (see `rpc-socket`).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(
     name = "peerd",
@@ -47,28 +46,28 @@ pub struct Opts {
     // only since they are instance-specific
     /// Start daemon in listening mode binding the provided local address.
     ///
-    /// Binds to the specified interface and listens for incoming connections,
-    /// spawning a new thread / forking child process for each new incoming
-    /// client connecting the opened socket. Whether the child is spawned as a
-    /// thread or forked as a child process determined by the presence of
-    /// `--threaded-daemons` flag.
-    /// If the argument is provided in form of flag, without value, uses
-    /// `0.0.0.0` as the bind address.
+    /// Binds to the specified interface and listens for incoming connections, spawning
+    /// a new thread / forking child process for each new incoming client connecting the
+    /// opened socket. Whether the child is spawned as a thread or forked as a child
+    /// process determined by the presence of `--threaded-daemons` flag.
+    ///
+    /// If the argument is provided in form of flag, without value, uses `0.0.0.0` as the
+    /// bind address.
     #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
     pub listen: Option<Option<IpAddr>>,
 
-    /// Connect to a remote peer with the provided address after start
+    /// Connect to a remote peer with the provided address after start.
     ///
-    /// Connects to the specified remote peer. Peer address should be given as
-    /// either IPv4, IPv6 or Onion address (v2 or v3); in the former case you
-    /// will be also required to provide `--tor` argument.
+    /// Connects to the specified remote peer. Peer address should be given as either
+    /// IPv4, IPv6 or Onion address (v2 or v3); in the former case you will be also
+    /// required to provide `--tor` argument.
     #[clap(short = 'C', long, group = "action")]
     pub connect: Option<RemoteNodeAddr>,
 
-    /// Customize port used by lightning peer network
+    /// Customize port used by lightning peer network.
     ///
-    /// Optional argument specifying local or remote TCP port to use with the
-    /// address given to `--listen` or `--connect` argument.
+    /// Optional argument specifying local or remote TCP port to use with the address
+    /// given to `--listen` or `--connect` argument.
     #[clap(short, long, default_value = "9735")]
     pub port: u16,
 
@@ -96,7 +95,7 @@ pub struct Opts {
 pub struct KeyOpts {
     /// Node key file.
     ///
-    /// Location for the file containing node private Secp256k1 key (unencrypted).
+    /// Location for the file containing node private key (unencrypted).
     #[clap(
         short,
         long,

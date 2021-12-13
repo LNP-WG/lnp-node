@@ -22,7 +22,7 @@ use crate::peerd::KeyOpts;
 
 /// Lightning peer network channel daemon; part of LNP Node.
 ///
-/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
+/// The daemon is controlled though RPC socket (see `rpc-socket`).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "channeld", bin_name = "channeld", author, version)]
 pub struct Opts {

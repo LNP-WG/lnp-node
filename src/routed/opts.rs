@@ -14,7 +14,7 @@
 
 /// Lightning peer network channel daemon; part of LNP Node.
 ///
-/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
+/// The daemon is controlled though RPC socket (see `rpc-socket`).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "routed", bin_name = "routed", author, version)]
 pub struct Opts {
