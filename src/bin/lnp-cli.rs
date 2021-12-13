@@ -19,7 +19,7 @@ extern crate log;
 
 use clap::Parser;
 use lnp_node::cli::Opts;
-use lnp_node::rpc::Client;
+use lnp_node::i9n::Client;
 use lnp_node::{Config, LogStyle};
 use microservices::shell::{Exec, LogLevel};
 

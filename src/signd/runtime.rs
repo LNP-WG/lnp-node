@@ -19,9 +19,10 @@ use internet2::TypedEnum;
 use microservices::esb;
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SignAll};
 
+use crate::i9n::ctl::CtlMsg;
+use crate::i9n::{BusMsg, ServiceBus};
 use crate::opts::LNP_NODE_MASTER_KEY_FILE;
-use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::{Config, Endpoints, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();
@@ -62,7 +63,7 @@ impl<'secp> esb::Handler<ServiceBus> for Runtime<'secp>
 where
     Self: 'secp,
 {
-    type Request = Request;
+    type Request = BusMsg;
     type Address = ServiceId;
     type Error = Error;
 
@@ -70,15 +71,14 @@ where
 
     fn handle(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        endpoints: &mut Endpoints,
         bus: ServiceBus,
         source: ServiceId,
-        request: Request,
+        message: BusMsg,
     ) -> Result<(), Self::Error> {
-        match bus {
-            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
-            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
+        match (bus, message, source) {
+            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
         }
     }
 
@@ -94,36 +94,26 @@ impl<'secp> Runtime<'secp>
 where
     Self: 'secp,
 {
-    #[inline]
-    fn handle_rpc_msg(
+    fn handle_ctl(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _source: ServiceId,
-        request: Request,
-    ) -> Result<(), Error> {
-        return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
-    }
-
-    fn handle_rpc_ctl(
-        &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        endpoints: &mut Endpoints,
         source: ServiceId,
-        request: Request,
+        message: CtlMsg,
     ) -> Result<(), Error> {
-        match request {
-            Request::Sign(mut psbt) => {
+        match message {
+            CtlMsg::Sign(mut psbt) => {
                 psbt.sign_all(&self.provider)?;
-                senders.send_to(
+                endpoints.send_to(
                     ServiceBus::Ctl,
                     self.identity.clone(),
                     source,
-                    Request::Signed(psbt),
+                    CtlMsg::Signed(psbt),
                 )?;
                 Ok(())
             }
-            _ => {
-                error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
+            wrong_msg => {
+                error!("Request {} is not supported by the CTL interface", wrong_msg);
+                return Err(Error::NotSupported(ServiceBus::Ctl, wrong_msg.get_type()));
             }
         }
     }

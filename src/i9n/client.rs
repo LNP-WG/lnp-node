@@ -12,26 +12,23 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryInto;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
 
 use internet2::ZmqType;
-use lnpbp::chain::Chain;
 use microservices::esb;
 
-use crate::cli::Opts;
-use crate::rpc::request::OptionDetails;
-use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, LogStyle, ServiceId};
+use crate::i9n::rpc::{OptionDetails, RpcMsg};
+use crate::i9n::ServiceBus;
+use crate::{Error, LogStyle, ServiceId};
 
 #[repr(C)]
 pub struct Client {
     identity: ServiceId,
-    response_queue: Vec<Request>,
-    esb: esb::Controller<ServiceBus, Request, Handler>,
+    response_queue: Vec<RpcMsg>,
+    esb: esb::Controller<ServiceBus, RpcMsg, Handler>,
 }
 
 impl Client {
@@ -64,13 +61,13 @@ impl Client {
 
     pub fn identity(&self) -> ServiceId { self.identity.clone() }
 
-    pub fn request(&mut self, daemon: ServiceId, req: Request) -> Result<(), Error> {
+    pub fn request(&mut self, daemon: ServiceId, req: RpcMsg) -> Result<(), Error> {
         debug!("Executing {}", req);
         self.esb.send_to(ServiceBus::Rpc, daemon, req)?;
         Ok(())
     }
 
-    pub fn response(&mut self) -> Result<Request, Error> {
+    pub fn response(&mut self) -> Result<RpcMsg, Error> {
         if self.response_queue.is_empty() {
             for (_, _, rep) in self.esb.recv_poll()? {
                 self.response_queue.push(rep);
@@ -79,11 +76,11 @@ impl Client {
         return Ok(self.response_queue.pop().expect("We always have at least one element"));
     }
 
-    pub fn report_failure(&mut self) -> Result<Request, Error> {
+    pub fn report_failure(&mut self) -> Result<RpcMsg, Error> {
         match self.response()? {
-            Request::Failure(fail) => {
+            RpcMsg::Failure(fail) => {
                 eprintln!("{}: {}", "Request failure".err(), fail.err_details());
-                Err(Error::from(fail.into_microservice_failure()))?
+                Err(Error::Rpc(fail.into_microservice_failure().into()))
             }
             resp => Ok(resp),
         }
@@ -103,14 +100,14 @@ impl Client {
             counter += 1;
             match self.report_failure()? {
                 // Failure is already covered by `report_response()`
-                Request::Progress(info) => {
+                RpcMsg::Progress(info) => {
                     println!("{}", info.progress());
                     finished = false;
                 }
-                Request::Success(OptionDetails(Some(info))) => {
+                RpcMsg::Success(OptionDetails(Some(info))) => {
                     println!("{}{}", "Success: ".ended(), info);
                 }
-                Request::Success(OptionDetails(None)) => {
+                RpcMsg::Success(OptionDetails(None)) => {
                     println!("{}", "Success".ended());
                 }
                 other => {
@@ -128,7 +125,7 @@ pub struct Handler {
 }
 
 impl esb::Handler<ServiceBus> for Handler {
-    type Request = Request;
+    type Request = RpcMsg;
     type Address = ServiceId;
     type Error = Error;
 
@@ -139,7 +136,7 @@ impl esb::Handler<ServiceBus> for Handler {
         _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
         _bus: ServiceBus,
         _addr: ServiceId,
-        _request: Request,
+        _request: RpcMsg,
     ) -> Result<(), Error> {
         // Cli does not receive replies for now
         Ok(())

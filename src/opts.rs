@@ -149,7 +149,7 @@ pub struct Opts {
         short = 'r',
         long = "rpc",
         global = true,
-        default_value = "LNP_NODE_RPC_SOCKET",
+        default_value = LNP_NODE_RPC_SOCKET,
         env = "LNP_NODE_RPC_SOCKET"
     )]
     pub rpc_socket: String,

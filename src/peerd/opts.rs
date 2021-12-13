@@ -12,15 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::fs;
 use std::net::{IpAddr, Ipv4Addr};
-use std::path::PathBuf;
 
-use bitcoin::secp256k1::Secp256k1;
 use clap::{ArgGroup, ValueHint};
 use internet2::addr::InetSocketAddr;
-use internet2::{FramingProtocol, LocalNode, RemoteNodeAddr, RemoteSocketAddr};
-use strict_encoding::{StrictDecode, StrictEncode};
+use internet2::{FramingProtocol, RemoteNodeAddr, RemoteSocketAddr};
 
 use crate::opts::LNP_NODE_KEY_FILE;
 

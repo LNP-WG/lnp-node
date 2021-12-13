@@ -13,10 +13,12 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use internet2::TypedEnum;
+use lnp::p2p::legacy::Messages as LnMsg;
 use microservices::esb;
 
-use crate::rpc::{Request, ServiceBus};
-use crate::{Config, Error, Service, ServiceId};
+use crate::i9n::ctl::CtlMsg;
+use crate::i9n::{BusMsg, ServiceBus};
+use crate::{Config, Endpoints, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime { identity: ServiceId::Gossip };
@@ -29,7 +31,7 @@ pub struct Runtime {
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
-    type Request = Request;
+    type Request = BusMsg;
     type Address = ServiceId;
     type Error = Error;
 
@@ -37,15 +39,15 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        endpoints: &mut Endpoints,
         bus: ServiceBus,
         source: ServiceId,
-        request: Request,
+        message: BusMsg,
     ) -> Result<(), Self::Error> {
-        match bus {
-            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
-            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
+        match (bus, message, source) {
+            (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
+            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
         }
     }
 
@@ -58,34 +60,30 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn handle_rpc_msg(
+    fn handle_p2p(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _endpoints: &mut Endpoints,
         _source: ServiceId,
-        request: Request,
+        message: LnMsg,
     ) -> Result<(), Error> {
-        match request {
-            Request::PeerMessage(_message) => {
-                // TODO: Process message
-            }
+        match message {
             _ => {
-                error!("MSG RPC can be only used for forwarding LN P2P messages");
-                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
+                // TODO: Process message
             }
         }
         Ok(())
     }
 
-    fn handle_rpc_ctl(
+    fn handle_ctl(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _source: ServiceId,
-        request: Request,
+        _: &mut Endpoints,
+        _: ServiceId,
+        message: CtlMsg,
     ) -> Result<(), Error> {
-        match request {
-            _ => {
-                error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
+        match message {
+            wrong_msg => {
+                error!("Request {} is not supported by the CTL interface", wrong_msg);
+                return Err(Error::NotSupported(ServiceBus::Ctl, wrong_msg.get_type()));
             }
         }
     }

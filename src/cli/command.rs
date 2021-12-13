@@ -23,7 +23,8 @@ use rgb::Consignment;
 use rgb_node::util::file::ReadWrite;
 
 use super::Command;
-use crate::rpc::{request, Client, Request};
+use crate::i9n::rpc::{self as request, RpcMsg};
+use crate::i9n::Client;
 use crate::{Error, LogStyle, ServiceId};
 
 impl Exec for Command {
@@ -36,9 +37,9 @@ impl Exec for Command {
             Command::Info { subject } => {
                 if let Some(subj) = subject {
                     if let Ok(node_addr) = NodeAddr::from_str(&subj) {
-                        runtime.request(ServiceId::Peer(node_addr), Request::GetInfo)?;
+                        runtime.request(ServiceId::Peer(node_addr), RpcMsg::GetInfo)?;
                     } else if let Ok(channel_id) = ChannelId::from_str(&subj) {
-                        runtime.request(ServiceId::Channel(channel_id), Request::GetInfo)?;
+                        runtime.request(ServiceId::Channel(channel_id), RpcMsg::GetInfo)?;
                     } else {
                         let err = format!(
                             "{}",
@@ -49,12 +50,12 @@ impl Exec for Command {
                         return Err(Error::Other(err));
                     }
                 } else {
-                    runtime.request(ServiceId::Lnpd, Request::GetInfo)?;
+                    runtime.request(ServiceId::Lnpd, RpcMsg::GetInfo)?;
                 }
                 match runtime.response()? {
-                    Request::NodeInfo(info) => println!("{}", info),
-                    Request::PeerInfo(info) => println!("{}", info),
-                    Request::ChannelInfo(info) => println!("{}", info),
+                    RpcMsg::NodeInfo(info) => println!("{}", info),
+                    RpcMsg::PeerInfo(info) => println!("{}", info),
+                    RpcMsg::ChannelInfo(info) => println!("{}", info),
                     _ => {
                         Err(Error::Other(format!("{}", "Server returned unrecognizable response")))?
                     }
@@ -62,23 +63,23 @@ impl Exec for Command {
             }
 
             Command::Peers => {
-                runtime.request(ServiceId::Lnpd, Request::ListPeers)?;
+                runtime.request(ServiceId::Lnpd, RpcMsg::ListPeers)?;
                 runtime.report_response()?;
             }
 
             Command::Channels => {
-                runtime.request(ServiceId::Lnpd, Request::ListChannels)?;
+                runtime.request(ServiceId::Lnpd, RpcMsg::ListChannels)?;
                 runtime.report_response()?;
             }
 
             Command::Funds => {
-                runtime.request(ServiceId::Lnpd, Request::ListFunds)?;
+                runtime.request(ServiceId::Lnpd, RpcMsg::ListFunds)?;
                 runtime.report_response()?;
             }
 
             Command::Listen { ip_addr, port, overlay } => {
                 let socket = RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
-                runtime.request(ServiceId::Lnpd, Request::Listen(socket))?;
+                runtime.request(ServiceId::Lnpd, RpcMsg::Listen(socket))?;
                 runtime.report_progress()?;
             }
 
@@ -87,7 +88,7 @@ impl Exec for Command {
                     .to_remote_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
-                runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))?;
+                runtime.request(ServiceId::Lnpd, RpcMsg::ConnectPeer(peer))?;
                 runtime.report_progress()?;
             }
 
@@ -95,7 +96,7 @@ impl Exec for Command {
                 let node_addr =
                     peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
 
-                runtime.request(ServiceId::Peer(node_addr), Request::PingPeer)?;
+                runtime.request(ServiceId::Peer(node_addr), RpcMsg::PingPeer)?;
             }
 
             Command::Open {
@@ -117,7 +118,7 @@ impl Exec for Command {
 
                 runtime.request(
                     ServiceId::Lnpd,
-                    Request::CreateChannel(request::CreateChannel {
+                    RpcMsg::CreateChannel(request::CreateChannel {
                         funding_sat,
                         push_msat: push_msat.unwrap_or_default(),
                         fee_rate,
@@ -140,7 +141,7 @@ impl Exec for Command {
             Command::Transfer { channel, amount, asset } => {
                 runtime.request(
                     channel.clone().into(),
-                    Request::Transfer(request::Transfer {
+                    RpcMsg::Transfer(request::Transfer {
                         channeld: channel.clone().into(),
                         amount,
                         asset: asset.map(|id| id.into()),
@@ -159,7 +160,7 @@ impl Exec for Command {
 
                 runtime.request(
                     channel.clone().into(),
-                    Request::RefillChannel(request::RefillChannel {
+                    RpcMsg::RefillChannel(rprequestc::RefillChannel {
                         consignment,
                         outpoint,
                         blinding: blinding_factor,

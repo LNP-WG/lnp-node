@@ -22,17 +22,18 @@ use microservices::esb::Handler;
 
 use self::channel_propose::ChannelPropose;
 use crate::channeld::runtime::Runtime;
-use crate::rpc::request::{Failure, OpenChannelWith};
+use crate::i9n::ctl::{CtlMsg, OpenChannelWith};
+use crate::i9n::rpc::Failure;
 use crate::service::LogStyle;
 use crate::state_machine::Event;
-use crate::{rpc, CtlServer, Senders, ServiceId};
+use crate::{CtlServer, Endpoints, ServiceId};
 
 /// Errors for channel proposal workflow
-#[derive(Debug, Display, From, Error)]
+#[derive(Clone, Debug, Display, From, Error)]
 #[display(doc_comments)]
 pub enum Error {
     /// unexpected message for a channel state {1}. Message details: {0}
-    UnexpectedMessage(rpc::Request, Lifecycle),
+    UnexpectedMessage(CtlMsg, Lifecycle),
 
     /// generic LNP channel error
     #[from]
@@ -136,7 +137,7 @@ impl ChannelStateMachine {
 impl Runtime {
     pub fn propose_channel(
         &mut self,
-        senders: &mut Senders,
+        senders: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<(), Error> {
         if !matches!(self.state_machine, ChannelStateMachine::Launch) {
@@ -154,9 +155,9 @@ impl Runtime {
     /// necessary. Returns bool indicating whether a successful state update happened
     pub fn process(
         &mut self,
-        senders: &mut Senders,
+        senders: &mut Endpoints,
         source: ServiceId,
-        request: rpc::Request,
+        request: CtlMsg,
     ) -> Result<bool, Error> {
         let event = Event::with(senders, self.identity(), source, request);
         let channel_id = self.channel.active_channel_id();
@@ -194,7 +195,7 @@ impl Runtime {
         Ok(updated_state)
     }
 
-    fn process_event(&mut self, event: Event<rpc::Request>) -> Result<(), Error> {
+    fn process_event(&mut self, event: Event<CtlMsg>) -> Result<(), Error> {
         match self.state_machine {
             _ => {} // TODO: implement
         }

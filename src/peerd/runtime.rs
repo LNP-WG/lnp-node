@@ -25,7 +25,7 @@ use internet2::{
     presentation, transport, zmqsocket, CreateUnmarshaller, TypedEnum, ZmqType, ZMQ_CONTEXT,
 };
 use lnp::p2p::legacy::{
-    FundingCreated, FundingLocked, FundingSigned, Init, Messages, Ping, UpdateAddHtlc,
+    FundingCreated, FundingLocked, FundingSigned, Init, Messages as LnMsg, Ping, UpdateAddHtlc,
     UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
 };
 use microservices::esb::{self, Handler};
@@ -33,9 +33,10 @@ use microservices::node::TryService;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
 use super::RuntimeParams;
-use crate::rpc::request::PeerInfo;
-use crate::rpc::{Request, ServiceBus};
-use crate::{CtlServer, Error, LogStyle, Service, ServiceId};
+use crate::i9n::ctl::CtlMsg;
+use crate::i9n::rpc::PeerInfo;
+use crate::i9n::{BusMsg, ServiceBus};
+use crate::{CtlServer, Endpoints, Error, LogStyle, Service, ServiceId};
 
 pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
@@ -64,7 +65,7 @@ pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(
             ZmqType::Rep,
         )?,
     };
-    let listener = peer::Listener::with(receiver, bridge_handler, Messages::create_unmarshaller());
+    let listener = peer::Listener::with(receiver, bridge_handler, LnMsg::create_unmarshaller());
     spawn(move || listener.run_or_panic("peerd-listener"));
     // TODO: Use the handle returned by spawn to track the child process
 
@@ -92,7 +93,7 @@ pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(
 pub struct BridgeHandler;
 
 impl esb::Handler<ServiceBus> for BridgeHandler {
-    type Request = Request;
+    type Request = BusMsg;
     type Address = ServiceId;
     type Error = Error;
 
@@ -100,10 +101,10 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
 
     fn handle(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _bus: ServiceBus,
-        _addr: ServiceId,
-        _request: Request,
+        _: &mut Endpoints,
+        _: ServiceBus,
+        _: ServiceId,
+        _: BusMsg,
     ) -> Result<(), Error> {
         // Bridge does not receive replies for now
         Ok(())
@@ -117,25 +118,25 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
 
 pub struct ListenerRuntime {
     identity: ServiceId,
-    bridge: esb::Controller<ServiceBus, Request, BridgeHandler>,
+    bridge: esb::Controller<ServiceBus, BusMsg, BridgeHandler>,
 }
 
 impl ListenerRuntime {
-    fn send_over_bridge(&mut self, req: Request) -> Result<(), Error> {
+    fn send_over_bridge(&mut self, req: BusMsg) -> Result<(), Error> {
         debug!("Forwarding LN P2P message over BRIDGE interface to the runtime");
         self.bridge.send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
         Ok(())
     }
 }
 
-impl peer::Handler<Messages> for ListenerRuntime {
+impl peer::Handler<LnMsg> for ListenerRuntime {
     type Error = crate::Error;
 
     // TODO: Update microservices not to take Arc type
-    fn handle(&mut self, message: Arc<Messages>) -> Result<(), Self::Error> {
+    fn handle(&mut self, message: Arc<LnMsg>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         trace!("LN P2P message details: {:?}", message);
-        self.send_over_bridge(Request::PeerMessage((*message).clone()))
+        self.send_over_bridge(BusMsg::Ln((*message).clone()))
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
@@ -145,7 +146,7 @@ impl peer::Handler<Messages> for ListenerRuntime {
                 trace!("Time to ping the remote peer");
                 // This means socket reading timeout and the fact that we need
                 // to send a ping message
-                self.send_over_bridge(Request::PingPeer)
+                self.send_over_bridge(BusMsg::Ctl(CtlMsg::PingPeer))
             }
             // for all other error types, indicating internal errors, we
             // propagate error to the upper level
@@ -177,20 +178,17 @@ pub struct Runtime {
 impl CtlServer for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
-    type Request = Request;
+    type Request = BusMsg;
     type Address = ServiceId;
     type Error = Error;
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
 
-    fn on_ready(
-        &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-    ) -> Result<(), Error> {
+    fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".promo());
 
-            self.sender.send_message(Messages::Init(Init {
+            self.sender.send_message(LnMsg::Init(Init {
                 global_features: none!(),
                 local_features: none!(),
                 assets: none!(),
@@ -204,16 +202,17 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        endpoints: &mut Endpoints,
         bus: ServiceBus,
         source: ServiceId,
-        request: Request,
+        message: BusMsg,
     ) -> Result<(), Self::Error> {
-        match bus {
-            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
-            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            ServiceBus::Bridge => self.handle_bridge(senders, source, request),
-            ServiceBus::Rpc => unreachable!("peer daemon must not bind to RPC interface"),
+        match (bus, message, source) {
+            (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
+            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
+            (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
+            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
         }
     }
 
@@ -226,14 +225,14 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn handle_rpc_msg(
+    fn handle_p2p(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _: &mut Endpoints,
         source: ServiceId,
-        request: Request,
+        message: LnMsg,
     ) -> Result<(), Error> {
-        match &request {
-            Request::PeerMessage(Messages::FundingSigned(FundingSigned { channel_id, .. })) => {
+        match &message {
+            LnMsg::FundingSigned(FundingSigned { channel_id, .. }) => {
                 debug!(
                     "Renaming channeld service from temporary id {:#} to channel id #{:#}",
                     source, channel_id
@@ -243,8 +242,8 @@ impl Runtime {
             }
             _ => {}
         }
-        match request {
-            Request::PeerMessage(message) => {
+        match message {
+            message => {
                 // 1. Check permissions
                 // 2. Forward to the remote peer
                 debug!("Forwarding LN peer message to the remote peer");
@@ -253,20 +252,20 @@ impl Runtime {
             }
             _ => {
                 error!("MSG RPC can be only used for forwarding LN P2P messages");
-                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
+                return Err(Error::NotSupported(ServiceBus::Msg, message.get_type()));
             }
         }
         Ok(())
     }
 
-    fn handle_rpc_ctl(
+    fn handle_ctl(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        endpoints: &mut Endpoints,
         source: ServiceId,
-        request: Request,
+        request: CtlMsg,
     ) -> Result<(), Error> {
         match request {
-            Request::UpdateChannelId(channel_id) => {
+            CtlMsg::UpdateChannelId(channel_id) => {
                 debug!(
                     "Renaming channeld service from temporary id {:#} to channel id #{:#}",
                     source, channel_id
@@ -275,7 +274,7 @@ impl Runtime {
                 self.routing.insert(channel_id.clone().into(), source);
             }
 
-            Request::GetInfo => {
+            CtlMsg::GetInfo => {
                 let info = PeerInfo {
                     local_id: self.local_id,
                     remote_id: self.remote_id.map(|id| vec![id]).unwrap_or_default(),
@@ -305,7 +304,7 @@ impl Runtime {
                     connected: !self.connect,
                     awaits_pong: self.awaited_pong.is_some(),
                 };
-                self.send_ctl(senders, source, Request::PeerInfo(info))?;
+                self.send_ctl(endpoints, source, CtlMsg::PeerInfo(info))?;
             }
 
             _ => {
@@ -316,28 +315,23 @@ impl Runtime {
         Ok(())
     }
 
-    fn handle_bridge(
-        &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
-        _source: ServiceId,
-        request: Request,
-    ) -> Result<(), Error> {
+    fn handle_bridge(&mut self, endpoints: &mut Endpoints, request: BusMsg) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
 
-        if let Request::PeerMessage(_) = request {
+        if let BusMsg::Ln(_) = request {
             self.messages_received += 1;
         }
 
         match &request {
-            Request::PingPeer => {
+            BusMsg::Ctl(CtlMsg::PingPeer) => {
                 self.ping()?;
             }
 
-            Request::PeerMessage(Messages::Ping(Ping { pong_size, .. })) => {
+            BusMsg::Ln(LnMsg::Ping(Ping { pong_size, .. })) => {
                 self.pong(*pong_size)?;
             }
 
-            Request::PeerMessage(Messages::Pong(noise)) => {
+            BusMsg::Ln(LnMsg::Pong(noise)) => {
                 match self.awaited_pong {
                     None => error!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => {
@@ -348,21 +342,18 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            Request::PeerMessage(Messages::OpenChannel(_)) => {
-                senders.send_to(ServiceBus::Msg, self.identity(), ServiceId::Lnpd, request)?;
+            BusMsg::Ln(LnMsg::OpenChannel(_)) => {
+                endpoints.send_to(ServiceBus::Msg, self.identity(), ServiceId::Lnpd, request)?;
             }
 
-            Request::PeerMessage(Messages::AcceptChannel(accept_channel)) => {
+            BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => {
                 let channeld: ServiceId = accept_channel.temporary_channel_id.into();
                 self.routing.insert(channeld.clone(), channeld.clone());
-                senders.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
+                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            Request::PeerMessage(Messages::FundingCreated(FundingCreated {
-                temporary_channel_id,
-                ..
-            })) => {
-                senders.send_to(
+            BusMsg::Ln(LnMsg::FundingCreated(FundingCreated { temporary_channel_id, .. })) => {
+                endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     temporary_channel_id.clone().into(),
@@ -370,32 +361,17 @@ impl Runtime {
                 )?;
             }
 
-            Request::PeerMessage(Messages::FundingSigned(FundingSigned { channel_id, .. }))
-            | Request::PeerMessage(Messages::FundingLocked(FundingLocked { channel_id, .. }))
-            | Request::PeerMessage(Messages::UpdateAddHtlc(UpdateAddHtlc { channel_id, .. }))
-            | Request::PeerMessage(Messages::UpdateFulfillHtlc(UpdateFulfillHtlc {
-                channel_id,
-                ..
-            }))
-            | Request::PeerMessage(Messages::UpdateFailHtlc(UpdateFailHtlc {
-                channel_id, ..
-            }))
-            | Request::PeerMessage(Messages::UpdateFailMalformedHtlc(UpdateFailMalformedHtlc {
+            BusMsg::Ln(LnMsg::FundingSigned(FundingSigned { channel_id, .. }))
+            | BusMsg::Ln(LnMsg::FundingLocked(FundingLocked { channel_id, .. }))
+            | BusMsg::Ln(LnMsg::UpdateAddHtlc(UpdateAddHtlc { channel_id, .. }))
+            | BusMsg::Ln(LnMsg::UpdateFulfillHtlc(UpdateFulfillHtlc { channel_id, .. }))
+            | BusMsg::Ln(LnMsg::UpdateFailHtlc(UpdateFailHtlc { channel_id, .. }))
+            | BusMsg::Ln(LnMsg::UpdateFailMalformedHtlc(UpdateFailMalformedHtlc {
                 channel_id,
                 ..
             })) => {
                 let channeld: ServiceId = channel_id.clone().into();
-                senders.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
-                    request,
-                )?;
-            }
-            #[cfg(feature = "rgb")]
-            Request::PeerMessage(Messages::AssignFunds(AssignFunds { channel_id, .. })) => {
-                let channeld: ServiceId = channel_id.clone().into();
-                senders.send_to(
+                endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     self.routing.get(&channeld).cloned().unwrap_or(channeld),
@@ -403,9 +379,21 @@ impl Runtime {
                 )?;
             }
 
-            Request::PeerMessage(message) => {
-                // 1. Check permissions
-                // 2. Forward to the corresponding daemon
+            #[cfg(feature = "rgb")]
+            BusMsg::Ln(LnMsg::AssignFunds(AssignFunds { channel_id, .. })) => {
+                let channeld: ServiceId = channel_id.clone().into();
+                endpoints.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
+                    request,
+                )?;
+            }
+
+            BusMsg::Ln(message) => {
+                // TODO:
+                //  1. Check permissions
+                //  2. Forward to the corresponding daemon
                 debug!("Got peer LN P2P message {}", message);
             }
 
@@ -428,7 +416,7 @@ impl Runtime {
         rng.fill_bytes(&mut noise);
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
-        self.sender.send_message(Messages::Ping(Ping { ignored: noise, pong_size }))?;
+        self.sender.send_message(LnMsg::Ping(Ping { ignored: noise, pong_size }))?;
         self.awaited_pong = Some(pong_size);
         Ok(())
     }
@@ -441,7 +429,7 @@ impl Runtime {
             noise[i] = rng.gen();
         }
         self.messages_sent += 1;
-        self.sender.send_message(Messages::Pong(noise))?;
+        self.sender.send_message(LnMsg::Pong(noise))?;
         Ok(())
     }
 }

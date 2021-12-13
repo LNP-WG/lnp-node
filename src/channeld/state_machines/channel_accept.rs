@@ -18,9 +18,10 @@ use lnp::Extension;
 
 use super::Error;
 use crate::channeld::runtime::Runtime;
+use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg};
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
-use crate::{rpc, ServiceId};
+use crate::{Endpoints, ServiceId};
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
@@ -42,12 +43,12 @@ pub enum ChannelAccept {
     Locked,
 }
 
-impl StateMachine<rpc::Request, Runtime> for ChannelAccept {
+impl StateMachine<CtlMsg, Runtime> for ChannelAccept {
     type Error = Error;
 
     fn next(
         self,
-        event: Event<rpc::Request>,
+        event: Event<CtlMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
@@ -83,22 +84,18 @@ impl ChannelAccept {
 
 impl ChannelAccept {
     /// Constructs channel acceptance state machine
-    pub fn with(event: Event<rpc::Request>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
-        let request = match event.message {
-            rpc::Request::AcceptChannelFrom(ref request) => request,
-            msg => {
-                panic!("channel_accept workflow inconsistency: starting workflow with {}", msg)
-            }
-        };
+    pub fn with(
+        endpoints: &mut Endpoints,
+        accept_channel_from: AcceptChannelFrom,
+        runtime: &mut Runtime,
+    ) -> Result<ChannelAccept, Error> {
+        let remote_peer = accept_channel_from.remote_peer.clone();
+        runtime.peer_service = ServiceId::Peer(remote_peer);
 
-        let open_channel = Messages::OpenChannel(request.channel_req.clone());
+        let open_channel = Messages::OpenChannel(accept_channel_from.channel_req.clone());
         runtime.channel.update_from_peer(&open_channel)?;
 
-        let peerd = request.remote_peer.clone();
-        event.complete_msg_service(
-            ServiceId::Peer(peerd),
-            rpc::Request::PeerMessage(open_channel),
-        )?;
+        runtime.send_p2p(endpoints, open_channel)?;
 
         Ok(ChannelAccept::Accepted)
     }
@@ -116,25 +113,16 @@ impl ChannelAccept {
     }
 }
 
-fn finish_accepted(
-    event: Event<rpc::Request>,
-    runtime: &mut Runtime,
-) -> Result<ChannelAccept, Error> {
+fn finish_accepted(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_signed(
-    event: Event<rpc::Request>,
-    runtime: &mut Runtime,
-) -> Result<ChannelAccept, Error> {
+fn finish_signed(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_funded(
-    event: Event<rpc::Request>,
-    runtime: &mut Runtime,
-) -> Result<ChannelAccept, Error> {
+fn finish_funded(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_locked(event: Event<rpc::Request>, runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<(), Error> { todo!() }

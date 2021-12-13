@@ -24,10 +24,10 @@ use microservices::{esb, rpc};
 use psbt::sign::SignError;
 
 use crate::channeld;
+#[cfg(feature = "_rpc")]
+use crate::i9n::ServiceBus;
 use crate::lnpd::state_machines::channel_launch;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
-#[cfg(feature = "_rpc")]
-use crate::rpc::ServiceBus;
 
 #[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]

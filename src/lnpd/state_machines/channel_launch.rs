@@ -19,23 +19,26 @@
 //! request coming from a remote peer, since this is one-stage process and does not require
 //! dedicated state machine.
 
-use amplify::{IoError, Slice32, Wrapper};
+use amplify::{Slice32, Wrapper};
 use bitcoin::Txid;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
 use microservices::esb;
 
+use crate::i9n::ctl::{CtlMsg, FundChannel, OpenChannelWith};
+use crate::i9n::rpc::{CreateChannel, Failure, OptionDetails, RpcMsg};
+use crate::i9n::ServiceBus;
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
-use crate::rpc::request::{Failure, OptionDetails, ToProgressOrFalure};
+use crate::service::ClientId;
 use crate::state_machine::{Event, StateMachine};
-use crate::{rpc, ServiceId};
+use crate::{Endpoints, ServiceId};
 
 /// Errors for channel launching workflow
 #[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]
 pub enum Error {
     /// the received message {0} was not expected at the {1} stage of the channel launch workflow
-    UnexpectedMessage(rpc::Request, &'static str),
+    UnexpectedMessage(CtlMsg, &'static str),
 
     /// transaction id changed after signing from {unsigned_txid} to {signed_txid}; may be signd is
     /// hacked
@@ -55,38 +58,42 @@ pub enum Error {
     Funding(funding_wallet::Error),
 }
 
+impl From<Error> for Failure {
+    fn from(err: Error) -> Self { Failure { code: 6000, info: err.to_string() } }
+}
+
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
 /// See `doc/workflows/channel_propose.png` for more details.
 #[derive(Debug, Display)]
 pub enum ChannelLauncher {
     /// Awaiting for channeld to come online and report back to lnpd
     #[display("LAUNCHING")]
-    Launching(TempChannelId, rpc::request::CreateChannel, ServiceId),
+    Launching(TempChannelId, CreateChannel, ClientId),
 
     /// Awaiting for channeld to complete negotiations on channel structure with the remote peer.
     /// At the end of this state lnpd will construct funding transaction and will provide channeld
     /// with it.
     #[display("NEGOTIATING")]
-    Negotiating(TempChannelId, ServiceId),
+    Negotiating(TempChannelId, ClientId),
 
     /// Awaiting for channeld to sign the commitment transaction with the remote peer. Local
     /// channeld already have the funding transaction received from lnpd at the end of the previous
     /// stage.
     #[display("COMMITTING")]
-    Committing(TempChannelId, Txid, ServiceId),
+    Committing(TempChannelId, Txid, ClientId),
 
     /// Awaiting signd to sign the funding transaction, after which it can be sent by lnpd to
     /// bitcoin network and the workflow will be complete
     #[display("SIGNING")]
-    Signing(ChannelId, Txid, ServiceId),
+    Signing(ChannelId, Txid, ClientId),
 }
 
-impl StateMachine<rpc::Request, Runtime> for ChannelLauncher {
+impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
     type Error = Error;
 
     fn next(
         self,
-        event: Event<rpc::Request>,
+        event: Event<CtlMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
@@ -129,47 +136,39 @@ impl ChannelLauncher {
 impl ChannelLauncher {
     /// Constructs channel launcher state machine
     pub fn with(
-        mut event: Event<rpc::Request>,
+        endpoints: &mut Endpoints,
+        enquirer: ClientId,
+        create_channel: CreateChannel,
         runtime: &mut Runtime,
     ) -> Result<ChannelLauncher, Error> {
-        let create_channel = match event.message {
-            rpc::Request::CreateChannel(ref request) => request.clone(),
-            msg => {
-                panic!("channel_launcher workflow inconsistency: starting workflow with {}", msg)
-            }
-        };
-
         let temp_channel_id = TempChannelId::random();
         debug!("Generated {} as a temporary channel id", temp_channel_id);
         debug!("ChannelLauncher {} is instantiated", temp_channel_id);
 
-        let enquirer = event.source.clone();
         let report = runtime
             .launch_daemon(Daemon::Channeld(temp_channel_id.into()), runtime.config.clone())
             .map(|handle| format!("Launched new instance of {}", handle))
             .map_err(Error::from);
-        // Swallowing error since we do not want to break channel creation workflow just because of
-        // not able to report back to the client
-        let _ = event.send_ctl(report.to_progress_or_failure());
-        report?;
+
+        let launcher = ChannelLauncher::Launching(temp_channel_id, create_channel, enquirer);
+        report_progress_or_failure(enquirer, endpoints, report)?;
         debug!("Awaiting for channeld to connect...");
 
         info!("ChannelLauncher {} entered LAUNCHING state", temp_channel_id);
-        Ok(ChannelLauncher::Launching(temp_channel_id, create_channel, enquirer))
+        Ok(launcher)
     }
 }
 
 fn finish_launching(
-    mut event: Event<rpc::Request>,
+    mut event: Event<CtlMsg>,
     runtime: &Runtime,
     temp_channel_id: TempChannelId,
-    create_channel: rpc::request::CreateChannel,
-    enquirer: ServiceId,
+    create_channel: CreateChannel,
+    enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
-    if !matches!(&event.message, rpc::Request::Hello) {
+    if !matches!(&event.message, CtlMsg::Hello) {
         let err = Error::UnexpectedMessage(event.message.clone(), "LAUNCHING");
-        let _ = event.complete_ctl_service(enquirer, Failure::from(&err).into());
-        return Err(err);
+        report_failure(enquirer, event.endpoints, err)?;
     }
     debug_assert_eq!(
         event.source,
@@ -177,20 +176,18 @@ fn finish_launching(
         "channel_launcher workflow inconsistency: `Hello` RPC CTL message originating not from a \
          channel daemon"
     );
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = event.send_ctl_service(
-        enquirer.clone(),
+    report_progress(
+        enquirer,
+        event.endpoints,
         format!(
             "Channel daemon connecting to remote peer {} is launched",
             create_channel.peerd.clone()
-        )
-        .into(),
+        ),
     );
     let mut common = runtime.channel_params.1;
     let mut local = runtime.channel_params.2;
     create_channel.apply_params(&mut common, &mut local);
-    let request = rpc::request::OpenChannelWith {
+    let request = OpenChannelWith {
         remote_peer: create_channel.peerd,
         report_to: create_channel.report_to,
         funding_sat: create_channel.funding_sat,
@@ -200,27 +197,24 @@ fn finish_launching(
         local_params: local,
         local_keys: runtime.new_channel_keyset(),
     };
-    event.send_ctl(rpc::Request::OpenChannelWith(request)).map_err(|err| {
-        let _ = event.complete_ctl_service(enquirer.clone(), Failure::from(&err).into());
-        err
-    })?;
+    event
+        .send_ctl(CtlMsg::OpenChannelWith(request))
+        .or_else(|err| report_failure(enquirer, event.endpoints, Error::from(err)))?;
     Ok(ChannelLauncher::Negotiating(temp_channel_id, enquirer))
 }
 
 fn finish_negotiating(
-    mut event: Event<rpc::Request>,
+    mut event: Event<CtlMsg>,
     runtime: &mut Runtime,
     temp_channel_id: TempChannelId,
-    enquirer: ServiceId,
+    enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
     let (amount, address, fee) = match event.message {
-        rpc::Request::ConstructFunding(rpc::request::FundChannel { amount, address, fee }) => {
-            (amount, address, fee)
-        }
+        CtlMsg::ConstructFunding(FundChannel { amount, address, fee }) => (amount, address, fee),
         _ => {
             let err = Error::UnexpectedMessage(event.message.clone(), "SIGNING");
-            let _ = event.complete_ctl_service(enquirer, Failure::from(&err).into());
-            return Err(err);
+            report_failure(enquirer, event.endpoints, err)?;
+            unreachable!()
         }
     };
     debug_assert_eq!(
@@ -229,42 +223,37 @@ fn finish_negotiating(
         "channel_launcher workflow inconsistency: `ConstructFunding` RPC CTL message originating \
          not from a channel daemon"
     );
-    let _ = event.send_ctl_service(enquirer.clone(), "Remote peer accepted the channel".into());
+    report_progress(enquirer, event.endpoints, "Remote peer accepted the channel");
     let funding_outpoint = runtime
         .funding_wallet
         .construct_funding_psbt(temp_channel_id, address, amount, fee)
         .map_err(Error::from)
         .and_then(|funding_outpoint| {
-            event.send_ctl(rpc::Request::FundingConstructed(funding_outpoint)).map(|_| {
-                let _ = event.send_ctl_service(
-                    enquirer.clone(),
-                    rpc::Request::Progress(format!(
+            event.send_ctl(CtlMsg::FundingConstructed(funding_outpoint)).map(|_| {
+                report_progress(
+                    enquirer,
+                    event.endpoints,
+                    format!(
                         "Constructed funding transaction with funding outpoint is {}",
                         funding_outpoint
-                    )),
+                    ),
                 );
             })?;
             Ok(funding_outpoint)
         })
-        .map_err(|err| {
-            // Swallowing error since we do not want to break channel creation workflow just because
-            // of not able to report back to the client
-            let _ = event.complete_ctl_service(enquirer.clone(), Failure::from(&err).into());
-            err
-        })?;
+        .map_err(|err| report_failure(enquirer, event.endpoints, err).unwrap_err())?;
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid, enquirer))
 }
 
 fn finish_committing(
-    mut event: Event<rpc::Request>,
+    mut event: Event<CtlMsg>,
     runtime: &Runtime,
     txid: Txid,
-    enquirer: ServiceId,
+    enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
-    if !matches!(event.message, rpc::Request::PublishFunding) {
+    if !matches!(event.message, CtlMsg::PublishFunding) {
         let err = Error::UnexpectedMessage(event.message.clone(), "COMMITTING");
-        let _ = event.complete_ctl_service(enquirer, Failure::from(&err).into());
-        return Err(err);
+        report_failure(enquirer, event.endpoints, err)?;
     }
     let channel_id = if let ServiceId::Channel(channel_id) = event.source {
         channel_id
@@ -280,34 +269,32 @@ fn finish_committing(
         .expect("funding construction is broken")
         .clone();
     let report = event
-        .send_ctl_service(ServiceId::Signer, rpc::Request::Sign(psbt))
-        .map(|_| format!("Signing funding transaction {}", txid));
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = event.complete_ctl_service(enquirer.clone(), report.to_progress_or_failure());
-    report?;
+        .send_ctl_service(ServiceId::Signer, CtlMsg::Sign(psbt))
+        .map(|_| format!("Signing funding transaction {}", txid))
+        .map_err(Error::from);
+    report_progress_or_failure(enquirer, event.endpoints, report)?;
     Ok(ChannelLauncher::Signing(channel_id, txid, enquirer))
 }
 
 fn finish_signing(
-    mut event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &Runtime,
     txid: Txid,
-    enquirer: ServiceId,
+    enquirer: ClientId,
 ) -> Result<(), Error> {
     let psbt = match event.message {
-        rpc::Request::Signed(ref psbt) => psbt.clone(),
+        CtlMsg::Signed(ref psbt) => psbt.clone(),
         _ => {
             let err = Error::UnexpectedMessage(event.message.clone(), "SIGNING");
-            let _ = event.complete_ctl_service(enquirer, Failure::from(&err).into());
-            return Err(err);
+            report_failure(enquirer, event.endpoints, err)?;
+            unreachable!();
         }
     };
     let psbt_txid = psbt.global.unsigned_tx.txid();
     if psbt_txid != txid {
         let err = Error::SignedTxidChanged { unsigned_txid: txid, signed_txid: psbt_txid };
-        let _ = event.complete_ctl_service(enquirer, Failure::from(&err).into());
-        return Err(err);
+        report_failure(enquirer, event.endpoints, err)?;
+        unreachable!()
     }
     debug_assert_eq!(
         event.source,
@@ -315,14 +302,74 @@ fn finish_signing(
         "channel_launcher workflow inconsistency: `Signed` RPC CTL message originating not from a \
          signing daemon"
     );
-    let _ = event.send_ctl_service(
-        enquirer.clone(),
-        "Funding transaction is signed, publishing to bitcoin network".into(),
+    report_progress(
+        enquirer,
+        event.endpoints,
+        "Funding transaction is signed, publishing to bitcoin network",
     );
     runtime.funding_wallet.publish(psbt)?;
-    let _ = event.complete_ctl_service(
-        enquirer,
-        rpc::Request::Success(OptionDetails::with("Channel created and active")),
-    );
+    report_success(enquirer, event.endpoints, "Channel created and active");
     Ok(())
+}
+
+fn report_failure<E>(client_id: ClientId, endpoints: &mut Endpoints, err: E) -> Result<(), Error>
+where
+    E: Into<Failure> + Into<Error> + std::error::Error,
+{
+    let enquirer = ServiceId::Client(client_id);
+    let report = RpcMsg::Failure(Failure::from(&err));
+    // Swallowing error since we do not want to break channel creation workflow just because of
+    // not able to report back to the client
+    let _ = endpoints
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
+        .map_err(|err| error!("Can't report back to client #{}", client_id));
+    Err(err.into())
+}
+
+fn report_progress<T>(client_id: ClientId, endpoints: &mut Endpoints, msg: T)
+where
+    T: ToString,
+{
+    let enquirer = ServiceId::Client(client_id);
+    let report = RpcMsg::Progress(msg.to_string());
+    // Swallowing error since we do not want to break channel creation workflow just because of
+    // not able to report back to the client
+    let _ = endpoints
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
+        .map_err(|err| error!("Can't report back to client #{}", client_id));
+}
+
+fn report_success<T>(client_id: ClientId, endpoints: &mut Endpoints, msg: T)
+where
+    T: Into<OptionDetails>,
+{
+    let enquirer = ServiceId::Client(client_id);
+    let report = RpcMsg::Success(msg.into());
+    // Swallowing error since we do not want to break channel creation workflow just because of
+    // not able to report back to the client
+    let _ = endpoints
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
+        .map_err(|err| error!("Can't report back to client #{}", client_id));
+}
+
+fn report_progress_or_failure<T, E>(
+    client_id: ClientId,
+    endpoints: &mut Endpoints,
+    result: Result<T, E>,
+) -> Result<(), Error>
+where
+    T: ToString,
+    E: Into<Failure> + Into<Error> + std::error::Error,
+{
+    let enquirer = ServiceId::Client(client_id);
+    let report = match &result {
+        Ok(val) => RpcMsg::Progress(val.to_string()),
+        Err(err) => RpcMsg::Failure(err.clone().into()),
+    };
+    // Swallowing error since we do not want to break channel creation workflow just because of
+    // not able to report back to the client
+    let _ = endpoints
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
+        .map_err(|err| error!("Can't report back to client #{}", client_id));
+    result.map(|_| ()).map_err(E::into)
 }

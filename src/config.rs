@@ -21,7 +21,7 @@ use lnpbp::chain::Chain;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;
-use crate::opts::{LNP_NODE_MSG_SOCKET, LNP_NODE_RPC_SOCKET};
+use crate::opts::{LNP_NODE_CTL_SOCKET, LNP_NODE_MSG_SOCKET};
 
 /// Final configuration resulting from data contained in config file environment
 /// variables and command-line options. For security reasons node key is kept
@@ -75,7 +75,7 @@ impl From<Opts> for Config {
             true => (s!("inproc://msg"), s!("inproc://ctl")),
             false => {
                 let mut msg_default = LNP_NODE_MSG_SOCKET.to_owned();
-                let mut ctl_default = LNP_NODE_RPC_SOCKET.to_owned();
+                let mut ctl_default = LNP_NODE_CTL_SOCKET.to_owned();
                 opts.process_dir(&mut msg_default);
                 opts.process_dir(&mut ctl_default);
                 (format!("ipc://{}", msg_default), format!("ipc://{}", ctl_default))

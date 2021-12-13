@@ -12,34 +12,32 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
-use std::ffi::OsStr;
-use std::net::{IpAddr, SocketAddr};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
-use std::{io, process};
 
 use amplify::{DumbDefault, Wrapper};
-use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr, TypedEnum};
+use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, Messages as LnMessage};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
+use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg};
+use crate::i9n::rpc::{Failure, FundsInfo, IntoSuccessOrFalure, NodeInfo, OptionDetails, RpcMsg};
+use crate::i9n::{BusMsg, ServiceBus};
 use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
 use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::peerd::supervisor::read_node_key_file;
 use crate::peerd::PeerSocket;
-use crate::rpc::request::{Failure, FundsInfo, NodeInfo, OptionDetails, ToProgressOrFalure};
-use crate::rpc::{request, Request, ServiceBus};
+use crate::service::ClientId;
 use crate::state_machine::{Event, StateMachine};
-use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
+use crate::{Config, Endpoints, Error, LogStyle, Service, ServiceId};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let mut listens = HashSet::with_capacity(1);
@@ -97,19 +95,19 @@ pub struct Runtime {
     pub(super) channel_params: (Policy, CommonParams, PeerParams),
     connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
-    spawning_peers: HashMap<ServiceId, ServiceId>,
+    spawning_peers: HashMap<ServiceId, ClientId>,
     creating_channels: HashMap<ServiceId, ChannelLauncher>,
-    accepting_channels: HashMap<ServiceId, request::AcceptChannelFrom>,
+    accepting_channels: HashMap<ServiceId, AcceptChannelFrom>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
-    type Request = Request;
+    type Request = BusMsg;
     type Address = ServiceId;
     type Error = Error;
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
 
-    fn on_ready(&mut self, _senders: &mut Senders) -> Result<(), Self::Error> {
+    fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");
         self.launch_daemon(Daemon::Signd, self.config.clone())?;
         for addr in self.listens.clone() {
@@ -120,15 +118,26 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn handle(
         &mut self,
-        senders: &mut Senders,
+        endpoints: &mut Endpoints,
         bus: ServiceBus,
         source: ServiceId,
-        request: Request,
+        message: BusMsg,
     ) -> Result<(), Self::Error> {
-        match bus {
-            ServiceBus::Msg => self.handle_rpc_msg(senders, source, request),
-            ServiceBus::Ctl => self.handle_rpc_ctl(senders, source, request),
-            _ => Err(Error::NotSupported(ServiceBus::Bridge, request.get_type())),
+        match (bus, message, source) {
+            (ServiceBus::Msg, BusMsg::Ln(msg), ServiceId::Peer(remote_peer)) => {
+                self.handle_p2p(endpoints, remote_peer, msg)
+            }
+            (ServiceBus::Msg, BusMsg::Ln(_), service) => {
+                unreachable!("lnpd received peer message not from a peerd but from {}", service)
+            }
+            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
+                self.handle_rpc(endpoints, client_id, msg)
+            }
+            (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
+                unreachable!("lnpd received RPC message not from a client but from {}", service)
+            }
+            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
         }
     }
 
@@ -141,40 +150,24 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn handle_rpc_msg(
+    fn handle_p2p(
         &mut self,
-        _senders: &mut Senders,
-        source: ServiceId,
-        request: Request,
+        _: &mut Endpoints,
+        remote_peer: NodeAddr,
+        message: LnMessage,
     ) -> Result<(), Error> {
-        let message = match request {
-            Request::Hello => {
-                // Ignoring; this is used to set remote identity at ZMQ level
-                return Ok(());
-            }
-            Request::PeerMessage(message) => message,
-            _ => {
-                error!("MSG RPC can be only used for forwarding LN P2P messages");
-                return Err(Error::NotSupported(ServiceBus::Msg, request.get_type()));
-            }
-        };
-
-        let remote_peer = match source {
-            ServiceId::Peer(node_addr) => node_addr,
-            service => {
-                unreachable!("lnpd received peer message not from a peerd but from {}", service)
-            }
-        };
-
         match message {
-            Messages::OpenChannel(open_channel) => {
+            // Happens when a remote peer connects to a peerd listening for incoming connections.
+            // Lisnening peerd forwards this request to lnpd so it can launch a new channeld
+            // instance.
+            LnMessage::OpenChannel(open_channel) => {
                 info!("Creating channel by peer request from {}", remote_peer);
                 self.launch_daemon(
                     Daemon::Channeld(open_channel.temporary_channel_id.into()),
                     self.config.clone(),
                 )?;
                 let channeld_id = ServiceId::Channel(open_channel.temporary_channel_id.into());
-                let accept_channel = request::AcceptChannelFrom {
+                let accept_channel = AcceptChannelFrom {
                     remote_peer,
                     report_to: None,
                     channel_req: open_channel,
@@ -185,260 +178,223 @@ impl Runtime {
                 };
                 self.accepting_channels.insert(channeld_id, accept_channel);
             }
-            _ => {} // nothing to do
+            _ => {} // nothing to do for the rest of LN messages
         }
         Ok(())
     }
 
-    fn handle_rpc_ctl(
+    fn handle_rpc(
         &mut self,
-        senders: &mut Senders,
-        source: ServiceId,
-        request: Request,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        message: RpcMsg,
     ) -> Result<(), Error> {
-        let mut notify_cli = None;
-        match request {
-            Request::Hello => {
-                info!("{} daemon is {}", source.ended(), "connected".ended());
-
-                match &source {
-                    ServiceId::Lnpd => {
-                        error!("{}", "Unexpected another lnpd instance connection".err());
-                    }
-                    ServiceId::Peer(connection_id) => {
-                        if self.connections.insert(connection_id.clone()) {
-                            info!(
-                                "Connection {} is registered; total {} connections are known",
-                                connection_id,
-                                self.connections.len()
-                            );
-                        } else {
-                            warn!(
-                                "Connection {} was already registered; the service probably was \
-                                 relaunched",
-                                connection_id
-                            );
-                        }
-                    }
-                    ServiceId::Channel(channel_id) => {
-                        if self.channels.insert(channel_id.clone()) {
-                            info!(
-                                "Channel {} is registered; total {} channels are known",
-                                channel_id,
-                                self.channels.len()
-                            );
-                        } else {
-                            warn!(
-                                "Channel {} was already registered; the service probably was \
-                                 relaunched",
-                                channel_id
-                            );
-                        }
-                    }
-                    _ => {
-                        // Ignoring the rest of daemon/client types
-                    }
-                }
-
-                if let Some(channel_launcher) = self.creating_channels.remove(&source) {
-                    // Tell channeld channel options and link it with the peer daemon
-                    debug!(
-                        "Daemon {} is known: we spawned it to create a channel. Ordering channel \
-                         opening",
-                        source
-                    );
-                    let event =
-                        Event::with(senders, self.identity(), source.clone(), Request::Hello);
-                    if let Some(channel_launcher) = channel_launcher.next(event, self)? {
-                        self.creating_channels.insert(source, channel_launcher);
-                    }
-                } else if let Some(accept_channel) = self.accepting_channels.get(&source) {
-                    // Tell channeld channel options and link it with the peer daemon
-                    debug!(
-                        "Daemon {} is known: we spawned it to create a channel. Ordering channel \
-                         acceptance",
-                        source
-                    );
-                    senders.send_to(
-                        ServiceBus::Ctl,
-                        self.identity(),
-                        source.clone(),
-                        Request::AcceptChannelFrom(accept_channel.clone()),
-                    )?;
-                    self.accepting_channels.remove(&source);
-                } else if let Some(enquirer) = self.spawning_peers.get(&source) {
-                    debug!(
-                        "Daemon {} is known: we spawned it to create a new peer connection by a \
-                         request from {}",
-                        source, enquirer
-                    );
-                    notify_cli = Some((
-                        Some(enquirer.clone()),
-                        Request::Success(OptionDetails::with(format!(
-                            "Peer connected to {}",
-                            source
-                        ))),
-                    ));
-                    self.spawning_peers.remove(&source);
-                }
+        match message {
+            RpcMsg::GetInfo => {
+                let node_info = RpcMsg::NodeInfo(NodeInfo {
+                    node_id: self.node_id,
+                    listens: self.listens.iter().cloned().collect(),
+                    uptime: SystemTime::now()
+                        .duration_since(self.started)
+                        .unwrap_or(Duration::from_secs(0)),
+                    since: self
+                        .started
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs(),
+                    peers: self.connections.iter().cloned().collect(),
+                    channels: self.channels.iter().cloned().collect(),
+                });
+                self.send_rpc(endpoints, client_id, node_info)?;
             }
 
-            Request::UpdateChannelId(new_id) => {
-                debug!("Requested to update channel id {} on {}", source, new_id);
-                if let ServiceId::Channel(old_id) = source {
-                    if !self.channels.remove(&old_id) {
-                        warn!("Channel daemon {} was unknown", source);
-                    }
-                    self.channels.insert(new_id);
-                    debug!("Registered channel daemon id {}", new_id);
-                } else {
-                    error!("Chanel id update may be requested only by a channeld, not {}", source);
-                }
+            RpcMsg::ListPeers => {
+                let peer_list = self.connections.iter().cloned().collect();
+                self.send_rpc(endpoints, client_id, RpcMsg::PeerList(peer_list))?;
             }
 
-            Request::GetInfo => {
-                senders.send_to(
-                    ServiceBus::Ctl,
-                    ServiceId::Lnpd,
-                    source,
-                    Request::NodeInfo(NodeInfo {
-                        node_id: self.node_id,
-                        listens: self.listens.iter().cloned().collect(),
-                        uptime: SystemTime::now()
-                            .duration_since(self.started)
-                            .unwrap_or(Duration::from_secs(0)),
-                        since: self
-                            .started
-                            .duration_since(SystemTime::UNIX_EPOCH)
-                            .unwrap_or(Duration::from_secs(0))
-                            .as_secs(),
-                        peers: self.connections.iter().cloned().collect(),
-                        channels: self.channels.iter().cloned().collect(),
-                    }),
-                )?;
+            RpcMsg::ListChannels => {
+                let channel_list = self.channels.iter().cloned().collect();
+                self.send_rpc(endpoints, client_id, RpcMsg::ChannelList(channel_list))?;
             }
 
-            Request::ListPeers => {
-                senders.send_to(
-                    ServiceBus::Ctl,
-                    ServiceId::Lnpd,
-                    source,
-                    Request::PeerList(self.connections.iter().cloned().collect()),
-                )?;
+            RpcMsg::ListFunds => {
+                let bitcoin_funds = self.available_funding()?;
+                let next_address = self.funding_wallet.next_funding_address()?;
+                let funds_info = FundsInfo { bitcoin_funds, asset_funds: none!(), next_address };
+                self.send_rpc(endpoints, client_id, RpcMsg::FundsInfo(funds_info))?;
             }
 
-            Request::ListChannels => {
-                senders.send_to(
-                    ServiceBus::Ctl,
-                    ServiceId::Lnpd,
-                    source,
-                    Request::ChannelList(self.channels.iter().cloned().collect()),
-                )?;
+            RpcMsg::Listen(addr) if self.listens.contains(&addr) => {
+                let failure = Failure {
+                    code: 1, /* TODO: Update code */
+                    info: format!("Listener on {} already exists, ignoring request", addr),
+                };
+                warn!("{}", failure.info.err());
+                self.send_rpc(endpoints, client_id, RpcMsg::Failure(failure))?;
             }
-
-            Request::ListFunds => {
-                let funds = self.funding_wallet.list_funds()?.into_iter().try_fold(
-                    bmap! {},
-                    |mut acc, f| -> Result<_, Error> {
-                        *acc.entry(
-                            AddressCompat::from_script(
-                                f.script_pubkey.as_inner(),
-                                self.funding_wallet.network(),
-                            )
-                            .ok_or(funding_wallet::Error::NoAddressRepresentation)?,
-                        )
-                        .or_insert(0) += f.amount;
-                        Ok(acc)
-                    },
-                )?;
-                senders.send_to(
-                    ServiceBus::Ctl,
-                    ServiceId::Lnpd,
-                    source,
-                    Request::FundsInfo(FundsInfo {
-                        bitcoin_funds: funds,
-                        asset_funds: none!(),
-                        next_address: self.funding_wallet.next_funding_address()?,
-                    }),
-                )?;
-            }
-
-            Request::Listen(addr) => {
+            RpcMsg::Listen(addr) => {
                 let addr_str = addr.addr();
-                if self.listens.contains(&addr) {
-                    let msg = format!("Listener on {} already exists, ignoring request", addr);
-                    warn!("{}", msg.err());
-                    notify_cli = Some((
-                        Some(source.clone()),
-                        Request::Failure(Failure { code: 1, info: msg }),
-                    ));
-                } else {
-                    self.listens.insert(addr);
-                    info!(
-                        "{} for incoming LN peer connections on {}",
-                        "Starting listener".promo(),
+                self.listens.insert(addr);
+                info!(
+                    "{} for incoming LN peer connections on {}",
+                    "Starting listener".promo(),
+                    addr_str
+                );
+                let resp = self.listen(addr);
+                match resp {
+                    Ok(_) => info!(
+                        "Connection daemon is {} for incoming LN peer connections on {}",
+                        "listening".ended(),
                         addr_str
-                    );
-                    let resp = self.listen(addr);
-                    match resp {
-                        Ok(_) => info!(
-                            "Connection daemon {} for incoming LN peer connections on {}",
-                            "listens".ended(),
-                            addr_str
-                        ),
-                        Err(ref err) => error!("{}", err.err()),
-                    }
-                    senders.send_to(
-                        ServiceBus::Ctl,
-                        ServiceId::Lnpd,
-                        source.clone(),
-                        resp.to_progress_or_failure(),
-                    )?;
-                    notify_cli = Some((
-                        Some(source.clone()),
-                        Request::Success(OptionDetails::with(format!(
-                            "Node {} listens for connections on {}",
-                            self.node_id, addr
-                        ))),
-                    ));
+                    ),
+                    Err(ref err) => error!("{}", err.err()),
                 }
+                self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
             }
 
-            Request::ConnectPeer(addr) => {
+            RpcMsg::ConnectPeer(addr) => {
                 info!("{} to remote peer {}", "Connecting".promo(), addr.promoter());
-                let resp = match self.launch_daemon(
-                    Daemon::Peerd(PeerSocket::Connect(addr), self.node_key_path.clone()),
-                    self.config.clone(),
-                ) {
-                    Ok(handle) => Ok(format!("Launched new instance of {}", handle)),
+                let peerd =
+                    Daemon::Peerd(PeerSocket::Connect(addr.clone()), self.node_key_path.clone());
+                let resp = match self.launch_daemon(peerd, self.config.clone()) {
+                    Ok(handle) => {
+                        self.spawning_peers.insert(ServiceId::Peer(addr.into()), client_id);
+                        Ok(format!("Launched new instance of {}", handle))
+                    }
                     Err(err) => {
                         error!("{}", err.err());
-                        Err(err)
+                        Err(Error::from(err))
                     }
                 };
-                notify_cli = Some((Some(source.clone()), resp.to_progress_or_failure()));
+                self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
             }
 
-            request @ Request::CreateChannel(_) => {
-                let launcher = ChannelLauncher::with(
-                    Event::with(senders, self.identity(), source, request),
-                    self,
-                )?;
+            RpcMsg::CreateChannel(create_channel) => {
+                let launcher = ChannelLauncher::with(endpoints, client_id, create_channel, self)?;
                 let channeld_id = ServiceId::Channel(launcher.channel_id().into());
                 self.creating_channels.insert(channeld_id, launcher);
             }
 
-            _ => {
-                error!("{}", "Request is not supported by the CTL interface".err());
-                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
+            wrong_message => {
+                error!("Request is not supported by the RPC interface");
+                return Err(Error::NotSupported(ServiceBus::Rpc, wrong_message.get_type()));
             }
         }
 
-        if let Some((Some(respond_to), resp)) = notify_cli {
-            senders.send_to(ServiceBus::Ctl, ServiceId::Lnpd, respond_to, resp)?;
+        Ok(())
+    }
+
+    #[inline]
+    fn send_rpc(
+        &self,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        message: impl Into<RpcMsg>,
+    ) -> Result<(), esb::Error> {
+        endpoints.send_to(
+            ServiceBus::Rpc,
+            ServiceId::Lnpd,
+            ServiceId::Client(client_id),
+            message.into(),
+        )
+    }
+
+    fn handle_ctl(
+        &mut self,
+        endpoints: &mut Endpoints,
+        source: ServiceId,
+        message: CtlMsg,
+    ) -> Result<(), Error> {
+        if let CtlMsg::Hello = message {
+            self.handle_hello(endpoints, source)?;
+        } else if let CtlMsg::UpdateChannelId(new_id) = message {
+            debug!("Requested to update channel id {} on {}", source, new_id);
+            if let ServiceId::Channel(old_id) = source {
+                if !self.channels.remove(&old_id) {
+                    warn!("Channel daemon {} was unknown", source);
+                }
+                self.channels.insert(new_id);
+                debug!("Registered channel daemon id {}", new_id);
+            } else {
+                error!("Chanel id update may be requested only by a channeld, not {}", source);
+            }
+        } else {
+            error!("Request is not supported by the CTL interface");
+            return Err(Error::NotSupported(ServiceBus::Ctl, message.get_type()));
         }
 
         Ok(())
+    }
+
+    fn handle_hello(&mut self, endpoints: &mut Endpoints, source: ServiceId) -> Result<(), Error> {
+        info!("{} daemon is {}", source.ended(), "connected".ended());
+
+        self.register_daemon(source.clone());
+
+        if let Some(channel_launcher) = self.creating_channels.remove(&source) {
+            // Tell channeld channel options and link it with the peer daemon
+            debug!("Daemon {} reported back. Ordering channel opening", source);
+            let event = Event::with(endpoints, self.identity(), source.clone(), CtlMsg::Hello);
+            if let Some(channel_launcher) = channel_launcher.next(event, self)? {
+                self.creating_channels.insert(source, channel_launcher);
+            }
+        } else if let Some(accept_channel) = self.accepting_channels.get(&source) {
+            // Tell channeld channel options and link it with the peer daemon
+            debug!("Daemon {} reported back. Ordering channel acceptance", source);
+            endpoints.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                source.clone(),
+                CtlMsg::AcceptChannelFrom(accept_channel.clone()),
+            )?;
+            self.accepting_channels.remove(&source);
+        } else if let Some(enquirer) = self.spawning_peers.get(&source).copied() {
+            debug!("Daemon {} reported back", source);
+            self.spawning_peers.remove(&source);
+            let success =
+                RpcMsg::Success(OptionDetails::with(format!("Peer connected to {}", source)));
+            self.send_rpc(endpoints, enquirer, success)?;
+        }
+
+        Ok(())
+    }
+
+    fn register_daemon(&mut self, source: ServiceId) {
+        match source {
+            ServiceId::Lnpd => {
+                error!("{}", "Unexpected another lnpd instance connection".err());
+            }
+            ServiceId::Peer(connection_id) if self.connections.insert(connection_id.clone()) => {
+                info!(
+                    "Connection {} is registered; total {} connections are known",
+                    connection_id,
+                    self.connections.len()
+                );
+            }
+            ServiceId::Peer(connection_id) => {
+                warn!(
+                    "Connection {} was already registered; the service probably was relaunched",
+                    connection_id
+                );
+            }
+            ServiceId::Channel(channel_id) if self.channels.insert(channel_id.clone()) => {
+                info!(
+                    "Channel {} is registered; total {} channels are known",
+                    channel_id,
+                    self.channels.len()
+                );
+            }
+            ServiceId::Channel(channel_id) => {
+                warn!(
+                    "Channel {} was already registered; the service probably was relaunched",
+                    channel_id
+                );
+            }
+            _ => {
+                // Ignoring the rest of daemon/client types
+            }
+        }
     }
 
     fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
@@ -448,6 +404,23 @@ impl Runtime {
             self.config.clone(),
         )?;
         Ok(format!("Launched new instance of {}", handle))
+    }
+
+    fn available_funding(&mut self) -> Result<BTreeMap<AddressCompat, u64>, Error> {
+        self.funding_wallet.list_funds()?.into_iter().try_fold(
+            bmap! {},
+            |mut acc, f| -> Result<_, Error> {
+                *acc.entry(
+                    AddressCompat::from_script(
+                        f.script_pubkey.as_inner(),
+                        self.funding_wallet.network(),
+                    )
+                    .ok_or(funding_wallet::Error::NoAddressRepresentation)?,
+                )
+                .or_insert(0) += f.amount;
+                Ok(acc)
+            },
+        )
     }
 
     pub(super) fn new_channel_keyset(&self) -> Keyset {

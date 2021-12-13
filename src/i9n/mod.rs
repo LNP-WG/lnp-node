@@ -13,14 +13,16 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 mod client;
-pub mod reply;
-pub mod request;
+pub mod ctl;
+pub mod rpc;
 
 pub use client::Client;
+use lnp::p2p;
 use microservices::esb::BusId;
-use microservices::rpc_connection::Api;
-pub use reply::Reply;
-pub use request::Request;
+use microservices::rpc_connection;
+
+use crate::i9n::ctl::CtlMsg;
+use crate::i9n::rpc::RpcMsg;
 
 /// Service buses used for inter-daemon communication
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
@@ -44,9 +46,28 @@ pub enum ServiceBus {
 
 impl BusId for ServiceBus {}
 
-pub struct Rpc {}
+/// Service bus messages wrapping all other message types
+#[derive(Clone, Debug, Display, From, Api)]
+#[api(encoding = "strict")]
+#[non_exhaustive]
+pub enum BusMsg {
+    /// Wrapper for LN P2P messages to be transmitted over control bus
+    #[api(type = 1)]
+    #[display(inner)]
+    #[from]
+    Ln(p2p::legacy::Messages),
 
-impl Api for Rpc {
-    type Request = Request;
-    type Reply = Reply;
+    /// Wrapper for inner type of control messages to be transmitted over control bus
+    #[api(type = 3)]
+    #[display(inner)]
+    #[from]
+    Ctl(CtlMsg),
+
+    /// Wrapper for RPC messages to be transmitted over control bus
+    #[api(type = 5)]
+    #[display(inner)]
+    #[from]
+    Rpc(RpcMsg),
 }
+
+impl rpc_connection::Request for BusMsg {}

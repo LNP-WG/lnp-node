@@ -48,10 +48,10 @@ pub mod cli;
 #[cfg(feature = "_rpc")]
 mod config;
 mod error;
+#[cfg(feature = "_rpc")]
+pub mod i9n;
 #[cfg(feature = "shell")]
 pub mod opts;
-#[cfg(feature = "_rpc")]
-pub mod rpc;
 #[cfg(feature = "_rpc")]
 pub mod state_machine;
 
@@ -74,4 +74,4 @@ pub mod signd;
 pub use config::Config;
 pub use error::Error;
 #[cfg(feature = "_rpc")]
-pub use service::{CtlServer, LogStyle, Senders, Service, ServiceId, TryToServiceId};
+pub use service::{CtlServer, Endpoints, LogStyle, Service, ServiceId, TryToServiceId};

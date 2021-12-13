@@ -17,10 +17,10 @@ use lnp::p2p::legacy::{ActiveChannelId, Messages};
 
 use crate::channeld::runtime::Runtime;
 use crate::channeld::state_machines;
-use crate::rpc::request::OpenChannelWith;
+use crate::i9n::ctl::{CtlMsg, OpenChannelWith};
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
-use crate::{rpc, Senders};
+use crate::Endpoints;
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
@@ -50,12 +50,12 @@ pub enum ChannelPropose {
     Locked,
 }
 
-impl StateMachine<rpc::Request, Runtime> for ChannelPropose {
+impl StateMachine<CtlMsg, Runtime> for ChannelPropose {
     type Error = state_machines::Error;
 
     fn next(
         self,
-        event: Event<rpc::Request>,
+        event: Event<CtlMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
@@ -97,14 +97,14 @@ impl ChannelPropose {
     /// Constructs channel proposal state machine
     pub fn with(
         runtime: &mut Runtime,
-        senders: &mut Senders,
+        senders: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<ChannelPropose, state_machines::Error> {
         let open_channel = Messages::OpenChannel(
             runtime.channel.open_channel_compose(request.funding_sat, request.push_msat)?,
         );
 
-        runtime.send_peer(senders, open_channel)?;
+        runtime.send_p2p(senders, open_channel)?;
 
         Ok(ChannelPropose::Proposed)
     }
@@ -126,43 +126,40 @@ impl ChannelPropose {
 }
 
 fn finish_proposed(
-    event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_accepted(
-    event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funding(
-    event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_signed(
-    event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funded(
-    event: Event<rpc::Request>,
+    event: Event<CtlMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_locked(
-    event: Event<rpc::Request>,
-    runtime: &mut Runtime,
-) -> Result<(), state_machines::Error> {
+fn finish_locked(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<(), state_machines::Error> {
     todo!()
 }

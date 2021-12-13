@@ -23,8 +23,9 @@ use microservices::esb;
 use microservices::node::TryService;
 use strict_encoding::{strict_deserialize, strict_serialize};
 
-use crate::rpc::request::Failure;
-use crate::rpc::{Request, ServiceBus};
+use crate::i9n::ctl::CtlMsg;
+use crate::i9n::rpc::{Failure, RpcMsg};
+use crate::i9n::{BusMsg, ServiceBus};
 use crate::{Config, Error};
 
 #[derive(Wrapper, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, From, Default)]
@@ -57,6 +58,8 @@ impl FromStr for ClientName {
     }
 }
 
+pub type ClientId = u64;
+
 /// Identifiers of daemons participating in LNP Node
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode)]
 pub enum ServiceId {
@@ -82,7 +85,7 @@ pub enum ServiceId {
     Channel(ChannelId),
 
     #[display("client<{0}>")]
-    Client(u64),
+    Client(ClientId),
 
     #[display("signer")]
     Signer,
@@ -121,16 +124,16 @@ impl From<Vec<u8>> for ServiceId {
 
 pub struct Service<Runtime>
 where
-    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = BusMsg>,
     esb::Error: From<Runtime::Error>,
 {
-    esb: esb::Controller<ServiceBus, Request, Runtime>,
+    esb: esb::Controller<ServiceBus, BusMsg, Runtime>,
     broker: bool,
 }
 
 impl<Runtime> Service<Runtime>
 where
-    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = Request>,
+    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = BusMsg>,
     esb::Error: From<Runtime::Error>,
 {
     #[cfg(feature = "node")]
@@ -142,17 +145,23 @@ where
 
     fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error> {
         let router = if !broker { Some(ServiceId::router()) } else { None };
+        let mut services = map! {
+            ServiceBus::Msg => esb::BusConfig::with_locator(
+                config.msg_endpoint,
+                router.clone()
+            ),
+            ServiceBus::Ctl => esb::BusConfig::with_locator(
+                config.ctl_endpoint,
+                router.clone()
+            )
+        };
+        // Broker also listens to RPC requests from connecting clients
+        if broker {
+            services
+                .insert(ServiceBus::Rpc, esb::BusConfig::with_locator(config.rpc_endpoint, router));
+        }
         let esb = esb::Controller::with(
-            map! {
-                ServiceBus::Msg => esb::BusConfig::with_locator(
-                    config.msg_endpoint,
-                    router.clone()
-                ),
-                ServiceBus::Ctl => esb::BusConfig::with_locator(
-                    config.ctl_endpoint,
-                    router
-                )
-            },
+            services,
             runtime,
             if broker { ZmqType::RouterBind } else { ZmqType::RouterConnect },
         )?;
@@ -181,8 +190,8 @@ where
     pub fn run_loop(mut self) -> Result<(), Error> {
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));
-            self.esb.send_to(ServiceBus::Ctl, ServiceId::Lnpd, Request::Hello)?;
-            self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, Request::Hello)?;
+            self.esb.send_to(ServiceBus::Ctl, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
+            self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
         }
 
         let identity = self.esb.handler().identity();
@@ -194,7 +203,7 @@ where
     }
 }
 
-pub type Senders = esb::SenderList<ServiceBus, ServiceId>;
+pub type Endpoints = esb::SenderList<ServiceBus, ServiceId>;
 
 pub trait TryToServiceId {
     fn try_to_service_id(&self) -> Option<ServiceId>;
@@ -223,7 +232,7 @@ where
 
     fn report_success(
         &mut self,
-        senders: &mut Senders,
+        senders: &mut Endpoints,
         msg: Option<impl ToString>,
     ) -> Result<(), Error> {
         if let Some(ref message) = msg {
@@ -234,22 +243,26 @@ where
                 ServiceBus::Ctl,
                 self.identity(),
                 dest,
-                Request::Success(msg.map(|m| m.to_string()).into()),
+                RpcMsg::Success(msg.map(|m| m.to_string()).into()),
             )?;
         }
         Ok(())
     }
 
-    fn report_progress(&mut self, senders: &mut Senders, msg: impl ToString) -> Result<(), Error> {
+    fn report_progress(
+        &mut self,
+        senders: &mut Endpoints,
+        msg: impl ToString,
+    ) -> Result<(), Error> {
         let msg = msg.to_string();
         info!("{}", msg);
         if let Some(dest) = self.enquirer() {
-            senders.send_to(ServiceBus::Ctl, self.identity(), dest, Request::Progress(msg))?;
+            senders.send_to(ServiceBus::Ctl, self.identity(), dest, RpcMsg::Progress(msg))?;
         }
         Ok(())
     }
 
-    fn report_failure(&mut self, senders: &mut Senders, failure: impl Into<Failure>) -> Error {
+    fn report_failure(&mut self, senders: &mut Endpoints, failure: impl Into<Failure>) -> Error {
         let failure = failure.into();
         if let Some(dest) = self.enquirer() {
             // Even if we fail, we still have to terminate :)
@@ -257,7 +270,7 @@ where
                 ServiceBus::Ctl,
                 self.identity(),
                 dest,
-                Request::Failure(failure.clone()),
+                RpcMsg::Failure(failure.clone()),
             );
         }
         Error::Terminate(failure.to_string())
@@ -265,9 +278,9 @@ where
 
     fn send_ctl(
         &mut self,
-        senders: &mut Senders,
+        senders: &mut Endpoints,
         dest: impl TryToServiceId,
-        request: Request,
+        request: CtlMsg,
     ) -> Result<(), Error> {
         if let Some(dest) = dest.try_to_service_id() {
             senders.send_to(ServiceBus::Ctl, self.identity(), dest, request)?;

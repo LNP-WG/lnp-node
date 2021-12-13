@@ -22,7 +22,7 @@ use std::{process, thread};
 
 use amplify::hex::ToHex;
 use amplify::IoError;
-use internet2::{LocalNode, RemoteSocketAddr};
+use internet2::RemoteSocketAddr;
 use lnp::p2p::legacy::ChannelId;
 
 use crate::lnpd::runtime::Runtime;

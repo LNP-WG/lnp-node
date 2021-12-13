@@ -14,7 +14,7 @@
 
 use std::convert::TryFrom;
 use std::net::{SocketAddr, TcpListener};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::thread::JoinHandle;
 use std::time::Duration;
 use std::{fs, thread};
