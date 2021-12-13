@@ -24,8 +24,8 @@ use microservices::{esb, rpc};
 use psbt::sign::SignError;
 
 use crate::channeld;
-use crate::lnpd::funding_wallet;
 use crate::lnpd::state_machines::channel_launch;
+use crate::lnpd::{funding_wallet, Daemon, DaemonError};
 #[cfg(feature = "_rpc")]
 use crate::rpc::ServiceBus;
 
@@ -46,6 +46,10 @@ pub enum Error {
     #[cfg(feature = "_rpc")]
     #[from]
     Rpc(rpc::Error),
+
+    /// Error launching the daemon: {0}
+    #[from(DaemonError<Daemon>)]
+    DaemonLaunch(Box<DaemonError<Daemon>>),
 
     /// Peer interface error: {0}
     #[from]

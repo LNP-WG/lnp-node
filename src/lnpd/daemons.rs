@@ -92,7 +92,7 @@ impl<DaemonName: Debug + Display + Clone> DaemonHandle<DaemonName> {
 
 /// Daemons that can be launched by lnpd
 #[derive(Clone, Eq, PartialEq, Debug, Display)]
-pub(super) enum Daemon {
+pub enum Daemon {
     #[display("signd")]
     Signd,
 

@@ -41,6 +41,7 @@ use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
 pub fn run(config: Config, node_id: secp256k1::PublicKey, threaded: bool) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
+        config: config.clone(),
         node_id,
         chain: config.chain.clone(),
         listens: none!(),
@@ -77,6 +78,7 @@ impl Config {
 
 pub struct Runtime {
     identity: ServiceId,
+    config: Config,
     node_id: secp256k1::PublicKey,
     chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
@@ -100,9 +102,14 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
 
+    fn on_ready(&mut self, _senders: &mut Senders) -> Result<(), Self::Error> {
+        self.launch_daemon(Daemon::Signd, self.config.clone())?;
+        Ok(())
+    }
+
     fn handle(
         &mut self,
-        senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        senders: &mut Senders,
         bus: ServiceBus,
         source: ServiceId,
         request: Request,

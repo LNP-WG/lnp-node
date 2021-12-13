@@ -20,6 +20,7 @@ mod opts;
 mod runtime;
 pub mod state_machines;
 
+pub use daemons::{Daemon, DaemonError};
 #[cfg(feature = "shell")]
 pub use opts::{Command, Opts};
 pub use runtime::run;
