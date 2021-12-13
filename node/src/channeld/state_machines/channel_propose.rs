@@ -97,14 +97,14 @@ impl ChannelPropose {
     /// Constructs channel proposal state machine
     pub fn with(
         runtime: &mut Runtime,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<ChannelPropose, state_machines::Error> {
         let open_channel = Messages::OpenChannel(
             runtime.channel.open_channel_compose(request.funding_sat, request.push_msat)?,
         );
 
-        runtime.send_p2p(senders, open_channel)?;
+        runtime.send_p2p(endpoints, open_channel)?;
 
         Ok(ChannelPropose::Proposed)
     }

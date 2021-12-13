@@ -24,6 +24,7 @@ use self::channel_propose::ChannelPropose;
 use crate::channeld::runtime::Runtime;
 use crate::i9n::ctl::{CtlMsg, OpenChannelWith};
 use crate::i9n::rpc::Failure;
+use crate::i9n::BusMsg;
 use crate::service::LogStyle;
 use crate::state_machine::Event;
 use crate::{CtlServer, Endpoints, ServiceId};
@@ -137,7 +138,7 @@ impl ChannelStateMachine {
 impl Runtime {
     pub fn propose_channel(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<(), Error> {
         if !matches!(self.state_machine, ChannelStateMachine::Launch) {
@@ -147,7 +148,7 @@ impl Runtime {
             });
         }
         self.state_machine =
-            ChannelStateMachine::Propose(ChannelPropose::with(self, senders, request)?);
+            ChannelStateMachine::Propose(ChannelPropose::with(self, endpoints, request)?);
         Ok(())
     }
 
@@ -155,17 +156,18 @@ impl Runtime {
     /// necessary. Returns bool indicating whether a successful state update happened
     pub fn process(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         source: ServiceId,
-        request: CtlMsg,
+        request: BusMsg,
     ) -> Result<bool, Error> {
-        let event = Event::with(senders, self.identity(), source, request);
+        let event = Event::with(endpoints, self.identity(), source, request);
         let channel_id = self.channel.active_channel_id();
         let updated_state = match self.process_event(event) {
             Ok(_) => {
                 // Ignoring possible reporting errors here and after: do not want to
                 // halt the channel just because the client disconnected
-                let _ = self.report_progress(senders, self.state_machine.info_message(channel_id));
+                let _ =
+                    self.report_progress(endpoints, self.state_machine.info_message(channel_id));
                 true
             }
             // We pass ESB errors forward such that they can fail the channel.
@@ -173,12 +175,15 @@ impl Runtime {
             // message later without channel halting.
             Err(err @ Error::Esb(_)) => {
                 error!("{} due to ESB failure: {}", "Failing channel".err(), err.err_details());
-                self.report_failure(senders, Failure { code: err.errno(), info: err.to_string() });
+                self.report_failure(endpoints, Failure {
+                    code: err.errno(),
+                    info: err.to_string(),
+                });
                 return Err(err);
             }
             Err(other_err) => {
                 error!("{}: {}", "Channel error".err(), other_err.err_details());
-                self.report_failure(senders, Failure {
+                self.report_failure(endpoints, Failure {
                     code: other_err.errno(),
                     info: other_err.to_string(),
                 });
@@ -195,7 +200,7 @@ impl Runtime {
         Ok(updated_state)
     }
 
-    fn process_event(&mut self, _event: Event<CtlMsg>) -> Result<(), Error> {
+    fn process_event(&mut self, _event: Event<BusMsg>) -> Result<(), Error> {
         match self.state_machine {
             _ => {} // TODO: implement
         }

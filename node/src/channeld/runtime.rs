@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryFrom;
 use std::time::SystemTime;
 
 use bitcoin::hashes::{sha256, Hash, HashEngine};
@@ -26,11 +25,11 @@ use internet2::NodeAddr;
 #[cfg(feature = "rgb")]
 use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
 use lnp::bolt::extensions::{HtlcKnown, HtlcSecret};
-use lnp::bolt::{self, AssetsBalance, Lifecycle, ScriptGenerators};
+use lnp::bolt::{self, AssetsBalance, Lifecycle};
 use lnp::channel::Channel;
 use lnp::p2p::legacy::{
-    AcceptChannel, ChannelId, FundingCreated, FundingLocked, FundingSigned, Messages as LnMsg,
-    OpenChannel, TempChannelId,
+    AcceptChannel, ChannelId, FundingCreated, FundingSigned, Messages as LnMsg, OpenChannel,
+    TempChannelId,
 };
 #[cfg(feature = "rgb")]
 use lnpbp::chain::AssetId;
@@ -38,12 +37,10 @@ use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
-use wallet::scripts::PubkeyScript;
 
 use super::storage::{self, Driver};
 use crate::channeld::state_machines::ChannelStateMachine;
 use crate::i9n::ctl::CtlMsg;
-use crate::i9n::rpc::Failure;
 use crate::i9n::{ctl as request, BusMsg, ServiceBus};
 use crate::{Config, CtlServer, Endpoints, Error, LogStyle, Service, ServiceId};
 
@@ -240,48 +237,11 @@ impl Runtime {
                 );
             }
 
-            LnMsg::AcceptChannel(accept_channel) => {
-                self.state = Lifecycle::Accepted;
-
-                self.channel_accepted(endpoints, &accept_channel, &ServiceId::Peer(remote_peer))
-                    .map_err(|err| {
-                        self.report_failure(endpoints, Failure {
-                            code: 0, // TODO: Create error type system
-                            info: err.to_string(),
-                        })
-                    })?;
-
-                // Construct funding output scriptPubkey
-                let remote_pk = accept_channel.funding_pubkey;
-                let local_pk = self.local_keys.funding_pubkey;
-                trace!("Generating script pubkey from local {} and remote {}", local_pk, remote_pk);
-                let script_pubkey =
-                    PubkeyScript::ln_funding(self.channel_capacity(), local_pk, remote_pk);
-                trace!("Funding script: {}", script_pubkey);
-                if let Some(addr) = bitcoin::Network::try_from(&self.chain)
-                    .ok()
-                    .and_then(|network| script_pubkey.address(network))
-                {
-                    debug!("Funding address: {}", addr);
-                } else {
-                    error!(
-                        "{} {}",
-                        "Unable to generate funding address for the current network ".err(),
-                        self.chain.err()
-                    )
-                }
-
-                /*
-                // Ignoring possible error here: do not want to halt the channel just because the
-                // client disconnected
-                let _ = self.send_ctl(
-                    endpoints,
-                    &self.enquirer.clone(),
-                    CtlMsg::ChannelFunding(script_pubkey),
-                );
-                 */
+            LnMsg::AcceptChannel(_) | LnMsg::FundingSigned(_) | LnMsg::FundingLocked(_) => {
+                self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Ln(message))?;
             }
 
+            /*
             LnMsg::FundingCreated(funding_created) => {
                 self.state = Lifecycle::Funding;
 
@@ -367,7 +327,7 @@ impl Runtime {
 
                 // TODO: Re-sign the commitment and return to the remote peer
             }
-
+            */
             _ => {
                 // Ignore the rest of LN peer messages
             }
@@ -377,28 +337,32 @@ impl Runtime {
 
     fn handle_ctl(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         source: ServiceId,
         request: CtlMsg,
     ) -> Result<(), Error> {
         // RPC control requests are sent by either clients or lnpd daemon and used to initiate one
         // of channel workflows and to request information about the channel state.
-        match request {
+        match request.clone() {
             // Proposing remote peer to open a channel
             CtlMsg::OpenChannelWith(open_channel_with) => {
                 let remote_peer = open_channel_with.remote_peer.clone();
                 self.enquirer = open_channel_with.report_to.clone();
-                self.propose_channel(senders, open_channel_with)?;
+                self.propose_channel(endpoints, open_channel_with)?;
                 // Updating state only if the request was processed
                 self.peer_service = ServiceId::Peer(remote_peer.clone());
                 self.remote_peer = Some(remote_peer);
+            }
+
+            CtlMsg::FundingConstructed(_) | CtlMsg::FundingPublished | CtlMsg::Mined(_) => {
+                self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
             // Processing remote request to open a channel
             CtlMsg::AcceptChannelFrom(request::AcceptChannelFrom { ref remote_peer, .. }) => {
                 self.enquirer = None;
                 let remote_peer = remote_peer.clone();
-                if self.process(senders, source, request)? {
+                if self.process(endpoints, source, BusMsg::Ctl(request))? {
                     // Updating state only if the request was processed
                     self.peer_service = ServiceId::Peer(remote_peer.clone());
                     self.remote_peer = Some(remote_peer);
