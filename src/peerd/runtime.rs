@@ -21,9 +21,7 @@ use amplify::Bipolar;
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
-use internet2::{
-    presentation, transport, zmqsocket, CreateUnmarshaller, TypedEnum, ZmqType, ZMQ_CONTEXT,
-};
+use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
 use lnp::p2p::legacy::{
     FundingCreated, FundingLocked, FundingSigned, Init, Messages as LnMsg, Ping, UpdateAddHtlc,
     UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
@@ -212,7 +210,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
             (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
-            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
+            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
         }
     }
 
@@ -252,7 +250,7 @@ impl Runtime {
             }
             _ => {
                 error!("MSG RPC can be only used for forwarding LN P2P messages");
-                return Err(Error::NotSupported(ServiceBus::Msg, message.get_type()));
+                return Err(Error::wrong_rpc_msg(ServiceBus::Msg, &message));
             }
         }
         Ok(())
@@ -309,7 +307,7 @@ impl Runtime {
 
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
+                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &request));
             }
         }
         Ok(())
@@ -397,9 +395,9 @@ impl Runtime {
                 debug!("Got peer LN P2P message {}", message);
             }
 
-            _ => {
+            wrong_msg => {
                 error!("Request is not supported by the BRIDGE interface");
-                return Err(Error::NotSupported(ServiceBus::Bridge, request.get_type()))?;
+                return Err(Error::wrong_rpc_msg(ServiceBus::Bridge, wrong_msg))?;
             }
         }
         Ok(())

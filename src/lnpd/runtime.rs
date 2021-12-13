@@ -20,7 +20,7 @@ use std::time::{Duration, SystemTime};
 use amplify::{DumbDefault, Wrapper};
 use bitcoin::secp256k1;
 use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
+use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, Messages as LnMessage};
 use microservices::esb::{self, Handler};
@@ -137,7 +137,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
                 unreachable!("lnpd received RPC message not from a client but from {}", service)
             }
-            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
+            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
         }
     }
 
@@ -276,9 +276,9 @@ impl Runtime {
                 self.creating_channels.insert(channeld_id, launcher);
             }
 
-            wrong_message => {
+            wrong_msg => {
                 error!("Request is not supported by the RPC interface");
-                return Err(Error::NotSupported(ServiceBus::Rpc, wrong_message.get_type()));
+                return Err(Error::wrong_rpc_msg(ServiceBus::Rpc, &wrong_msg));
             }
         }
 
@@ -321,7 +321,7 @@ impl Runtime {
             }
         } else {
             error!("Request is not supported by the CTL interface");
-            return Err(Error::NotSupported(ServiceBus::Ctl, message.get_type()));
+            return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &message));
         }
 
         Ok(())

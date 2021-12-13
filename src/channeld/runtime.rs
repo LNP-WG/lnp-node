@@ -22,9 +22,9 @@ use bitcoin::{secp256k1, OutPoint};
 use bp::seals::OutpointReveal;
 #[cfg(feature = "rgb")]
 use internet2::zmqsocket::{self, ZmqSocketAddr, ZmqType};
+use internet2::NodeAddr;
 #[cfg(feature = "rgb")]
 use internet2::{session, CreateUnmarshaller, Session, Unmarshall, Unmarshaller};
-use internet2::{NodeAddr, TypedEnum};
 use lnp::bolt::extensions::{HtlcKnown, HtlcSecret};
 use lnp::bolt::{self, AssetsBalance, Lifecycle, ScriptGenerators};
 use lnp::channel::Channel;
@@ -182,7 +182,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
-            (bus, msg, _) => Err(Error::NotSupported(bus, msg.get_type())),
+            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
         }
     }
 
@@ -488,7 +488,7 @@ impl Runtime {
              */
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::NotSupported(ServiceBus::Ctl, request.get_type()));
+                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &request));
             }
         }
         Ok(())

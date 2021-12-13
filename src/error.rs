@@ -18,7 +18,7 @@ use amplify::IoError;
 use bitcoin::util::bip32;
 #[cfg(feature = "_rpc")]
 use internet2::TypeId;
-use internet2::{presentation, transport};
+use internet2::{presentation, transport, TypedEnum};
 #[cfg(feature = "_rpc")]
 use microservices::{esb, rpc};
 use psbt::sign::SignError;
@@ -47,23 +47,25 @@ pub enum Error {
     #[from]
     Rpc(rpc::Error),
 
-    /// Error launching the daemon: {0}
+    /// failed to launch a daemon: {0}
     #[from(DaemonError<Daemon>)]
     DaemonLaunch(Box<DaemonError<Daemon>>),
 
-    /// Peer interface error: {0}
+    /// peer interface error: {0}
     #[from]
     Peer(presentation::Error),
 
-    /// Channel operations error: {0}
+    /// channel operations failure: {0}
     #[from]
     Channel(channeld::Error),
 
-    /// Error launching channel daemon: {0}
+    /// filed to bootstrap channel: {0}
     #[from]
     ChannelLaunch(channel_launch::Error),
 
-    /// Encoding error: {0}
+    /// encoding failure
+    ///
+    /// Details: {0}
     #[from]
     BitcoinEncoding(bitcoin::consensus::encode::Error),
 
@@ -72,38 +74,38 @@ pub enum Error {
     #[display(inner)]
     FundingWallet(funding_wallet::Error),
 
-    /// Error deriving keys: {0}
+    /// unbable to deriving keys: {0}
     #[from]
     Derivation(bip32::Error),
 
-    /// Error constructing descriptor: {0}
+    /// descriptor failure: {0}
     #[from]
     Miniscript(miniscript::Error),
 
-    /// Error signing PSBT: {0}
+    /// unbale to sign PSBT: {0}
     #[from]
     Signing(SignError),
 
-    /// Bridge interface error: {0}
+    /// bridge interface failure: {0}
     #[cfg(any(feature = "node", feature = "client"))]
     #[from(zmq::Error)]
     #[from]
     Bridge(transport::Error),
 
-    /// Provided RPC request is not supported for the used type of endpoint
+    /// message type #{1} is not supported on {0} message bus. Message details: {2}
     #[cfg(feature = "_rpc")]
-    NotSupported(ServiceBus, TypeId),
+    NotSupported(ServiceBus, TypeId, String),
 
-    /// Peer does not respond to ping messages
+    /// peer does not respond to ping messages
     NotResponding,
 
-    /// Peer has misbehaved LN peer protocol rules
+    /// peer has misbehaved LN peer protocol rules
     Misbehaving,
 
     /// unrecoverable error "{0}"
     Terminate(String),
 
-    /// Other error type with string explanation
+    /// other error type with string explanation
     #[display(inner)]
     #[from(internet2::addr::NoOnionSupportError)]
     Other(String),
@@ -128,5 +130,11 @@ impl From<Error> for rpc::Error {
             Error::Rpc(err) => err,
             err => rpc::Error::ServerFailure(rpc::Failure { code: 2000, info: err.to_string() }),
         }
+    }
+}
+
+impl Error {
+    pub fn wrong_rpc_msg(bus: ServiceBus, message: &(impl TypedEnum + ToString)) -> Error {
+        Error::NotSupported(bus, message.get_type(), message.to_string())
     }
 }
