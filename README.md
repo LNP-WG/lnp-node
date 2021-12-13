@@ -143,21 +143,21 @@ More information on the service buses used in the node:
 
 ## Project organization & architecture
 
-* [`src/bin/`](src/bin/) – binaries for daemons & CLI launching main process
-* [`src/cli/`](src/cli/) – CLAP-based command line API talking to message bus
-* [`src/rpc/`](src/rpc/) – RPC commands for all daemons used for message bus
-* `src/<name>/` – service/daemon-specific code:
-  - [`src/peerd/`](src/peerd) – daemon managing peer connections 
+* [`node/`](node/src) – main node source code;
+* [`client/`](client/src) – CLAP-based command line API talking to message bus;
+* [`rpc/`](rpc/src) – RPC commands for client-server node interface;
+* `node/src/<name>/` – service/daemon-specific code:
+  - [`peerd/`](node/src/peerd) – daemon managing peer connections 
     within Lightning peer network using LNP (Lightning network protocol). 
     Specific supported message types are defined as a part of 
     [LNP/BP Core Library](https://github.com/LNP-BP/rust-lnpbp)
-  - [`src/channeld`](src/channeld) – daemon managing generalized Lightning
+  - [`channeld`](node/src/channeld) – daemon managing generalized Lightning
     channels with their extensions
-  - [`src/lnpd`](src/lnpd) – daemon initializing creation of new channels and
+  - [`lnpd`](node/src/lnpd) – daemon initializing creation of new channels and
     connections
-  - [`src/routed`](src/routed) – daemon managing routing information
-  - [`src/gossip`](src/gossip) – daemon managing gossip data
-  - [`src/signd`](src/signd) - key managing daemon producing signatures over
+  - [`routed`](node/src/routed) – daemon managing routing information
+  - [`gossip`](node/src/gossip) – daemon managing gossip data
+  - [`signd`](node/src/signd) - key managing daemon producing signatures over
     PSBTs using 
     [Descriptor Wallet library](https://github.com/LNP-BP/descriptor-wallet)
 

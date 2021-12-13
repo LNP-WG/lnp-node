@@ -1218,6 +1218,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "lnp_rpc"
+version = "0.5.0"
+
+[[package]]
 name = "lnpbp"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

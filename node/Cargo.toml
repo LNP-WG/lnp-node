@@ -1,0 +1,158 @@
+[package]
+name = "lnp_node"
+description = "LNP node"
+version = "0.5.0"
+authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
+license = "MIT"
+keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rgb"]
+edition = "2018"
+readme = "README.md"
+build = "build.rs"
+exclude = ["Dockerfile", ".dockerignore"]
+
+[lib]
+name = "lnp_node"
+
+[[bin]]
+name = "lnpd"
+required-features = ["server"]
+
+[[bin]]
+name = "peerd"
+required-features = ["server"]
+
+[[bin]]
+name = "gossipd"
+required-features = ["server"]
+
+[[bin]]
+name = "routed"
+required-features = ["server"]
+
+[[bin]]
+name = "channeld"
+required-features = ["server"]
+
+[[bin]]
+name = "signd"
+required-features = ["server"]
+
+[[bin]]
+name = "lnp-cli"
+required-features = ["cli"]
+
+[dependencies]
+# LNP/BP crates
+amplify = "3.9.1"
+strict_encoding = "1.7.5"
+descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
+psbt = { version = "0.6.0-alpha.4", features = ["sign"] }
+descriptors = "0.6.0-alpha.1"
+bitcoin_onchain = { version = "0.6.0-alpha.4", features = ["electrum"] }
+bitcoin_hd = "0.6.0-alpha.2"
+slip132 = "0.5.0"
+lnpbp = "0.5.0"
+bp-core = "0.5.0"
+lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
+rgb-core = { version = "0.5.1", optional = true }
+# rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node", git = "https://github.com/" }
+internet2 = "0.5.2"
+microservices = { version = "0.5.2", default-features = false, features = ["peer"] }
+# Bitcoin
+bitcoin = "0.27.1"
+miniscript = "6.0.1"
+electrum-client = { version = "0.8", optional = true }
+# Rust language
+lazy_static = "1.4"
+chrono = "0.4"
+nix = { version = "0.19", optional = true }
+# Serialization & parsing
+serde_crate = { package = "serde", version = "1", features = ["derive"], optional = true }
+serde_with = { version = "1.8", optional = true }
+serde_json = { version = "1", optional = true }
+serde_yaml = { version = "0.8", optional = true }
+toml = { version = "0.5", optional = true }
+bech32 = { version = "0.7", optional = true }
+base64 = { version = "0.12", optional = true }
+# Congig & logging
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
+env_logger = "0.7"
+clap = { version = "=3.0.0-beta.5", optional = true }
+settings = { version = "0.10", package = "config", optional = true }
+configure_me = { version = "0.4", optional = true }
+dotenv = { version = "0.15", optional = true }
+colored = { version = "2", optional = true }
+shellexpand = { version = "2", optional = true }
+rpassword = { version = "5.0.1", optional = true }
+# IPC
+zmq = "0.9.2"
+
+[dev-dependencies]
+strict_encoding_test = "1.7.4"
+
+[build-dependencies]
+amplify = "3.9.1"
+strict_encoding = "1.7.2"
+lnpbp = "0.5.0"
+bitcoin = "0.27.1"
+lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
+rgb-core = { version = "0.5.0", optional = true }
+internet2 = "0.5.7"
+microservices = { version = "0.5.0", default-features = false, features = ["peer"] }
+lazy_static = "1.4"
+clap = "3.0.0-beta.5"
+clap_generate = "3.0.0-beta.4"
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
+shellexpand = "2"
+configure_me_codegen = "0.4"
+
+# Recommended set of features:
+# 1. Standalone node: `server` (=`node`+`shell`)
+# 2. Cli to remote node: `cli` (auto includes `shell` and `integration`)
+# 3. Mobile app talking to a server: `client`
+# 4. Mobile app with embedded node: `embedded` (auto includes `client` + `node`)
+# 5. Simple cli utility app: `shell`
+[features]
+default = ["server", "cli"]
+all = ["server", "cli", "serde", "tor"] # "rgb"
+
+# Server is a standalone application that runs daemon
+server = ["node", "shell", "microservices/server", "nix"]
+# Command-line application feature
+cli = ["shell", "client", "microservices/cli"]
+
+# Embedded is an app that contains embedded node and that talks to it through
+# integration layer
+embedded = ["client", "node", "microservices/embedded"]
+# Server node can be run as a part of mobile app and other types of clients;
+# thus `server` != `node`.
+# This feature results in building with features not required for command-line
+node = ["serde", "internet2/keygen", "bitcoin/rand", "internet2/zmq", "microservices/node",
+    "internet2/url", "electrum-client", "base64",
+    # Required for storing config and cache
+    "_config", "_rpc"]
+# Feature is required for any applications that talks to daemon processes
+client = ["internet2/zmq", "microservices/client", "microservices/node", "bitcoin/rand",
+    "electrum-client", "base64", # "rgb_node/node",
+    "internet2/url", "clap", "_rpc"]
+# Required for all apps that can be launched from command-line shell as binaries
+# (i.e. both servers and cli)
+shell = [
+    "dotenv", "clap", "settings", "configure_me", "serde",
+    "amplify/parse_arg", "microservices/shell", "shellexpand", "colored", "rpassword"
+]
+
+# Internally used features for convenience
+_config = ["serde_yaml", "toml"]
+_rpc = []
+
+# rgb = ["lnp-core/rgb", "rgb-core", "rgb_node"]
+serde = ["serde_crate", "serde_with", "serde_yaml", "serde_json", "toml",
+    "chrono/serde", "bitcoin/use-serde", "slip132/serde",
+    "amplify/serde", "internet2/serde", "microservices/serde",
+    "bitcoin_hd/serde",
+    "lnpbp/serde", "descriptor-wallet/serde", "lnp-core/serde"] #, "rgb-core/serde",  "rgb_node/serde" ]
+tor = ["microservices/tor", "internet2/tor"] #, "rgb_node/tor"]
+
+[package.metadata.configure_me]
+spec = "config_spec.toml"
