@@ -24,7 +24,7 @@ use amplify::{DumbDefault, Wrapper};
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
 use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
+use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
 use microservices::esb::{self, Handler};
@@ -112,12 +112,8 @@ impl esb::Handler<ServiceBus> for Runtime {
     fn on_ready(&mut self, _senders: &mut Senders) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");
         self.launch_daemon(Daemon::Signd, self.config.clone())?;
-        for addr in &self.listens {
-            info!("Starting peer connection listening daemon on {}...", addr);
-            self.launch_daemon(
-                Daemon::Peerd(PeerSocket::Listen(addr.clone()), self.node_key_path.clone()),
-                self.config.clone(),
-            )?;
+        for addr in self.listens.clone() {
+            self.listen(addr)?;
         }
         Ok(())
     }
@@ -173,7 +169,10 @@ impl Runtime {
         match message {
             Messages::OpenChannel(open_channel) => {
                 info!("Creating channel by peer request from {}", remote_peer);
-                self.launch_channeld(open_channel.temporary_channel_id)?;
+                self.launch_daemon(
+                    Daemon::Channeld(open_channel.temporary_channel_id.into()),
+                    self.config.clone(),
+                )?;
                 let channeld_id = ServiceId::Channel(open_channel.temporary_channel_id.into());
                 let accept_channel = request::AcceptChannelFrom {
                     remote_peer,
@@ -407,11 +406,16 @@ impl Runtime {
 
             Request::ConnectPeer(addr) => {
                 info!("{} to remote peer {}", "Connecting".promo(), addr.promoter());
-                let resp = self.connect_peer(source.clone(), addr);
-                match resp {
-                    Ok(_) => {}
-                    Err(ref err) => error!("{}", err.err()),
-                }
+                let resp = match self.launch_daemon(
+                    Daemon::Peerd(PeerSocket::Connect(addr), self.node_key_path.clone()),
+                    self.config.clone(),
+                ) {
+                    Ok(handle) => Ok(format!("Launched new instance of {}", handle)),
+                    Err(err) => {
+                        error!("{}", err.err());
+                        Err(err)
+                    }
+                };
                 notify_cli = Some((Some(source.clone()), resp.to_progress_or_failure()));
             }
 
@@ -438,80 +442,16 @@ impl Runtime {
     }
 
     fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
-        if let RemoteSocketAddr::Ftcp(inet) = addr {
-            let socket_addr = SocketAddr::try_from(inet)?;
-            let ip = socket_addr.ip();
-            let port = socket_addr.port();
-
-            debug!("Instantiating peerd...");
-
-            // Start channeld
-            let child =
-                launch("peerd", &["--listen", &ip.to_string(), "--port", &port.to_string()])?;
-            let msg = format!("New instance of peerd launched with PID {}", child.id());
-            info!("{}", msg);
-            Ok(msg)
-        } else {
-            Err(Error::Other(s!("Only TCP is supported for now as an overlay protocol")))
-        }
-    }
-
-    fn connect_peer(&mut self, source: ServiceId, node_addr: NodeAddr) -> Result<String, Error> {
-        debug!("Instantiating peerd...");
-
-        // Start channeld
-        let child = launch("peerd", &["--connect", &node_addr.to_string()])?;
-        let msg = format!("New instance of peerd launched with PID {}", child.id());
-        info!("{}", msg);
-
-        self.spawning_peers.insert(ServiceId::Peer(node_addr), source);
-        debug!("Awaiting for peerd to connect...");
-
-        Ok(msg)
+        info!("Starting peer connection listening daemon on {}...", addr);
+        let handle = self.launch_daemon(
+            Daemon::Peerd(PeerSocket::Listen(addr.clone()), self.node_key_path.clone()),
+            self.config.clone(),
+        )?;
+        Ok(format!("Launched new instance of {}", handle))
     }
 
     pub(super) fn new_channel_keyset(&self) -> Keyset {
         // TODO: Derive proper channel keys
         Keyset::dumb_default()
     }
-
-    pub(super) fn launch_channeld(
-        &self,
-        temp_channel_id: TempChannelId,
-    ) -> Result<String, io::Error> {
-        debug!("Instantiating channeld...");
-        let child = launch("channeld", &[temp_channel_id.to_hex()])?;
-        let report = format!("New instance of channeld launched with PID {}", child.id());
-        info!("{}", report);
-        Ok(report)
-    }
-}
-
-fn launch(
-    name: &str,
-    args: impl IntoIterator<Item = impl AsRef<OsStr>>,
-) -> io::Result<process::Child> {
-    let mut bin_path = std::env::current_exe().map_err(|err| {
-        error!("Unable to detect binary directory: {}", err);
-        err
-    })?;
-    bin_path.pop();
-
-    bin_path.push(name);
-    #[cfg(target_os = "windows")]
-    bin_path.set_extension("exe");
-
-    debug!(
-        "Launching {} as a separate process using `{}` as binary",
-        name,
-        bin_path.to_string_lossy()
-    );
-
-    let mut cmd = process::Command::new(bin_path);
-    cmd.args(std::env::args().skip(1)).args(args);
-    trace!("Executing `{:?}`", cmd);
-    cmd.spawn().map_err(|err| {
-        error!("Error launching {}: {}", name, err);
-        err
-    })
 }

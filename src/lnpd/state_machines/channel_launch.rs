@@ -24,8 +24,8 @@ use bitcoin::Txid;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
 use microservices::esb;
 
-use crate::lnpd::funding_wallet;
 use crate::lnpd::runtime::Runtime;
+use crate::lnpd::{funding_wallet, Daemon, DaemonError};
 use crate::rpc::request::{Failure, OptionDetails, ToProgressOrFalure};
 use crate::state_machine::{Event, StateMachine};
 use crate::{rpc, ServiceId};
@@ -41,17 +41,18 @@ pub enum Error {
     /// hacked
     SignedTxidChanged { unsigned_txid: Txid, signed_txid: Txid },
 
-    /// error sending RPC request during state transition. Details: {0}
+    /// failure sending RPC request during state transition. Details: {0}
     #[from]
     Esb(esb::Error),
 
-    /// error during channel funding
+    /// unable to launch channel daemon. Details: {0}
+    #[from(DaemonError<Daemon>)]
+    DaemonLaunch(Box<DaemonError<Daemon>>),
+
+    /// failure during channel funding
     #[from]
     #[display(inner)]
     Funding(funding_wallet::Error),
-
-    /// unable to launch channel daemon. Details: {0}
-    ChannelDaemonLaunch(IoError),
 }
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
@@ -143,11 +144,14 @@ impl ChannelLauncher {
         debug!("ChannelLauncher {} is instantiated", temp_channel_id);
 
         let enquirer = event.source.clone();
-        let report = runtime.launch_channeld(temp_channel_id);
+        let report = runtime
+            .launch_daemon(Daemon::Channeld(temp_channel_id.into()), runtime.config.clone())
+            .map(|handle| format!("Launched new instance of {}", handle))
+            .map_err(Error::from);
         // Swallowing error since we do not want to break channel creation workflow just because of
         // not able to report back to the client
         let _ = event.send_ctl(report.to_progress_or_failure());
-        report.map_err(|err| Error::ChannelDaemonLaunch(err.into()))?;
+        report?;
         debug!("Awaiting for channeld to connect...");
 
         info!("ChannelLauncher {} entered LAUNCHING state", temp_channel_id);

@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::convert::TryFrom;
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display, Formatter};
 use std::net::SocketAddr;
 use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
@@ -32,12 +32,23 @@ use crate::{channeld, peerd, signd, Config, Error};
 // TODO: Move `DaemonHandle` to microservices crate
 /// Handle for a daemon launched by LNPd
 #[derive(Debug)]
-pub enum DaemonHandle<DaemonName: Display + Clone> {
+pub enum DaemonHandle<DaemonName: Debug + Display + Clone> {
     /// Daemon launched as a separate process
     Process(DaemonName, process::Child),
 
     /// Daemon launched as a thread
     Thread(DaemonName, thread::JoinHandle<Result<(), Error>>),
+}
+
+impl<DaemonName: Debug + Display + Clone> Display for DaemonHandle<DaemonName> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DaemonHandle::Process(name, child) => write!(f, "{} PID #{}", name, child.id()),
+            DaemonHandle::Thread(name, handle) => {
+                write!(f, "{} {:?}", name, handle.thread().id())
+            }
+        }
+    }
 }
 
 /// Errors during daemon launching
@@ -165,7 +176,7 @@ impl Runtime {
         );
 
         let mut cmd = process::Command::new(bin_path);
-        cmd.args(std::env::args().skip(1));
+        cmd.args(std::env::args().skip(1).filter(|arg| !arg.starts_with("--listen")));
 
         match &daemon {
             Daemon::Peerd(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {

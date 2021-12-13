@@ -21,7 +21,7 @@ use amplify::{ToYamlString, Wrapper};
 use bitcoin::{secp256k1, Address, OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteSocketAddr};
+use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lnp::bolt::{self, AssetsBalance, CommonParams, Keyset, Lifecycle, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, ChannelType, Messages, OpenChannel, TempChannelId};
 use lnpbp::chain::AssetId;
@@ -85,7 +85,7 @@ pub enum Request {
     // Can be issued from `cli` to `lnpd`
     #[api(type = 201)]
     #[display("connect({0})")]
-    ConnectPeer(NodeAddr),
+    ConnectPeer(RemoteNodeAddr),
 
     // Can be issued from `cli` to a specific `peerd`
     #[api(type = 202)]

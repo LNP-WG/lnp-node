@@ -14,7 +14,7 @@
 
 use std::str::FromStr;
 
-use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr};
+use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr, ToRemoteNodeAddr};
 use lnp::p2p::legacy::{ChannelId, LNP2P_LEGACY_PORT};
 use microservices::shell::Exec;
 #[cfg(feature = "rgb")]
@@ -84,7 +84,7 @@ impl Exec for Command {
 
             Command::Connect { peer: node_locator } => {
                 let peer = node_locator
-                    .to_node_addr(LNP2P_LEGACY_PORT)
+                    .to_remote_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
                 runtime.request(ServiceId::Lnpd, Request::ConnectPeer(peer))?;
