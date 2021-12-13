@@ -89,6 +89,8 @@
 #[macro_use]
 extern crate log;
 
+use std::path::PathBuf;
+
 use clap::Parser;
 use lnp_node::peerd::{self, Opts, PeerSocket};
 use lnp_node::Config;
@@ -122,11 +124,11 @@ fn main() {
         .unwrap_or_exit();
      */
 
-    let local_node = opts.key_opts.local_node();
+    let key_file = PathBuf::from(opts.key_opts.key_file.clone());
     let peer_socket = PeerSocket::from(opts);
 
     debug!("Starting runtime ...");
-    peerd::supervisor::run(config, local_node, peer_socket).expect("Error running peerd runtime");
+    peerd::supervisor::run(config, &key_file, peer_socket).expect("Error running peerd runtime");
 
     unreachable!()
 }

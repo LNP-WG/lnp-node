@@ -53,12 +53,12 @@ lazy_static::lazy_static! {
         format!("{}/fungibled.rpc", RGB_NODE_DATA_DIR);
 }
 
-pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp.toml";
+pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp_node.toml";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
-pub const LNP_NODE_KEY_FILE: &'static str = "{data_dir}/key.dat";
+pub const LNP_NODE_KEY_FILE: &'static str = "{data_dir}/node.key";
 
-pub const LNP_NODE_MASTER_WALLET: &'static str = "master";
-pub const LNP_NODE_FUNDING_WALLET: &'static str = "funding";
+pub const LNP_NODE_MASTER_KEY_FILE: &'static str = "master.key";
+pub const LNP_NODE_FUNDING_WALLET: &'static str = "funding.wallet";
 
 /// Shared options used by different binaries
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]

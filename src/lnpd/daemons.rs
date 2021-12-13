@@ -16,6 +16,7 @@ use std::convert::TryFrom;
 use std::fmt::{Debug, Display};
 use std::net::SocketAddr;
 use std::os::unix::process::ExitStatusExt;
+use std::path::PathBuf;
 use std::process::{Child, ExitStatus};
 use std::{process, thread};
 
@@ -97,7 +98,7 @@ pub enum Daemon {
     Signd,
 
     #[display("peerd")]
-    Peerd(PeerSocket, LocalNode),
+    Peerd(PeerSocket, PathBuf),
 
     #[display("channeld")]
     Channeld(ChannelId, #[cfg(feature = "rgb")] internet2::zmqsocket::ZmqSocketAddr),
@@ -131,8 +132,8 @@ impl Runtime {
 
         Ok(match daemon {
             Daemon::Signd => thread::spawn(move || signd::run(config)),
-            Daemon::Peerd(socket, local_node) => {
-                thread::spawn(move || peerd::supervisor::run(config, local_node, socket))
+            Daemon::Peerd(socket, key_file) => {
+                thread::spawn(move || peerd::supervisor::run(config, &key_file, socket))
             }
             #[cfg(not(feature = "rgb"))]
             Daemon::Channeld(channel_id) => {

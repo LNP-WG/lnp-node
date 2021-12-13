@@ -19,7 +19,7 @@ use internet2::TypedEnum;
 use microservices::esb;
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SignAll};
 
-use crate::opts::LNP_NODE_MASTER_WALLET;
+use crate::opts::LNP_NODE_MASTER_KEY_FILE;
 use crate::rpc::{Request, ServiceBus};
 use crate::{Config, Error, Service, ServiceId};
 
@@ -50,7 +50,7 @@ where
         config: &Config,
     ) -> Result<MemoryKeyProvider<'secp, secp256k1::All>, Error> {
         let mut wallet_path = config.data_dir.clone();
-        wallet_path.push(LNP_NODE_MASTER_WALLET);
+        wallet_path.push(LNP_NODE_MASTER_KEY_FILE);
         let signing_account = MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
         let mut provider = MemoryKeyProvider::with(&secp);
         provider.add_account(signing_account);

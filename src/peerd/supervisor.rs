@@ -14,15 +14,17 @@
 
 use std::convert::TryFrom;
 use std::net::{SocketAddr, TcpListener};
-use std::thread;
+use std::path::{Path, PathBuf};
 use std::thread::JoinHandle;
 use std::time::Duration;
+use std::{fs, thread};
 
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{session, LocalNode, LocalSocketAddr, NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use microservices::peer::PeerConnection;
 use nix::unistd::{fork, ForkResult, Pid};
+use strict_encoding::StrictDecode;
 
 use super::runtime;
 use crate::peerd::PeerSocket;
@@ -53,14 +55,27 @@ impl RuntimeParams {
     }
 }
 
-pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Result<(), Error> {
-    debug!("Peer socket parameter interpreted as {}", peer_socket);
+pub fn read_node_key_file(key_file: &Path) -> LocalNode {
+    let local_node = LocalNode::strict_decode(fs::File::open(key_file).expect(&format!(
+        "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
+         access rights to it",
+        key_file.display()
+    )))
+    .expect(&format!("Unable understand format of node key file '{}'", key_file.display()));
 
     let local_id = local_node.node_id();
     info!("{}: {}", "Local node id".ended(), local_id.addr());
 
+    local_node
+}
+
+pub fn run(config: Config, key_file: &Path, peer_socket: PeerSocket) -> Result<(), Error> {
+    debug!("Peer socket parameter interpreted as {}", peer_socket);
+
+    let local_node = read_node_key_file(key_file);
+
     let threaded = config.threaded;
-    let mut params = RuntimeParams::with(config, local_id);
+    let mut params = RuntimeParams::with(config, local_node.node_id());
     match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
             debug!("Running in LISTEN mode");

@@ -45,13 +45,13 @@ use crate::opts::LNP_NODE_KEY_FILE;
 pub struct Opts {
     // These params are passed through command-line argument or environment
     // only since they are instance-specific
-    /// Start daemon in listening mode binding the provided local address
+    /// Start daemon in listening mode binding the provided local address.
     ///
     /// Binds to the specified interface and listens for incoming connections,
     /// spawning a new thread / forking child process for each new incoming
     /// client connecting the opened socket. Whether the child is spawned as a
     /// thread or forked as a child process determined by the presence of
-    /// `--use-threads` flag.
+    /// `--threaded-daemons` flag.
     /// If the argument is provided in form of flag, without value, uses
     /// `0.0.0.0` as the bind address.
     #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
@@ -94,10 +94,9 @@ pub struct Opts {
 /// Node key configuration
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct KeyOpts {
-    /// Node key file
+    /// Node key file.
     ///
-    /// Location for the file containing node private Secp256k1 key
-    /// (unencrypted)
+    /// Location for the file containing node private Secp256k1 key (unencrypted).
     #[clap(
         short,
         long,
@@ -118,26 +117,6 @@ impl Opts {
 impl KeyOpts {
     pub fn process(&mut self, shared: &crate::opts::Opts) {
         shared.process_dir(&mut self.key_file);
-    }
-
-    pub fn local_node(&self) -> LocalNode {
-        if PathBuf::from(self.key_file.clone()).exists() {
-            LocalNode::strict_decode(fs::File::open(&self.key_file).expect(&format!(
-                "Unable to open key file {}; please check that the user running the daemon has \
-                 necessary permissions",
-                self.key_file
-            )))
-            .expect("Unable to read node code file format")
-        } else {
-            let secp = Secp256k1::new();
-            let local_node = LocalNode::new(&secp);
-            let key_file = fs::File::create(&self.key_file).expect(&format!(
-                "Unable to create key file '{}'; please check that the path exists",
-                self.key_file
-            ));
-            local_node.strict_encode(key_file).expect("Unable to save generated node kay");
-            local_node
-        }
     }
 }
 

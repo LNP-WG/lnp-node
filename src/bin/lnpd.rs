@@ -29,6 +29,9 @@
 #[macro_use]
 extern crate log;
 
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::path::PathBuf;
+
 use clap::Parser;
 use lnp_node::lnpd::{self, Command, Opts};
 use lnp_node::{Config, Error, LogStyle};
@@ -52,9 +55,6 @@ fn main() -> Result<(), Error> {
         }
     }
 
-    let node_id = opts.key_opts.local_node().node_id();
-    info!("{}: {}", "Local node id".ended(), node_id.addr());
-
     /*
     use self::internal::ResultExt;
     let (config_from_file, _) =
@@ -64,8 +64,15 @@ fn main() -> Result<(), Error> {
         .unwrap_or_exit();
      */
 
+    let key_file = PathBuf::from(opts.key_opts.key_file);
+    let bind_port = opts.port;
+    let bind_socket = opts.listen.map(|maybe_ip: Option<IpAddr>| {
+        let ip = maybe_ip.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
+        SocketAddr::new(ip, bind_port)
+    });
+
     debug!("Starting runtime ...");
-    lnpd::run(config, node_id).expect("running lnpd runtime");
+    lnpd::run(config, key_file, bind_socket).expect("running lnpd runtime");
 
     unreachable!()
 }
@@ -79,7 +86,7 @@ fn init(config: &Config) -> Result<(), Error> {
     use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
     use bitcoin_hd::{TerminalStep, TrackingAccount};
     use lnp_node::lnpd::funding_wallet::FundingWallet;
-    use lnp_node::opts::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_WALLET};
+    use lnp_node::opts::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_KEY_FILE};
     use miniscript::descriptor::{Descriptor, Wpkh};
     use psbt::sign::MemorySigningAccount;
 
@@ -95,9 +102,9 @@ fn init(config: &Config) -> Result<(), Error> {
     }
 
     let mut wallet_path = config.data_dir.clone();
-    wallet_path.push(LNP_NODE_MASTER_WALLET);
+    wallet_path.push(LNP_NODE_MASTER_KEY_FILE);
     let signing_account = if !wallet_path.exists() {
-        println!("Signing account '{}' ... {}", LNP_NODE_MASTER_WALLET, "creating".action());
+        println!("Signing account '{}' ... {}", LNP_NODE_MASTER_KEY_FILE, "creating".action());
         let xpriv = rpassword::read_password_from_tty(Some("Please enter your master xpriv: "))?;
         let xpriv = ExtendedPrivKey::from_str(&xpriv)?;
         let derivation = DerivationPath::from_str("m/10046h").expect("hardcoded derivation path");
@@ -109,7 +116,7 @@ fn init(config: &Config) -> Result<(), Error> {
         signing_account.write(file)?;
         signing_account
     } else {
-        println!("Signing account '{}' ... {}", LNP_NODE_MASTER_WALLET, "found".progress());
+        println!("Signing account '{}' ... {}", LNP_NODE_MASTER_KEY_FILE, "found".progress());
         MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?
     };
     println!(

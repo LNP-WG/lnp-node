@@ -15,13 +15,15 @@
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use std::ffi::OsStr;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
+use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 use std::{io, process};
 
 use amplify::{DumbDefault, Wrapper};
 use bitcoin::hashes::hex::ToHex;
 use bitcoin::secp256k1;
+use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
@@ -32,17 +34,27 @@ use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
 use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
+use crate::peerd::supervisor::read_node_key_file;
+use crate::peerd::PeerSocket;
 use crate::rpc::request::{Failure, FundsInfo, NodeInfo, OptionDetails, ToProgressOrFalure};
 use crate::rpc::{request, Request, ServiceBus};
 use crate::state_machine::{Event, StateMachine};
 use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
 
-pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
+pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
+    let mut listens = HashSet::with_capacity(1);
+    if let Some(addr) = listen {
+        listens.insert(RemoteSocketAddr::Ftcp(InetSocketAddr::from(addr)));
+    }
+
+    let node_id = read_node_key_file(&key_file).node_id();
+
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         config: config.clone(),
+        node_key_path: key_file,
         node_id,
-        listens: none!(),
+        listens,
         started: SystemTime::now(),
         handles: vec![],
         funding_wallet: config.funding_wallet()?,
@@ -76,6 +88,7 @@ impl Config {
 pub struct Runtime {
     identity: ServiceId,
     pub(super) config: Config,
+    node_key_path: PathBuf,
     node_id: secp256k1::PublicKey,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
@@ -98,6 +111,12 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn on_ready(&mut self, _senders: &mut Senders) -> Result<(), Self::Error> {
         self.launch_daemon(Daemon::Signd, self.config.clone())?;
+        for addr in &self.listens {
+            self.launch_daemon(
+                Daemon::Peerd(PeerSocket::Listen(addr.clone()), self.node_key_path.clone()),
+                self.config.clone(),
+            )?;
+        }
         Ok(())
     }
 

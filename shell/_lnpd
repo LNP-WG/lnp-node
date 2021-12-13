@@ -31,6 +31,10 @@ _lnpd() {
 '--chain=[Blockchain to use]:CHAIN: ' \
 '--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
+'-L+[Start daemon in listening mode binding the provided local address]:LISTEN:_hosts' \
+'--listen=[Start daemon in listening mode binding the provided local address]:LISTEN:_hosts' \
+'-p+[Customize port used by lightning peer network]:PORT: ' \
+'--port=[Customize port used by lightning peer network]:PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
