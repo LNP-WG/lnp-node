@@ -20,10 +20,9 @@ use lnp::p2p::legacy::ChannelId;
 use crate::opts::FUNGIBLED_RPC_ENDPOINT;
 use crate::peerd::KeyOpts;
 
-/// Lightning peer network channel daemon; part of LNP Node
+/// Lightning peer network channel daemon; part of LNP Node.
 ///
-/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
-/// description)
+/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "channeld", bin_name = "channeld", author, version)]
 pub struct Opts {
@@ -50,7 +49,6 @@ pub struct Opts {
 pub struct RgbOpts {
     /// ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)
     #[clap(
-        short,
         long = "rgb20-rpc",
         global = true,
         env = "FUNGIBLED_RPC_ENDPOINT",

@@ -53,17 +53,13 @@ impl RuntimeParams {
     }
 }
 
-pub fn run(
-    config: Config,
-    local_node: LocalNode,
-    peer_socket: PeerSocket,
-    threaded_daemons: bool,
-) -> Result<(), Error> {
+pub fn run(config: Config, local_node: LocalNode, peer_socket: PeerSocket) -> Result<(), Error> {
     debug!("Peer socket parameter interpreted as {}", peer_socket);
 
     let local_id = local_node.node_id();
     info!("{}: {}", "Local node id".ended(), local_id.addr());
 
+    let threaded = config.threaded;
     let mut params = RuntimeParams::with(config, local_id);
     match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
@@ -76,7 +72,7 @@ pub fn run(
                 remote_addr: RemoteSocketAddr::Ftcp(inet_addr),
             });
 
-            spawner(params, inet_addr, threaded_daemons)?;
+            spawner(params, inet_addr, threaded)?;
         }
         PeerSocket::Connect(remote_node_addr) => {
             debug!("Running in CONNECT mode");

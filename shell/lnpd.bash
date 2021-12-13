@@ -25,20 +25,12 @@ _lnpd() {
 
     case "${cmd}" in
         lnpd)
-            opts="-h -V -r -k -d -c -v -T -m -x -n --help --version --rgb20-rpc --key-file --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port --threaded-daemons init help"
+            opts="-h -V -k -d -c -v -T -m -r -n --help --version --key-file --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port --threaded-daemons init help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                --rgb20-rpc)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -r)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 --key-file)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -71,7 +63,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --msg-socket)
+                --msg)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -79,11 +71,11 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --ctl-socket)
+                --rpc)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -x)
+                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -111,20 +103,12 @@ _lnpd() {
             return 0
             ;;
         lnpd__help)
-            opts="-h -r -d -c -v -T -m -x -n --help --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
+            opts="-h -d -c -v -T -m -r -n --help --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                --rgb20-rpc)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -r)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 --data-dir)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -149,7 +133,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --msg-socket)
+                --msg)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -157,11 +141,11 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --ctl-socket)
+                --rpc)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -x)
+                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -189,20 +173,12 @@ _lnpd() {
             return 0
             ;;
         lnpd__init)
-            opts="-h -r -d -c -v -T -m -x -n --help --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port"
+            opts="-h -d -c -v -T -m -r -n --help --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi
             case "${prev}" in
-                --rgb20-rpc)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -r)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
                 --data-dir)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
@@ -227,7 +203,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --msg-socket)
+                --msg)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -235,11 +211,11 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --ctl-socket)
+                --rpc)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -x)
+                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

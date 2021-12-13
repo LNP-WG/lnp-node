@@ -17,17 +17,17 @@ _lnp-cli() {
     _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -35,6 +35,7 @@ _lnp-cli() {
 '--version[Print version information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+'--threaded-daemons[Spawn daemons as threads and not processes]' \
 ":: :_lnp-cli_commands" \
 "*::: :->lnp-cli" \
 && ret=0
@@ -54,17 +55,17 @@ _arguments "${_arguments_options[@]}" \
 '--overlay=[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -76,17 +77,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -99,17 +100,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -122,17 +123,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -145,17 +146,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -167,17 +168,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -189,17 +190,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -221,17 +222,17 @@ _arguments "${_arguments_options[@]}" \
 '--channel-reserve=[The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis]:CHANNEL_RESERVE: ' \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -245,17 +246,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -269,17 +270,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -293,17 +294,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
@@ -317,17 +318,17 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-d+[Data directory path]:DATA_DIR:_files -/' \
 '--data-dir=[Data directory path]:DATA_DIR:_files -/' \
-'-c+[Path to the configuration file]:CONFIG:_files' \
-'--config=[Path to the configuration file]:CONFIG:_files' \
+'-c+[Path for the configuration file]:CONFIG:_files' \
+'--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'-m+[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'--msg-socket=[ZMQ socket name/address to forward all incoming lightning messages]:MSG_SOCKET:_files' \
-'-x+[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
-'--ctl-socket=[ZMQ socket name/address for daemon control interface]:CTL_SOCKET:_files' \
+'-m+[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'--msg=[ZMQ socket used internally by daemon message bus]:MSG_SOCKET:_files' \
+'-r+[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
+'--rpc=[ZMQ socket for daemon RPC interface]:RPC_SOCKET:_files' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
-'--electrum-server=[Electrum server to use. `extract` command]:ELECTRUM_SERVER: ' \
+'--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \

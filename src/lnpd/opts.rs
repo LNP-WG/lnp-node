@@ -12,17 +12,18 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#[cfg(feature = "rgb")]
 use crate::channeld::RgbOpts;
 use crate::peerd::KeyOpts;
 
-/// Lightning node management daemon; part of LNP Node
+/// Lightning node management daemon; part of LNP Node.
 ///
-/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
-/// description)
+/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "lnpd", bin_name = "lnpd", author, version)]
 pub struct Opts {
     /// RGB configuration
+    #[cfg(feature = "rgb")]
     #[clap(flatten)]
     pub rgb_opts: RgbOpts,
 
@@ -38,10 +39,6 @@ pub struct Opts {
     /// Optional command to execute and exit
     #[clap(subcommand)]
     pub command: Option<Command>,
-
-    /// Spawn daemons as threads and not processes
-    #[clap(long)]
-    pub threaded_daemons: bool,
 }
 
 #[derive(Subcommand, Clone, PartialEq, Eq, Debug)]
@@ -54,6 +51,7 @@ impl Opts {
     pub fn process(&mut self) {
         self.shared.process();
         self.key_opts.process(&self.shared);
+        #[cfg(feature = "rgb")]
         self.rgb_opts.process(&self.shared);
     }
 }

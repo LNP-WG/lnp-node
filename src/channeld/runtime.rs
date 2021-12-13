@@ -686,6 +686,8 @@ impl Runtime {
     }
 
     pub fn sign_funding(&mut self) -> secp256k1::Signature {
+        todo!()
+        /*
         // We are doing counterparty's transaction!
         let mut cmt_tx = Transaction::ln_cmt_base(
             self.remote_capacity,
@@ -712,8 +714,7 @@ impl Runtime {
             self.channel_capacity(),
             SigHashType::All,
         );
-        todo!()
-        /*
+
         let sign_msg = secp256k1::Message::from_slice(&sighash[..])
             .expect("Sighash size always match requirements");
         let signature = self.local_node.sign(&self.secp, &sign_msg);

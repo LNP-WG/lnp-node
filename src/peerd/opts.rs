@@ -24,7 +24,7 @@ use strict_encoding::{StrictDecode, StrictEncode};
 
 use crate::opts::LNP_NODE_KEY_FILE;
 
-/// Lightning peer network connection daemon; part of LNP Node
+/// Lightning peer network connection daemon; part of LNP Node.
 ///
 /// Daemon listens to incoming connections from the lightning network peers
 /// (if started with `--listen` argument) or connects to the remote peer
@@ -33,8 +33,7 @@ use crate::opts::LNP_NODE_KEY_FILE;
 /// `msg.rpc` file inside the data directory from `--data-dir`). It also
 /// forwards messages from the same socket to the remote peer.
 ///
-/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
-/// description)
+/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(
     name = "peerd",
@@ -90,10 +89,6 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
-
-    /// Spawn new `peerd` for incoming connections as threads and not processes
-    #[clap(long)]
-    pub threaded_daemons: bool,
 }
 
 /// Node key configuration

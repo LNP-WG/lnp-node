@@ -111,7 +111,7 @@ FLAGS:
 OPTIONS:
     -n, --chain <chain>              Blockchain to use [env: LNP_NODE_NETWORK=] [default: signet]
     -c, --config <config>            Path to the configuration file [env: LNP_NODE_CONFIG=]
-    -x, --ctl-socket <ctl-socket>    ZMQ socket name/address for daemon control interface [env:
+    -r, --rpc-socket <Failure::from(err.clone())>    ZMQ socket name/address for daemon control interface [env:
                                      LNP_NODE_CTL_SOCKET=] [default:
                                      lnpz:{data_dir}/ctl.rpc?api=esb]
     -d, --data-dir <data-dir>        Data directory path [env: LNP_NODE_DATA_DIR=] [default:

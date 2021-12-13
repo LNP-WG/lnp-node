@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
@@ -146,13 +145,11 @@ where
         let esb = esb::Controller::with(
             map! {
                 ServiceBus::Msg => esb::BusConfig::with_locator(
-                        config.msg_endpoint.try_into()
-                            .expect("Only ZMQ RPC is currently supported"),
+                    config.msg_endpoint,
                     router.clone()
                 ),
                 ServiceBus::Ctl => esb::BusConfig::with_locator(
-                    config.ctl_endpoint.try_into()
-                        .expect("Only ZMQ RPC is currently supported"),
+                    config.ctl_endpoint,
                     router
                 )
             },

@@ -12,17 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-/// Lightning peer network gossip daemon; part of LNP Node
+/// Lightning peer network channel daemon; part of LNP Node.
 ///
-/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
-/// description)
+/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "gossipd", bin_name = "gossipd", author, version)]
 pub struct Opts {
-    /// RGB configuration: ignored by this daemon
-    #[clap(short, long = "rgb20-rpc")]
-    pub r: Option<String>,
-
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
     #[clap(flatten)]

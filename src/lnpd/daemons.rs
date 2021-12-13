@@ -132,16 +132,16 @@ impl Runtime {
         Ok(match daemon {
             Daemon::Signd => thread::spawn(move || signd::run(config)),
             Daemon::Peerd(socket, local_node) => {
-                thread::spawn(move || peerd::supervisor::run(config, local_node, socket, true))
+                thread::spawn(move || peerd::supervisor::run(config, local_node, socket))
             }
             #[cfg(not(feature = "rgb"))]
             Daemon::Channeld(channel_id) => {
                 thread::spawn(move || channeld::run(config, channel_id))
             }
             #[cfg(feature = "rgb")]
-            Daemon::Channeld(channel_id, rgb_socket) => thread::spawn(move || {
-                channeld::run(config, local_node, channel_id, chain, rgb_socket)
-            }),
+            Daemon::Channeld(channel_id, rgb_socket) => {
+                thread::spawn(move || channeld::run(config, channel_id, rgb_socket))
+            }
             Daemon::Routed => todo!(),
             Daemon::Gossipd => todo!(),
         })
@@ -199,7 +199,7 @@ impl Runtime {
         daemon: Daemon,
         config: Config,
     ) -> Result<DaemonHandle<Daemon>, DaemonError<Daemon>> {
-        if self.threaded {
+        if self.config.threaded {
             Ok(DaemonHandle::Thread(daemon.clone(), self.thread_daemon(daemon, config)?))
         } else {
             Ok(DaemonHandle::Process(daemon.clone(), self.exec_daemon(daemon)?))

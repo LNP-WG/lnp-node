@@ -37,7 +37,7 @@ use crate::rpc::{request, Request, ServiceBus};
 use crate::state_machine::{Event, StateMachine};
 use crate::{Config, Error, LogStyle, Senders, Service, ServiceId};
 
-pub fn run(config: Config, node_id: secp256k1::PublicKey, threaded: bool) -> Result<(), Error> {
+pub fn run(config: Config, node_id: secp256k1::PublicKey) -> Result<(), Error> {
     let runtime = Runtime {
         identity: ServiceId::Lnpd,
         config: config.clone(),
@@ -45,7 +45,6 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey, threaded: bool) -> Res
         listens: none!(),
         started: SystemTime::now(),
         handles: vec![],
-        threaded,
         funding_wallet: config.funding_wallet()?,
         channel_params: config.channel_params()?,
         connections: none!(),
@@ -76,13 +75,11 @@ impl Config {
 
 pub struct Runtime {
     identity: ServiceId,
-    config: Config,
+    pub(super) config: Config,
     node_id: secp256k1::PublicKey,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
     handles: Vec<DaemonHandle<Daemon>>,
-    /// Indicates whether deamons should be spawned as threads (true) or as child processes (false)
-    pub(super) threaded: bool,
     pub(super) funding_wallet: FundingWallet,
     pub(super) channel_params: (Policy, CommonParams, PeerParams),
     connections: HashSet<NodeAddr>,

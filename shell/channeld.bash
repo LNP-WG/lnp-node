@@ -19,7 +19,7 @@ _channeld() {
 
     case "${cmd}" in
         channeld)
-            opts="-h -V -k -r -d -c -v -T -m -x -n --help --version --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg-socket --ctl-socket --chain --electrum-server --electrum-port <CHANNEL_ID>"
+            opts="-h -V -k -d -c -v -T -m -r -n --help --version --key-file --rgb20-rpc --data-dir --config --verbose --tor-proxy --msg --rpc --chain --electrum-server --electrum-port --threaded-daemons <CHANNEL_ID>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -34,10 +34,6 @@ _channeld() {
                     return 0
                     ;;
                 --rgb20-rpc)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -65,7 +61,7 @@ _channeld() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --msg-socket)
+                --msg)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -73,11 +69,11 @@ _channeld() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                --ctl-socket)
+                --rpc)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -x)
+                -r)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

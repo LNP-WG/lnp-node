@@ -12,13 +12,16 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::str::FromStr;
 
-use internet2::NodeAddr;
+use internet2::ZmqSocketAddr;
 use lnpbp::chain::Chain;
 
 #[cfg(feature = "shell")]
 use crate::opts::Opts;
+use crate::opts::{LNP_NODE_MSG_SOCKET, LNP_NODE_RPC_SOCKET};
 
 /// Final configuration resulting from data contained in config file environment
 /// variables and command-line options. For security reasons node key is kept
@@ -33,13 +36,16 @@ pub struct Config {
     pub data_dir: PathBuf,
 
     /// ZMQ socket for lightning peer network message bus
-    pub msg_endpoint: NodeAddr,
+    pub msg_endpoint: ZmqSocketAddr,
 
     /// ZMQ socket for internal service control bus
-    pub ctl_endpoint: NodeAddr,
+    pub ctl_endpoint: ZmqSocketAddr,
 
     /// URL for the electrum server connection
     pub electrum_url: String,
+
+    /// Indicates whether deamons should be spawned as threads (true) or as child processes (false)
+    pub threaded: bool,
 }
 
 fn default_electrum_port(chain: &Chain) -> u16 {
@@ -62,12 +68,40 @@ impl From<Opts> for Config {
             opts.electrum_port.unwrap_or_else(|| default_electrum_port(&opts.chain))
         );
 
+        let (msg_default, ctl_default) = match opts.threaded_daemons {
+            true => (s!("inproc://msg"), s!("inproc://ctl")),
+            false => {
+                let mut msg_default = LNP_NODE_MSG_SOCKET.to_owned();
+                let mut ctl_default = LNP_NODE_RPC_SOCKET.to_owned();
+                opts.process_dir(&mut msg_default);
+                opts.process_dir(&mut ctl_default);
+                (format!("ipc://{}", msg_default), format!("ipc://{}", ctl_default))
+            }
+        };
+
+        let msg_endpoint = opts.msg_socket.map(|s| match SocketAddr::from_str(&s) {
+            Ok(_) => format!("tcp://{}", s),
+            Err(_) => format!("ipc://{}", s),
+        });
+
+        let ctl_endpoint = opts.rpc_socket.map(|s| match SocketAddr::from_str(&s) {
+            Ok(_) => format!("tcp://{}", s),
+            Err(_) => format!("ipc://{}", s),
+        });
+
         Config {
             chain: opts.chain,
             data_dir: opts.data_dir,
-            msg_endpoint: opts.msg_socket.into(),
-            ctl_endpoint: opts.ctl_socket.into(),
+            msg_endpoint: msg_endpoint
+                .unwrap_or(msg_default)
+                .parse()
+                .expect("ZMQ sockets should be either TCP addresses or files"),
+            ctl_endpoint: ctl_endpoint
+                .unwrap_or(ctl_default)
+                .parse()
+                .expect("ZMQ sockets should be either TCP addresses or files"),
             electrum_url,
+            threaded: opts.threaded_daemons,
         }
     }
 }

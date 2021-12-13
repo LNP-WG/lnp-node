@@ -17,7 +17,6 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::ValueHint;
-use internet2::PartialNodeAddr;
 use lnpbp::chain::Chain;
 use microservices::shell::LogLevel;
 
@@ -39,7 +38,7 @@ pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
 pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
 #[cfg(target_os = "macos")]
-pub const RGB_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node";
+pub const RGB_NODE_DATA_DIR: &'static str = "~/Library/Application Support/RGB Node";
 #[cfg(target_os = "windows")]
 pub const RGB_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\RGB Node";
 #[cfg(target_os = "ios")]
@@ -47,11 +46,11 @@ pub const RGB_NODE_DATA_DIR: &'static str = "~/Documents";
 #[cfg(target_os = "android")]
 pub const RGB_NODE_DATA_DIR: &'static str = ".";
 
-pub const LNP_NODE_MSG_SOCKET_NAME: &'static str = "lnpz:{data_dir}/msg.rpc?api=esb";
-pub const LNP_NODE_CTL_SOCKET_NAME: &'static str = "lnpz:{data_dir}/ctl.rpc?api=esb";
+pub const LNP_NODE_MSG_SOCKET: &'static str = "{data_dir}/msg";
+pub const LNP_NODE_RPC_SOCKET: &'static str = "{data_dir}/rpc";
 lazy_static::lazy_static! {
     pub static ref FUNGIBLED_RPC_ENDPOINT: String =
-        format!("lnpz://{}/fungibled.rpc?api=rpc", RGB_NODE_DATA_DIR);
+        format!("{}/fungibled.rpc", RGB_NODE_DATA_DIR);
 }
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp.toml";
@@ -64,10 +63,10 @@ pub const LNP_NODE_FUNDING_WALLET: &'static str = "funding";
 /// Shared options used by different binaries
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct Opts {
-    /// Data directory path
+    /// Data directory path.
     ///
-    /// Path to the directory that contains LNP Node data, and where ZMQ RPC
-    /// socket files are located
+    /// Path to the directory that contains LNP Node data, and where ZMQ RPC socket files are
+    /// located.
     #[clap(
         short,
         long,
@@ -78,7 +77,7 @@ pub struct Opts {
     )]
     pub data_dir: PathBuf,
 
-    /// Path to the configuration file.
+    /// Path for the configuration file.
     ///
     /// NB: Command-line options override configuration file values.
     #[clap(
@@ -88,19 +87,18 @@ pub struct Opts {
         env = "LNP_NODE_CONFIG",
         value_hint = ValueHint::FilePath
     )]
-    pub config: Option<String>,
+    pub config: Option<PathBuf>,
 
-    /// Set verbosity level
+    /// Set verbosity level.
     ///
-    /// Can be used multiple times to increase verbosity
+    /// Can be used multiple times to increase verbosity.
     #[clap(short, long, global = true, parse(from_occurrences))]
     pub verbose: u8,
 
     /// Use Tor
     ///
-    /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs
-    /// all network traffic through Tor network.
-    /// If the argument is provided in form of flag, without value, uses
+    /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs all network traffic
+    /// through Tor network. If the argument is provided in form of flag, without value, uses
     /// `127.0.0.1:9050` as default Tor proxy address.
     #[clap(
         short = 'T',
@@ -112,37 +110,33 @@ pub struct Opts {
     )]
     pub tor_proxy: Option<Option<SocketAddr>>,
 
-    /// ZMQ socket name/address to forward all incoming lightning messages
+    /// ZMQ socket used internally by daemon message bus.
     ///
-    /// Internal interface for transmitting P2P lightning network messages.
-    /// Defaults to `msg.rpc` file inside `--data-dir` directory, unless
-    /// `--use-threads` is specified; in that cases uses in-memory
-    /// communication protocol.
-    #[clap(
-        short = 'm',
-        long,
-        global = true,
-        env = "LNP_NODE_MSG_SOCKET",
-        value_hint = ValueHint::FilePath,
-        default_value = LNP_NODE_MSG_SOCKET_NAME
-    )]
-    pub msg_socket: PartialNodeAddr,
+    /// A user needs to specify this socket usually if it likes to distribute daemons over
+    /// different server instances. In this case all daemons within the same node must use the same
+    /// socket address.
+    ///
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path to an IPC
+    /// file.
+    ///
+    /// Defaults to `msg` file inside `--data-dir` directory, unless `--threaded-daemons` is
+    /// specified; in that cases uses in-memory communication protocol.
+    #[clap(short = 'm', long = "msg", global = true, env = "LNP_NODE_MSG_SOCKET", value_hint = ValueHint::FilePath)]
+    pub msg_socket: Option<String>,
 
-    /// ZMQ socket name/address for daemon control interface
+    /// ZMQ socket for daemon RPC interface.
     ///
-    /// Internal interface for control PRC protocol communications
-    /// Defaults to `ctl.rpc` file inside `--data-dir` directory, unless
-    /// `--use-threads` is specified; in that cases uses in-memory
-    /// communication protocol.
-    #[clap(
-        short = 'x',
-        long,
-        global = true,
-        env = "LNP_NODE_CTL_SOCKET",
-        value_hint = ValueHint::FilePath,
-        default_value = LNP_NODE_CTL_SOCKET_NAME
-    )]
-    pub ctl_socket: PartialNodeAddr,
+    /// A user needs to specify this socket usually if it likes to distribute daemons over
+    /// different server instances. In this case all daemons within the same node must use the same
+    /// socket address.
+    ///
+    /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path to an IPC
+    /// file.
+    ///
+    /// Defaults to `rpc` file inside `--data-dir` directory, unless `--threaded-daemons` is
+    /// specified; in that cases uses in-memory communication protocol.
+    #[clap(short = 'r', long = "rpc", global = true, env = "LNP_NODE_CTL_SOCKET", value_hint = ValueHint::FilePath)]
+    pub rpc_socket: Option<String>,
 
     /// Blockchain to use
     #[clap(
@@ -156,19 +150,23 @@ pub struct Opts {
     pub chain: Chain,
 
     /// Electrum server to use.
-    /// `extract` command
     #[clap(
         long,
         global = true,
         default_value("pandora.network"),
-        env = "LNP_NODE_ELECTRUM_SERVER"
+        env = "LNP_NODE_ELECTRUM_SERVER",
+        value_hint = ValueHint::Hostname
     )]
     pub electrum_server: String,
 
-    /// Customize Electrum server port number. By default the wallet will use
-    /// port matching the selected network.
+    /// Customize Electrum server port number. By default the wallet will use port matching the
+    /// selected network.
     #[clap(long, global = true, env = "LNP_NODE_ELECTRUM_PORT")]
     pub electrum_port: Option<u16>,
+
+    /// Spawn daemons as threads and not processes
+    #[clap(long)]
+    pub threaded_daemons: bool,
 }
 
 impl Opts {
@@ -181,9 +179,9 @@ impl Opts {
         );
         fs::create_dir_all(&me.data_dir).expect("Unable to access data directory");
 
-        for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
+        for s in vec![&mut self.msg_socket, &mut self.rpc_socket] {
             match s {
-                PartialNodeAddr::ZmqIpc(path, ..) | PartialNodeAddr::Posix(path) => {
+                Some(path) => {
                     me.process_dir(path);
                 }
                 _ => {}
@@ -192,7 +190,11 @@ impl Opts {
     }
 
     pub fn process_dir(&self, path: &mut String) {
-        *path = path.replace("{data_dir}", &self.data_dir.to_string_lossy());
-        *path = shellexpand::tilde(path).to_string();
+        process_dir(path, &self.data_dir.display().to_string());
     }
+}
+
+pub fn process_dir(path: &mut String, data_dir: &str) {
+    *path = path.replace("{data_dir}", &data_dir);
+    *path = shellexpand::tilde(path).to_string();
 }

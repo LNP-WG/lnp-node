@@ -12,10 +12,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-/// Lightning peer network signing daemon; part of LNP Node
+/// Lightning peer network channel daemon; part of LNP Node.
 ///
-/// The daemon is controlled though ZMQ ctl socket (see `ctl-socket` argument
-/// description)
+/// The daemon is controlled though RPC socket (see `rpc-socket` argument description).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "signd", bin_name = "signd", author, version)]
 pub struct Opts {
