@@ -78,7 +78,7 @@ pub fn run(config: Config, key_file: &Path, peer_socket: PeerSocket) -> Result<(
     let mut params = RuntimeParams::with(config, local_node.node_id());
     match peer_socket {
         PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet_addr)) => {
-            debug!("Running in LISTEN mode");
+            info!("Running peer daemon in LISTEN mode");
 
             params.connect = false;
             params.local_socket = Some(inet_addr);
@@ -90,7 +90,7 @@ pub fn run(config: Config, key_file: &Path, peer_socket: PeerSocket) -> Result<(
             spawner(params, inet_addr, threaded)?;
         }
         PeerSocket::Connect(remote_node_addr) => {
-            debug!("Running in CONNECT mode");
+            debug!("Running peer daemon in CONNECT mode");
 
             params.connect = true;
             params.id = NodeAddr::Remote(remote_node_addr.clone());
@@ -123,17 +123,17 @@ fn spawner(
     // Handlers for all of our spawned processes and threads
     let mut handlers = vec![];
 
-    debug!("Binding TCP socket {}", inet_addr);
+    info!("Binding TCP socket {}", inet_addr);
     let listener =
         TcpListener::bind(SocketAddr::try_from(inet_addr).expect("Tor is not yet supported"))
             .expect("Unable to bind to Lightning network peer socket");
 
-    debug!("Running TCP listener event loop");
+    info!("Running TCP listener event loop");
     let stream = loop {
         debug!("Awaiting for incoming connections...");
         let (stream, remote_socket_addr) =
             listener.accept().expect("Error accepting incpming peer connection");
-        debug!("New connection from {}", remote_socket_addr);
+        info!("New connection from {}", remote_socket_addr);
 
         params.remote_socket = remote_socket_addr.into();
 

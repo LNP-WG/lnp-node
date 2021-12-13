@@ -110,8 +110,10 @@ impl esb::Handler<ServiceBus> for Runtime {
     fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn on_ready(&mut self, _senders: &mut Senders) -> Result<(), Self::Error> {
+        info!("Starting signer daemon...");
         self.launch_daemon(Daemon::Signd, self.config.clone())?;
         for addr in &self.listens {
+            info!("Starting peer connection listening daemon on {}...", addr);
             self.launch_daemon(
                 Daemon::Peerd(PeerSocket::Listen(addr.clone()), self.node_key_path.clone()),
                 self.config.clone(),
