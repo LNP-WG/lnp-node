@@ -63,7 +63,7 @@ impl<DaemonName: Debug + Display + Clone> DaemonHandle<DaemonName> {
     ///
     /// # Returns
     ///
-    /// On error or upon thread/process successul completion. For process this means that the
+    /// On error or upon thread/process successful completion. For process this means that the
     /// process has exited with status 0.
     ///
     /// # Errors

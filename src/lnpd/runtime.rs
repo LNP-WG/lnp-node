@@ -25,7 +25,6 @@ use bitcoin::secp256k1;
 use internet2::{NodeAddr, RemoteSocketAddr, TypedEnum};
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, Messages, TempChannelId};
-use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
@@ -43,7 +42,6 @@ pub fn run(config: Config, node_id: secp256k1::PublicKey, threaded: bool) -> Res
         identity: ServiceId::Lnpd,
         config: config.clone(),
         node_id,
-        chain: config.chain.clone(),
         listens: none!(),
         started: SystemTime::now(),
         handles: vec![],
@@ -80,7 +78,6 @@ pub struct Runtime {
     identity: ServiceId,
     config: Config,
     node_id: secp256k1::PublicKey,
-    chain: Chain,
     listens: HashSet<RemoteSocketAddr>,
     started: SystemTime,
     handles: Vec<DaemonHandle<Daemon>>,
