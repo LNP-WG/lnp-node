@@ -46,7 +46,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         match (bus, message, source) {
             (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
-            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
+            (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
 
@@ -82,7 +82,7 @@ impl Runtime {
         match message {
             wrong_msg => {
                 error!("Request {} is not supported by the CTL interface", wrong_msg);
-                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &wrong_msg));
+                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_msg));
             }
         }
     }

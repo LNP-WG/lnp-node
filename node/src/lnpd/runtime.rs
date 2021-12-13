@@ -139,7 +139,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
                 unreachable!("lnpd received RPC message not from a client but from {}", service)
             }
-            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
+            (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
 
@@ -281,7 +281,7 @@ impl Runtime {
 
             wrong_msg => {
                 error!("Request is not supported by the RPC interface");
-                return Err(Error::wrong_rpc_msg(ServiceBus::Rpc, &wrong_msg));
+                return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_msg));
             }
         }
 
@@ -309,12 +309,35 @@ impl Runtime {
         source: ServiceId,
         message: CtlMsg,
     ) -> Result<(), Error> {
-        match message {
+        match &message {
             CtlMsg::Hello => self.handle_hello(endpoints, source)?,
+
+            CtlMsg::Keyset(service_id, _) => {
+                let service_id = service_id.clone();
+                let launcher = self
+                    .creating_channels
+                    .remove(&service_id)
+                    .expect(&format!("unregistered channel launcher {}", service_id));
+                let launcher = launcher
+                    .next(Event::with(endpoints, self.identity(), source, message), self)?
+                    .expect("channel launcher should not be complete");
+                self.creating_channels.insert(service_id, launcher);
+            }
+
+            CtlMsg::ConstructFunding(_) | CtlMsg::PublishFunding => {
+                let launcher = self
+                    .creating_channels
+                    .remove(&source)
+                    .expect(&format!("unregistered channel launcher {}", source));
+                let launcher = launcher
+                    .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
+                    .expect("channel launcher should not be complete");
+                self.creating_channels.insert(source, launcher);
+            }
 
             wrong_msg => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &wrong_msg));
+                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, wrong_msg));
             }
         }
 

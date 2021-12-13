@@ -98,7 +98,7 @@ where
                     Ok(())
                 }
             }
-            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
+            (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
 
@@ -150,14 +150,15 @@ where
                         ServiceBus::Ctl,
                         self.identity(),
                         source.clone(),
-                        BusMsg::Ctl(CtlMsg::Keyset(keyset)),
+                        BusMsg::Ctl(CtlMsg::Keyset(source.clone(), keyset)),
                     )?;
+                    break;
                 }
             }
 
             wrong_msg => {
                 error!("Request {} is not supported by the CTL interface", wrong_msg);
-                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &wrong_msg));
+                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_msg));
             }
         }
 

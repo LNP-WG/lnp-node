@@ -104,8 +104,8 @@ pub enum CtlMsg {
     DeriveKeyset(Slice32),
 
     // signd -> lnpd
-    #[display("keyset({0})")]
-    Keyset(Keyset),
+    #[display("keyset({0}, ...)")]
+    Keyset(ServiceId, Keyset),
 
     // Responses
     // ---------

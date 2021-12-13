@@ -21,11 +21,11 @@ use internet2::{presentation, transport};
 use microservices::{esb, rpc};
 use psbt::sign::SignError;
 
-use crate::channeld;
 #[cfg(feature = "_rpc")]
 use crate::i9n::ServiceBus;
 use crate::lnpd::state_machines::channel_launch;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
+use crate::{channeld, ServiceId};
 
 #[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]
@@ -94,6 +94,10 @@ pub enum Error {
     #[cfg(feature = "_rpc")]
     NotSupported(ServiceBus, String),
 
+    /// message `{1}` is not supported on {0} message bus for service {2}
+    #[cfg(feature = "_rpc")]
+    SourceNotSupported(ServiceBus, String, ServiceId),
+
     /// peer does not respond to ping messages
     NotResponding,
 
@@ -132,7 +136,15 @@ impl From<Error> for rpc::Error {
 }
 
 impl Error {
-    pub fn wrong_rpc_msg(bus: ServiceBus, message: &impl ToString) -> Error {
+    pub fn wrong_esb_msg(bus: ServiceBus, message: &impl ToString) -> Error {
         Error::NotSupported(bus, message.to_string())
+    }
+
+    pub fn wrong_esb_msg_source(
+        bus: ServiceBus,
+        message: &impl ToString,
+        source: ServiceId,
+    ) -> Error {
+        Error::SourceNotSupported(bus, message.to_string(), source)
     }
 }

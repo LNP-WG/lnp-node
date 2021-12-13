@@ -207,7 +207,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
             (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
-            (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
+            (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
 
@@ -273,7 +273,7 @@ impl Runtime {
 
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &request));
+                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
             }
         }
         Ok(())
@@ -357,7 +357,7 @@ impl Runtime {
 
             wrong_msg => {
                 error!("Request is not supported by the BRIDGE interface");
-                return Err(Error::wrong_rpc_msg(ServiceBus::Bridge, wrong_msg))?;
+                return Err(Error::wrong_esb_msg(ServiceBus::Bridge, wrong_msg))?;
             }
         }
         Ok(())

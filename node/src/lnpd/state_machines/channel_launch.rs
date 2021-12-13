@@ -135,7 +135,7 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
         let state = match self {
             ChannelLauncher::Init(temp_channel_id, request, enquirer) => match event.message {
                 CtlMsg::Hello => complete_launch(event, temp_channel_id, request, enquirer),
-                CtlMsg::Keyset(ref keyset) => {
+                CtlMsg::Keyset(_, ref keyset) => {
                     let keyset = keyset.clone();
                     complete_derivation(event, temp_channel_id, keyset, request, enquirer)
                 }
@@ -275,7 +275,7 @@ fn start_negotiation1(
          sign daemon"
     );
     let keyset = match &event.message {
-        CtlMsg::Keyset(keyset) => keyset.clone(),
+        CtlMsg::Keyset(_, keyset) => keyset.clone(),
         _ => {
             let err = Error::UnexpectedMessage(event.message.clone(), "LAUNCHING");
             report_failure(enquirer, event.endpoints, err)?;
