@@ -116,11 +116,22 @@ pub enum CtlMsg {
     #[from]
     Report(Report),
 
+    /// Error returned back by response-reply type of daemons (like signed) in case if the
+    /// operation has failed.
+    #[display("error(\"{error}\")")]
+    Error { request: String, error: String },
+
     #[display("node_info({0})", alt = "{0:#}")]
     PeerInfo(PeerInfo),
 
     #[display("channel_info({0})", alt = "{0:#}")]
     ChannelInfo(ChannelInfo),
+}
+
+impl CtlMsg {
+    pub fn with_error(message: &CtlMsg, err: &impl std::error::Error) -> CtlMsg {
+        CtlMsg::Error { request: message.to_string(), error: err.to_string() }
+    }
 }
 
 /// Request configuring newly launched channeld instance
