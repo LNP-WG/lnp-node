@@ -21,8 +21,10 @@
 
 use amplify::{Slice32, Wrapper};
 use bitcoin::Txid;
+use lnp::bolt::Keyset;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
 use microservices::esb;
+use microservices::esb::Handler;
 
 use crate::i9n::ctl::{CtlMsg, FundChannel, OpenChannelWith};
 use crate::i9n::rpc::{CreateChannel, Failure, OptionDetails, RpcMsg};
@@ -64,11 +66,43 @@ impl From<Error> for Failure {
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
 /// See `doc/workflows/channel_propose.png` for more details.
+///
+/// State machine workflow:
+/// ```ignore
+///           START
+///             |
+///        +---------+
+///        V         V
+///    LAUNCHING  DERIVING
+///        |         |
+///        +---------+
+///             V
+///        NEGOTIATING
+///             |
+///             V
+///        COMMITTING
+///             |
+///             V
+///          SIGNING
+///             |
+///             V
+///           DONE
+/// ```
 #[derive(Debug, Display)]
 pub enum ChannelLauncher {
-    /// Awaiting for channeld to come online and report back to lnpd
+    /// Awaiting for channeld to come online and report back to lnpd + for signd to derive keyset
+    /// in parallel.
+    #[display("INIT")]
+    Init(TempChannelId, CreateChannel, ClientId),
+
+    /// Keyset for channel is derived. Still awaiting for channeld to come online and report back
+    /// to lnpd.
     #[display("LAUNCHING")]
-    Launching(TempChannelId, CreateChannel, ClientId),
+    Launching(TempChannelId, CreateChannel, ClientId, Keyset),
+
+    /// Channel daemon is launched, awaiting for keyset to be derived.
+    #[display("DERIVING")]
+    Deriving(TempChannelId, CreateChannel, ClientId),
 
     /// Awaiting for channeld to complete negotiations on channel structure with the remote peer.
     /// At the end of this state lnpd will construct funding transaction and will provide channeld
@@ -99,17 +133,32 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
         debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
         let channel_id = self.channel_id();
         let state = match self {
-            ChannelLauncher::Launching(temp_channel_id, request, enquirer) => {
-                finish_launching(event, runtime, temp_channel_id, request, enquirer)
+            ChannelLauncher::Init(temp_channel_id, request, enquirer) => match event.message {
+                CtlMsg::Hello => complete_launch(event, temp_channel_id, request, enquirer),
+                CtlMsg::Keyset(ref keyset) => {
+                    let keyset = keyset.clone();
+                    complete_derivation(event, temp_channel_id, keyset, request, enquirer)
+                }
+                _ => {
+                    let err = Error::UnexpectedMessage(event.message.clone(), "INIT");
+                    report_failure(enquirer, event.endpoints, err)?;
+                    unreachable!()
+                }
+            },
+            ChannelLauncher::Deriving(temp_channel_id, request, enquirer) => {
+                start_negotiation1(event, runtime, temp_channel_id, request, enquirer)
+            }
+            ChannelLauncher::Launching(temp_channel_id, request, enquirer, keyset) => {
+                start_negotiation2(event, runtime, temp_channel_id, keyset, request, enquirer)
             }
             ChannelLauncher::Negotiating(temp_channel_id, enquirer) => {
-                finish_negotiating(event, runtime, temp_channel_id, enquirer)
+                complete_negotiation(event, runtime, temp_channel_id, enquirer)
             }
             ChannelLauncher::Committing(_, txid, enquirer) => {
-                finish_committing(event, runtime, txid, enquirer)
+                complete_commitment(event, runtime, txid, enquirer)
             }
             ChannelLauncher::Signing(channel_id, txid, enquirer) => {
-                finish_signing(event, runtime, txid, enquirer)?;
+                complete_signatures(event, runtime, txid, enquirer)?;
                 info!("ChannelLauncher {} has completed its work", channel_id);
                 return Ok(None);
             }
@@ -123,7 +172,9 @@ impl ChannelLauncher {
     /// Computes current channel id for the daemon being launched
     pub fn channel_id(&self) -> Slice32 {
         match self {
-            ChannelLauncher::Launching(temp_channel_id, ..)
+            ChannelLauncher::Init(temp_channel_id, ..)
+            | ChannelLauncher::Launching(temp_channel_id, ..)
+            | ChannelLauncher::Deriving(temp_channel_id, ..)
             | ChannelLauncher::Negotiating(temp_channel_id, ..)
             | ChannelLauncher::Committing(temp_channel_id, ..) => temp_channel_id.into_inner(),
             ChannelLauncher::Signing(channel_id, ..) => channel_id.into_inner(),
@@ -149,9 +200,20 @@ impl ChannelLauncher {
             .launch_daemon(Daemon::Channeld(temp_channel_id.into()), runtime.config.clone())
             .map(|handle| format!("Launched new instance of {}", handle))
             .map_err(Error::from);
-
-        let launcher = ChannelLauncher::Launching(temp_channel_id, create_channel, enquirer);
         report_progress_or_failure(enquirer, endpoints, report)?;
+
+        let report = endpoints
+            .send_to(
+                ServiceBus::Ctl,
+                runtime.identity(),
+                ServiceId::Signer,
+                BusMsg::Ctl(CtlMsg::DeriveKeyset(temp_channel_id.into_inner())),
+            )
+            .map(|_| s!("Deriving basepoint keys for the channel"))
+            .map_err(Error::from);
+        report_progress_or_failure(enquirer, endpoints, report)?;
+
+        let launcher = ChannelLauncher::Init(temp_channel_id, create_channel, enquirer);
         debug!("Awaiting for channeld to connect...");
 
         info!("ChannelLauncher {} entered LAUNCHING state", temp_channel_id);
@@ -159,17 +221,12 @@ impl ChannelLauncher {
     }
 }
 
-fn finish_launching(
-    mut event: Event<CtlMsg>,
-    runtime: &Runtime,
+fn complete_launch(
+    event: Event<CtlMsg>,
     temp_channel_id: TempChannelId,
     create_channel: CreateChannel,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
-    if !matches!(&event.message, CtlMsg::Hello) {
-        let err = Error::UnexpectedMessage(event.message.clone(), "LAUNCHING");
-        report_failure(enquirer, event.endpoints, err)?;
-    }
     debug_assert_eq!(
         event.source,
         ServiceId::Channel(temp_channel_id.into()),
@@ -184,6 +241,83 @@ fn finish_launching(
             create_channel.peerd.clone()
         ),
     );
+    Ok(ChannelLauncher::Deriving(temp_channel_id, create_channel, enquirer))
+}
+
+fn complete_derivation(
+    event: Event<CtlMsg>,
+    temp_channel_id: TempChannelId,
+    keyset: Keyset,
+    create_channel: CreateChannel,
+    enquirer: ClientId,
+) -> Result<ChannelLauncher, Error> {
+    debug_assert_eq!(
+        event.source,
+        ServiceId::Signer,
+        "channel_launcher workflow inconsistency: `Keyset` RPC CTL message originating not from a \
+         sign daemon"
+    );
+    report_progress(enquirer, event.endpoints, "Key derivation complete");
+    Ok(ChannelLauncher::Launching(temp_channel_id, create_channel, enquirer, keyset))
+}
+
+fn start_negotiation1(
+    event: Event<CtlMsg>,
+    runtime: &Runtime,
+    temp_channel_id: TempChannelId,
+    create_channel: CreateChannel,
+    enquirer: ClientId,
+) -> Result<ChannelLauncher, Error> {
+    debug_assert_eq!(
+        event.source,
+        ServiceId::Signer,
+        "channel_launcher workflow inconsistency: `Keyset` RPC CTL message originating not from a \
+         sign daemon"
+    );
+    let keyset = match &event.message {
+        CtlMsg::Keyset(keyset) => keyset.clone(),
+        _ => {
+            let err = Error::UnexpectedMessage(event.message.clone(), "LAUNCHING");
+            report_failure(enquirer, event.endpoints, err)?;
+            unreachable!()
+        }
+    };
+    report_progress(enquirer, event.endpoints, "Key derivation complete");
+    start_negotiation(event, runtime, temp_channel_id, keyset, create_channel, enquirer)
+}
+
+fn start_negotiation2(
+    event: Event<CtlMsg>,
+    runtime: &Runtime,
+    temp_channel_id: TempChannelId,
+    keyset: Keyset,
+    create_channel: CreateChannel,
+    enquirer: ClientId,
+) -> Result<ChannelLauncher, Error> {
+    if !matches!(event.message, CtlMsg::Hello) {
+        let err = Error::UnexpectedMessage(event.message.clone(), "DERIVING");
+        report_failure(enquirer, event.endpoints, err)?;
+        unreachable!()
+    }
+    report_progress(
+        enquirer,
+        event.endpoints,
+        format!(
+            "Channel daemon connecting to remote peer {} is launched",
+            create_channel.peerd.clone()
+        ),
+    );
+    start_negotiation(event, runtime, temp_channel_id, keyset, create_channel, enquirer)
+}
+
+fn start_negotiation(
+    mut event: Event<CtlMsg>,
+    runtime: &Runtime,
+    temp_channel_id: TempChannelId,
+    keyset: Keyset,
+    create_channel: CreateChannel,
+    enquirer: ClientId,
+) -> Result<ChannelLauncher, Error> {
     let mut common = runtime.channel_params.1;
     let mut local = runtime.channel_params.2;
     create_channel.apply_params(&mut common, &mut local);
@@ -195,7 +329,7 @@ fn finish_launching(
         policy: runtime.channel_params.0.clone(),
         common_params: common,
         local_params: local,
-        local_keys: runtime.new_channel_keyset(),
+        local_keys: keyset,
     };
     event
         .send_ctl(CtlMsg::OpenChannelWith(request))
@@ -203,7 +337,7 @@ fn finish_launching(
     Ok(ChannelLauncher::Negotiating(temp_channel_id, enquirer))
 }
 
-fn finish_negotiating(
+fn complete_negotiation(
     mut event: Event<CtlMsg>,
     runtime: &mut Runtime,
     temp_channel_id: TempChannelId,
@@ -245,7 +379,7 @@ fn finish_negotiating(
     Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid, enquirer))
 }
 
-fn finish_committing(
+fn complete_commitment(
     mut event: Event<CtlMsg>,
     runtime: &Runtime,
     txid: Txid,
@@ -276,7 +410,7 @@ fn finish_committing(
     Ok(ChannelLauncher::Signing(channel_id, txid, enquirer))
 }
 
-fn finish_signing(
+fn complete_signatures(
     event: Event<CtlMsg>,
     runtime: &Runtime,
     txid: Txid,

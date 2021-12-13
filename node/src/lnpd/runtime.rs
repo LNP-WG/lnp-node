@@ -163,6 +163,7 @@ impl Runtime {
             // Lisnening peerd forwards this request to lnpd so it can launch a new channeld
             // instance.
             LnMessage::OpenChannel(open_channel) => {
+                // TODO: Replace with state machine-based workflow
                 info!("Creating channel by peer request from {}", remote_peer);
                 self.launch_daemon(
                     Daemon::Channeld(open_channel.temporary_channel_id.into()),
@@ -425,8 +426,8 @@ impl Runtime {
         )
     }
 
-    pub(super) fn new_channel_keyset(&self) -> Keyset {
-        // TODO: Derive proper channel keys
+    fn new_channel_keyset(&self) -> Keyset {
+        // TODO: Use signd daemon instead
         Keyset::dumb_default()
     }
 }
