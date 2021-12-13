@@ -14,9 +14,13 @@
 
 use std::fs;
 
+use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
-use microservices::esb;
-use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SignAll};
+use bitcoin::util::bip32::ChildNumber;
+use lnp::bolt::Keyset;
+use lnpbp::chain::Chain;
+use microservices::esb::{self, Handler};
+use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
 
 use crate::i9n::ctl::CtlMsg;
 use crate::i9n::{BusMsg, ServiceBus};
@@ -33,6 +37,7 @@ pub struct Runtime<'secp>
 where
     Self: 'secp,
 {
+    chain: Chain,
     identity: ServiceId,
     provider: MemoryKeyProvider<'secp, secp256k1::All>,
 }
@@ -42,7 +47,11 @@ where
     Self: 'secp,
 {
     pub fn with(secp: &'secp Secp256k1<secp256k1::All>, config: &Config) -> Result<Self, Error> {
-        Ok(Runtime { identity: ServiceId::Signer, provider: Runtime::provider(secp, config)? })
+        Ok(Runtime {
+            chain: config.chain.clone(),
+            identity: ServiceId::Signer,
+            provider: Runtime::provider(secp, config)?,
+        })
     }
 
     fn provider(
@@ -76,7 +85,19 @@ where
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => {
+                if let Err(err) = self.handle_ctl(endpoints, source.clone(), msg.clone()) {
+                    endpoints.send_to(
+                        ServiceBus::Ctl,
+                        self.identity(),
+                        source,
+                        BusMsg::Ctl(CtlMsg::with_error(&msg, &err)),
+                    )?;
+                    Err(err)
+                } else {
+                    Ok(())
+                }
+            }
             (bus, msg, _) => Err(Error::wrong_rpc_msg(bus, &msg)),
         }
     }
@@ -108,12 +129,38 @@ where
                     source,
                     BusMsg::Ctl(CtlMsg::Signed(psbt)),
                 )?;
-                Ok(())
             }
+
+            CtlMsg::DeriveKeyset(slice32) => {
+                let mut buf = [0u8; 4];
+                buf.copy_from_slice(&slice32.as_inner()[..4]);
+                let le = u32::from_be_bytes(buf);
+                let channel_index = le & 0x7FFFFFFF;
+                for account in &self.provider {
+                    let account_xpriv = account.account_xpriv();
+                    let chain_index = self.chain.chain_params().is_testnet as u32;
+                    let path = &[chain_index, 1, 0, channel_index]
+                        .iter()
+                        .map(|idx| ChildNumber::from_hardened_idx(*idx).expect("hardcoded index"))
+                        .collect::<Vec<_>>();
+                    let channel_xpriv =
+                        account_xpriv.derive_priv(self.provider.secp_context(), path)?;
+                    let keyset = Keyset::with(self.provider.secp_context(), channel_xpriv, false);
+                    endpoints.send_to(
+                        ServiceBus::Ctl,
+                        self.identity(),
+                        source.clone(),
+                        BusMsg::Ctl(CtlMsg::Keyset(keyset)),
+                    )?;
+                }
+            }
+
             wrong_msg => {
                 error!("Request {} is not supported by the CTL interface", wrong_msg);
                 return Err(Error::wrong_rpc_msg(ServiceBus::Ctl, &wrong_msg));
             }
         }
+
+        Ok(())
     }
 }

@@ -12,6 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::Slice32;
 use bitcoin::{OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
@@ -93,11 +94,21 @@ pub enum CtlMsg {
     #[display("mined({0})")]
     Mined(MiningInfo),
 
+    // Key-related tasks
+    // -----------------
     #[display("sign(...)")]
     Sign(Psbt),
 
     #[display("signed(...)")]
     Signed(Psbt),
+
+    // lnpd -> signd
+    #[display("derive_keyset({0})")]
+    DeriveKeyset(Slice32),
+
+    // signd -> lnpd
+    #[display("keyset({0})")]
+    Keyset(Keyset),
 
     // Responses
     // ---------
