@@ -27,7 +27,9 @@ use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
 use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg};
-use crate::i9n::rpc::{Failure, FundsInfo, IntoSuccessOrFalure, NodeInfo, OptionDetails, RpcMsg};
+use crate::i9n::rpc::{
+    Failure, FundsInfo, IntoSuccessOrFalure, NodeInfo, OptionDetails, RpcMsg, ToProgressOrFalure,
+};
 use crate::i9n::{BusMsg, ServiceBus};
 use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
@@ -267,7 +269,7 @@ impl Runtime {
                         Err(Error::from(err))
                     }
                 };
-                self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
+                self.send_rpc(endpoints, client_id, resp.to_progress_or_failure())?;
             }
 
             RpcMsg::CreateChannel(create_channel) => {
