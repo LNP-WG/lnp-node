@@ -24,7 +24,6 @@ use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lnp::bolt::{self, AssetsBalance, CommonParams, Lifecycle, PeerParams};
 use lnp::p2p::legacy::{ChannelId, ChannelType, TempChannelId};
 use lnpbp::chain::AssetId;
-use microservices::rpc_connection;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 #[cfg(feature = "serde")]
@@ -35,107 +34,84 @@ use wallet::address::AddressCompat;
 use crate::ServiceId;
 
 /// RPC API requests between LNP Node daemons and clients.
-#[derive(Clone, Debug, Display, From, Api)]
+#[derive(Clone, Debug, Display, From)]
 #[derive(NetworkEncode, NetworkDecode)]
-#[api(encoding = "strict")]
 #[non_exhaustive]
 pub enum RpcMsg {
-    #[api(type = 100)]
     #[display("get_info()")]
     GetInfo,
 
-    #[api(type = 101)]
     #[display("list_peers()")]
     ListPeers,
 
-    #[api(type = 102)]
     #[display("list_channels()")]
     ListChannels,
 
-    #[api(type = 103)]
     #[display("list_funds()")]
     ListFunds,
 
-    #[api(type = 200)]
     #[display("listen({0})")]
     Listen(RemoteSocketAddr),
 
     // Node connectivity API
     // ---------------------
-    #[api(type = 201)]
     #[display("connect({0})")]
     ConnectPeer(RemoteNodeAddr),
 
-    #[api(type = 202)]
     #[display("ping_peer()")]
     PingPeer,
 
     // Channel API
     // -----------
     /// Requests creation of a new outbound channel by a client.
-    #[api(type = 203)]
     #[display("create_channel({0})")]
     CreateChannel(CreateChannel),
 
     // Can be issued from `cli` to a specific `peerd`
     #[cfg(feature = "rgb")]
-    #[api(type = 401)]
     #[display("refill_channel({0})")]
     RefillChannel(RefillChannel),
 
     // Can be issued from `cli` to a specific `peerd`
-    #[api(type = 402)]
     #[display("transfer({0})")]
     Transfer(Transfer),
 
     /* TODO: Activate after lightning-invoice library update
     // Can be issued from `cli` to a specific `peerd`
-    #[api(type = 208)]
     #[display("pay_invoice({0})")]
     PayInvoice(Invoice),
      */
     // Responses to CLI
     // ----------------
-    #[api(type = 1002)]
     #[display("progress(\"{0}\")")]
     #[from]
     Progress(String),
 
-    #[api(type = 1001)]
     #[display("success({0})")]
     Success(OptionDetails),
 
-    #[api(type = 1000)]
     #[display("failure({0:#})")]
     #[from]
     Failure(Failure),
 
-    #[api(type = 1100)]
     #[display("node_info({0})", alt = "{0:#}")]
     NodeInfo(NodeInfo),
 
-    #[api(type = 1101)]
     #[display("node_info({0})", alt = "{0:#}")]
     PeerInfo(PeerInfo),
 
-    #[api(type = 1102)]
     #[display("channel_info({0})", alt = "{0:#}")]
     ChannelInfo(ChannelInfo),
 
-    #[api(type = 1103)]
     #[display("peer_list({0})", alt = "{0:#}")]
     PeerList(List<NodeAddr>),
 
-    #[api(type = 1104)]
     #[display("channel_list({0})", alt = "{0:#}")]
     ChannelList(List<ChannelId>),
 
-    #[api(type = 1105)]
     #[display("funds_info({0})", alt = "{0:#}")]
     FundsInfo(FundsInfo),
 }
-
-impl rpc_connection::Request for RpcMsg {}
 
 /// Request to create channel originating from a client
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]

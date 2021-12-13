@@ -106,7 +106,7 @@ where
                     ServiceBus::Ctl,
                     self.identity.clone(),
                     source,
-                    CtlMsg::Signed(psbt),
+                    BusMsg::Ctl(CtlMsg::Signed(psbt)),
                 )?;
                 Ok(())
             }

@@ -15,10 +15,9 @@
 //! State machines help to organize complex asynchronous worflows involving multiple daemon
 //! interactions.
 
-use internet2::TypedEnum;
-use microservices::{esb, rpc_connection};
+use microservices::esb;
 
-use crate::i9n::ServiceBus;
+use crate::i9n::{BusMsg, ServiceBus};
 use crate::{Endpoints, ServiceId};
 
 /// State machine used by runtimes for managing complex asynchronous workflows:
@@ -27,7 +26,7 @@ use crate::{Endpoints, ServiceId};
 /// - Accepting channel creation by channeld;
 /// - Cooperative and non-cooperative channel closings;
 /// - Channel operations.
-pub trait StateMachine<Message: TypedEnum, Runtime: esb::Handler<ServiceBus>>
+pub trait StateMachine<Message, Runtime: esb::Handler<ServiceBus>>
 where
     esb::Error: From<<Runtime as esb::Handler<ServiceBus>>::Error>,
 {
@@ -47,7 +46,7 @@ where
 
 /// Event changing state machine state, consisting of a certain P2P or PRC `message` sent from some
 /// serivce `source` to the current `service`.
-pub struct Event<'esb, Message: TypedEnum> {
+pub struct Event<'esb, Message> {
     /// ESB API provided by a controller
     pub endpoints: &'esb mut Endpoints,
     /// Local service id (event receiver)
@@ -60,7 +59,7 @@ pub struct Event<'esb, Message: TypedEnum> {
 
 impl<'esb, Message> Event<'esb, Message>
 where
-    Message: rpc_connection::Request,
+    Message: Into<BusMsg>,
 {
     /// Constructs event out of the provided data
     pub fn with(
@@ -74,7 +73,7 @@ where
 
     /// Finalizes event processing by sending reply message via CTL message bus
     pub fn complete_ctl(self, message: Message) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Ctl, self.service, self.source, message)
+        self.endpoints.send_to(ServiceBus::Ctl, self.service, self.source, message.into())
     }
 
     /// Finalizes event processing by sending reply message via CTL message bus to a specific
@@ -84,12 +83,17 @@ where
         service: ServiceId,
         message: Message,
     ) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Ctl, self.service, service, message)
+        self.endpoints.send_to(ServiceBus::Ctl, self.service, service, message.into())
     }
 
     /// Sends a reply message via CTL message bus
     pub fn send_ctl(&mut self, message: Message) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Ctl, self.service.clone(), self.source.clone(), message)
+        self.endpoints.send_to(
+            ServiceBus::Ctl,
+            self.service.clone(),
+            self.source.clone(),
+            message.into(),
+        )
     }
 
     /// Sends reply message via CTL message bus to a specific service (different from the event
@@ -99,12 +103,12 @@ where
         service: ServiceId,
         message: Message,
     ) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Ctl, self.service.clone(), service, message)
+        self.endpoints.send_to(ServiceBus::Ctl, self.service.clone(), service, message.into())
     }
 
     /// Finalizes event processing by sending reply message via MSG message bus
     pub fn complete_msg(self, message: Message) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Msg, self.service, self.source, message)
+        self.endpoints.send_to(ServiceBus::Msg, self.service, self.source, message.into())
     }
 
     /// Finalizes event processing by sending reply message via MSG message bus to a specific
@@ -114,6 +118,6 @@ where
         service: ServiceId,
         message: Message,
     ) -> Result<(), esb::Error> {
-        self.endpoints.send_to(ServiceBus::Msg, self.service, service, message)
+        self.endpoints.send_to(ServiceBus::Msg, self.service, service, message.into())
     }
 }

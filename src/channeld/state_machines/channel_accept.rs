@@ -113,16 +113,16 @@ impl ChannelAccept {
     }
 }
 
-fn finish_accepted(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_accepted(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_signed(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_signed(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_funded(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_funded(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_locked(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }

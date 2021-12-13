@@ -347,7 +347,7 @@ impl Runtime {
                 let _ = self.report_success(endpoints, Some(msg));
             }
 
-            LnMsg::UpdateAddHtlc(update_add_htlc) => {
+            LnMsg::UpdateAddHtlc(_update_add_htlc) => {
                 // let _commitment_signed = self.htlc_receive(endpoints, update_add_htlc)?;
             }
 

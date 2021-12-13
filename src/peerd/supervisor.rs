@@ -140,13 +140,15 @@ fn spawner(
         if threaded_daemons {
             debug!("Spawning child thread");
             let child_params = params.clone();
-            let handler = thread::spawn(move || {
-                debug!("Establishing session with the remote");
-                let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
-                    .expect("Unable to establish session with the remote peer");
-                let connection = PeerConnection::with(session);
-                runtime::run(connection, child_params)
-            });
+            let handler = thread::Builder::new()
+                .name(format!("peerd-listner<{}>", inet_addr))
+                .spawn(move || {
+                    debug!("Establishing session with the remote");
+                    let session = session::Raw::with_ftcp_unencrypted(stream, inet_addr)
+                        .expect("Unable to establish session with the remote peer");
+                    let connection = PeerConnection::with(session);
+                    runtime::run(connection, child_params)
+                })?;
             handlers.push(Handler::Thread(handler));
             // We have started the thread so awaiting for the next incoming connection
         } else {

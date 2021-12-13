@@ -60,13 +60,16 @@ pub enum DaemonError<DaemonName: Debug + Display + Clone> {
     /// Error details: {1}
     ThreadAborted(DaemonName, Error),
 
+    /// thread `{0}` failed to launch due to I/O error {1}
+    ThreadLaunch(DaemonName, IoError),
+
     /// thread `{0}` failed to launch
-    ThreadLaunch(DaemonName),
+    ThreadJoin(DaemonName),
 
     /// process `{0}` has existed with a non-zero exit status {1}
     ProcessAborted(DaemonName, ExitStatus),
 
-    /// I/O error {1} during process `{0}` execution
+    /// process `{0}` failed to launch due to I/O error {1}
     ProcessLaunch(DaemonName, IoError),
 }
 
@@ -96,7 +99,7 @@ impl<DaemonName: Debug + Display + Clone> DaemonHandle<DaemonName> {
                 }),
             DaemonHandle::Thread(name, thread) => thread
                 .join()
-                .map_err(|_| DaemonError::ThreadLaunch(name.clone()))?
+                .map_err(|_| DaemonError::ThreadJoin(name.clone()))?
                 .map_err(|err| DaemonError::ThreadAborted(name, err)),
         }
     }
@@ -141,19 +144,20 @@ impl Runtime {
     ) -> Result<thread::JoinHandle<Result<(), Error>>, DaemonError<Daemon>> {
         debug!("Spawning {} as a new thread", daemon);
 
-        Ok(match daemon {
+        let builder = thread::Builder::new().name(daemon.to_string());
+        Ok(match daemon.clone() {
             Daemon::Signd => thread::spawn(move || signd::run(config)),
-            Daemon::Peerd(socket, key_file) => {
-                thread::spawn(move || peerd::supervisor::run(config, &key_file, socket))
-            }
+            Daemon::Peerd(socket, key_file) => builder
+                .spawn(move || peerd::supervisor::run(config, &key_file, socket))
+                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             #[cfg(not(feature = "rgb"))]
-            Daemon::Channeld(channel_id) => {
-                thread::spawn(move || channeld::run(config, channel_id))
-            }
+            Daemon::Channeld(channel_id) => builder
+                .spawn(move || channeld::run(config, channel_id))
+                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             #[cfg(feature = "rgb")]
-            Daemon::Channeld(channel_id, rgb_socket) => {
-                thread::spawn(move || channeld::run(config, channel_id, rgb_socket))
-            }
+            Daemon::Channeld(channel_id, rgb_socket) => builder
+                .spawn(move || channeld::run(config, channel_id, rgb_socket))
+                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             Daemon::Routed => todo!(),
             Daemon::Gossipd => todo!(),
         })

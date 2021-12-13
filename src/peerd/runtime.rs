@@ -149,7 +149,7 @@ impl peer::Handler<LnMsg> for ListenerRuntime {
             // for all other error types, indicating internal errors, we
             // propagate error to the upper level
             _ => {
-                error!("Unrecoverable peer error {}, halting", err);
+                error!("Unrecoverable {}, halting", err);
                 Err(err)
             }
         }
@@ -247,10 +247,6 @@ impl Runtime {
                 debug!("Forwarding LN peer message to the remote peer");
                 self.messages_sent += 1;
                 self.sender.send_message(message)?;
-            }
-            _ => {
-                error!("MSG RPC can be only used for forwarding LN P2P messages");
-                return Err(Error::wrong_rpc_msg(ServiceBus::Msg, &message));
             }
         }
         Ok(())

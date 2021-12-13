@@ -191,7 +191,7 @@ where
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));
             self.esb.send_to(ServiceBus::Ctl, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
-            self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
+            // self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
         }
 
         let identity = self.esb.handler().identity();
@@ -232,18 +232,18 @@ where
 
     fn report_success(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         msg: Option<impl ToString>,
     ) -> Result<(), Error> {
         if let Some(ref message) = msg {
             info!("{}", message.to_string());
         }
         if let Some(dest) = self.enquirer() {
-            senders.send_to(
+            endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
                 dest,
-                RpcMsg::Success(msg.map(|m| m.to_string()).into()),
+                BusMsg::Rpc(RpcMsg::Success(msg.map(|m| m.to_string()).into())),
             )?;
         }
         Ok(())
@@ -251,26 +251,31 @@ where
 
     fn report_progress(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         msg: impl ToString,
     ) -> Result<(), Error> {
         let msg = msg.to_string();
         info!("{}", msg);
         if let Some(dest) = self.enquirer() {
-            senders.send_to(ServiceBus::Ctl, self.identity(), dest, RpcMsg::Progress(msg))?;
+            endpoints.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                dest,
+                BusMsg::Rpc(RpcMsg::Progress(msg)),
+            )?;
         }
         Ok(())
     }
 
-    fn report_failure(&mut self, senders: &mut Endpoints, failure: impl Into<Failure>) -> Error {
+    fn report_failure(&mut self, endpoints: &mut Endpoints, failure: impl Into<Failure>) -> Error {
         let failure = failure.into();
         if let Some(dest) = self.enquirer() {
             // Even if we fail, we still have to terminate :)
-            let _ = senders.send_to(
+            let _ = endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
                 dest,
-                RpcMsg::Failure(failure.clone()),
+                BusMsg::Rpc(RpcMsg::Failure(failure.clone())),
             );
         }
         Error::Terminate(failure.to_string())
@@ -278,12 +283,12 @@ where
 
     fn send_ctl(
         &mut self,
-        senders: &mut Endpoints,
+        endpoints: &mut Endpoints,
         dest: impl TryToServiceId,
         request: CtlMsg,
     ) -> Result<(), Error> {
         if let Some(dest) = dest.try_to_service_id() {
-            senders.send_to(ServiceBus::Ctl, self.identity(), dest, request)?;
+            endpoints.send_to(ServiceBus::Ctl, self.identity(), dest, BusMsg::Ctl(request))?;
         }
         Ok(())
     }

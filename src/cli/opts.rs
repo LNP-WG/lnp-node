@@ -22,6 +22,8 @@ use lnp::p2p::legacy::{ChannelId, ChannelType};
 #[cfg(feature = "rgb")]
 use rgb::ContractId;
 
+use crate::opts::LNP_NODE_RPC_SOCKET;
+
 /// Command-line tool for working with LNP node
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "lnp-cli", bin_name = "lnp-cli", author, version)]
@@ -36,7 +38,7 @@ pub struct Opts {
         short,
         long,
         global = true,
-        default_value = "LNP_NODE_RPC_SOCKET",
+        default_value = LNP_NODE_RPC_SOCKET,
         env = "LNP_NODE_RPC_SOCKET"
     )]
     pub connect: String,

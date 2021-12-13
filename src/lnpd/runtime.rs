@@ -296,7 +296,7 @@ impl Runtime {
             ServiceBus::Rpc,
             ServiceId::Lnpd,
             ServiceId::Client(client_id),
-            message.into(),
+            BusMsg::Rpc(message.into()),
         )
     }
 
@@ -346,7 +346,7 @@ impl Runtime {
                 ServiceBus::Ctl,
                 self.identity(),
                 source.clone(),
-                CtlMsg::AcceptChannelFrom(accept_channel.clone()),
+                BusMsg::Ctl(CtlMsg::AcceptChannelFrom(accept_channel.clone())),
             )?;
             self.accepting_channels.remove(&source);
         } else if let Some(enquirer) = self.spawning_peers.get(&source).copied() {

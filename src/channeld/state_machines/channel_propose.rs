@@ -126,40 +126,43 @@ impl ChannelPropose {
 }
 
 fn finish_proposed(
-    event: Event<CtlMsg>,
-    runtime: &mut Runtime,
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_accepted(
-    event: Event<CtlMsg>,
-    runtime: &mut Runtime,
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funding(
-    event: Event<CtlMsg>,
-    runtime: &mut Runtime,
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_signed(
-    event: Event<CtlMsg>,
-    runtime: &mut Runtime,
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
 fn finish_funded(
-    event: Event<CtlMsg>,
-    runtime: &mut Runtime,
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     todo!()
 }
 
-fn finish_locked(event: Event<CtlMsg>, runtime: &mut Runtime) -> Result<(), state_machines::Error> {
+fn finish_locked(
+    _event: Event<CtlMsg>,
+    _runtime: &mut Runtime,
+) -> Result<(), state_machines::Error> {
     todo!()
 }

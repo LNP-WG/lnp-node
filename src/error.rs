@@ -16,9 +16,7 @@ use std::io;
 
 use amplify::IoError;
 use bitcoin::util::bip32;
-#[cfg(feature = "_rpc")]
-use internet2::TypeId;
-use internet2::{presentation, transport, TypedEnum};
+use internet2::{presentation, transport};
 #[cfg(feature = "_rpc")]
 use microservices::{esb, rpc};
 use psbt::sign::SignError;
@@ -92,9 +90,9 @@ pub enum Error {
     #[from]
     Bridge(transport::Error),
 
-    /// message type #{1} is not supported on {0} message bus. Message details: {2}
+    /// message `{1}` is not supported on {0} message bus
     #[cfg(feature = "_rpc")]
-    NotSupported(ServiceBus, TypeId, String),
+    NotSupported(ServiceBus, String),
 
     /// peer does not respond to ping messages
     NotResponding,
@@ -134,7 +132,7 @@ impl From<Error> for rpc::Error {
 }
 
 impl Error {
-    pub fn wrong_rpc_msg(bus: ServiceBus, message: &(impl TypedEnum + ToString)) -> Error {
-        Error::NotSupported(bus, message.get_type(), message.to_string())
+    pub fn wrong_rpc_msg(bus: ServiceBus, message: &impl ToString) -> Error {
+        Error::NotSupported(bus, message.to_string())
     }
 }

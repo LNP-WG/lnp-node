@@ -58,13 +58,13 @@ pub enum BusMsg {
     Ln(p2p::legacy::Messages),
 
     /// Wrapper for inner type of control messages to be transmitted over control bus
-    #[api(type = 3)]
+    #[api(type = 2)]
     #[display(inner)]
     #[from]
     Ctl(CtlMsg),
 
     /// Wrapper for RPC messages to be transmitted over control bus
-    #[api(type = 5)]
+    #[api(type = 4)]
     #[display(inner)]
     #[from]
     Rpc(RpcMsg),

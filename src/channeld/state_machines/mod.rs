@@ -195,7 +195,7 @@ impl Runtime {
         Ok(updated_state)
     }
 
-    fn process_event(&mut self, event: Event<CtlMsg>) -> Result<(), Error> {
+    fn process_event(&mut self, _event: Event<CtlMsg>) -> Result<(), Error> {
         match self.state_machine {
             _ => {} // TODO: implement
         }

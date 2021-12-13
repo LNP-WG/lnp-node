@@ -26,7 +26,7 @@ use microservices::esb;
 
 use crate::i9n::ctl::{CtlMsg, FundChannel, OpenChannelWith};
 use crate::i9n::rpc::{CreateChannel, Failure, OptionDetails, RpcMsg};
-use crate::i9n::ServiceBus;
+use crate::i9n::{BusMsg, ServiceBus};
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
 use crate::service::ClientId;
@@ -321,8 +321,8 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
-        .map_err(|err| error!("Can't report back to client #{}", client_id));
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
     Err(err.into())
 }
 
@@ -335,8 +335,8 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
-        .map_err(|err| error!("Can't report back to client #{}", client_id));
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
 }
 
 fn report_success<T>(client_id: ClientId, endpoints: &mut Endpoints, msg: T)
@@ -348,8 +348,8 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
-        .map_err(|err| error!("Can't report back to client #{}", client_id));
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
 }
 
 fn report_progress_or_failure<T, E>(
@@ -369,7 +369,7 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, report)
-        .map_err(|err| error!("Can't report back to client #{}", client_id));
+        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
     result.map(|_| ()).map_err(E::into)
 }
