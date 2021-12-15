@@ -110,10 +110,14 @@ impl ChannelPropose {
         endpoints: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<ChannelPropose, state_machines::Error> {
-        let open_channel = LnMsg::OpenChannel(
-            // TODO: Push common and other params to the channel from channel open request
-            runtime.channel.compose_open_channel(request.funding_sat, request.push_msat)?,
-        );
+        let open_channel = LnMsg::OpenChannel(runtime.channel.compose_open_channel(
+            request.funding_sat,
+            request.push_msat,
+            request.policy,
+            request.common_params,
+            request.local_params,
+            request.local_keys,
+        )?);
 
         runtime.send_p2p(endpoints, open_channel)?;
 
