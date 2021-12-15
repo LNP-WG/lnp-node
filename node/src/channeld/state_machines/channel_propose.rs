@@ -223,11 +223,10 @@ fn complete_funding(
         }
     };
 
-    runtime.send_ctl(
-        event.endpoints,
-        ServiceId::Lnpd,
-        CtlMsg::PublishFunding(funding_signed.signature),
-    )?;
+    // Save signature
+    runtime.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
+
+    runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::PublishFunding)?;
     Ok(ChannelPropose::Signed)
 }
 
