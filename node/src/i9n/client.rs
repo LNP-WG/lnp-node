@@ -22,7 +22,7 @@ use microservices::esb;
 
 use crate::i9n::rpc::{OptionDetails, RpcMsg};
 use crate::i9n::{BusMsg, ServiceBus};
-use crate::{Error, LogStyle, ServiceId};
+use crate::{Endpoints, Error, LogStyle, ServiceId};
 
 #[repr(C)]
 pub struct Client {
@@ -129,14 +129,13 @@ pub struct Handler {
 
 impl esb::Handler<ServiceBus> for Handler {
     type Request = BusMsg;
-    type Address = ServiceId;
     type Error = Error;
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
-        _senders: &mut esb::SenderList<ServiceBus, ServiceId>,
+        _senders: &mut Endpoints,
         _bus: ServiceBus,
         _addr: ServiceId,
         _request: BusMsg,
@@ -145,7 +144,11 @@ impl esb::Handler<ServiceBus> for Handler {
         Ok(())
     }
 
-    fn handle_err(&mut self, err: esb::Error) -> Result<(), esb::Error> {
+    fn handle_err(
+        &mut self,
+        _: &mut Endpoints,
+        err: esb::Error<ServiceId>,
+    ) -> Result<(), Self::Error> {
         // We simply propagate the error since it's already being reported
         Err(err)?
     }

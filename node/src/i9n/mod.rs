@@ -23,6 +23,7 @@ use microservices::rpc_connection;
 
 use crate::i9n::ctl::CtlMsg;
 use crate::i9n::rpc::RpcMsg;
+use crate::ServiceId;
 
 /// Service buses used for inter-daemon communication
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]
@@ -44,7 +45,9 @@ pub enum ServiceBus {
     Bridge,
 }
 
-impl BusId for ServiceBus {}
+impl BusId for ServiceBus {
+    type Address = ServiceId;
+}
 
 /// Service bus messages wrapping all other message types
 #[derive(Clone, Debug, Display, From, Api)]

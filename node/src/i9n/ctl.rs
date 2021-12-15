@@ -118,6 +118,10 @@ pub enum CtlMsg {
     #[display("error({destination}, \"{error}\")")]
     Error { destination: ServiceId, request: String, error: String },
 
+    /// Error returned if the destination service is offline
+    #[display("esb_error({destination}, \"{error}\")")]
+    EsbError { destination: ServiceId, error: String },
+
     #[display("node_info({0})", alt = "{0:#}")]
     PeerInfo(PeerInfo),
 

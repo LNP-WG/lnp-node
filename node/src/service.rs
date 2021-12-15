@@ -127,8 +127,8 @@ impl From<Vec<u8>> for ServiceId {
 
 pub struct Service<Runtime>
 where
-    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = BusMsg>,
-    esb::Error: From<Runtime::Error>,
+    Runtime: esb::Handler<ServiceBus, Request = BusMsg>,
+    esb::Error<ServiceId>: From<Runtime::Error>,
 {
     esb: esb::Controller<ServiceBus, BusMsg, Runtime>,
     broker: bool,
@@ -136,8 +136,8 @@ where
 
 impl<Runtime> Service<Runtime>
 where
-    Runtime: esb::Handler<ServiceBus, Address = ServiceId, Request = BusMsg>,
-    esb::Error: From<Runtime::Error>,
+    Runtime: esb::Handler<ServiceBus, Request = BusMsg>,
+    esb::Error<ServiceId>: From<Runtime::Error>,
 {
     #[cfg(feature = "node")]
     pub fn run(config: Config, runtime: Runtime, broker: bool) -> Result<(), Error> {
@@ -146,7 +146,7 @@ where
         unreachable!()
     }
 
-    fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error> {
+    fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error<ServiceId>> {
         let router = if !broker { Some(ServiceId::router()) } else { None };
         let mut services = map! {
             ServiceBus::Msg => esb::BusConfig::with_locator(
@@ -171,17 +171,17 @@ where
         Ok(Self { esb, broker })
     }
 
-    pub fn broker(config: Config, runtime: Runtime) -> Result<Self, esb::Error> {
+    pub fn broker(config: Config, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
         Self::with(config, runtime, true)
     }
 
-    pub fn service(config: Config, runtime: Runtime) -> Result<Self, esb::Error> {
+    pub fn service(config: Config, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
         Self::with(config, runtime, false)
     }
 
     pub fn is_broker(&self) -> bool { self.broker }
 
-    pub fn add_loopback(&mut self, socket: zmq::Socket) -> Result<(), esb::Error> {
+    pub fn add_loopback(&mut self, socket: zmq::Socket) -> Result<(), esb::Error<ServiceId>> {
         self.esb.add_service_bus(ServiceBus::Bridge, esb::BusConfig {
             carrier: zmqsocket::Carrier::Socket(socket),
             router: None,
@@ -206,7 +206,7 @@ where
     }
 }
 
-pub type Endpoints = esb::SenderList<ServiceBus, ServiceId>;
+pub type Endpoints = esb::SenderList<ServiceBus>;
 
 pub trait TryToServiceId {
     fn try_to_service_id(&self) -> Option<ServiceId>;
@@ -226,8 +226,8 @@ impl TryToServiceId for Option<ServiceId> {
 
 pub trait CtlServer
 where
-    Self: esb::Handler<ServiceBus, Address = ServiceId>,
-    esb::Error: From<Self::Error>,
+    Self: esb::Handler<ServiceBus>,
+    esb::Error<ServiceId>: From<Self::Error>,
 {
     /// Returns client which should receive status update reports
     #[inline]
@@ -289,7 +289,7 @@ where
         endpoints: &mut Endpoints,
         dest: impl TryToServiceId,
         request: CtlMsg,
-    ) -> Result<(), esb::Error> {
+    ) -> Result<(), esb::Error<ServiceId>> {
         if let Some(dest) = dest.try_to_service_id() {
             endpoints.send_to(ServiceBus::Ctl, self.identity(), dest, BusMsg::Ctl(request))?;
         }

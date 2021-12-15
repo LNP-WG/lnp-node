@@ -38,7 +38,7 @@ pub enum Error {
     /// ESB error: {0}
     #[cfg(feature = "_rpc")]
     #[from]
-    Esb(esb::Error),
+    Esb(esb::Error<ServiceId>),
 
     /// RPC error: {0}
     #[cfg(feature = "_rpc")]
@@ -116,7 +116,7 @@ pub enum Error {
 impl microservices::error::Error for Error {}
 
 #[cfg(feature = "_rpc")]
-impl From<Error> for esb::Error {
+impl From<Error> for esb::Error<ServiceId> {
     fn from(err: Error) -> Self {
         match err {
             Error::Esb(err) => err,

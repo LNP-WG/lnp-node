@@ -48,7 +48,7 @@ pub enum Error {
 
     /// failure sending RPC request during state transition. Details: {0}
     #[from]
-    Esb(esb::Error),
+    Esb(esb::Error<ServiceId>),
 
     /// unable to launch channel daemon. Details: {0}
     #[from(DaemonError<Daemon>)]

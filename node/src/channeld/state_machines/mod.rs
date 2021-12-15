@@ -46,7 +46,7 @@ pub enum Error {
 
     /// error sending RPC request during state transition. Details: {0}
     #[from]
-    Esb(esb::Error),
+    Esb(esb::Error<ServiceId>),
 
     /// unable to {operation} during {current_state} channel state
     InvalidState { operation: &'static str, current_state: Lifecycle },
@@ -155,6 +155,24 @@ impl Runtime {
         source: ServiceId,
         request: BusMsg,
     ) -> Result<bool, Error> {
+        if let BusMsg::Ctl(CtlMsg::EsbError { destination, error: _ }) = &request {
+            let (code, info) = match destination {
+                ServiceId::Peer(remote_peer) => (
+                    9001,
+                    format!(
+                        "There is no connection with the remote peer {}; you have to `connect` to \
+                         it first",
+                        remote_peer
+                    ),
+                ),
+                _ => (
+                    9000,
+                    format!("Unable to complete: daemon {} is offline or crashed", destination),
+                ),
+            };
+            self.report_failure(endpoints, Failure { code, info });
+        }
+
         let event = Event::with(endpoints, self.identity(), source, request);
         let channel_id = self.channel.active_channel_id();
         let updated_state = match self.process_event(event) {

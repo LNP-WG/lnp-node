@@ -28,7 +28,7 @@ use crate::{Endpoints, ServiceId};
 /// - Channel operations.
 pub trait StateMachine<Message, Runtime: esb::Handler<ServiceBus>>
 where
-    esb::Error: From<<Runtime as esb::Handler<ServiceBus>>::Error>,
+    esb::Error<ServiceId>: From<<Runtime as esb::Handler<ServiceBus>>::Error>,
 {
     /// Workflow-specific error type
     type Error: std::error::Error;
@@ -72,7 +72,7 @@ where
     }
 
     /// Finalizes event processing by sending reply message via CTL message bus
-    pub fn complete_ctl(self, message: Message) -> Result<(), esb::Error> {
+    pub fn complete_ctl(self, message: Message) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(ServiceBus::Ctl, self.service, self.source, message.into())
     }
 
@@ -82,12 +82,12 @@ where
         self,
         service: ServiceId,
         message: Message,
-    ) -> Result<(), esb::Error> {
+    ) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(ServiceBus::Ctl, self.service, service, message.into())
     }
 
     /// Sends a reply message via CTL message bus
-    pub fn send_ctl(&mut self, message: Message) -> Result<(), esb::Error> {
+    pub fn send_ctl(&mut self, message: Message) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(
             ServiceBus::Ctl,
             self.service.clone(),
@@ -102,12 +102,12 @@ where
         &mut self,
         service: ServiceId,
         message: Message,
-    ) -> Result<(), esb::Error> {
+    ) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(ServiceBus::Ctl, self.service.clone(), service, message.into())
     }
 
     /// Finalizes event processing by sending reply message via MSG message bus
-    pub fn complete_msg(self, message: Message) -> Result<(), esb::Error> {
+    pub fn complete_msg(self, message: Message) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(ServiceBus::Msg, self.service, self.source, message.into())
     }
 
@@ -117,7 +117,7 @@ where
         self,
         service: ServiceId,
         message: Message,
-    ) -> Result<(), esb::Error> {
+    ) -> Result<(), esb::Error<ServiceId>> {
         self.endpoints.send_to(ServiceBus::Msg, self.service, service, message.into())
     }
 }

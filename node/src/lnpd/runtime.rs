@@ -104,7 +104,6 @@ pub struct Runtime {
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
-    type Address = ServiceId;
     type Error = Error;
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
@@ -143,7 +142,24 @@ impl esb::Handler<ServiceBus> for Runtime {
         }
     }
 
-    fn handle_err(&mut self, _: esb::Error) -> Result<(), esb::Error> {
+    fn handle_err(
+        &mut self,
+        endpints: &mut Endpoints,
+        err: esb::Error<ServiceId>,
+    ) -> Result<(), Self::Error> {
+        if let esb::Error::Send(source, dest, err) = err {
+            // We need to report back that one of the daemons is offline so the client will not hang
+            // waiting for updates forever
+            let dest = ServiceId::from(dest);
+            error!("Daemon {} is offline", dest);
+            let _ = endpints.send_to(
+                ServiceBus::Ctl,
+                self.identity(),
+                source,
+                BusMsg::Ctl(CtlMsg::EsbError { destination: dest, error: err.to_string() }),
+            )?;
+        }
+
         // We do nothing and do not propagate error; it's already being reported
         // with `error!` macro by the controller. If we propagate error here
         // this will make whole daemon panic
@@ -295,7 +311,7 @@ impl Runtime {
         endpoints: &mut Endpoints,
         client_id: ClientId,
         message: impl Into<RpcMsg>,
-    ) -> Result<(), esb::Error> {
+    ) -> Result<(), esb::Error<ServiceId>> {
         endpoints.send_to(
             ServiceBus::Rpc,
             ServiceId::Lnpd,

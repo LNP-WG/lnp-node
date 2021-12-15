@@ -73,7 +73,6 @@ where
     Self: 'secp,
 {
     type Request = BusMsg;
-    type Address = ServiceId;
     type Error = Error;
 
     fn identity(&self) -> ServiceId { self.identity.clone() }
@@ -103,7 +102,11 @@ where
         }
     }
 
-    fn handle_err(&mut self, _: esb::Error) -> Result<(), esb::Error> {
+    fn handle_err(
+        &mut self,
+        _: &mut Endpoints,
+        _: esb::Error<ServiceId>,
+    ) -> Result<(), Self::Error> {
         // We do nothing and do not propagate error; it's already being reported
         // with `error!` macro by the controller. If we propagate error here
         // this will make whole daemon panic
