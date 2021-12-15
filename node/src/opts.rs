@@ -21,17 +21,17 @@ use lnpbp::chain::Chain;
 use microservices::shell::LogLevel;
 
 #[cfg(any(target_os = "linux"))]
-pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
+pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/{chain}";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
-pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node";
+pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/{chain}";
 #[cfg(target_os = "macos")]
-pub const LNP_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node";
+pub const LNP_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node/{chain}";
 #[cfg(target_os = "windows")]
-pub const LNP_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\LNP Node";
+pub const LNP_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\LNP Node\\{chain}";
 #[cfg(target_os = "ios")]
-pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents";
+pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/{chain}";
 #[cfg(target_os = "android")]
-pub const LNP_NODE_DATA_DIR: &'static str = ".";
+pub const LNP_NODE_DATA_DIR: &'static str = "./{chain}";
 
 #[cfg(any(target_os = "linux"))]
 pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
@@ -190,10 +190,11 @@ impl Opts {
         LogLevel::from_verbosity_flag_count(self.verbose).apply();
         let me = self.clone();
 
-        self.data_dir = PathBuf::from(
-            shellexpand::tilde(&me.data_dir.to_string_lossy().to_string()).to_string(),
-        );
-        fs::create_dir_all(&me.data_dir).expect("Unable to access data directory");
+        let mut data_dir = me.data_dir.display().to_string();
+        data_dir = data_dir.replace("{chain}", &self.chain.to_string());
+        self.data_dir = PathBuf::from(shellexpand::tilde(&data_dir.to_string()).to_string());
+        fs::create_dir_all(&self.data_dir)
+            .expect(&format!("Unable to access data directory '{}'", &self.data_dir.display()));
 
         for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
             match s {
