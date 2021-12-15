@@ -205,8 +205,8 @@ pub struct FundChannel {
     /// Amount of funds to be sent to the funding address
     pub amount: u64,
 
-    /// Fee to pay for the funding transaction
-    pub fee: u64,
+    /// Fee rate to use for the funding transaction, per kilo-weight unit
+    pub feerate_per_kw: Option<u32>,
 }
 
 /// Update on a transaction mining status

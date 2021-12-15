@@ -31,12 +31,15 @@ use descriptors::InputDescriptor;
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::p2p::legacy::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
-use miniscript::Descriptor;
+use miniscript::{Descriptor, DescriptorTrait};
 use psbt::construct::Construct;
 use psbt::{Psbt, Tx};
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 use wallet::scripts::PubkeyScript;
+
+// The default fee rate is 2 sats per kilo-vbyte
+const DEFAULT_FEERATE_PER_KW: u32 = 2u32 * 1000 * 4;
 
 /// Errors working with funding wallet
 #[derive(Debug, Display, Error, From)]
@@ -140,6 +143,7 @@ pub struct FundingWallet {
     secp: Secp256k1<secp256k1::All>,
     network: bitcoin::Network,
     resolver: ElectrumClient,
+    feerate_per_kw: u32,
     wallet_file: fs::File,
     wallet_data: WalletData,
 }
@@ -151,6 +155,7 @@ impl FundingWallet {
         descriptor: Descriptor<TrackingAccount>,
         electrum_url: &str,
     ) -> Result<FundingWallet, Error> {
+        info!("Creating funding wallet at '{}'", wallet_path.as_ref().display());
         let wallet_file = fs::File::create(wallet_path)?;
         let wallet_data = WalletData {
             descriptor,
@@ -160,13 +165,9 @@ impl FundingWallet {
             pending_fundings: bmap! {},
         };
         wallet_data.strict_encode(&wallet_file)?;
-        Ok(FundingWallet {
-            secp: Secp256k1::new(),
-            network: chain.try_into()?,
-            resolver: ElectrumClient::new(electrum_url)?,
-            wallet_file,
-            wallet_data,
-        })
+
+        let network = chain.try_into()?;
+        FundingWallet::init(network, wallet_data, wallet_file, electrum_url)
     }
 
     pub fn with(
@@ -174,6 +175,7 @@ impl FundingWallet {
         wallet_path: impl AsRef<Path>,
         electrum_url: &str,
     ) -> Result<FundingWallet, Error> {
+        info!("Opening funding wallet at '{}'", wallet_path.as_ref().display());
         let wallet_file =
             fs::OpenOptions::new().read(true).write(true).create(false).open(wallet_path)?;
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
@@ -183,19 +185,53 @@ impl FundingWallet {
             return Err(Error::ChainMismatch);
         }
 
-        Ok(FundingWallet {
+        FundingWallet::init(network, wallet_data, wallet_file, electrum_url)
+    }
+
+    fn init(
+        network: Network,
+        wallet_data: WalletData,
+        wallet_file: fs::File,
+        electrum_url: &str,
+    ) -> Result<FundingWallet, Error> {
+        info!("Connecting Electrum server at {}", electrum_url);
+        let resolver = ElectrumClient::new(electrum_url)?;
+
+        let mut wallet = FundingWallet {
             secp: Secp256k1::new(),
             network,
-            resolver: ElectrumClient::new(electrum_url)?,
+            resolver,
             wallet_data,
             wallet_file,
-        })
+            feerate_per_kw: DEFAULT_FEERATE_PER_KW,
+        };
+        wallet.update_fees()?;
+        Ok(wallet)
     }
 
     pub fn save(&mut self) -> Result<(), Error> {
+        trace!("Saving funding wallet data on disk");
         self.wallet_file.seek(io::SeekFrom::Start(0))?;
         self.wallet_data.strict_encode(&self.wallet_file)?;
+        debug!("Funding wallet data is saved on disk");
         Ok(())
+    }
+
+    // TODO: Call update fees from a LNPd on a regular basis
+    pub fn update_fees(&mut self) -> Result<u32, Error> {
+        trace!("Getting fee estimate from the electrum server");
+        let fee_estimate = self.resolver.estimate_fee(1)?;
+        if fee_estimate == -1.0 {
+            debug!(
+                "Electrum server was unable to provide fee estimation, keeping current rate of {} \
+                 per kilo-weight unit",
+                self.feerate_per_kw
+            );
+        } else {
+            self.feerate_per_kw = (fee_estimate / 4.0 * 1000.0) as u32;
+            debug!("Updated fee rate is {} per kilo-weight unit", self.feerate_per_kw);
+        }
+        Ok(self.feerate_per_kw)
     }
 
     #[inline]
@@ -203,6 +239,9 @@ impl FundingWallet {
 
     #[inline]
     pub fn descriptor(&self) -> &Descriptor<TrackingAccount> { &self.wallet_data.descriptor }
+
+    #[inline]
+    pub fn feerate_per_kw(&self) -> u32 { self.feerate_per_kw }
 
     /// Scans blockchain for available funds.
     /// Updates last derivation index basing on the scanned information.
@@ -266,10 +305,10 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = self
-            .wallet_data
-            .descriptor
-            .address(&self.secp, &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index])?;
+        let address = DescriptorDerive::address(&self.wallet_data.descriptor, &self.secp, &[
+            UnhardenedIndex::zero(),
+            self.wallet_data.last_normal_index,
+        ])?;
         Ok(address)
     }
 
@@ -278,9 +317,13 @@ impl FundingWallet {
         temp_channel_id: TempChannelId,
         address: AddressCompat,
         amount: u64,
-        fee: u64,
+        feerate_per_kw: Option<u32>,
     ) -> Result<OutPoint, Error> {
-        let amount_and_fee = amount + fee;
+        let feerate_per_kw = feerate_per_kw.unwrap_or(self.feerate_per_kw);
+        // We start with the assumption that we will have four-five inputs and two outputs,
+        // i.e. it is a 2-kw transaction
+        let mut fee_target = 2u64 * feerate_per_kw as u64;
+        let amount_and_fee = amount + fee_target;
         // Do coin selection:
         let mut funds = self.list_funds()?;
         funds.sort_by_key(|f| f.amount);
@@ -320,17 +363,39 @@ impl FundingWallet {
         let change_index = self.wallet_data.last_change_index;
         self.wallet_data.last_change_index =
             change_index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
-        let psbt = Psbt::construct(
-            &self.secp,
-            &self.wallet_data.descriptor,
-            LockTime::default(),
-            &inputs,
-            &[(address.into(), amount)],
-            change_index,
-            fee,
-            &self.resolver,
-        )
-        .expect("funding PSBT construction is broken");
+
+        let descriptor = &self.wallet_data.descriptor;
+        let psbt = loop {
+            trace!("Constructing PSBT with fee {}", fee_target);
+            let psbt = Psbt::construct(
+                &self.secp,
+                descriptor,
+                LockTime::default(),
+                &inputs,
+                &[(address.into(), amount)],
+                change_index,
+                fee_target,
+                &self.resolver,
+            )
+            .expect("funding PSBT construction is broken");
+            let transaction = &psbt.global.unsigned_tx;
+            // If we use non-standard descriptor we assume its witness will weight 256 bytes per
+            // input
+            let tx_weight = transaction.get_weight() as u64;
+            let witness_weight = descriptor.max_satisfaction_weight().unwrap_or(256) * inputs.len();
+            let precise_fee = (tx_weight + witness_weight as u64) * feerate_per_kw as u64 / 1000;
+            if precise_fee == fee_target {
+                trace!("Resulting fee matched target; exiting PSBT construction cycle");
+                break psbt;
+            }
+            trace!(
+                "Resulting fee was {} while the target is set to {}; trying to re-construct PSBT",
+                precise_fee,
+                fee_target
+            );
+            fee_target = precise_fee;
+        };
+
         let txid = psbt.to_txid();
         self.wallet_data.pending_fundings.insert(txid, PendingFunding {
             temp_channel_id,

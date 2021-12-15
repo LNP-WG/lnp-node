@@ -1137,7 +1137,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#4cc74ed5e594f56340e1bcdc6157769f533fa3bc"
+source = "git+https://github.com/LNP-BP/lnp-core#3b5640996bbd8cb5ba9aba9f29ce2598f1e61de0"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1155,7 +1155,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#4cc74ed5e594f56340e1bcdc6157769f533fa3bc"
+source = "git+https://github.com/LNP-BP/lnp-core#3b5640996bbd8cb5ba9aba9f29ce2598f1e61de0"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1252,9 +1252,9 @@ dependencies = [
 
 [[package]]
 name = "lnpbp_chain"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b795a82f652a0252565a0bf0c0c8bf11d2fe0278c9a018970067ddbbe27314d3"
+checksum = "1bd9f671f1c5a20380b34af25286832c1da4e9b1d8babaa0771d42036aeae31e"
 dependencies = [
  "amplify",
  "bitcoin",

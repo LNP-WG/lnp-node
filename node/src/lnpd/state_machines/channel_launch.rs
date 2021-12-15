@@ -365,8 +365,10 @@ fn complete_negotiation(
     temp_channel_id: TempChannelId,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
-    let (amount, address, fee) = match event.message {
-        CtlMsg::ConstructFunding(FundChannel { amount, address, fee }) => (amount, address, fee),
+    let (amount, address, feerate_per_kw) = match event.message {
+        CtlMsg::ConstructFunding(FundChannel { amount, address, feerate_per_kw }) => {
+            (amount, address, feerate_per_kw)
+        }
         _ => {
             let err = Error::UnexpectedMessage(event.message.clone(), "SIGNING");
             report_failure(enquirer, event.endpoints, err)?;
@@ -382,7 +384,7 @@ fn complete_negotiation(
     report_progress(enquirer, event.endpoints, "Remote peer accepted the channel");
     let funding_outpoint = runtime
         .funding_wallet
-        .construct_funding_psbt(temp_channel_id, address, amount, fee)
+        .construct_funding_psbt(temp_channel_id, address, amount, feerate_per_kw)
         .map_err(Error::from)
         .and_then(|funding_outpoint| {
             event.send_ctl(CtlMsg::FundingConstructed(funding_outpoint)).map(|_| {

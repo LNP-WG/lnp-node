@@ -109,6 +109,7 @@ impl ChannelPropose {
         request: OpenChannelWith,
     ) -> Result<ChannelPropose, state_machines::Error> {
         let open_channel = LnMsg::OpenChannel(
+            // TODO: Push common and other params to the channel from channel open request
             runtime.channel.compose_open_channel(request.funding_sat, request.push_msat)?,
         );
 
@@ -147,8 +148,8 @@ fn complete_proposed(
     let channel = &mut runtime.channel;
     channel.update_from_accept_channel(accept_channel)?;
     let fund_channel = FundChannel {
-        address: channel.funding_address(),
-        fee: channel.funding_fee(),
+        address: channel.funding_address().expect("node operates standard bitcoin networks"),
+        feerate_per_kw: None, // Will use one from the funding wallet
         amount: channel.local_amount(),
     };
 
@@ -180,9 +181,8 @@ fn complete_signing(
 ) -> Result<ChannelPropose, state_machines::Error> {
     let refund_psbt = match event.message {
         BusMsg::Ctl(CtlMsg::Signed(psbt)) => psbt,
-        // TODO: Change lifecycle to Lifecycle::Signing
         wrong_msg => {
-            return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Accepted, event.source))
+            return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Signing, event.source))
         }
     };
 
@@ -191,8 +191,8 @@ fn complete_signing(
         temporary_channel_id: channel
             .temp_channel_id()
             .expect("channel at funding stage must have temporary channel id"),
-        funding_txid: channel.funding_outpoint().txid,
-        funding_output_index: channel.funding_outpoint().vout as u16,
+        funding_txid: channel.funding_txid(),
+        funding_output_index: channel.funding_output(),
         // TODO: Extract signature
         signature: todo!("refund_psbt.inputs[0].partial_sigs.get(0).unwrap()"),
     };
@@ -229,8 +229,8 @@ fn complete_signed(
     }
 
     let channel = &runtime.channel;
-    let funding_outpoint = channel.funding_outpoint();
-    runtime.send_ctl(event.endpoints, ServiceId::Chain, CtlMsg::Track(funding_outpoint.txid))?;
+    let txid = channel.funding_txid();
+    runtime.send_ctl(event.endpoints, ServiceId::Chain, CtlMsg::Track(txid))?;
     Ok(ChannelPropose::Funded)
 }
 
