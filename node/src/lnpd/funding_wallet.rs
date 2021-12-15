@@ -228,7 +228,7 @@ impl FundingWallet {
                 self.feerate_per_kw
             );
         } else {
-            self.feerate_per_kw = (fee_estimate / 4.0 * 1000.0) as u32;
+            self.feerate_per_kw = (fee_estimate * 100_000_000.0 / 4.0) as u32;
             debug!("Updated fee rate is {} per kilo-weight unit", self.feerate_per_kw);
         }
         Ok(self.feerate_per_kw)
