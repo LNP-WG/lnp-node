@@ -134,7 +134,8 @@ impl peer::Handler<LnMsg> for ListenerRuntime {
     // TODO: Update microservices not to take Arc type
     fn handle(&mut self, message: Arc<LnMsg>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
-        trace!("LN P2P message details: {:?}", message);
+        debug!("New message from peer: {}", message);
+        trace!("{:?}", message);
         self.send_over_bridge(BusMsg::Ln((*message).clone()))
     }
 
@@ -232,18 +233,10 @@ impl Runtime {
         _source: ServiceId,
         message: LnMsg,
     ) -> Result<(), Error> {
-        match &message {
-            _ => {}
-        }
-        match message {
-            message => {
-                // 1. Check permissions
-                // 2. Forward to the remote peer
-                debug!("Forwarding LN peer message to the remote peer");
-                self.messages_sent += 1;
-                self.sender.send_message(message)?;
-            }
-        }
+        debug!("Sending remote peer {}", message);
+        trace!("{:#?}", message);
+        self.messages_sent += 1;
+        self.sender.send_message(message)?;
         Ok(())
     }
 
@@ -373,7 +366,7 @@ impl Runtime {
         trace!("Sending ping to the remote peer");
         if self.awaited_pong.is_some() {
             warn!(
-                "Peer {}@{} ignores to ping messages. May be we got banned?",
+                "Peer {}@{} ignores our ping. Are we banned?",
                 self.remote_id.expect("peer id is known at this stage"),
                 self.remote_socket
             );
