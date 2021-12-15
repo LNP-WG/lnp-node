@@ -20,6 +20,6 @@ pub(self) mod state_machines;
 pub(self) mod storage;
 
 #[cfg(feature = "shell")]
-pub use opts::{Opts, RgbOpts};
+pub use opts::Opts;
 pub use runtime::run;
 pub use state_machines::Error;

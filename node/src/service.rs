@@ -90,6 +90,9 @@ pub enum ServiceId {
     #[display("signer")]
     Signer,
 
+    #[display("chain")]
+    Chain,
+
     #[display("other<{0}>")]
     Other(ClientName),
 }
@@ -286,7 +289,7 @@ where
         endpoints: &mut Endpoints,
         dest: impl TryToServiceId,
         request: CtlMsg,
-    ) -> Result<(), Error> {
+    ) -> Result<(), esb::Error> {
         if let Some(dest) = dest.try_to_service_id() {
             endpoints.send_to(ServiceBus::Ctl, self.identity(), dest, BusMsg::Ctl(request))?;
         }

@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Slice32;
+use bitcoin::secp256k1::Signature;
 use bitcoin::{OutPoint, Txid};
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
@@ -68,8 +69,8 @@ pub enum CtlMsg {
 
     /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
     /// from channeld to lnpd upon receival of `funding_signed` message from a remote peer.
-    #[display("publish_funding()")]
-    PublishFunding,
+    #[display("publish_funding({0})")]
+    PublishFunding(Signature),
 
     /// Reports back to channeld that the funding transaction was published and its mining status
     /// should be monitored onchain.

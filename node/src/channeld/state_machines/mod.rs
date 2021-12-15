@@ -22,19 +22,20 @@ use microservices::esb::Handler;
 
 use self::channel_propose::ChannelPropose;
 use crate::channeld::runtime::Runtime;
-use crate::i9n::ctl::{CtlMsg, OpenChannelWith};
+use crate::channeld::state_machines::channel_accept::ChannelAccept;
+use crate::i9n::ctl::CtlMsg;
 use crate::i9n::rpc::Failure;
 use crate::i9n::BusMsg;
 use crate::service::LogStyle;
-use crate::state_machine::Event;
+use crate::state_machine::{Event, StateMachine};
 use crate::{CtlServer, Endpoints, ServiceId};
 
 /// Errors for channel proposal workflow
 #[derive(Clone, Debug, Display, From, Error)]
 #[display(doc_comments)]
 pub enum Error {
-    /// unexpected message for a channel state {1}. Message details: {0}
-    UnexpectedMessage(CtlMsg, Lifecycle),
+    /// unexpected message from {2} for a channel state {1}. Message details: {0}
+    UnexpectedMessage(BusMsg, Lifecycle, ServiceId),
 
     /// generic LNP channel error
     #[from]
@@ -54,7 +55,7 @@ impl Error {
     /// client-side diagnostics
     pub fn errno(&self) -> u16 {
         match self {
-            Error::UnexpectedMessage(_, _) => 1001,
+            Error::UnexpectedMessage(_, _, _) => 1001,
             Error::Channel(lnp::channel::Error::Extension(_)) => 2001,
             Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
             Error::Channel(lnp::channel::Error::Policy(_)) => 2003,
@@ -136,22 +137,6 @@ impl ChannelStateMachine {
 }
 
 impl Runtime {
-    pub fn propose_channel(
-        &mut self,
-        endpoints: &mut Endpoints,
-        request: OpenChannelWith,
-    ) -> Result<(), Error> {
-        if !matches!(self.state_machine, ChannelStateMachine::Launch) {
-            return Err(Error::InvalidState {
-                operation: "open channel",
-                current_state: self.state_machine.lifecycle(),
-            });
-        }
-        self.state_machine =
-            ChannelStateMachine::Propose(ChannelPropose::with(self, endpoints, request)?);
-        Ok(())
-    }
-
     /// Processes incoming RPC or peer requests updating state - and switching to a new state, if
     /// necessary. Returns bool indicating whether a successful state update happened
     pub fn process(
@@ -200,10 +185,54 @@ impl Runtime {
         Ok(updated_state)
     }
 
-    fn process_event(&mut self, _event: Event<BusMsg>) -> Result<(), Error> {
-        match self.state_machine {
-            _ => {} // TODO: implement
-        }
+    fn process_event(&mut self, event: Event<BusMsg>) -> Result<(), Error> {
+        self.state_machine = match self.state_machine {
+            ChannelStateMachine::Launch => self.complete_launch(event),
+            ChannelStateMachine::Propose(channel_propose) => {
+                self.process_propose(event, channel_propose)
+            }
+            ChannelStateMachine::Accept(channel_accept) => {
+                self.process_accept(event, channel_accept)
+            }
+            ChannelStateMachine::Active => Ok(ChannelStateMachine::Active), // TODO
+            ChannelStateMachine::Reestablishing => todo!(),
+            ChannelStateMachine::Closing => todo!(),
+            ChannelStateMachine::Abort => todo!(),
+            ChannelStateMachine::Penalize => todo!(),
+        }?;
         Ok(())
+    }
+
+    fn complete_launch(&mut self, event: Event<BusMsg>) -> Result<ChannelStateMachine, Error> {
+        let Event { endpoints, service: _, source, message } = event;
+        let open_channel_with = match message {
+            BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => open_channel_with,
+            wrong_msg => {
+                return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))
+            }
+        };
+        Ok(ChannelStateMachine::Propose(ChannelPropose::with(self, endpoints, open_channel_with)?))
+    }
+
+    fn process_propose(
+        &mut self,
+        event: Event<BusMsg>,
+        channel_propose: ChannelPropose,
+    ) -> Result<ChannelStateMachine, Error> {
+        Ok(match channel_propose.next(event, self)? {
+            None => ChannelStateMachine::Active,
+            Some(channel_propose) => ChannelStateMachine::Propose(channel_propose),
+        })
+    }
+
+    fn process_accept(
+        &mut self,
+        event: Event<BusMsg>,
+        channel_accept: ChannelAccept,
+    ) -> Result<ChannelStateMachine, Error> {
+        Ok(match channel_accept.next(event, self)? {
+            None => ChannelStateMachine::Active,
+            Some(channel_accept) => ChannelStateMachine::Accept(channel_accept),
+        })
     }
 }

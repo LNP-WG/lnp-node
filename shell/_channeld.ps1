@@ -22,7 +22,6 @@ Register-ArgumentCompleter -Native -CommandName 'channeld' -ScriptBlock {
         'channeld' {
             [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')
             [CompletionResult]::new('--key-file', 'key-file', [CompletionResultType]::ParameterName, 'Node key file')
-            [CompletionResult]::new('--rgb20-rpc', 'rgb20-rpc', [CompletionResultType]::ParameterName, 'ZMQ socket name/address for RGB Node fungible RPC interface (RGB20 RPC)')
             [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')

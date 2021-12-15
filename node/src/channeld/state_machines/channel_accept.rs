@@ -18,7 +18,8 @@ use lnp::Extension;
 
 use super::Error;
 use crate::channeld::runtime::Runtime;
-use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg};
+use crate::i9n::ctl::AcceptChannelFrom;
+use crate::i9n::BusMsg;
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
 use crate::{Endpoints, ServiceId};
@@ -43,12 +44,12 @@ pub enum ChannelAccept {
     Locked,
 }
 
-impl StateMachine<CtlMsg, Runtime> for ChannelAccept {
+impl StateMachine<BusMsg, Runtime> for ChannelAccept {
     type Error = Error;
 
     fn next(
         self,
-        event: Event<CtlMsg>,
+        event: Event<BusMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
@@ -113,16 +114,16 @@ impl ChannelAccept {
     }
 }
 
-fn finish_accepted(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_accepted(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_signed(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_signed(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_funded(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
+fn finish_funded(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<ChannelAccept, Error> {
     todo!()
 }
 
-fn finish_locked(_event: Event<CtlMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }

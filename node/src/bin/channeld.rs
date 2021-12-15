@@ -66,13 +66,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(
-        config,
-        opts.channel_id,
-        #[cfg(feature = "rgb")]
-        rgb20_socket_addr,
-    )
-    .expect("Error running channeld runtime");
+    channeld::run(config, opts.channel_id).expect("Error running channeld runtime");
 
     unreachable!()
 }

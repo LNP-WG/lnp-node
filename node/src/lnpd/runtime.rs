@@ -324,7 +324,7 @@ impl Runtime {
                 self.creating_channels.insert(service_id, launcher);
             }
 
-            CtlMsg::ConstructFunding(_) | CtlMsg::PublishFunding => {
+            CtlMsg::ConstructFunding(_) | CtlMsg::PublishFunding(_) => {
                 let launcher = self
                     .creating_channels
                     .remove(&source)

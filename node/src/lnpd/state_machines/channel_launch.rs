@@ -20,6 +20,7 @@
 //! dedicated state machine.
 
 use amplify::{Slice32, Wrapper};
+use bitcoin::secp256k1::Signature;
 use bitcoin::Txid;
 use lnp::bolt::Keyset;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
@@ -119,7 +120,7 @@ pub enum ChannelLauncher {
     /// Awaiting signd to sign the funding transaction, after which it can be sent by lnpd to
     /// bitcoin network and the workflow will be complete
     #[display("SIGNING")]
-    Signing(ChannelId, Txid, ClientId),
+    Signing(ChannelId, Txid, Signature, ClientId),
 }
 
 impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
@@ -167,8 +168,8 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
             ChannelLauncher::Committing(_, txid, enquirer) => {
                 complete_commitment(event, runtime, txid, enquirer)
             }
-            ChannelLauncher::Signing(channel_id, txid, enquirer) => {
-                complete_signatures(event, runtime, txid, enquirer)?;
+            ChannelLauncher::Signing(channel_id, txid, signature, enquirer) => {
+                complete_signatures(event, runtime, txid, signature, enquirer)?;
                 info!("ChannelLauncher {} has completed its work", channel_id);
                 return Ok(None);
             }
@@ -198,7 +199,7 @@ impl ChannelLauncher {
             | ChannelLauncher::Deriving(_, _, enquirer)
             | ChannelLauncher::Negotiating(_, enquirer)
             | ChannelLauncher::Committing(_, _, enquirer)
-            | ChannelLauncher::Signing(_, _, enquirer) => ServiceId::Client(*enquirer),
+            | ChannelLauncher::Signing(_, _, _, enquirer) => ServiceId::Client(*enquirer),
         }
     }
 }
@@ -418,10 +419,14 @@ fn complete_commitment(
     txid: Txid,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
-    if !matches!(event.message, CtlMsg::PublishFunding) {
-        let err = Error::UnexpectedMessage(event.message.clone(), "COMMITTING");
-        report_failure(enquirer, event.endpoints, err)?;
-    }
+    let signature = match event.message {
+        CtlMsg::PublishFunding(signature) => signature,
+        _ => {
+            let err = Error::UnexpectedMessage(event.message.clone(), "COMMITTING");
+            report_failure(enquirer, event.endpoints, err)?;
+            unreachable!()
+        }
+    };
     let channel_id = if let ServiceId::Channel(channel_id) = event.source {
         channel_id
     } else {
@@ -440,13 +445,14 @@ fn complete_commitment(
         .map(|_| format!("Signing funding transaction {}", txid))
         .map_err(Error::from);
     report_progress_or_failure(enquirer, event.endpoints, report)?;
-    Ok(ChannelLauncher::Signing(channel_id, txid, enquirer))
+    Ok(ChannelLauncher::Signing(channel_id, txid, signature, enquirer))
 }
 
 fn complete_signatures(
     event: Event<CtlMsg>,
     runtime: &Runtime,
     txid: Txid,
+    signature: Signature,
     enquirer: ClientId,
 ) -> Result<(), Error> {
     let psbt = match event.message {
@@ -457,6 +463,7 @@ fn complete_signatures(
             unreachable!();
         }
     };
+    // TODO: insert signature
     let psbt_txid = psbt.global.unsigned_tx.txid();
     if psbt_txid != txid {
         let err = Error::SignedTxidChanged { unsigned_txid: txid, signed_txid: psbt_txid };
