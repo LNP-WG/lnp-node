@@ -12,8 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use bitcoin::secp256k1::Signature;
 use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, FundingCreated, Messages as LnMsg};
+use lnp::Extension;
 
 use super::Error;
 use crate::channeld::runtime::Runtime;
@@ -146,7 +148,7 @@ fn complete_proposed(
     };
 
     let channel = &mut runtime.channel;
-    channel.update_from_accept_channel(accept_channel)?;
+    channel.update_from_peer(&LnMsg::AcceptChannel(accept_channel))?;
     let fund_channel = FundChannel {
         address: channel.funding_address().expect("node operates standard bitcoin networks"),
         feerate_per_kw: None, // Will use one from the funding wallet
@@ -169,7 +171,7 @@ fn complete_accepted(
     };
 
     let channel = &mut runtime.channel;
-    let refund_psbt = channel.construct_refund(funding_outpoint);
+    let refund_psbt = channel.refund_tx(funding_outpoint.txid, funding_outpoint.vout as u16)?;
 
     runtime.send_ctl(event.endpoints, ServiceId::Signer, CtlMsg::Sign(refund_psbt))?;
     Ok(ChannelPropose::Signing)
@@ -187,14 +189,23 @@ fn complete_signing(
     };
 
     let channel = &runtime.channel;
+
+    let funding_pubkey = channel.funding_pubkey();
+    let funding_input =
+        refund_psbt.inputs.get(0).expect("BOLT commitment always has a single input");
+    let signature = funding_input
+        .partial_sigs
+        .get(&bitcoin::PublicKey::new(funding_pubkey))
+        .ok_or(state_machines::Error::FundingPsbtUnsigned(funding_pubkey))?;
+    let signature = Signature::from_der(signature).map_err(state_machines::Error::InvalidSig)?;
+
     let funding_created = FundingCreated {
         temporary_channel_id: channel
             .temp_channel_id()
             .expect("channel at funding stage must have temporary channel id"),
         funding_txid: channel.funding_txid(),
         funding_output_index: channel.funding_output(),
-        // TODO: Extract signature
-        signature: todo!("refund_psbt.inputs[0].partial_sigs.get(0).unwrap()"),
+        signature,
     };
 
     runtime.send_p2p(event.endpoints, LnMsg::FundingCreated(funding_created))?;

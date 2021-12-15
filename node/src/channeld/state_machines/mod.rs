@@ -15,6 +15,8 @@
 pub mod channel_accept;
 pub mod channel_propose;
 
+use bitcoin::secp256k1;
+use bitcoin::secp256k1::PublicKey;
 use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::ActiveChannelId;
 use microservices::esb;
@@ -48,6 +50,12 @@ pub enum Error {
 
     /// unable to {operation} during {current_state} channel state
     InvalidState { operation: &'static str, current_state: Lifecycle },
+
+    /// sign daemon was unable to sign funding transaction for our public key {0}
+    FundingPsbtUnsigned(PublicKey),
+
+    /// sign daemon produced invalid signature. {0}
+    InvalidSig(secp256k1::Error),
 }
 
 impl Error {
@@ -62,6 +70,8 @@ impl Error {
             Error::Channel(lnp::channel::Error::LifecycleMismatch { .. }) => 2004,
             Error::Esb(_) => 3001,
             Error::InvalidState { .. } => 4001,
+            Error::FundingPsbtUnsigned(_) => 5001,
+            Error::InvalidSig(_) => 5002,
         }
     }
 }
