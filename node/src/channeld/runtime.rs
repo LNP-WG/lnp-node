@@ -14,8 +14,11 @@
 
 use std::time::SystemTime;
 
+use amplify::{DumbDefault, Slice32};
+use bitcoin::hashes::Hash;
 use internet2::NodeAddr;
 use lnp::bolt;
+use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::channel::Channel;
 use lnp::p2p::legacy::{ChannelId, Messages as LnMsg};
 use microservices::esb::{self, Handler};
@@ -28,11 +31,21 @@ use crate::service::ClientId;
 use crate::{Config, CtlServer, Endpoints, Error, Service, ServiceId};
 
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
+    let chain_hash = config.chain.as_genesis_hash().as_inner();
+    // TODO: use node configuration to provide custom policy & parameters
+    let channel = Channel::with(
+        Slice32::from(chain_hash),
+        Policy::default(),
+        CommonParams::default(),
+        PeerParams::default(),
+        Keyset::dumb_default(), // we do not have keyset derived at this stage
+    );
+
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         peer_service: ServiceId::Loopback,
         state_machine: default!(),
-        channel: default!(), // TODO: use node configuration to provide custom policy & parameters
+        channel,
         remote_peer: None,
         started: SystemTime::now(),
         obscuring_factor: 0,
