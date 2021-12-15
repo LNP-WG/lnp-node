@@ -18,6 +18,7 @@ use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
 use lnp::bolt::Keyset;
+use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
@@ -150,7 +151,10 @@ where
                         ServiceBus::Ctl,
                         self.identity(),
                         source.clone(),
-                        BusMsg::Ctl(CtlMsg::Keyset(source.clone(), keyset)),
+                        BusMsg::Ctl(CtlMsg::Keyset(
+                            ServiceId::Channel(ChannelId::from_inner(slice32)),
+                            keyset,
+                        )),
                     )?;
                     break;
                 }

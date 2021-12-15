@@ -223,6 +223,7 @@ impl ChannelLauncher {
             .map_err(Error::from);
         report_progress_or_failure(enquirer, endpoints, report)?;
 
+        debug!("Asking signd to derive keyset for the channel {}", temp_channel_id);
         let report = endpoints
             .send_to(
                 ServiceBus::Ctl,

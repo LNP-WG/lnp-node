@@ -274,6 +274,7 @@ impl Runtime {
             }
 
             RpcMsg::CreateChannel(create_channel) => {
+                info!("Creating channel with {}", create_channel.peerd);
                 let launcher = ChannelLauncher::with(endpoints, client_id, create_channel, self)?;
                 let channeld_id = ServiceId::Channel(launcher.channel_id().into());
                 self.creating_channels.insert(channeld_id, launcher);
