@@ -23,9 +23,9 @@ use microservices::esb;
 use microservices::node::TryService;
 use strict_encoding::{strict_deserialize, strict_serialize};
 
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::rpc::{Failure, RpcMsg};
-use crate::i9n::{BusMsg, ServiceBus};
+use crate::i9n::ctl::{CtlMsg, Report};
+use crate::i9n::rpc::Failure;
+use crate::i9n::{ctl, BusMsg, ServiceBus};
 use crate::{Config, Error};
 
 #[derive(Wrapper, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, From, Default)]
@@ -231,7 +231,7 @@ where
 {
     /// Returns client which should receive status update reports
     #[inline]
-    fn enquirer(&self) -> Option<ServiceId> { return None }
+    fn enquirer(&self) -> Option<ClientId> { return None }
 
     fn report_success(
         &mut self,
@@ -241,12 +241,14 @@ where
         if let Some(ref message) = msg {
             info!("{}", message.to_string());
         }
-        if let Some(dest) = self.enquirer() {
+        if let Some(client) = self.enquirer() {
+            let status = ctl::Status::Success(msg.map(|m| m.to_string()).into());
+            let report = CtlMsg::Report(Report { client, status });
             endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                dest,
-                BusMsg::Rpc(RpcMsg::Success(msg.map(|m| m.to_string()).into())),
+                ServiceId::Lnpd,
+                BusMsg::Ctl(report),
             )?;
         }
         Ok(())
@@ -259,12 +261,14 @@ where
     ) -> Result<(), Error> {
         let msg = msg.to_string();
         info!("{}", msg);
-        if let Some(dest) = self.enquirer() {
+        if let Some(client) = self.enquirer() {
+            let status = ctl::Status::Progress(msg);
+            let report = CtlMsg::Report(Report { client, status });
             endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                dest,
-                BusMsg::Rpc(RpcMsg::Progress(msg)),
+                ServiceId::Lnpd,
+                BusMsg::Ctl(report),
             )?;
         }
         Ok(())
@@ -272,13 +276,15 @@ where
 
     fn report_failure(&mut self, endpoints: &mut Endpoints, failure: impl Into<Failure>) -> Error {
         let failure = failure.into();
-        if let Some(dest) = self.enquirer() {
+        if let Some(client) = self.enquirer() {
+            let status = ctl::Status::Failure(failure.clone());
+            let report = CtlMsg::Report(Report { client, status });
             // Even if we fail, we still have to terminate :)
             let _ = endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                dest,
-                BusMsg::Rpc(RpcMsg::Failure(failure.clone())),
+                ServiceId::Lnpd,
+                BusMsg::Ctl(report),
             );
         }
         Error::Terminate(failure.to_string())

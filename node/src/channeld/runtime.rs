@@ -24,6 +24,7 @@ use super::storage::{self, Driver};
 use crate::channeld::state_machines::ChannelStateMachine;
 use crate::i9n::ctl::CtlMsg;
 use crate::i9n::{ctl as request, BusMsg, ServiceBus};
+use crate::service::ClientId;
 use crate::{Config, CtlServer, Endpoints, Error, Service, ServiceId};
 
 pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
@@ -58,14 +59,14 @@ pub struct Runtime {
     obscuring_factor: u64,
 
     // TODO: Refactor to use ClientId
-    enquirer: Option<ServiceId>,
+    enquirer: Option<ClientId>,
 
     storage: Box<dyn storage::Driver>,
 }
 
 impl CtlServer for Runtime {
     #[inline]
-    fn enquirer(&self) -> Option<ServiceId> { self.enquirer.clone() }
+    fn enquirer(&self) -> Option<ClientId> { self.enquirer.clone() }
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -180,10 +181,10 @@ impl Runtime {
             CtlMsg::OpenChannelWith(ref open_channel_with) => {
                 let remote_peer = open_channel_with.remote_peer.clone();
                 self.enquirer = open_channel_with.report_to.clone();
-                self.process(endpoints, source, BusMsg::Ctl(request))?;
                 // Updating state only if the request was processed
                 self.peer_service = ServiceId::Peer(remote_peer.clone());
                 self.remote_peer = Some(remote_peer);
+                self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
             // Processing remote request to open a channel
@@ -201,7 +202,8 @@ impl Runtime {
             | CtlMsg::FundingPublished
             | CtlMsg::Mined(_)
             | CtlMsg::Signed(_)
-            | CtlMsg::Error { .. } => {
+            | CtlMsg::Error { .. }
+            | CtlMsg::EsbError { .. } => {
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 

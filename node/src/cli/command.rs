@@ -129,8 +129,8 @@ impl Exec for Command {
                         htlc_max_count,
                         htlc_min_value,
                         htlc_max_total_value,
-                        peerd: node_addr,
-                        report_to: Some(runtime.identity()),
+                        remote_peer: node_addr,
+                        report_to: Some(runtime.identity),
                         channel_reserve,
                     }),
                 )?;

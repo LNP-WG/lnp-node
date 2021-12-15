@@ -151,7 +151,7 @@ pub struct OpenChannelWith {
     pub remote_peer: NodeAddr,
 
     /// Client identifier to report about the progress
-    pub report_to: Option<ServiceId>,
+    pub report_to: Option<ClientId>,
 
     /// Amount of satoshis for channel funding
     pub funding_sat: u64,

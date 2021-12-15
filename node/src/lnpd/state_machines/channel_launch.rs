@@ -134,12 +134,7 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
         let channel_id = self.channel_id();
         if let CtlMsg::Error { error, .. } = &event.message {
             let failure = Failure { code: 10000, info: error.clone() };
-            event.endpoints.send_to(
-                ServiceBus::Rpc,
-                ServiceId::Lnpd,
-                self.enquirer(),
-                BusMsg::Rpc(RpcMsg::Failure(failure)),
-            )?;
+            runtime.send_rpc(event.endpoints, self.enquirer(), RpcMsg::Failure(failure))?;
             return Ok(None);
         }
         let state = match self {
@@ -191,14 +186,14 @@ impl ChannelLauncher {
         }
     }
 
-    pub fn enquirer(&self) -> ServiceId {
+    pub fn enquirer(&self) -> ClientId {
         match self {
             ChannelLauncher::Init(_, _, enquirer)
             | ChannelLauncher::Launching(_, _, enquirer, _)
             | ChannelLauncher::Deriving(_, _, enquirer)
             | ChannelLauncher::Negotiating(_, enquirer)
             | ChannelLauncher::Committing(_, _, enquirer)
-            | ChannelLauncher::Signing(_, _, enquirer) => ServiceId::Client(*enquirer),
+            | ChannelLauncher::Signing(_, _, enquirer) => *enquirer,
         }
     }
 }
@@ -260,7 +255,7 @@ fn complete_launch(
         event.endpoints,
         format!(
             "Channel daemon connecting to remote peer {} is launched",
-            create_channel.peerd.clone()
+            create_channel.remote_peer.clone()
         ),
     );
     Ok(ChannelLauncher::Deriving(temp_channel_id, create_channel, enquirer))
@@ -326,7 +321,7 @@ fn start_negotiation2(
         event.endpoints,
         format!(
             "Channel daemon connecting to remote peer {} is launched",
-            create_channel.peerd.clone()
+            create_channel.remote_peer.clone()
         ),
     );
     start_negotiation(event, runtime, temp_channel_id, keyset, create_channel, enquirer)
@@ -344,7 +339,7 @@ fn start_negotiation(
     let mut local = runtime.channel_params.2;
     create_channel.apply_params(&mut common, &mut local);
     let request = OpenChannelWith {
-        remote_peer: create_channel.peerd,
+        remote_peer: create_channel.remote_peer,
         report_to: create_channel.report_to,
         funding_sat: create_channel.funding_sat,
         push_msat: create_channel.push_msat,

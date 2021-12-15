@@ -22,21 +22,24 @@ use microservices::esb;
 
 use crate::i9n::rpc::{OptionDetails, RpcMsg};
 use crate::i9n::{BusMsg, ServiceBus};
+use crate::service::ClientId;
 use crate::{Endpoints, Error, LogStyle, ServiceId};
 
 #[repr(C)]
 pub struct Client {
-    identity: ServiceId,
+    pub(crate) identity: ClientId,
     response_queue: Vec<RpcMsg>,
     esb: esb::Controller<ServiceBus, BusMsg, Handler>,
 }
 
 impl Client {
     pub fn with(connect: &str) -> Result<Self, Error> {
+        use bitcoin::secp256k1::rand;
+
         debug!("RPC socket {}", connect);
 
         debug!("Setting up RPC client...");
-        let identity = ServiceId::client();
+        let identity = rand::random();
         let rpc_endpoint = match SocketAddr::from_str(connect) {
             Ok(_) => format!("tcp://{}", connect),
             Err(_) => format!("ipc://{}", connect),
@@ -49,7 +52,7 @@ impl Client {
             map! {
                 ServiceBus::Rpc => bus_config
             },
-            Handler { identity: identity.clone() },
+            Handler { identity: ServiceId::Client(identity) },
             ZmqType::RouterConnect,
         )?;
 
@@ -59,7 +62,7 @@ impl Client {
         Ok(Self { identity, response_queue: empty!(), esb })
     }
 
-    pub fn identity(&self) -> ServiceId { self.identity.clone() }
+    pub fn identity(&self) -> ServiceId { ServiceId::Client(self.identity) }
 
     pub fn request(&mut self, daemon: ServiceId, req: RpcMsg) -> Result<(), Error> {
         debug!("Executing {}", req);

@@ -26,7 +26,7 @@ use lnp::p2p::legacy::{ChannelId, Messages as LnMessage, TempChannelId};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
-use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg};
+use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg, Status};
 use crate::i9n::rpc::{
     Failure, FundsInfo, IntoSuccessOrFalure, NodeInfo, OptionDetails, RpcMsg, ToProgressOrFalure,
 };
@@ -290,7 +290,7 @@ impl Runtime {
             }
 
             RpcMsg::CreateChannel(create_channel) => {
-                info!("Creating channel with {}", create_channel.peerd);
+                info!("Creating channel with {}", create_channel.remote_peer);
                 let launcher = ChannelLauncher::with(endpoints, client_id, create_channel, self)?;
                 let channeld_id = ServiceId::Channel(launcher.channel_id().into());
                 self.creating_channels.insert(channeld_id, launcher);
@@ -306,7 +306,7 @@ impl Runtime {
     }
 
     #[inline]
-    fn send_rpc(
+    pub(crate) fn send_rpc(
         &self,
         endpoints: &mut Endpoints,
         client_id: ClientId,
@@ -352,7 +352,7 @@ impl Runtime {
                 self.creating_channels.insert(source, launcher);
             }
 
-            CtlMsg::Error { destination, .. } => {
+            CtlMsg::Error { destination, .. } | CtlMsg::EsbError { destination, .. } => {
                 let launcher = self
                     .creating_channels
                     .remove(&destination)
@@ -362,6 +362,19 @@ impl Runtime {
                     Event::with(endpoints, self.identity(), destination.clone(), message),
                     self,
                 );
+            }
+
+            CtlMsg::Report(report) => {
+                let msg = match &report.status {
+                    Status::Progress(msg) => RpcMsg::Progress(msg.clone()),
+                    Status::Success(msg) => RpcMsg::Success(msg.clone()),
+                    Status::Failure(msg) => RpcMsg::Failure(msg.clone()),
+                };
+                // If the client is disconnected, just swallow the error - there is no reason to
+                // propagate it anywhere
+                if let Err(_) = self.send_rpc(endpoints, report.client, msg) {
+                    error!("Client #{} got disconnected", report.client);
+                }
             }
 
             wrong_msg => {

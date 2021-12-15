@@ -31,6 +31,7 @@ use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
+use crate::service::ClientId;
 use crate::ServiceId;
 
 /// RPC API requests between LNP Node daemons and clients.
@@ -115,13 +116,13 @@ pub enum RpcMsg {
 
 /// Request to create channel originating from a client
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
-#[display("{peerd}, {funding_sat}, ...")]
+#[display("{remote_peer}, {funding_sat}, ...")]
 pub struct CreateChannel {
     /// Node to open a channel with
-    pub peerd: NodeAddr,
+    pub remote_peer: NodeAddr,
 
     /// Client identifier to report about the progress
-    pub report_to: Option<ServiceId>,
+    pub report_to: Option<ClientId>,
 
     /// Amount of satoshis for channel funding
     pub funding_sat: u64,
