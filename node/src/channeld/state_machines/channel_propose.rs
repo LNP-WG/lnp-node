@@ -67,7 +67,7 @@ impl StateMachine<BusMsg, Runtime> for ChannelPropose {
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
-        debug!("ChannelPropose {} received {} event", channel_id, event.message);
+        debug!("ChannelPropose {:#} received {} event", channel_id, event.message);
         let state = match self {
             ChannelPropose::Proposed => complete_proposed(event, runtime),
             ChannelPropose::Accepted => complete_accepted(event, runtime),
@@ -77,11 +77,11 @@ impl StateMachine<BusMsg, Runtime> for ChannelPropose {
             ChannelPropose::Funded => complete_funded(event, runtime),
             ChannelPropose::Locked => {
                 complete_locked(event, runtime)?;
-                info!("ChannelPropose {} has completed its work", channel_id);
+                info!("ChannelPropose {:#} has completed its work", channel_id);
                 return Ok(None);
             }
         }?;
-        info!("ChannelPropose {} switched to {} state", channel_id, state);
+        info!("ChannelPropose {:#} switched to {} state", channel_id, state);
         Ok(Some(state))
     }
 }

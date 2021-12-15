@@ -53,7 +53,7 @@ impl StateMachine<BusMsg, Runtime> for ChannelAccept {
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
         let channel_id = runtime.channel.active_channel_id();
-        debug!("ChannelAccept {} received {} event", channel_id, event.message);
+        debug!("ChannelAccept {:#} received {} event", channel_id, event.message);
         let state = match self {
             ChannelAccept::Accepted => finish_accepted(event, runtime),
             ChannelAccept::Signed => finish_signed(event, runtime),
@@ -64,7 +64,7 @@ impl StateMachine<BusMsg, Runtime> for ChannelAccept {
                 return Ok(None);
             }
         }?;
-        info!("ChannelAccept {} switched to {} state", channel_id, state);
+        info!("ChannelAccept {:#} switched to {} state", channel_id, state);
         Ok(Some(state))
     }
 }

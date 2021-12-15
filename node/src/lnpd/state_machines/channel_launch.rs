@@ -130,7 +130,7 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
         event: Event<CtlMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
-        debug!("ChannelLauncher {} received {} event", self.channel_id(), event.message);
+        debug!("ChannelLauncher {:#} received {} event", self.channel_id(), event.message);
         let channel_id = self.channel_id();
         if let CtlMsg::Error { error, .. } = &event.message {
             let failure = Failure { code: 10000, info: error.clone() };
@@ -169,11 +169,11 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
             }
             ChannelLauncher::Signing(channel_id, txid, enquirer) => {
                 complete_signatures(event, runtime, txid, enquirer)?;
-                info!("ChannelLauncher {} has completed its work", channel_id);
+                info!("ChannelLauncher {:#} has completed its work", channel_id);
                 return Ok(None);
             }
         }?;
-        info!("ChannelLauncher {} switched to {} state", channel_id, state);
+        info!("ChannelLauncher {:#} switched to {} state", channel_id, state);
         Ok(Some(state))
     }
 }
@@ -215,7 +215,7 @@ impl ChannelLauncher {
     ) -> Result<ChannelLauncher, Error> {
         let temp_channel_id = TempChannelId::random();
         debug!("Generated {} as a temporary channel id", temp_channel_id);
-        debug!("ChannelLauncher {} is instantiated", temp_channel_id);
+        debug!("ChannelLauncher {:#} is instantiated", temp_channel_id);
 
         let report = runtime
             .launch_daemon(Daemon::Channeld(temp_channel_id.into()), runtime.config.clone())
@@ -238,7 +238,7 @@ impl ChannelLauncher {
         let launcher = ChannelLauncher::Init(temp_channel_id, create_channel, enquirer);
         debug!("Awaiting for channeld to connect...");
 
-        info!("ChannelLauncher {} entered LAUNCHING state", temp_channel_id);
+        info!("ChannelLauncher {:#} entered LAUNCHING state", temp_channel_id);
         Ok(launcher)
     }
 }
