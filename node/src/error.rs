@@ -98,9 +98,6 @@ pub enum Error {
     #[cfg(feature = "_rpc")]
     SourceNotSupported(ServiceBus, String, ServiceId),
 
-    /// peer does not respond to ping messages
-    NotResponding,
-
     /// peer has misbehaved LN peer protocol rules
     Misbehaving,
 

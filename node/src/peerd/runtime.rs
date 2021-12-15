@@ -372,7 +372,11 @@ impl Runtime {
     fn ping(&mut self) -> Result<(), Error> {
         trace!("Sending ping to the remote peer");
         if self.awaited_pong.is_some() {
-            return Err(Error::NotResponding);
+            warn!(
+                "Peer {}@{} ignores to ping messages. May be we got banned?",
+                self.remote_id.expect("peer id is known at this stage"),
+                self.remote_socket
+            );
         }
         let mut rng = rand::thread_rng();
         let len: u16 = rng.gen_range(4, 32);
