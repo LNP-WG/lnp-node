@@ -152,7 +152,7 @@ impl Runtime {
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             #[cfg(not(feature = "rgb"))]
             Daemon::Channeld(channel_id) => builder
-                .spawn(move || channeld::run(config, channel_id))
+                .spawn(move || channeld::run(config, channel_id.into()))
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             #[cfg(feature = "rgb")]
             Daemon::Channeld(channel_id, rgb_socket) => builder

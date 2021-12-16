@@ -20,7 +20,7 @@ use internet2::NodeAddr;
 use lnp::bolt;
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
 use lnp::channel::Channel;
-use lnp::p2p::legacy::{ChannelId, Messages as LnMsg};
+use lnp::p2p::legacy::{Messages as LnMsg, TempChannelId};
 use microservices::esb::{self, Handler};
 
 use super::storage::{self, Driver};
@@ -30,10 +30,11 @@ use crate::i9n::{ctl as request, BusMsg, ServiceBus};
 use crate::service::ClientId;
 use crate::{Config, CtlServer, Endpoints, Error, Service, ServiceId};
 
-pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
+pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> {
     let chain_hash = config.chain.as_genesis_hash().as_inner();
     // TODO: use node configuration to provide custom policy & parameters
     let channel = Channel::with(
+        temp_channel_id,
         Slice32::from(chain_hash),
         Policy::default(),
         CommonParams::default(),
@@ -42,7 +43,7 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     );
 
     let runtime = Runtime {
-        identity: ServiceId::Channel(channel_id),
+        identity: ServiceId::Channel(temp_channel_id.into()),
         peer_service: ServiceId::Loopback,
         state_machine: default!(),
         channel,
@@ -51,7 +52,7 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
         obscuring_factor: 0,
         enquirer: None,
         storage: Box::new(storage::DiskDriver::init(
-            channel_id,
+            temp_channel_id.into(),
             Box::new(storage::DiskConfig { path: Default::default() }),
         )?),
     };
