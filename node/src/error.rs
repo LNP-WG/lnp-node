@@ -72,7 +72,7 @@ pub enum Error {
     #[display(inner)]
     FundingWallet(funding_wallet::Error),
 
-    /// unbable to deriving keys: {0}
+    /// unable to deriving keys: {0}
     #[from]
     Derivation(bip32::Error),
 
@@ -80,7 +80,7 @@ pub enum Error {
     #[from]
     Miniscript(miniscript::Error),
 
-    /// unbale to sign PSBT: {0}
+    /// unable to sign PSBT: {0}
     #[from]
     Signing(SignError),
 

@@ -1024,9 +1024,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.5.7"
+version = "0.5.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adf9376aeb5b87b29901d1620f332189122c4c0263b5ec88287adb97556ab738"
+checksum = "4d88c67698f4b3c661d860b1c17d069274b47b2694083b83aae9dd9b4004aa04"
 dependencies = [
  "amplify",
  "bitcoin_hashes 0.10.0",
@@ -1309,7 +1309,7 @@ dependencies = [
 [[package]]
 name = "microservices"
 version = "0.6.0-beta.1"
-source = "git+https://github.com/internet2-org/rust-microservices#6cca5b175e32a6e91afc81bf9ce191ec978506f5"
+source = "git+https://github.com/internet2-org/rust-microservices#7e02365bc307ae73c432d1cd45244b25327501db"
 dependencies = [
  "amplify",
  "clap",
@@ -2283,11 +2283,10 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.14.0"
+version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70e992e41e0d2fb9f755b37446f20900f64446ef54874f40a60c78f021ac6144"
+checksum = "fbbf1c778ec206785635ce8ad57fe52b3009ae9e0c9f574a728f3049d3e55838"
 dependencies = [
- "autocfg 1.0.1",
  "bytes",
  "memchr",
  "pin-project-lite",

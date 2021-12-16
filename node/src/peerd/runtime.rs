@@ -140,7 +140,6 @@ impl peer::Handler<LnMsg> for ListenerRuntime {
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
-        debug!("Underlying peer interface requested to handle {}", err);
         match err {
             Error::Peer(presentation::Error::Transport(transport::Error::TimedOut)) => {
                 trace!("Time to ping the remote peer");
@@ -296,7 +295,7 @@ impl Runtime {
 
             BusMsg::Ln(LnMsg::Pong(noise)) => {
                 match self.awaited_pong {
-                    None => error!("Unexpected pong from the remote peer"),
+                    None => warn!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => {
                         warn!("Pong data size does not match requested with ping")
                     }
