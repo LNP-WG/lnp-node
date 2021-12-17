@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Slice32;
-use bitcoin::{OutPoint, Txid};
+use bitcoin::Txid;
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
 use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
@@ -63,8 +63,8 @@ pub enum CtlMsg {
 
     /// Provides channeld with the information about funding transaction output used to fund the
     /// newly created channel. Sent from lnpd to channeld.
-    #[display("funding_constructed({0})")]
-    FundingConstructed(OutPoint),
+    #[display("funding_constructed(...)")]
+    FundingConstructed(Psbt),
 
     /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
     /// from channeld to lnpd upon receival of `funding_signed` message from a remote peer.

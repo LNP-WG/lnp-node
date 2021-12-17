@@ -23,6 +23,7 @@ use amplify::{Slice32, Wrapper};
 use bitcoin::Txid;
 use lnp::bolt::Keyset;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
+use lnp::{FundingError, PsbtLnpFunding};
 use microservices::esb;
 use microservices::esb::Handler;
 
@@ -45,6 +46,10 @@ pub enum Error {
     /// transaction id changed after signing from {unsigned_txid} to {signed_txid}; may be signd is
     /// hacked
     SignedTxidChanged { unsigned_txid: Txid, signed_txid: Txid },
+
+    /// incorrect construction of channel funding transaction: {0}
+    #[from]
+    FundingStructure(FundingError),
 
     /// failure sending RPC request during state transition. Details: {0}
     #[from]
@@ -381,13 +386,14 @@ fn complete_negotiation(
         .funding_wallet
         .construct_funding_psbt(temp_channel_id, address, amount, feerate_per_kw)
         .map_err(Error::from)
-        .and_then(|funding_outpoint| {
-            event.send_ctl(CtlMsg::FundingConstructed(funding_outpoint)).map(|_| {
+        .and_then(|psbt| {
+            let funding_outpoint = psbt.channel_funding_outpoint()?;
+            event.send_ctl(CtlMsg::FundingConstructed(psbt)).map(|_| {
                 report_progress(
                     enquirer,
                     event.endpoints,
                     format!(
-                        "Constructed funding transaction with funding outpoint is {}",
+                        "Constructed funding transaction with funding outpoint {}",
                         funding_outpoint
                     ),
                 );

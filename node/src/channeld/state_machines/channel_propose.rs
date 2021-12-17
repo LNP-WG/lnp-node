@@ -193,15 +193,15 @@ fn complete_accepted(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
-    let funding_outpoint = match event.message {
-        BusMsg::Ctl(CtlMsg::FundingConstructed(funding_outpoint)) => funding_outpoint,
+    let funding_psbt = match event.message {
+        BusMsg::Ctl(CtlMsg::FundingConstructed(funding_psbt)) => funding_psbt,
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Accepted, event.source))
         }
     };
 
     let channel = &mut runtime.channel;
-    let refund_psbt = channel.refund_tx(funding_outpoint.txid, funding_outpoint.vout as u16)?;
+    let refund_psbt = channel.refund_tx(funding_psbt)?;
 
     trace!("Refund transaction: {:#?}", refund_psbt);
     debug!("Refund transaction id is {}", refund_psbt.global.unsigned_tx.txid());
@@ -232,12 +232,13 @@ fn complete_signing(
         .ok_or(state_machines::Error::FundingPsbtUnsigned(funding_pubkey))?;
     let signature = Signature::from_der(signature).map_err(state_machines::Error::InvalidSig)?;
 
+    let funding = channel.funding();
     let funding_created = FundingCreated {
         temporary_channel_id: channel
             .temp_channel_id()
             .expect("channel at funding stage must have temporary channel id"),
-        funding_txid: channel.funding_txid(),
-        funding_output_index: channel.funding_output(),
+        funding_txid: funding.txid(),
+        funding_output_index: funding.output(),
         signature,
     };
 
@@ -274,7 +275,7 @@ fn complete_signed(
     }
 
     let channel = &runtime.channel;
-    let txid = channel.funding_txid();
+    let txid = channel.funding().txid();
     debug!("Funding transaction {} is published", txid);
 
     runtime.send_ctl(event.endpoints, ServiceId::Chain, CtlMsg::Track(txid))?;

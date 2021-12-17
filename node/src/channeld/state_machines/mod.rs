@@ -68,6 +68,7 @@ impl Error {
             Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
             Error::Channel(lnp::channel::Error::Policy(_)) => 2003,
             Error::Channel(lnp::channel::Error::LifecycleMismatch { .. }) => 2004,
+            Error::Channel(lnp::channel::Error::Funding(_)) => 2005,
             Error::Esb(_) => 3001,
             Error::InvalidState { .. } => 4001,
             Error::FundingPsbtUnsigned(_) => 5001,
