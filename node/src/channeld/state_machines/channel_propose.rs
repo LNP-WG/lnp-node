@@ -127,15 +127,39 @@ impl ChannelPropose {
     /// Construct information message for error and client reporting
     pub fn info_message(&self, channel_id: ActiveChannelId) -> String {
         match self {
-            ChannelPropose::Proposed => {
-                format!(
-                    "{} remote peer to {} with temp id {:#}",
-                    "Proposing".promo(),
-                    "open a channel".promo(),
-                    channel_id.promoter()
-                )
+            ChannelPropose::Proposed => format!(
+                "{} to remote peer (using temp id {:#})",
+                "Proposing channel".promo(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Accepted => format!(
+                "Remote peer {} channel with temp id {:#}. Constructing refund transaction.",
+                "accepted".promo(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Signing => format!(
+                "{} refund transaction locally for channel {:#}",
+                "Signing".promoter(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Funding => format!(
+                "{} for the remote peer to sign refund transaction for channel {:#}",
+                "Awaiting".promo(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Signed => format!(
+                "{} funding transaction for channel {:#}",
+                "Signing".promo(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Funded => format!(
+                "{} fully signed funding transaction for channel {:#}",
+                "Publishing".promo(),
+                channel_id.promoter()
+            ),
+            ChannelPropose::Locked => {
+                format!("{} channel {:#}", "Activating".promo(), channel_id.promoter())
             }
-            _ => todo!(),
         }
     }
 }
@@ -159,6 +183,8 @@ fn complete_proposed(
         amount: channel.local_amount(),
     };
 
+    debug!("Channel funding address is {}", fund_channel.address);
+
     runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::ConstructFunding(fund_channel))?;
     Ok(ChannelPropose::Accepted)
 }
@@ -176,6 +202,9 @@ fn complete_accepted(
 
     let channel = &mut runtime.channel;
     let refund_psbt = channel.refund_tx(funding_outpoint.txid, funding_outpoint.vout as u16)?;
+
+    trace!("Refund transaction: {:#?}", refund_psbt);
+    debug!("Refund transaction id is {}", refund_psbt.global.unsigned_tx.txid());
 
     runtime.send_ctl(event.endpoints, ServiceId::Signer, CtlMsg::Sign(refund_psbt))?;
     Ok(ChannelPropose::Signing)
@@ -227,6 +256,8 @@ fn complete_funding(
         }
     };
 
+    debug!("Got remote node signature {}", funding_signed.signature);
+
     // Save signature
     runtime.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
 
@@ -244,6 +275,8 @@ fn complete_signed(
 
     let channel = &runtime.channel;
     let txid = channel.funding_txid();
+    debug!("Funding transaction {} is published", txid);
+
     runtime.send_ctl(event.endpoints, ServiceId::Chain, CtlMsg::Track(txid))?;
     Ok(ChannelPropose::Funded)
 }

@@ -134,8 +134,8 @@ impl peer::Handler<LnMsg> for ListenerRuntime {
     // TODO: Update microservices not to take Arc type
     fn handle(&mut self, message: Arc<LnMsg>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
-        debug!("New message from peer: {}", message);
-        trace!("{:?}", message);
+        debug!("New message from remote peer: {}", message);
+        trace!("{:#?}", message);
         self.send_over_bridge(BusMsg::Ln((*message).clone()))
     }
 

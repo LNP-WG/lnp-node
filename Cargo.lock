@@ -1137,7 +1137,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#4f59ae7607cc5df998d48a7bde1c1bac6f569fba"
+source = "git+https://github.com/LNP-BP/lnp-core#8b5d2528034c5603a6fc4b2a919db1d397454b48"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1155,7 +1155,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#4f59ae7607cc5df998d48a7bde1c1bac6f569fba"
+source = "git+https://github.com/LNP-BP/lnp-core#8b5d2528034c5603a6fc4b2a919db1d397454b48"
 dependencies = [
  "amplify",
  "bitcoin",
