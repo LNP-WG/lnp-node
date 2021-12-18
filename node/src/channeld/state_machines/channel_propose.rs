@@ -182,7 +182,7 @@ fn complete_proposed(
     let fund_channel = FundChannel {
         script_pubkey: channel.funding_script_pubkey(),
         feerate_per_kw: None, // Will use one from the funding wallet
-        amount: channel.local_amount(),
+        amount: channel.funding().amount(),
     };
 
     if let Some(address) = channel
@@ -206,6 +206,9 @@ fn complete_accepted(
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Accepted, event.source))
         }
     };
+
+    trace!("Funding transaction: {:#?}", funding_psbt);
+    debug!("Funding transaction id is {}", funding_psbt.global.unsigned_tx.txid());
 
     let channel = &mut runtime.channel;
     let refund_psbt = channel.refund_tx(funding_psbt)?;
