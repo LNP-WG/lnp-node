@@ -240,7 +240,9 @@ fn complete_signing(
         .partial_sigs
         .get(&bitcoin::PublicKey::new(funding_pubkey))
         .ok_or(state_machines::Error::FundingPsbtUnsigned(funding_pubkey))?;
-    let signature = Signature::from_der(signature).map_err(state_machines::Error::InvalidSig)?;
+    // TODO: Use BitcoinSignature type for parsing signature once bitcoin 0.27 is released
+    let signature = Signature::from_der(&signature[..signature.len() - 1])
+        .map_err(state_machines::Error::InvalidSig)?;
 
     let funding = channel.funding();
     let funding_created = FundingCreated {
