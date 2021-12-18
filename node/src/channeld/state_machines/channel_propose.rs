@@ -16,6 +16,7 @@ use bitcoin::secp256k1::Signature;
 use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
+use wallet::address::AddressCompat;
 
 use super::Error;
 use crate::channeld::runtime::Runtime;
@@ -177,13 +178,19 @@ fn complete_proposed(
 
     let channel = &mut runtime.channel;
     channel.update_from_peer(&LnMsg::AcceptChannel(accept_channel))?;
+
     let fund_channel = FundChannel {
-        address: channel.funding_address().expect("node operates standard bitcoin networks"),
+        script_pubkey: channel.funding_script_pubkey(),
         feerate_per_kw: None, // Will use one from the funding wallet
         amount: channel.local_amount(),
     };
 
-    debug!("Channel funding address is {}", fund_channel.address);
+    if let Some(address) = channel
+        .network()
+        .and_then(|network| AddressCompat::from_script(&fund_channel.script_pubkey, network))
+    {
+        debug!("Channel funding address is {}", address);
+    }
 
     runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::ConstructFunding(fund_channel))?;
     Ok(ChannelPropose::Accepted)

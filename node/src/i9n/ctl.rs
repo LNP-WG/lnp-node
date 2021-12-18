@@ -22,7 +22,7 @@ use psbt::Psbt;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 use strict_encoding::{NetworkDecode, NetworkEncode};
-use wallet::address::AddressCompat;
+use wallet::scripts::PubkeyScript;
 
 use crate::i9n::rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use crate::service::ClientId;
@@ -200,10 +200,10 @@ pub struct AcceptChannelFrom {
 
 /// Request information about constructing funding transaction
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
-#[display("{address}, {amount}")]
+#[display("{script_pubkey}, {amount}")]
 pub struct FundChannel {
     /// Address for the channel funding
-    pub address: AddressCompat,
+    pub script_pubkey: PubkeyScript,
 
     /// Amount of funds to be sent to the funding address
     pub amount: u64,

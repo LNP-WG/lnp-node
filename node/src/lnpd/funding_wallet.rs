@@ -18,7 +18,7 @@ use std::io::Seek;
 use std::path::Path;
 use std::{fs, io};
 
-use amplify::{IoError, Slice32, ToYamlString};
+use amplify::{IoError, Slice32, ToYamlString, Wrapper};
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::{Address, Network, OutPoint, SigHashType, Txid};
 use bitcoin_hd::{
@@ -36,7 +36,6 @@ use miniscript::{Descriptor, DescriptorTrait};
 use psbt::construct::Construct;
 use psbt::Psbt;
 use strict_encoding::{StrictDecode, StrictEncode};
-use wallet::address::AddressCompat;
 use wallet::scripts::PubkeyScript;
 
 // The default fee rate is 2 sats per kilo-vbyte
@@ -316,7 +315,7 @@ impl FundingWallet {
     pub fn construct_funding_psbt(
         &mut self,
         temp_channel_id: TempChannelId,
-        address: AddressCompat,
+        script_pubkey: PubkeyScript,
         amount: u64,
         feerate_per_kw: Option<u32>,
     ) -> Result<Psbt, Error> {
@@ -366,6 +365,8 @@ impl FundingWallet {
             change_index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
 
         let descriptor = &self.wallet_data.descriptor;
+
+        let script_pubkey = script_pubkey.into_inner();
         let psbt = loop {
             trace!("Constructing PSBT with fee {}", fee_upper_est);
             let mut psbt: Psbt = Psbt::construct(
@@ -373,7 +374,7 @@ impl FundingWallet {
                 descriptor,
                 LockTime::default(),
                 &inputs,
-                &[(address.into(), amount)],
+                &[(script_pubkey.clone().into(), amount)],
                 change_index,
                 fee_upper_est,
                 &self.resolver,
