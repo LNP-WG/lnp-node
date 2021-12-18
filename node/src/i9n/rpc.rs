@@ -289,9 +289,9 @@ pub struct ChannelInfo {
     pub common_params: bolt::CommonParams,
     pub local_params: bolt::PeerParams,
     pub remote_params: bolt::PeerParams,
-    pub local_keys: bolt::Keyset,
+    pub local_keys: bolt::LocalKeyset,
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_keys: BTreeMap<NodeAddr, bolt::Keyset>,
+    pub remote_keys: BTreeMap<NodeAddr, bolt::RemoteKeyset>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

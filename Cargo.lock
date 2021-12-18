@@ -671,9 +671,9 @@ dependencies = [
 
 [[package]]
 name = "descriptor-wallet"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20744ada9383b8fbd21bca52d06c783ef1331eeb2a75769afc6150749889188c"
+checksum = "d76656a96c8141ddca1bc4c669f7904a4555cd010bca85cf3541df1983f0d027"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1137,7 +1137,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#204823234cc3f691f0d5050bd76be8430c9fbabe"
+source = "git+https://github.com/LNP-BP/lnp-core#5e2d15022d1340dd4e87e185af3822ba2beb3453"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1155,7 +1155,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#204823234cc3f691f0d5050bd76be8430c9fbabe"
+source = "git+https://github.com/LNP-BP/lnp-core#5e2d15022d1340dd4e87e185af3822ba2beb3453"
 dependencies = [
  "amplify",
  "bitcoin",

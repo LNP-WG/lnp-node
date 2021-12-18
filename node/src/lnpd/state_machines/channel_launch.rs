@@ -21,7 +21,7 @@
 
 use amplify::{Slice32, Wrapper};
 use bitcoin::Txid;
-use lnp::bolt::Keyset;
+use lnp::bolt::LocalKeyset;
 use lnp::p2p::legacy::{ChannelId, TempChannelId};
 use lnp::{FundingError, PsbtLnpFunding};
 use microservices::esb;
@@ -103,7 +103,7 @@ pub enum ChannelLauncher {
     /// Keyset for channel is derived. Still awaiting for channeld to come online and report back
     /// to lnpd.
     #[display("LAUNCHING")]
-    Launching(TempChannelId, CreateChannel, ClientId, Keyset),
+    Launching(TempChannelId, CreateChannel, ClientId, LocalKeyset),
 
     /// Channel daemon is launched, awaiting for keyset to be derived.
     #[display("DERIVING")]
@@ -269,7 +269,7 @@ fn complete_launch(
 fn complete_derivation(
     event: Event<CtlMsg>,
     temp_channel_id: TempChannelId,
-    keyset: Keyset,
+    keyset: LocalKeyset,
     create_channel: CreateChannel,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
@@ -312,7 +312,7 @@ fn start_negotiation2(
     event: Event<CtlMsg>,
     runtime: &Runtime,
     temp_channel_id: TempChannelId,
-    keyset: Keyset,
+    keyset: LocalKeyset,
     create_channel: CreateChannel,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {
@@ -336,7 +336,7 @@ fn start_negotiation(
     mut event: Event<CtlMsg>,
     runtime: &Runtime,
     temp_channel_id: TempChannelId,
-    keyset: Keyset,
+    keyset: LocalKeyset,
     create_channel: CreateChannel,
     enquirer: ClientId,
 ) -> Result<ChannelLauncher, Error> {

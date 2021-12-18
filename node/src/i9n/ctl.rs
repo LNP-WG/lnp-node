@@ -16,7 +16,7 @@ use amplify::Slice32;
 use bitcoin::Txid;
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
-use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
+use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::OpenChannel;
 use psbt::Psbt;
 #[cfg(feature = "rgb")]
@@ -105,7 +105,7 @@ pub enum CtlMsg {
 
     // signd -> lnpd
     #[display("keyset({0}, ...)")]
-    Keyset(ServiceId, Keyset),
+    Keyset(ServiceId, LocalKeyset),
 
     // Responses
     // ---------
@@ -169,7 +169,7 @@ pub struct OpenChannelWith {
     pub local_params: PeerParams,
 
     /// Channel local keyset
-    pub local_keys: Keyset,
+    pub local_keys: LocalKeyset,
 }
 
 /// Request configuring newly launched channeld instance
@@ -195,7 +195,7 @@ pub struct AcceptChannelFrom {
     pub local_params: PeerParams,
 
     /// Channel local keyset
-    pub local_keys: Keyset,
+    pub local_keys: LocalKeyset,
 }
 
 /// Request information about constructing funding transaction

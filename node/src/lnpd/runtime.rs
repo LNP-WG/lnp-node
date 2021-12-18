@@ -21,7 +21,7 @@ use amplify::{DumbDefault, Wrapper};
 use bitcoin::secp256k1;
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
-use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
+use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, Messages as LnMessage, TempChannelId};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
@@ -193,7 +193,8 @@ impl Runtime {
                     policy: self.channel_params.0.clone(),
                     common_params: self.channel_params.1,
                     local_params: self.channel_params.2,
-                    local_keys: self.new_channel_keyset(),
+                    // TODO: Remove this field, channeld will derive keyset itself
+                    local_keys: LocalKeyset::dumb_default(),
                 };
                 self.accepting_channels.insert(channeld_id, accept_channel);
             }
@@ -491,10 +492,5 @@ impl Runtime {
         self.channels.insert(new_id);
         info!("Channel daemon id registered to change from {} to {}", old_id, new_id);
         known
-    }
-
-    fn new_channel_keyset(&self) -> Keyset {
-        // TODO: Use signd daemon instead
-        Keyset::dumb_default()
     }
 }

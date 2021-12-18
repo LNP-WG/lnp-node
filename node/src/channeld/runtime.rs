@@ -18,7 +18,7 @@ use amplify::{DumbDefault, Slice32};
 use bitcoin::hashes::Hash;
 use internet2::NodeAddr;
 use lnp::bolt;
-use lnp::bolt::{CommonParams, Keyset, PeerParams, Policy};
+use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::channel::Channel;
 use lnp::p2p::legacy::{Messages as LnMsg, TempChannelId};
 use microservices::esb::{self, Handler};
@@ -39,7 +39,7 @@ pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> 
         Policy::default(),
         CommonParams::default(),
         PeerParams::default(),
-        Keyset::dumb_default(), // we do not have keyset derived at this stage
+        LocalKeyset::dumb_default(), // we do not have keyset derived at this stage
     );
 
     let runtime = Runtime {

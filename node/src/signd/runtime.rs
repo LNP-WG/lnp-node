@@ -17,7 +17,7 @@ use std::fs;
 use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
-use lnp::bolt::Keyset;
+use lnp::bolt::LocalKeyset;
 use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
@@ -149,7 +149,8 @@ where
                         .collect::<Vec<_>>();
                     let channel_xpriv =
                         account_xpriv.derive_priv(self.provider.secp_context(), path)?;
-                    let keyset = Keyset::with(self.provider.secp_context(), channel_xpriv, false);
+                    let keyset =
+                        LocalKeyset::with(self.provider.secp_context(), channel_xpriv, false);
                     endpoints.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
