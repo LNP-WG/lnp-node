@@ -16,7 +16,7 @@ use std::fs;
 
 use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
-use bitcoin::util::bip32::ChildNumber;
+use bitcoin::util::bip32::{ChildNumber, DerivationPath};
 use lnp::bolt::LocalKeyset;
 use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
@@ -61,8 +61,8 @@ where
     ) -> Result<MemoryKeyProvider<'secp, secp256k1::All>, Error> {
         let mut wallet_path = config.data_dir.clone();
         wallet_path.push(LNP_NODE_MASTER_KEY_FILE);
-        let signing_account = MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?;
-        let mut provider = MemoryKeyProvider::with(&secp);
+        let signing_account = MemorySigningAccount::read(secp, fs::File::open(wallet_path)?)?;
+        let mut provider = MemoryKeyProvider::with(secp);
         provider.add_account(signing_account);
         Ok(provider)
     }
@@ -149,8 +149,13 @@ where
                         .collect::<Vec<_>>();
                     let channel_xpriv =
                         account_xpriv.derive_priv(self.provider.secp_context(), path)?;
-                    let keyset =
-                        LocalKeyset::with(self.provider.secp_context(), channel_xpriv, false);
+                    let keyset = LocalKeyset::with(
+                        self.provider.secp_context(),
+                        DerivationPath::from(path.as_ref()),
+                        channel_xpriv,
+                        false,
+                    );
+
                     endpoints.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
