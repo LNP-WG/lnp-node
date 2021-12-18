@@ -151,7 +151,7 @@ where
                         account_xpriv.derive_priv(self.provider.secp_context(), path)?;
                     let keyset = LocalKeyset::with(
                         self.provider.secp_context(),
-                        DerivationPath::from(path.as_ref()),
+                        (account.account_fingerprint(), DerivationPath::from(path.as_ref())),
                         channel_xpriv,
                         false,
                     );

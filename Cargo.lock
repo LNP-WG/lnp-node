@@ -1137,7 +1137,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#f641bff7d3e0cd1e57f77e9aa3f17be13bb4101a"
+source = "git+https://github.com/LNP-BP/lnp-core#1dce661f248fe1c350141835ac08ca8ae499ae05"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1155,7 +1155,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#f641bff7d3e0cd1e57f77e9aa3f17be13bb4101a"
+source = "git+https://github.com/LNP-BP/lnp-core#1dce661f248fe1c350141835ac08ca8ae499ae05"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1202,7 +1202,7 @@ dependencies = [
  "microservices",
  "miniscript",
  "nix",
- "psbt 0.6.0-alpha.5",
+ "psbt 0.6.0-alpha.9",
  "rgb-core",
  "rpassword",
  "serde 1.0.132",
@@ -1523,9 +1523,9 @@ dependencies = [
 
 [[package]]
 name = "psbt"
-version = "0.6.0-alpha.5"
+version = "0.6.0-alpha.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ba91a5bb0113c379eb43f72055baf7be07a7fef7af3b48342a2bafc5431e5b7"
+checksum = "872d3738e494cbeb5f199aed4e0ef6455a0adfaaaa1adbaabc94e42403e3e0df"
 dependencies = [
  "amplify",
  "bitcoin",
