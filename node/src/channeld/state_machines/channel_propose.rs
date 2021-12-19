@@ -256,6 +256,11 @@ fn complete_signing(
         signature,
     };
 
+    // if we do this we get infinite loop at ESB: we ened to route at peerd level
+    // (and later at microservices crate)
+    // runtime.identity = ServiceId::Channel(ChannelId::with(funding.txid(), funding.output()));
+    // runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::Hello)?;
+
     runtime.send_p2p(event.endpoints, LnMsg::FundingCreated(funding_created))?;
     Ok(ChannelPropose::Funding)
 }

@@ -335,7 +335,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&service_id)
-                    .expect(&format!("unregistered channel launcher {}", service_id));
+                    .expect(&format!("unregistered channel launcher for {}", service_id));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source, message), self)?
                     .expect("channel launcher should not be complete");
@@ -346,7 +346,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&source)
-                    .expect(&format!("unregistered channel launcher {}", source));
+                    .expect(&format!("unregistered channel launcher for {}", source));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
                     .expect("channel launcher should not be complete");
@@ -357,7 +357,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&destination)
-                    .expect(&format!("unregistered channel launcher {}", destination));
+                    .expect(&format!("unregistered channel launcher for {}", destination));
                 // We swallow `None` here
                 let _ = launcher.next(
                     Event::with(endpoints, self.identity(), destination.clone(), message),
@@ -483,7 +483,8 @@ impl Runtime {
         )
     }
 
-    pub fn update_chanel_id(&mut self, old_id: TempChannelId, new_id: ChannelId) -> bool {
+    pub fn update_chanel_id(&mut self, _old_id: TempChannelId, _new_id: ChannelId) -> bool {
+        /* remove this once we add routing at microservices level
         let mut known = true;
         if !self.channels.remove(&ChannelId::from(old_id)) {
             known = false;
@@ -492,5 +493,7 @@ impl Runtime {
         self.channels.insert(new_id);
         info!("Channel daemon id registered to change from {} to {}", old_id, new_id);
         known
+         */
+        false
     }
 }
