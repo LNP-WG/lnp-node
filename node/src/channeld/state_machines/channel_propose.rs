@@ -211,9 +211,11 @@ fn complete_accepted(
     debug!("Funding transaction id is {}", funding_psbt.global.unsigned_tx.txid());
 
     let channel = &mut runtime.channel;
-    let refund_psbt = channel.refund_tx(funding_psbt)?;
+    let refund_psbt = channel.refund_tx(funding_psbt, true)?;
 
     trace!("Refund transaction: {:#?}", refund_psbt);
+    trace!("Local keyset: {:#}", channel.constructor().local_keys());
+    trace!("Remote keyset: {:#}", channel.constructor().remote_keys());
     debug!("Refund transaction id is {}", refund_psbt.global.unsigned_tx.txid());
 
     runtime.send_ctl(event.endpoints, ServiceId::Signer, CtlMsg::Sign(refund_psbt))?;
