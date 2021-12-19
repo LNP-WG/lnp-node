@@ -46,7 +46,7 @@ required-features = ["cli"]
 amplify = "3.9.1"
 strict_encoding = "1.7.5"
 descriptor-wallet = { version = "0.5.0", features = ["keygen"] }
-psbt = { version = "0.6.0-alpha.9", features = ["sign"] }
+psbt = { version = "0.6.0-alpha.10", features = ["sign"] }
 descriptors = "0.6.0-alpha.1"
 bitcoin_onchain = { version = "0.6.0-alpha.4", features = ["electrum"] }
 bitcoin_hd = "0.6.0-alpha.2"
