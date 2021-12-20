@@ -18,7 +18,7 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use amplify::{DumbDefault, Wrapper};
-use bitcoin::secp256k1;
+use bitcoin::{secp256k1, Txid};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
@@ -63,6 +63,7 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
         channels: none!(),
         spawning_peers: none!(),
         creating_channels: none!(),
+        funding_channels: none!(),
         accepting_channels: Default::default(),
     };
 
@@ -99,6 +100,7 @@ pub struct Runtime {
     channels: HashSet<ChannelId>,
     spawning_peers: HashMap<ServiceId, ClientId>,
     creating_channels: HashMap<ServiceId, ChannelLauncher>,
+    funding_channels: HashMap<Txid, ChannelLauncher>,
     accepting_channels: HashMap<ServiceId, AcceptChannelFrom>,
 }
 
@@ -342,7 +344,7 @@ impl Runtime {
                 self.creating_channels.insert(service_id, launcher);
             }
 
-            CtlMsg::ConstructFunding(_) | CtlMsg::PublishFunding => {
+            CtlMsg::ConstructFunding(_) => {
                 let launcher = self
                     .creating_channels
                     .remove(&source)
@@ -351,6 +353,33 @@ impl Runtime {
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
                     .expect("channel launcher should not be complete");
                 self.creating_channels.insert(source, launcher);
+            }
+
+            CtlMsg::PublishFunding => {
+                let launcher = self
+                    .creating_channels
+                    .remove(&source)
+                    .expect(&format!("unregistered channel launcher for {}", source));
+                let launcher = launcher
+                    .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
+                    .expect("channel launcher should not be complete");
+                let txid =
+                    launcher.funding_txid().expect("funding txid must be known at this stage");
+                self.funding_channels.insert(txid, launcher);
+            }
+
+            CtlMsg::Signed(psbt) => {
+                let txid = psbt.global.unsigned_tx.txid();
+                let launcher = self
+                    .funding_channels
+                    .remove(&txid)
+                    .expect(&format!("unregistered channel launcher for {}", source));
+                let none = launcher
+                    .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?;
+                debug_assert!(
+                    matches!(none, None),
+                    "Channel launcher must complete upon publishing funding transaction"
+                );
             }
 
             CtlMsg::Error { destination, .. } | CtlMsg::EsbError { destination, .. } => {

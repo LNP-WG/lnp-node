@@ -191,6 +191,18 @@ impl ChannelLauncher {
         }
     }
 
+    pub fn funding_txid(&self) -> Option<Txid> {
+        match self {
+            ChannelLauncher::Init(_, _, _)
+            | ChannelLauncher::Launching(_, _, _, _)
+            | ChannelLauncher::Deriving(_, _, _)
+            | ChannelLauncher::Negotiating(_, _) => None,
+            ChannelLauncher::Committing(_, txid, _) | ChannelLauncher::Signing(_, txid, _) => {
+                Some(*txid)
+            }
+        }
+    }
+
     pub fn enquirer(&self) -> ClientId {
         match self {
             ChannelLauncher::Init(_, _, enquirer)

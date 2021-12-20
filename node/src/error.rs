@@ -57,7 +57,7 @@ pub enum Error {
     #[from]
     Channel(channeld::Error),
 
-    /// filed to bootstrap channel: {0}
+    /// failed to bootstrap channel: {0}
     #[from]
     ChannelLaunch(channel_launch::Error),
 
