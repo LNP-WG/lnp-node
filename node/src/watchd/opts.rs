@@ -16,7 +16,7 @@
 ///
 /// The daemon is controlled though RPC socket (see `rpc-socket`).
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
-#[clap(name = "gossipd", bin_name = "gossipd", author, version)]
+#[clap(name = "watchd", bin_name = "watchd", author, version)]
 pub struct Opts {
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables

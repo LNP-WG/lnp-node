@@ -67,10 +67,10 @@ pub enum ServiceId {
     Loopback,
 
     #[display("lnpd")]
-    Lnpd,
+    LnpBroker,
 
-    #[display("gossipd")]
-    Gossip,
+    #[display("watchd")]
+    Watch,
 
     #[display("routed")]
     Routing,
@@ -98,7 +98,7 @@ pub enum ServiceId {
 }
 
 impl ServiceId {
-    pub fn router() -> ServiceId { ServiceId::Lnpd }
+    pub fn router() -> ServiceId { ServiceId::LnpBroker }
 
     pub fn client() -> ServiceId {
         use bitcoin::secp256k1::rand;
@@ -193,7 +193,7 @@ where
     pub fn run_loop(mut self) -> Result<(), Error> {
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));
-            self.esb.send_to(ServiceBus::Ctl, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
+            self.esb.send_to(ServiceBus::Ctl, ServiceId::LnpBroker, BusMsg::Ctl(CtlMsg::Hello))?;
             // self.esb.send_to(ServiceBus::Msg, ServiceId::Lnpd, BusMsg::Ctl(CtlMsg::Hello))?;
         }
 
@@ -247,7 +247,7 @@ where
             endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                ServiceId::Lnpd,
+                ServiceId::LnpBroker,
                 BusMsg::Ctl(report),
             )?;
         }
@@ -267,7 +267,7 @@ where
             endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                ServiceId::Lnpd,
+                ServiceId::LnpBroker,
                 BusMsg::Ctl(report),
             )?;
         }
@@ -283,7 +283,7 @@ where
             let _ = endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
-                ServiceId::Lnpd,
+                ServiceId::LnpBroker,
                 BusMsg::Ctl(report),
             );
         }

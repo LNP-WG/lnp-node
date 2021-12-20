@@ -1,8 +1,8 @@
-#compdef gossipd
+#compdef watchd
 
 autoload -U is-at-least
 
-_gossipd() {
+_watchd() {
     typeset -A opt_args
     typeset -a _arguments_options
     local ret=1
@@ -39,10 +39,10 @@ _gossipd() {
 && ret=0
 }
 
-(( $+functions[_gossipd_commands] )) ||
-_gossipd_commands() {
+(( $+functions[_watchd_commands] )) ||
+_watchd_commands() {
     local commands; commands=()
-    _describe -t commands 'gossipd commands' commands "$@"
+    _describe -t commands 'watchd commands' commands "$@"
 }
 
-_gossipd "$@"
+_watchd "$@"

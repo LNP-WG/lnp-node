@@ -193,7 +193,11 @@ fn complete_proposed(
         debug!("Channel funding address is {}", address);
     }
 
-    runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::ConstructFunding(fund_channel))?;
+    runtime.send_ctl(
+        event.endpoints,
+        ServiceId::LnpBroker,
+        CtlMsg::ConstructFunding(fund_channel),
+    )?;
     Ok(ChannelPropose::Accepted)
 }
 
@@ -262,7 +266,7 @@ fn complete_signing(
     debug!("Changing channeld identifier from {} to {}", runtime.identity(), new_id);
     runtime.set_identity(&mut event.endpoints, new_id).expect("unrecoverable ZMQ failure");
     // needed to update ESB routing map
-    runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::Hello)?;
+    runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::Hello)?;
 
     runtime.send_p2p(event.endpoints, LnMsg::FundingCreated(funding_created))?;
     Ok(ChannelPropose::Funding)
@@ -284,7 +288,7 @@ fn complete_funding(
     // Save signature
     runtime.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
 
-    runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::PublishFunding)?;
+    runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::PublishFunding)?;
     Ok(ChannelPropose::Signed)
 }
 

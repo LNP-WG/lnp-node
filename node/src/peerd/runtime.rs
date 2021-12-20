@@ -314,7 +314,12 @@ impl Runtime {
             }
 
             BusMsg::Ln(LnMsg::OpenChannel(_)) => {
-                endpoints.send_to(ServiceBus::Msg, self.identity(), ServiceId::Lnpd, request)?;
+                endpoints.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    ServiceId::LnpBroker,
+                    request,
+                )?;
             }
 
             BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => {

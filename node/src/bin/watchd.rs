@@ -24,18 +24,18 @@
     missing_docs
 )]
 
-//! Main executable for gossipd: lightning peer network microservice operating
-//! gossip protocol.
+//! Main executable for watchd: lightning peer network microservice monitoring
+//! uncooperative channel closings.
 
 #[macro_use]
 extern crate log;
 
 use clap::Parser;
-use lnp_node::gossipd::{self, Opts};
+use lnp_node::watchd::{self, Opts};
 use lnp_node::Config;
 
 fn main() {
-    println!("gossipd: lightning peer network gossip daemon");
+    println!("watchd: lightning peer network channel closing daemon");
 
     let mut opts = Opts::parse();
     trace!("Command-line arguments: {:?}", &opts);
@@ -57,7 +57,7 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    gossipd::run(config).expect("Error running gossipd runtime");
+    watchd::run(config).expect("Error running watchd runtime");
 
     unreachable!()
 }

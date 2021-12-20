@@ -22,7 +22,7 @@ name = "peerd"
 required-features = ["server"]
 
 [[bin]]
-name = "gossipd"
+name = "watchd"
 required-features = ["server"]
 
 [[bin]]

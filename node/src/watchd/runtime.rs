@@ -20,7 +20,7 @@ use crate::i9n::{BusMsg, ServiceBus};
 use crate::{Config, Endpoints, Error, Service, ServiceId};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime { identity: ServiceId::Gossip };
+    let runtime = Runtime { identity: ServiceId::Watch };
 
     Service::run(config, runtime, false)
 }

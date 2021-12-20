@@ -59,8 +59,6 @@ pub mod state_machine;
 #[cfg(feature = "node")]
 pub mod channeld;
 #[cfg(feature = "node")]
-pub mod gossipd;
-#[cfg(feature = "node")]
 pub mod lnpd;
 #[cfg(feature = "node")]
 pub mod peerd;
@@ -70,6 +68,8 @@ pub mod routed;
 mod service;
 #[cfg(feature = "node")]
 pub mod signd;
+#[cfg(feature = "node")]
+pub mod watchd;
 
 #[cfg(feature = "_rpc")]
 pub use config::Config;

@@ -1,4 +1,4 @@
-_gossipd() {
+_watchd() {
     local i cur prev opts cmds
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -9,8 +9,8 @@ _gossipd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            gossipd)
-                cmd="gossipd"
+            watchd)
+                cmd="watchd"
                 ;;
             *)
                 ;;
@@ -18,7 +18,7 @@ _gossipd() {
     done
 
     case "${cmd}" in
-        gossipd)
+        watchd)
             opts="-h -V -d -c -v -T -r -n --help --version --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -91,4 +91,4 @@ _gossipd() {
     esac
 }
 
-complete -F _gossipd -o bashdefault -o default gossipd
+complete -F _watchd -o bashdefault -o default watchd

@@ -50,7 +50,7 @@ impl Exec for Command {
                         return Err(Error::Other(err));
                     }
                 } else {
-                    runtime.request(ServiceId::Lnpd, RpcMsg::GetInfo)?;
+                    runtime.request(ServiceId::LnpBroker, RpcMsg::GetInfo)?;
                 }
                 match runtime.response()? {
                     RpcMsg::NodeInfo(info) => println!("{}", info),
@@ -63,23 +63,23 @@ impl Exec for Command {
             }
 
             Command::Peers => {
-                runtime.request(ServiceId::Lnpd, RpcMsg::ListPeers)?;
+                runtime.request(ServiceId::LnpBroker, RpcMsg::ListPeers)?;
                 runtime.report_response()?;
             }
 
             Command::Channels => {
-                runtime.request(ServiceId::Lnpd, RpcMsg::ListChannels)?;
+                runtime.request(ServiceId::LnpBroker, RpcMsg::ListChannels)?;
                 runtime.report_response()?;
             }
 
             Command::Funds => {
-                runtime.request(ServiceId::Lnpd, RpcMsg::ListFunds)?;
+                runtime.request(ServiceId::LnpBroker, RpcMsg::ListFunds)?;
                 runtime.report_response()?;
             }
 
             Command::Listen { ip_addr, port, overlay } => {
                 let socket = RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
-                runtime.request(ServiceId::Lnpd, RpcMsg::Listen(socket))?;
+                runtime.request(ServiceId::LnpBroker, RpcMsg::Listen(socket))?;
                 runtime.report_progress()?;
             }
 
@@ -88,7 +88,7 @@ impl Exec for Command {
                     .to_remote_node_addr(LNP2P_LEGACY_PORT)
                     .expect("Provided node address is invalid");
 
-                runtime.request(ServiceId::Lnpd, RpcMsg::ConnectPeer(peer))?;
+                runtime.request(ServiceId::LnpBroker, RpcMsg::ConnectPeer(peer))?;
                 runtime.report_progress()?;
             }
 
@@ -117,7 +117,7 @@ impl Exec for Command {
                     peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
 
                 runtime.request(
-                    ServiceId::Lnpd,
+                    ServiceId::LnpBroker,
                     RpcMsg::CreateChannel(request::CreateChannel {
                         funding_sat,
                         push_msat: push_msat.unwrap_or_default(),

@@ -166,7 +166,7 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
             }
             ChannelLauncher::Committing(_, ref txid, ref enquirer) => {
                 match event.message {
-                    // Since we changed channelid we send hello request once again, but this does
+                    // Since we changed channeld id we send hello request once again, but this does
                     // not influence state machine
                     CtlMsg::Hello => Ok(self),
                     _ => complete_commitment(event, runtime, *txid, *enquirer),
@@ -512,7 +512,7 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
     Err(err.into())
 }
@@ -526,7 +526,7 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
 }
 
@@ -539,7 +539,7 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
 }
 
@@ -560,7 +560,7 @@ where
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::Lnpd, enquirer, BusMsg::Rpc(report))
+        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
     result.map(|_| ()).map_err(E::into)
 }

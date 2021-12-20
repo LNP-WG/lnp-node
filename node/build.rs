@@ -41,8 +41,8 @@ pub mod channeld {
 pub mod signd {
     include!("src/signd/opts.rs");
 }
-pub mod gossipd {
-    include!("src/gossipd/opts.rs");
+pub mod watchd {
+    include!("src/watchd/opts.rs");
 }
 pub mod routed {
     include!("src/routed/opts.rs");
@@ -55,7 +55,7 @@ fn main() -> Result<(), configure_me_codegen::Error> {
         lnpd::Opts::into_app(),
         peerd::Opts::into_app(),
         channeld::Opts::into_app(),
-        gossipd::Opts::into_app(),
+        watchd::Opts::into_app(),
         routed::Opts::into_app(),
         signd::Opts::into_app(),
         cli::Opts::into_app(),

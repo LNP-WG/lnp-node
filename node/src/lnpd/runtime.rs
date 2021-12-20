@@ -50,7 +50,7 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
     let node_id = read_node_key_file(&key_file).node_id();
 
     let runtime = Runtime {
-        identity: ServiceId::Lnpd,
+        identity: ServiceId::LnpBroker,
         config: config.clone(),
         node_key_path: key_file,
         node_id,
@@ -317,7 +317,7 @@ impl Runtime {
     ) -> Result<(), esb::Error<ServiceId>> {
         endpoints.send_to(
             ServiceBus::Rpc,
-            ServiceId::Lnpd,
+            ServiceId::LnpBroker,
             ServiceId::Client(client_id),
             BusMsg::Rpc(message.into()),
         )
@@ -452,7 +452,7 @@ impl Runtime {
 
     fn register_daemon(&mut self, source: ServiceId) {
         match source {
-            ServiceId::Lnpd => {
+            ServiceId::LnpBroker => {
                 error!("{}", "Unexpected another lnpd instance connection".err());
             }
             ServiceId::Peer(connection_id) if self.connections.insert(connection_id.clone()) => {
