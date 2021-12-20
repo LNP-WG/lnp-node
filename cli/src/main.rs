@@ -12,6 +12,18 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#![recursion_limit = "256"]
+// Coding conventions
+#![deny(
+    non_upper_case_globals,
+    non_camel_case_types,
+    non_snake_case,
+    unused_mut,
+    unused_imports,
+    dead_code
+    // missing_docs,
+)]
+
 //! Command-line interface to LNP node
 
 #[macro_use]

@@ -19,7 +19,7 @@
     non_camel_case_types,
     non_snake_case,
     unused_mut,
-    // unused_imports,
+    unused_imports,
     // dead_code
     // missing_docs,
 )]
@@ -75,5 +75,4 @@ pub use service::{CtlServer, Endpoints, LogStyle, Service, TryToServiceId};
 // TODO: Make onchaind
 
 // Refactoring todos:
-// TODO: Refactor client repoting
-// TODO: Move cli to separate crate
+// TODO: Refactor client reporting
