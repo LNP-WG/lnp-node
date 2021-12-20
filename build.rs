@@ -49,7 +49,7 @@ pub mod routed {
 }
 
 fn main() -> Result<(), configure_me_codegen::Error> {
-    let outdir = "../shell";
+    let outdir = "./shell";
 
     for app in [
         lnpd::Opts::into_app(),

@@ -72,8 +72,10 @@ pub use error::Error;
 pub use service::{CtlServer, Endpoints, LogStyle, Service, TryToServiceId};
 
 // TODO: React on reestablish message
-// TODO: Lnpd must store channel launcher tate
+// TODO: Lnpd must store channel launcher state
 // TODO: Channel daemon must store its own state to data directory and re-load it
-// TODO: Add service renaming to microservices and change ServiceId upon channel creation
-// TODO: Refactor client repoting
 // TODO: Make onchaind
+
+// Refactoring todos:
+// TODO: Refactor client repoting
+// TODO: Move cli to separate crate
