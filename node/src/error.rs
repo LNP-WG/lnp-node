@@ -17,15 +17,14 @@ use std::io;
 use amplify::IoError;
 use bitcoin::util::bip32;
 use internet2::{presentation, transport};
-#[cfg(feature = "_rpc")]
-use microservices::{esb, rpc};
+use microservices::esb;
 use psbt::sign::SignError;
 
-#[cfg(feature = "_rpc")]
-use crate::i9n::ServiceBus;
+use crate::bus::ServiceBus;
+use crate::channeld;
 use crate::lnpd::state_machines::channel_launch;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
-use crate::{channeld, ServiceId};
+use crate::rpc::{self, ServiceId};
 
 #[derive(Debug, Display, From, Error)]
 #[display(doc_comments)]
@@ -36,12 +35,10 @@ pub enum Error {
     Io(IoError),
 
     /// ESB error: {0}
-    #[cfg(feature = "_rpc")]
     #[from]
     Esb(esb::Error<ServiceId>),
 
     /// RPC error: {0}
-    #[cfg(feature = "_rpc")]
     #[from]
     Rpc(rpc::Error),
 
@@ -91,11 +88,9 @@ pub enum Error {
     Bridge(transport::Error),
 
     /// message `{1}` is not supported on {0} message bus
-    #[cfg(feature = "_rpc")]
     NotSupported(ServiceBus, String),
 
     /// message `{1}` is not supported on {0} message bus for service {2}
-    #[cfg(feature = "_rpc")]
     SourceNotSupported(ServiceBus, String, ServiceId),
 
     /// peer has misbehaved LN peer protocol rules
@@ -112,7 +107,6 @@ pub enum Error {
 
 impl microservices::error::Error for Error {}
 
-#[cfg(feature = "_rpc")]
 impl From<Error> for esb::Error<ServiceId> {
     fn from(err: Error) -> Self {
         match err {
@@ -122,12 +116,14 @@ impl From<Error> for esb::Error<ServiceId> {
     }
 }
 
-#[cfg(feature = "_rpc")]
-impl From<Error> for rpc::Error {
+impl From<Error> for microservices::rpc::Error {
     fn from(err: Error) -> Self {
         match err {
-            Error::Rpc(err) => err,
-            err => rpc::Error::ServerFailure(rpc::Failure { code: 2000, info: err.to_string() }),
+            Error::Rpc(err) => err.into(),
+            err => microservices::rpc::Error::ServerFailure(microservices::rpc::Failure {
+                code: 2000,
+                info: err.to_string(),
+            }),
         }
     }
 }

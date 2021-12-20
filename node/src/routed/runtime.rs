@@ -15,9 +15,9 @@
 use lnp::p2p::legacy::Messages as LnMsg;
 use microservices::esb;
 
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::{BusMsg, ServiceBus};
-use crate::{Config, Endpoints, Error, Service, ServiceId};
+use crate::bus::{BusMsg, CtlMsg, ServiceBus};
+use crate::rpc::ServiceId;
+use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let runtime = Runtime { identity: ServiceId::Routing };

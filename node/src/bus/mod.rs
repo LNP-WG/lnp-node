@@ -12,18 +12,17 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-mod client;
-pub mod ctl;
-pub mod rpc;
+mod ctl;
+mod reports;
 
-pub use client::Client;
+pub use ctl::*;
 use lnp::p2p;
+use lnprpc::RpcMsg;
 use microservices::esb::BusId;
 use microservices::rpc_connection;
+pub use reports::{IntoSuccessOrFalure, ToProgressOrFalure};
 
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::rpc::RpcMsg;
-use crate::ServiceId;
+use crate::rpc::ServiceId;
 
 /// Service buses used for inter-daemon communication
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Display)]

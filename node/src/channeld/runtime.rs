@@ -24,11 +24,10 @@ use lnp::p2p::legacy::{Messages as LnMsg, TempChannelId};
 use microservices::esb::{self, Handler};
 
 use super::storage::{self, Driver};
+use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
 use crate::channeld::state_machines::ChannelStateMachine;
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::{ctl as request, BusMsg, ServiceBus};
-use crate::service::ClientId;
-use crate::{Config, CtlServer, Endpoints, Error, Service, ServiceId};
+use crate::rpc::{ClientId, ServiceId};
+use crate::{Config, CtlServer, Endpoints, Error, Service};
 
 pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> {
     let chain_hash = config.chain.as_genesis_hash().as_inner();
@@ -213,7 +212,7 @@ impl Runtime {
             }
 
             // Processing remote request to open a channel
-            CtlMsg::AcceptChannelFrom(request::AcceptChannelFrom { ref remote_peer, .. }) => {
+            CtlMsg::AcceptChannelFrom(bus::AcceptChannelFrom { ref remote_peer, .. }) => {
                 self.enquirer = None;
                 let remote_peer = remote_peer.clone();
                 if self.process(endpoints, source, BusMsg::Ctl(request))? {

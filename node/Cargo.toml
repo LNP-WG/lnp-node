@@ -56,6 +56,7 @@ bp-core = "0.5.0"
 lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
 rgb-core = { version = "0.5.1", optional = true }
 # rgb_node = { version = "0.5.0-alpha.1", optional = true, default-features = false, features = ["client", "fungibles"], path = "../../rgb/rgb-node", git = "https://github.com/" }
+lnprpc = { version = "0.5", path = "../rpc" }
 internet2 = "0.5.12"
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false, features = ["peer"] }
 # Bitcoin
@@ -130,11 +131,11 @@ embedded = ["client", "node", "microservices/embedded"]
 node = ["serde", "internet2/keygen", "bitcoin/rand", "internet2/zmq", "microservices/node",
     "internet2/url", "electrum-client", "base64",
     # Required for storing config and cache
-    "_config", "_rpc"]
+    "_config"]
 # Feature is required for any applications that talks to daemon processes
 client = ["internet2/zmq", "microservices/client", "microservices/node", "bitcoin/rand",
     "electrum-client", "base64", # "rgb_node/node",
-    "internet2/url", "clap", "_rpc"]
+    "internet2/url", "clap"]
 # Required for all apps that can be launched from command-line shell as binaries
 # (i.e. both servers and cli)
 shell = [
@@ -144,7 +145,6 @@ shell = [
 
 # Internally used features for convenience
 _config = ["serde_yaml", "toml"]
-_rpc = []
 
 # rgb = ["lnp-core/rgb", "rgb-core", "rgb_node"]
 serde = ["serde_crate", "serde_with", "serde_yaml", "serde_json", "toml",

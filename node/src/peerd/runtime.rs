@@ -32,10 +32,9 @@ use microservices::node::TryService;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
 use super::RuntimeParams;
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::rpc::PeerInfo;
-use crate::i9n::{BusMsg, ServiceBus};
-use crate::{CtlServer, Endpoints, Error, LogStyle, Service, ServiceId};
+use crate::bus::{BusMsg, CtlMsg, ServiceBus};
+use crate::rpc::{PeerInfo, ServiceId};
+use crate::{CtlServer, Endpoints, Error, LogStyle, Service};
 
 pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");

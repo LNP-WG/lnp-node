@@ -37,7 +37,7 @@ type Bus = esb::SenderList<RpcBus>;
 
 #[repr(C)]
 pub struct Client {
-    pub(crate) identity: ClientId,
+    identity: ClientId,
     response_queue: Vec<RpcMsg>,
     esb: esb::Controller<RpcBus, BusMsg, Handler>,
 }
@@ -72,7 +72,7 @@ impl Client {
         Ok(Self { identity, response_queue: empty!(), esb })
     }
 
-    pub fn identity(&self) -> ServiceId { ServiceId::Client(self.identity) }
+    pub fn identity(&self) -> ClientId { self.identity }
 
     pub fn request(&mut self, daemon: ServiceId, req: RpcMsg) -> Result<(), Error> {
         debug!("Executing {}", req);

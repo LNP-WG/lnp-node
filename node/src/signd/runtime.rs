@@ -23,10 +23,10 @@ use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
 
-use crate::i9n::ctl::CtlMsg;
-use crate::i9n::{BusMsg, ServiceBus};
+use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::opts::LNP_NODE_MASTER_KEY_FILE;
-use crate::{Config, Endpoints, Error, Service, ServiceId};
+use crate::rpc::ServiceId;
+use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();

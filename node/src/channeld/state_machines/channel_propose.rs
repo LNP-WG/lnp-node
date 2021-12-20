@@ -20,13 +20,13 @@ use microservices::esb::Handler;
 use wallet::address::AddressCompat;
 
 use super::Error;
+use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith};
 use crate::channeld::runtime::Runtime;
 use crate::channeld::state_machines;
-use crate::i9n::ctl::{CtlMsg, FundChannel, OpenChannelWith};
-use crate::i9n::BusMsg;
+use crate::rpc::ServiceId;
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
-use crate::{CtlServer, Endpoints, ServiceId};
+use crate::{CtlServer, Endpoints};
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]

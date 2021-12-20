@@ -26,20 +26,18 @@ use lnp::p2p::legacy::{ChannelId, Messages as LnMessage, TempChannelId};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
-use crate::i9n::ctl::{AcceptChannelFrom, CtlMsg, Status};
-use crate::i9n::rpc::{
-    Failure, FundsInfo, IntoSuccessOrFalure, NodeInfo, OptionDetails, RpcMsg, ToProgressOrFalure,
+use crate::bus::{
+    AcceptChannelFrom, BusMsg, CtlMsg, IntoSuccessOrFalure, ServiceBus, Status, ToProgressOrFalure,
 };
-use crate::i9n::{BusMsg, ServiceBus};
 use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
 use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::peerd::supervisor::read_node_key_file;
 use crate::peerd::PeerSocket;
-use crate::service::ClientId;
+use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
 use crate::state_machine::{Event, StateMachine};
-use crate::{Config, Endpoints, Error, LogStyle, Service, ServiceId};
+use crate::{Config, Endpoints, Error, LogStyle, Service};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let mut listens = HashSet::with_capacity(1);

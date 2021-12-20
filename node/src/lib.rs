@@ -28,8 +28,6 @@
 #[macro_use]
 extern crate amplify;
 #[macro_use]
-extern crate strict_encoding;
-#[cfg_attr(feature = "_rpc", macro_use)]
 extern crate internet2;
 
 #[cfg(feature = "shell")]
@@ -44,16 +42,15 @@ extern crate serde_crate as serde;
 #[macro_use]
 extern crate serde_with;
 
+pub extern crate lnprpc as rpc;
+
+pub mod bus;
 #[cfg(feature = "cli")]
 pub mod cli;
-#[cfg(feature = "_rpc")]
 mod config;
 mod error;
-#[cfg(feature = "_rpc")]
-pub mod i9n;
 #[cfg(feature = "shell")]
 pub mod opts;
-#[cfg(feature = "_rpc")]
 pub mod state_machine;
 
 #[cfg(feature = "node")]
@@ -64,18 +61,15 @@ pub mod lnpd;
 pub mod peerd;
 #[cfg(feature = "node")]
 pub mod routed;
-#[cfg(feature = "_rpc")]
 mod service;
 #[cfg(feature = "node")]
 pub mod signd;
 #[cfg(feature = "node")]
 pub mod watchd;
 
-#[cfg(feature = "_rpc")]
 pub use config::Config;
 pub use error::Error;
-#[cfg(feature = "_rpc")]
-pub use service::{CtlServer, Endpoints, LogStyle, Service, ServiceId, TryToServiceId};
+pub use service::{CtlServer, Endpoints, LogStyle, Service, TryToServiceId};
 
 // TODO: React on reestablish message
 // TODO: Lnpd must store channel launcher tate

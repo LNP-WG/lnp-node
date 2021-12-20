@@ -17,8 +17,9 @@
 
 use microservices::esb;
 
-use crate::i9n::{BusMsg, ServiceBus};
-use crate::{Endpoints, ServiceId};
+use crate::bus::{BusMsg, ServiceBus};
+use crate::rpc::ServiceId;
+use crate::Endpoints;
 
 /// State machine used by runtimes for managing complex asynchronous workflows:
 /// - Launching and managing channel daemon by lnpd for a locally created channel;

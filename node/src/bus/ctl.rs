@@ -24,9 +24,7 @@ use rgb::Consignment;
 use strict_encoding::{NetworkDecode, NetworkEncode};
 use wallet::scripts::PubkeyScript;
 
-use crate::i9n::rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
-use crate::service::ClientId;
-use crate::ServiceId;
+use crate::rpc::{ClientId, ServiceId};
 
 /// RPC API requests over CTL message bus between LNP Node daemons and from/to clients.
 #[derive(Clone, Debug, Display, From)]
@@ -123,10 +121,10 @@ pub enum CtlMsg {
     EsbError { destination: ServiceId, error: String },
 
     #[display("node_info({0})", alt = "{0:#}")]
-    PeerInfo(PeerInfo),
+    PeerInfo(rpc::PeerInfo),
 
     #[display("channel_info({0})", alt = "{0:#}")]
-    ChannelInfo(ChannelInfo),
+    ChannelInfo(rpc::ChannelInfo),
 }
 
 impl CtlMsg {
@@ -239,9 +237,9 @@ pub enum Status {
     Progress(String),
 
     #[display("success = {0}")]
-    Success(OptionDetails),
+    Success(rpc::OptionDetails),
 
     #[display("failure = {0}")]
     #[from]
-    Failure(Failure),
+    Failure(rpc::Failure),
 }

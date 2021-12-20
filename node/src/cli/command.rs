@@ -23,9 +23,8 @@ use rgb::Consignment;
 use rgb_node::util::file::ReadWrite;
 
 use super::Command;
-use crate::i9n::rpc::{self as request, RpcMsg};
-use crate::i9n::Client;
-use crate::{Error, LogStyle, ServiceId};
+use crate::rpc::{self, Client, RpcMsg, ServiceId};
+use crate::{Error, LogStyle};
 
 impl Exec for Command {
     type Client = Client;
@@ -118,7 +117,7 @@ impl Exec for Command {
 
                 runtime.request(
                     ServiceId::LnpBroker,
-                    RpcMsg::CreateChannel(request::CreateChannel {
+                    RpcMsg::CreateChannel(rpc::CreateChannel {
                         funding_sat,
                         push_msat: push_msat.unwrap_or_default(),
                         fee_rate,
@@ -130,7 +129,7 @@ impl Exec for Command {
                         htlc_min_value,
                         htlc_max_total_value,
                         remote_peer: node_addr,
-                        report_to: Some(runtime.identity),
+                        report_to: Some(runtime.identity()),
                         channel_reserve,
                     }),
                 )?;
@@ -141,7 +140,7 @@ impl Exec for Command {
             Command::Transfer { channel, amount, asset } => {
                 runtime.request(
                     channel.clone().into(),
-                    RpcMsg::Transfer(request::Transfer {
+                    RpcMsg::Transfer(rpc::Transfer {
                         channeld: channel.clone().into(),
                         amount,
                         asset: asset.map(|id| id.into()),
