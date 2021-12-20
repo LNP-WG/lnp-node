@@ -32,7 +32,7 @@ use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::p2p::legacy::TempChannelId;
 use lnp::PsbtLnpFunding;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
-use miniscript::{Descriptor, DescriptorTrait};
+use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
 use psbt::construct::Construct;
 use psbt::Psbt;
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -380,6 +380,17 @@ impl FundingWallet {
                 &self.resolver,
             )
             .expect("funding PSBT construction is broken");
+            // TODO: Update individual inputs instead
+            descriptor.for_each_key(|account| {
+                let account = account.as_key();
+                if let Some(master_fingerprint) = account.master_fingerprint() {
+                    psbt.global.xpub.insert(
+                        account.account_xpub,
+                        (master_fingerprint, account.to_account_derivation_path()),
+                    );
+                }
+                true
+            });
             psbt.set_channel_funding_output(0).expect("hardcoded funding output number");
             let transaction = &psbt.global.unsigned_tx;
             // If we use non-standard descriptor we assume its witness will weight 256 bytes per
