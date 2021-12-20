@@ -12,19 +12,20 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
 
-use amplify::Bipolar;
+use amplify::{Bipolar, Wrapper};
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
 use lnp::p2p::legacy::{
-    ChannelId, FundingCreated, FundingLocked, FundingSigned, Init, Messages as LnMsg, Ping,
-    UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
+    ActiveChannelId, ChannelId, FundingCreated, FundingLocked, FundingSigned, Init,
+    Messages as LnMsg, Ping, UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc,
+    UpdateFulfillHtlc,
 };
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
@@ -74,7 +75,7 @@ pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(
         remote_id: params.remote_id,
         local_socket: params.local_socket,
         remote_socket: params.remote_socket,
-        routing: empty!(),
+        channels: empty!(),
         sender,
         connect: params.connect,
         started: SystemTime::now(),
@@ -133,7 +134,6 @@ impl ListenerRuntime {
 impl peer::Handler<LnMsg> for ListenerRuntime {
     type Error = crate::Error;
 
-    // TODO: Update microservices not to take Arc type
     fn handle(&mut self, message: Arc<LnMsg>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         debug!("New message from remote peer: {}", message);
@@ -166,10 +166,10 @@ pub struct Runtime {
     local_socket: Option<InetSocketAddr>,
     remote_socket: InetSocketAddr,
 
-    routing: HashMap<ServiceId, ServiceId>,
     sender: PeerSender,
     connect: bool,
 
+    channels: HashSet<ActiveChannelId>,
     started: SystemTime,
     messages_sent: usize,
     messages_received: usize,
@@ -235,24 +235,6 @@ impl Runtime {
         _source: ServiceId,
         message: LnMsg,
     ) -> Result<(), Error> {
-        match &message {
-            LnMsg::FundingCreated(FundingCreated {
-                temporary_channel_id,
-                funding_txid,
-                funding_output_index,
-                ..
-            }) => {
-                let old_id = ServiceId::from(*temporary_channel_id);
-                let new_id = ServiceId::from(ChannelId::with(*funding_txid, *funding_output_index));
-                debug!(
-                    "Renaming channeld service from temporary id {:#} to channel id #{:#}",
-                    old_id, new_id
-                );
-                self.routing.insert(new_id, old_id);
-            }
-            _ => {}
-        }
-
         debug!("Sending remote peer {}", message);
         trace!("{:#?}", message);
         self.messages_sent += 1;
@@ -284,15 +266,11 @@ impl Runtime {
                     messages_sent: self.messages_sent,
                     messages_received: self.messages_received,
                     channels: self
-                        .routing
-                        .keys()
-                        .filter_map(|id| {
-                            if let ServiceId::Channel(channel_id) = id {
-                                Some(channel_id.clone())
-                            } else {
-                                None
-                            }
-                        })
+                        .channels
+                        .iter()
+                        .copied()
+                        .map(ActiveChannelId::as_slice32)
+                        .map(ChannelId::from_inner)
                         .collect(),
                     connected: !self.connect,
                     awaits_pong: self.awaited_pong.is_some(),
@@ -363,8 +341,6 @@ impl Runtime {
                 ..
             })) => {
                 let channeld: ServiceId = channel_id.clone().into();
-                // TODO: Do routing at microservices level
-                let channeld = self.routing.get(&channeld).cloned().unwrap_or(channeld);
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 

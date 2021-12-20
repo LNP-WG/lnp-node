@@ -14,8 +14,9 @@
 
 use bitcoin::secp256k1::Signature;
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, FundingCreated, Messages as LnMsg};
+use lnp::p2p::legacy::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
+use microservices::esb::Handler;
 use wallet::address::AddressCompat;
 
 use super::Error;
@@ -223,7 +224,7 @@ fn complete_accepted(
 }
 
 fn complete_signing(
-    event: Event<BusMsg>,
+    mut event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, state_machines::Error> {
     let refund_psbt = match event.message {
@@ -247,19 +248,21 @@ fn complete_signing(
         .map_err(state_machines::Error::InvalidSig)?;
 
     let funding = channel.funding();
+    let (funding_txid, funding_output_index) = (funding.txid(), funding.output());
     let funding_created = FundingCreated {
         temporary_channel_id: channel
             .temp_channel_id()
             .expect("channel at funding stage must have temporary channel id"),
-        funding_txid: funding.txid(),
-        funding_output_index: funding.output(),
+        funding_txid,
+        funding_output_index,
         signature,
     };
 
-    // if we do this we get infinite loop at ESB: we ened to route at peerd level
-    // (and later at microservices crate)
-    // runtime.identity = ServiceId::Channel(ChannelId::with(funding.txid(), funding.output()));
-    // runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::Hello)?;
+    let new_id = ServiceId::Channel(ChannelId::with(funding_txid, funding_output_index));
+    debug!("Changing channeld identifier from {} to {}", runtime.identity(), new_id);
+    runtime.set_identity(&mut event.endpoints, new_id).expect("unrecoverable ZMQ failure");
+    // needed to update ESB routing map
+    runtime.send_ctl(event.endpoints, ServiceId::Lnpd, CtlMsg::Hello)?;
 
     runtime.send_p2p(event.endpoints, LnMsg::FundingCreated(funding_created))?;
     Ok(ChannelPropose::Funding)

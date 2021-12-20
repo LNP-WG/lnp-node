@@ -1024,9 +1024,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.5.13"
+version = "0.5.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1230f7e5c6f0ab212e5afc01934deb977141b160c87608f62b636ad7615aa7"
+checksum = "a9ce52faff91afebfa413e59d7bd7cec6cd1e0d5506bf89036e00f7a627ae0a5"
 dependencies = [
  "amplify",
  "bitcoin_hashes 0.10.0",
@@ -1309,7 +1309,7 @@ dependencies = [
 [[package]]
 name = "microservices"
 version = "0.6.0-beta.1"
-source = "git+https://github.com/internet2-org/rust-microservices#b46d9f5b6fe9c47778dfbc5c9245897136b38d30"
+source = "git+https://github.com/internet2-org/rust-microservices#37b2e711a3c618235b3fbf319a3634b259b55df4"
 dependencies = [
  "amplify",
  "clap",

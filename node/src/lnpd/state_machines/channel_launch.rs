@@ -119,7 +119,7 @@ pub enum ChannelLauncher {
     /// channeld already have the funding transaction received from lnpd at the end of the previous
     /// stage.
     #[display("COMMITTING")]
-    Committing(TempChannelId, Txid, ClientId),
+    Committing(ChannelId, Txid, ClientId),
 
     /// Awaiting signd to sign the funding transaction, after which it can be sent by lnpd to
     /// bitcoin network and the workflow will be complete
@@ -164,8 +164,13 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
             ChannelLauncher::Negotiating(temp_channel_id, enquirer) => {
                 complete_negotiation(event, runtime, temp_channel_id, enquirer)
             }
-            ChannelLauncher::Committing(_, txid, enquirer) => {
-                complete_commitment(event, runtime, txid, enquirer)
+            ChannelLauncher::Committing(_, ref txid, ref enquirer) => {
+                match event.message {
+                    // Since we changed channelid we send hello request once again, but this does
+                    // not influence state machine
+                    CtlMsg::Hello => Ok(self),
+                    _ => complete_commitment(event, runtime, *txid, *enquirer),
+                }
             }
             ChannelLauncher::Signing(channel_id, txid, enquirer) => {
                 complete_signatures(event, runtime, txid, enquirer)?;
@@ -185,9 +190,9 @@ impl ChannelLauncher {
             ChannelLauncher::Init(temp_channel_id, ..)
             | ChannelLauncher::Launching(temp_channel_id, ..)
             | ChannelLauncher::Deriving(temp_channel_id, ..)
-            | ChannelLauncher::Negotiating(temp_channel_id, ..)
-            | ChannelLauncher::Committing(temp_channel_id, ..) => temp_channel_id.into_inner(),
-            ChannelLauncher::Signing(channel_id, ..) => channel_id.into_inner(),
+            | ChannelLauncher::Negotiating(temp_channel_id, ..) => temp_channel_id.into_inner(),
+            ChannelLauncher::Committing(channel_id, ..)
+            | ChannelLauncher::Signing(channel_id, ..) => channel_id.into_inner(),
         }
     }
 
@@ -425,7 +430,7 @@ fn complete_negotiation(
         ),
     );
 
-    Ok(ChannelLauncher::Committing(temp_channel_id, funding_outpoint.txid, enquirer))
+    Ok(ChannelLauncher::Committing(channel_id, funding_outpoint.txid, enquirer))
 }
 
 fn complete_commitment(

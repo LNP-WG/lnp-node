@@ -122,6 +122,17 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
+    pub(super) fn set_identity(
+        &mut self,
+        endpoints: &mut Endpoints,
+        identity: ServiceId,
+    ) -> Result<(), Error> {
+        endpoints.set_identity(ServiceBus::Ctl, identity.clone())?;
+        endpoints.set_identity(ServiceBus::Msg, identity.clone())?;
+        self.identity = identity;
+        Ok(())
+    }
+
     #[cfg(feature = "rgb")]
     fn request_rbg20(
         &mut self,

@@ -352,7 +352,8 @@ impl Runtime {
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
                     .expect("channel launcher should not be complete");
-                self.creating_channels.insert(source, launcher);
+                self.creating_channels
+                    .insert(ChannelId::from_inner(launcher.channel_id()).into(), launcher);
             }
 
             CtlMsg::PublishFunding => {
@@ -512,8 +513,7 @@ impl Runtime {
         )
     }
 
-    pub fn update_chanel_id(&mut self, _old_id: TempChannelId, _new_id: ChannelId) -> bool {
-        /* remove this once we add routing at microservices level
+    pub fn update_chanel_id(&mut self, old_id: TempChannelId, new_id: ChannelId) -> bool {
         let mut known = true;
         if !self.channels.remove(&ChannelId::from(old_id)) {
             known = false;
@@ -522,7 +522,5 @@ impl Runtime {
         self.channels.insert(new_id);
         info!("Channel daemon id registered to change from {} to {}", old_id, new_id);
         known
-         */
-        false
     }
 }

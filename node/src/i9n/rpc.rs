@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::FromIterator;
 use std::time::Duration;
@@ -248,8 +248,8 @@ pub struct PeerInfo {
     pub since: u64,
     pub messages_sent: usize,
     pub messages_received: usize,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub channels: Vec<ChannelId>,
+    #[serde_as(as = "HashSet<DisplayFromStr>")]
+    pub channels: HashSet<ChannelId>,
     pub connected: bool,
     pub awaits_pong: bool,
 }
