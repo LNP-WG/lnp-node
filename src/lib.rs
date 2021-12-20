@@ -45,8 +45,6 @@ extern crate serde_with;
 pub extern crate lnprpc as rpc;
 
 pub mod bus;
-#[cfg(feature = "cli")]
-pub mod cli;
 mod config;
 mod error;
 #[cfg(feature = "shell")]

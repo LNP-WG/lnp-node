@@ -19,10 +19,9 @@ use std::str::FromStr;
 
 use internet2::{FramingProtocol, PartialNodeAddr};
 use lnp::p2p::legacy::{ChannelId, ChannelType};
+use lnp_node::opts::LNP_NODE_RPC_SOCKET;
 #[cfg(feature = "rgb")]
 use rgb::ContractId;
-
-use crate::opts::LNP_NODE_RPC_SOCKET;
 
 /// Command-line tool for working with LNP node
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]

@@ -6,7 +6,7 @@ authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rpc"]
 edition = "2018"
-readme = "README.md"
+readme = "../README.md"
 
 [lib]
 name = "lnprpc"

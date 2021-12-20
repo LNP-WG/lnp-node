@@ -1,6 +1,6 @@
 [workspace]
-default-members = [".", "rpc"]
-members = [".", "rpc"]
+default-members = [".", "rpc", "cli"]
+members = [".", "rpc", "cli"]
 
 [package]
 name = "lnp_node"
@@ -40,10 +40,6 @@ required-features = ["server"]
 [[bin]]
 name = "signd"
 required-features = ["server"]
-
-[[bin]]
-name = "lnp-cli"
-required-features = ["cli"]
 
 [dependencies]
 # LNP/BP crates
@@ -118,13 +114,11 @@ configure_me_codegen = "0.4"
 # 4. Mobile app with embedded node: `embedded` (auto includes `client` + `node`)
 # 5. Simple cli utility app: `shell`
 [features]
-default = ["server", "cli"]
-all = ["server", "cli", "serde", "tor"] # "rgb"
+default = ["server"]
+all = ["server", "serde", "tor"] # "rgb"
 
 # Server is a standalone application that runs daemon
 server = ["node", "shell", "microservices/server", "nix"]
-# Command-line application feature
-cli = ["shell", "client", "microservices/cli"]
 
 # Embedded is an app that contains embedded node and that talks to it through
 # integration layer

@@ -16,15 +16,15 @@ use std::str::FromStr;
 
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr, ToRemoteNodeAddr};
 use lnp::p2p::legacy::{ChannelId, LNP2P_LEGACY_PORT};
+use lnp_node::rpc::{self, Client, RpcMsg, ServiceId};
+use lnp_node::{Error, LogStyle};
 use microservices::shell::Exec;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 #[cfg(feature = "rgb")]
 use rgb_node::util::file::ReadWrite;
 
-use super::Command;
-use crate::rpc::{self, Client, RpcMsg, ServiceId};
-use crate::{Error, LogStyle};
+use crate::opts::Command;
 
 impl Exec for Command {
     type Client = Client;

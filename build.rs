@@ -26,7 +26,10 @@ pub mod opts {
 }
 
 pub mod cli {
-    include!("src/cli/opts.rs");
+    pub mod lnp_node {
+        pub use crate::opts;
+    }
+    include!("cli/src/opts.rs");
 }
 pub mod lnpd {
     include!("src/lnpd/opts.rs");

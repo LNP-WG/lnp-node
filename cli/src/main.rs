@@ -15,13 +15,21 @@
 //! Command-line interface to LNP node
 
 #[macro_use]
+extern crate amplify;
+#[macro_use]
 extern crate log;
+#[macro_use]
+extern crate clap;
+
+mod command;
+mod opts;
 
 use clap::Parser;
-use lnp_node::cli::Opts;
-use lnp_node::i9n::Client;
+use lnp_node::rpc::Client;
 use lnp_node::LogStyle;
 use microservices::shell::{Exec, LogLevel};
+
+pub use crate::opts::{Command, Opts};
 
 fn main() {
     println!("lnp-cli: command-line tool for working with LNP node");
