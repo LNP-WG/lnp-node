@@ -76,3 +76,10 @@ pub use config::Config;
 pub use error::Error;
 #[cfg(feature = "_rpc")]
 pub use service::{CtlServer, Endpoints, LogStyle, Service, ServiceId, TryToServiceId};
+
+// TODO: React on reestablish message
+// TODO: Lnpd must store channel launcher tate
+// TODO: Channel daemon must store its own state to data directory and re-load it
+// TODO: Add service renaming to microservices and change ServiceId upon channel creation
+// TODO: Refactor client repoting
+// TODO: Make onchaind
