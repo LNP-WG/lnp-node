@@ -1198,6 +1198,7 @@ dependencies = [
  "lazy_static",
  "lnp-core",
  "lnpbp",
+ "lnprpc",
  "log",
  "microservices",
  "miniscript",
@@ -1216,10 +1217,6 @@ dependencies = [
  "toml 0.5.8",
  "zmq",
 ]
-
-[[package]]
-name = "lnp_rpc"
-version = "0.5.0"
 
 [[package]]
 name = "lnpbp"
@@ -1262,6 +1259,25 @@ dependencies = [
  "lazy_static",
  "serde 1.0.132",
  "serde_with",
+ "strict_encoding",
+]
+
+[[package]]
+name = "lnprpc"
+version = "0.5.0"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "colored",
+ "descriptor-wallet",
+ "internet2",
+ "lnp-core",
+ "lnpbp",
+ "log",
+ "microservices",
+ "serde 1.0.132",
+ "serde_with",
+ "serde_yaml",
  "strict_encoding",
 ]
 

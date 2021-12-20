@@ -24,6 +24,7 @@ use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lnp::bolt::{self, AssetsBalance, CommonParams, Lifecycle, PeerParams};
 use lnp::p2p::legacy::{ChannelId, ChannelType, TempChannelId};
 use lnpbp::chain::AssetId;
+use microservices::rpc_connection;
 #[cfg(feature = "rgb")]
 use rgb::Consignment;
 #[cfg(feature = "serde")]
@@ -31,8 +32,20 @@ use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
-use crate::service::ClientId;
-use crate::ServiceId;
+use crate::{ClientId, ServiceId};
+
+/// We need this wrapper type to be compatible with LNP Node having multiple message buses
+#[derive(Clone, Debug, Display, From, Api)]
+#[api(encoding = "strict")]
+#[non_exhaustive]
+pub(crate) enum BusMsg {
+    #[api(type = 4)]
+    #[display(inner)]
+    #[from]
+    Rpc(RpcMsg),
+}
+
+impl rpc_connection::Request for BusMsg {}
 
 /// RPC API requests between LNP Node daemons and clients.
 #[derive(Clone, Debug, Display, From)]
