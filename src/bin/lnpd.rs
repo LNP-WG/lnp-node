@@ -139,7 +139,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
     wallet_path.push(LNP_NODE_FUNDING_WALLET);
     let funding_wallet = if !wallet_path.exists() {
         println!("Funding wallet '{}' ... {}", LNP_NODE_FUNDING_WALLET, "creating".action());
-        let account_path = &[9735_u16, chain_index, 2][..];
+        let account_path = &[chain_index, 2][..];
         let node_xpriv = signing_account.account_xpriv();
         let account_xpriv = node_xpriv.derive_priv(
             &secp,
