@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use rpc::{Failure, OptionDetails, RpcMsg};
+use lnp_rpc::{Failure, OptionDetails, RpcMsg};
 
 pub trait ToProgressOrFalure {
     fn to_progress_or_failure(&self) -> RpcMsg;

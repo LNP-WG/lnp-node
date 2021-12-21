@@ -25,8 +25,6 @@ use lnp::bolt::{self, AssetsBalance, CommonParams, Lifecycle, PeerParams};
 use lnp::p2p::legacy::{ChannelId, ChannelType, TempChannelId};
 use lnpbp::chain::AssetId;
 use microservices::rpc_connection;
-#[cfg(feature = "rgb")]
-use rgb::Consignment;
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -80,11 +78,6 @@ pub enum RpcMsg {
     /// Requests creation of a new outbound channel by a client.
     #[display("create_channel({0})")]
     CreateChannel(CreateChannel),
-
-    // Can be issued from `cli` to a specific `peerd`
-    #[cfg(feature = "rgb")]
-    #[display("refill_channel({0})")]
-    RefillChannel(RefillChannel),
 
     // Can be issued from `cli` to a specific `peerd`
     #[display("transfer({0})")]
@@ -218,15 +211,6 @@ pub struct Transfer {
     pub channeld: ServiceId,
     pub amount: u64,
     pub asset: Option<AssetId>,
-}
-
-#[cfg(feature = "rgb")]
-#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
-#[display("{outpoint}, {blinding}, ...")]
-pub struct RefillChannel {
-    pub consignment: Consignment,
-    pub outpoint: OutPoint,
-    pub blinding: u64,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

@@ -124,21 +124,6 @@ impl Runtime {
         Ok(())
     }
 
-    #[cfg(feature = "rgb")]
-    fn request_rbg20(
-        &mut self,
-        request: rgb_node::rpc::fungible::Request,
-    ) -> Result<rgb_node::rpc::Reply, Error> {
-        let data = request.serialize();
-        self.rgb20_rpc.send_raw_message(&data)?;
-        let raw = self.rgb20_rpc.recv_raw_message()?;
-        let reply = &*self.rgb_unmarshaller.unmarshall(&raw)?;
-        if let rgb_node::rpc::Reply::Failure(failure) = reply {
-            error!("{} {}", "RGB Node reported failure:".err(), failure.err())
-        }
-        Ok(reply.clone())
-    }
-
     pub fn send_p2p(
         &self,
         endpoints: &mut Endpoints,

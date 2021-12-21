@@ -16,8 +16,6 @@ use std::net::IpAddr;
 
 use clap::ValueHint;
 
-#[cfg(feature = "rgb")]
-use crate::channeld::RgbOpts;
 use crate::peerd::KeyOpts;
 
 /// Lightning node management daemon; part of LNP Node.
@@ -26,11 +24,6 @@ use crate::peerd::KeyOpts;
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 #[clap(name = "lnpd", bin_name = "lnpd", author, version)]
 pub struct Opts {
-    /// RGB configuration
-    #[cfg(feature = "rgb")]
-    #[clap(flatten)]
-    pub rgb_opts: RgbOpts,
-
     /// Node key configuration
     #[clap(flatten)]
     pub key_opts: KeyOpts,
@@ -74,7 +67,5 @@ impl Opts {
     pub fn process(&mut self) {
         self.shared.process();
         self.key_opts.process(&self.shared);
-        #[cfg(feature = "rgb")]
-        self.rgb_opts.process(&self.shared);
     }
 }

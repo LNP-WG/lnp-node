@@ -14,7 +14,6 @@
 
 use internet2::{zmqsocket, ZmqType};
 use microservices::esb;
-#[cfg(feature = "node")]
 use microservices::node::TryService;
 
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
@@ -35,7 +34,6 @@ where
     Runtime: esb::Handler<ServiceBus, Request = BusMsg>,
     esb::Error<ServiceId>: From<Runtime::Error>,
 {
-    #[cfg(feature = "node")]
     pub fn run(config: Config, runtime: Runtime, broker: bool) -> Result<(), Error> {
         let service = Self::with(config, runtime, broker)?;
         service.run_loop()?;
@@ -85,7 +83,6 @@ where
         })
     }
 
-    #[cfg(feature = "node")]
     pub fn run_loop(mut self) -> Result<(), Error> {
         if !self.is_broker() {
             std::thread::sleep(core::time::Duration::from_secs(1));
@@ -201,7 +198,7 @@ where
 
 // TODO: Move to LNP/BP Services library
 use colored::Colorize;
-use rpc::ClientId;
+use lnp_rpc::ClientId;
 
 pub trait LogStyle: ToString {
     fn promo(&self) -> colored::ColoredString { self.to_string().bold().bright_blue() }

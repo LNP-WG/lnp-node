@@ -1,5 +1,5 @@
 [package]
-name = "lnprpc"
+name = "lnp_rpc"
 description = "LNP node RPC API"
 version = "0.5.0"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
@@ -9,7 +9,7 @@ edition = "2018"
 readme = "../README.md"
 
 [lib]
-name = "lnprpc"
+name = "lnp_rpc"
 
 [dependencies]
 amplify = "3.9.1"

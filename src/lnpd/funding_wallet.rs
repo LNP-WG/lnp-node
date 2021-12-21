@@ -18,7 +18,7 @@ use std::io::Seek;
 use std::path::Path;
 use std::{fs, io};
 
-use amplify::{IoError, Slice32, ToYamlString, Wrapper};
+use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, Network, OutPoint, SigHashType, Txid};
@@ -94,12 +94,6 @@ pub enum Error {
 /// Information about funding which is already used in channels pending
 /// negotiation or signature
 #[derive(Clone, Debug, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Display, Serialize, Deserialize),
-    serde(crate = "serde_crate"),
-    display(PendingFunding::to_yaml_string)
-)]
 pub struct PendingFunding {
     /// Provsionary channel using some of the funding
     pub temp_channel_id: TempChannelId,
@@ -111,9 +105,6 @@ pub struct PendingFunding {
     pub psbt: Psbt,
 }
 
-#[cfg(feature = "serde")]
-impl ToYamlString for PendingFunding {}
-
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, StrictEncode, StrictDecode)]
 pub struct Funds {
     pub outpoint: OutPoint,
@@ -123,12 +114,6 @@ pub struct Funds {
 }
 
 #[derive(Clone, Debug, StrictEncode, StrictDecode)]
-#[cfg_attr(
-    feature = "serde",
-    derive(Display, Serialize, Deserialize),
-    serde(crate = "serde_crate"),
-    display(WalletData::to_yaml_string)
-)]
 struct WalletData {
     pub descriptor: Descriptor<TrackingAccount>,
     pub last_normal_index: UnhardenedIndex,
@@ -136,9 +121,6 @@ struct WalletData {
     pub last_rgb_index: BTreeMap<Slice32, UnhardenedIndex>,
     pub pending_fundings: BTreeMap<Txid, PendingFunding>,
 }
-
-#[cfg(feature = "serde")]
-impl ToYamlString for WalletData {}
 
 pub struct FundingWallet {
     secp: Secp256k1<secp256k1::All>,

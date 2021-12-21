@@ -19,7 +19,7 @@ use std::str::FromStr;
 use internet2::ZmqSocketAddr;
 use lnpbp::chain::Chain;
 
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 use crate::opts::Opts;
 use crate::opts::{LNP_NODE_CTL_SOCKET, LNP_NODE_MSG_SOCKET};
 
@@ -62,7 +62,7 @@ fn default_electrum_port(chain: &Chain) -> u16 {
     }
 }
 
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 impl From<Opts> for Config {
     fn from(opts: Opts) -> Self {
         let electrum_url = format!(

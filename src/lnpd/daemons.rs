@@ -115,7 +115,7 @@ pub enum Daemon {
     Peerd(PeerSocket, PathBuf),
 
     #[display("channeld")]
-    Channeld(ChannelId, #[cfg(feature = "rgb")] internet2::zmqsocket::ZmqSocketAddr),
+    Channeld(ChannelId),
 
     #[display("routed")]
     Routed,
@@ -150,13 +150,8 @@ impl Runtime {
             Daemon::Peerd(socket, key_file) => builder
                 .spawn(move || peerd::supervisor::run(config, &key_file, socket))
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
-            #[cfg(not(feature = "rgb"))]
             Daemon::Channeld(channel_id) => builder
                 .spawn(move || channeld::run(config, channel_id.into()))
-                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
-            #[cfg(feature = "rgb")]
-            Daemon::Channeld(channel_id, rgb_socket) => builder
-                .spawn(move || channeld::run(config, channel_id, rgb_socket))
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             Daemon::Routed => todo!(),
             Daemon::Gossipd => todo!(),

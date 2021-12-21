@@ -12,15 +12,14 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "node")]
 pub(self) mod daemons;
 pub mod funding_wallet;
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 mod opts;
 mod runtime;
 pub mod state_machines;
 
 pub use daemons::{Daemon, DaemonError};
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 pub use opts::{Command, Opts};
 pub use runtime::run;

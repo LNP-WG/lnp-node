@@ -13,15 +13,11 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::net::IpAddr;
-#[cfg(feature = "rgb")]
-use std::path::PathBuf;
 use std::str::FromStr;
 
 use internet2::{FramingProtocol, PartialNodeAddr};
 use lnp::p2p::legacy::{ChannelId, ChannelType};
-use lnp_node::opts::LNP_NODE_RPC_SOCKET;
-#[cfg(feature = "rgb")]
-use rgb::ContractId;
+use lnp_rpc::LNP_NODE_RPC_SOCKET;
 
 /// Command-line tool for working with LNP node
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
@@ -197,24 +193,6 @@ pub enum Command {
         channel_reserve: Option<u64>,
     },
 
-    /// Adds RGB assets to an existing channel
-    #[cfg(feature = "rgb")]
-    Refill {
-        /// Channel to which the funding must be added
-        channel: ChannelId,
-
-        /// Consignment file to read containing information about transfer of
-        /// RGB20 asset to the funding transaction output
-        consignment: PathBuf,
-
-        /// Locally-controlled outpoint (specified when the invoice was
-        /// created)
-        outpoint: OutPoint,
-
-        /// Outpoint blinding factor (generated when the invoice was created)
-        blinding_factor: u64,
-    },
-
     /// Do an invoiceless direct payment
     Transfer {
         /// Channel to which the funding must be added
@@ -223,11 +201,6 @@ pub enum Command {
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
         /// unit type)
         amount: u64,
-
-        /// Asset ticker in which the invoice should be issued
-        #[cfg(feature = "rgb")]
-        #[clap(short, long)]
-        asset: Option<ContractId>,
     },
 
     /// Create an invoice

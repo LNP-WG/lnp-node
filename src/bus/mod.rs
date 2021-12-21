@@ -17,7 +17,7 @@ mod reports;
 
 pub use ctl::*;
 use lnp::p2p;
-use lnprpc::RpcMsg;
+use lnp_rpc::RpcMsg;
 use microservices::esb::BusId;
 use microservices::rpc_connection;
 pub use reports::{IntoSuccessOrFalure, ToProgressOrFalure};

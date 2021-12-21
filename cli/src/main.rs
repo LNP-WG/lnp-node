@@ -37,8 +37,7 @@ mod command;
 mod opts;
 
 use clap::Parser;
-use lnp_node::rpc::Client;
-use lnp_node::LogStyle;
+use lnp_rpc::Client;
 use microservices::shell::{Exec, LogLevel};
 
 pub use crate::opts::{Command, Opts};
@@ -54,5 +53,5 @@ fn main() {
     let mut client = Client::with(&opts.connect).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
-    opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err.err()));
+    opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err));
 }

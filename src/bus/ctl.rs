@@ -18,9 +18,8 @@ use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
 use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::OpenChannel;
+use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use psbt::Psbt;
-#[cfg(feature = "rgb")]
-use rgb::Consignment;
 use strict_encoding::{NetworkDecode, NetworkEncode};
 use wallet::scripts::PubkeyScript;
 
@@ -121,10 +120,10 @@ pub enum CtlMsg {
     EsbError { destination: ServiceId, error: String },
 
     #[display("node_info({0})", alt = "{0:#}")]
-    PeerInfo(rpc::PeerInfo),
+    PeerInfo(PeerInfo),
 
     #[display("channel_info({0})", alt = "{0:#}")]
-    ChannelInfo(rpc::ChannelInfo),
+    ChannelInfo(ChannelInfo),
 }
 
 impl CtlMsg {
@@ -237,9 +236,9 @@ pub enum Status {
     Progress(String),
 
     #[display("success = {0}")]
-    Success(rpc::OptionDetails),
+    Success(OptionDetails),
 
     #[display("failure = {0}")]
     #[from]
-    Failure(rpc::Failure),
+    Failure(Failure),
 }

@@ -82,7 +82,6 @@ pub enum Error {
     Signing(SignError),
 
     /// bridge interface failure: {0}
-    #[cfg(any(feature = "node", feature = "client"))]
     #[from(zmq::Error)]
     #[from]
     Bridge(transport::Error),

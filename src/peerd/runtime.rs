@@ -348,17 +348,6 @@ impl Runtime {
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            #[cfg(feature = "rgb")]
-            BusMsg::Ln(LnMsg::AssignFunds(AssignFunds { channel_id, .. })) => {
-                let channeld: ServiceId = channel_id.clone().into();
-                endpoints.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    self.routing.get(&channeld).cloned().unwrap_or(channeld),
-                    request,
-                )?;
-            }
-
             BusMsg::Ln(message) => {
                 // TODO:
                 //  1. Check permissions

@@ -48,3 +48,5 @@ pub use client::Client;
 pub use error::Error;
 pub use messages::*;
 pub use service_id::{ClientId, ClientName, ServiceId};
+
+pub const LNP_NODE_RPC_SOCKET: &'static str = "127.0.0.1:62962";

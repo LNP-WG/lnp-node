@@ -17,6 +17,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::ValueHint;
+use lnp_rpc::LNP_NODE_RPC_SOCKET;
 use lnpbp::chain::Chain;
 use microservices::shell::LogLevel;
 
@@ -33,26 +34,8 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/{chain}";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = "./{chain}";
 
-#[cfg(any(target_os = "linux"))]
-pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
-#[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
-pub const RGB_NODE_DATA_DIR: &'static str = "~/.rgb_node";
-#[cfg(target_os = "macos")]
-pub const RGB_NODE_DATA_DIR: &'static str = "~/Library/Application Support/RGB Node";
-#[cfg(target_os = "windows")]
-pub const RGB_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\RGB Node";
-#[cfg(target_os = "ios")]
-pub const RGB_NODE_DATA_DIR: &'static str = "~/Documents";
-#[cfg(target_os = "android")]
-pub const RGB_NODE_DATA_DIR: &'static str = ".";
-
 pub const LNP_NODE_MSG_SOCKET: &'static str = "{data_dir}/msg";
 pub const LNP_NODE_CTL_SOCKET: &'static str = "{data_dir}/ctl";
-pub const LNP_NODE_RPC_SOCKET: &'static str = "127.0.0.1:62962";
-lazy_static::lazy_static! {
-    pub static ref FUNGIBLED_RPC_ENDPOINT: String =
-        format!("{}/fungibled.rpc", RGB_NODE_DATA_DIR);
-}
 
 pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp_node.toml";
 pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";

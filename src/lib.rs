@@ -30,39 +30,27 @@ extern crate amplify;
 #[macro_use]
 extern crate internet2;
 
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 #[macro_use]
 extern crate clap;
 #[macro_use]
 extern crate log;
 
-#[cfg(feature = "serde")]
-extern crate serde_crate as serde;
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde_with;
-
-pub extern crate lnprpc as rpc;
+pub use lnp_rpc as rpc;
 
 pub mod bus;
 mod config;
 mod error;
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 pub mod opts;
 pub mod state_machine;
 
-#[cfg(feature = "node")]
 pub mod channeld;
-#[cfg(feature = "node")]
 pub mod lnpd;
-#[cfg(feature = "node")]
 pub mod peerd;
-#[cfg(feature = "node")]
 pub mod routed;
 mod service;
-#[cfg(feature = "node")]
 pub mod signd;
-#[cfg(feature = "node")]
 pub mod watchd;
 
 pub use config::Config;

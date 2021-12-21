@@ -29,9 +29,6 @@
 #[macro_use]
 extern crate log;
 
-#[cfg(feature = "rgb")]
-use std::convert::TryInto;
-
 use clap::Parser;
 use lnp_node::channeld::{self, Opts};
 use lnp_node::Config;
@@ -48,13 +45,6 @@ fn main() {
     trace!("Daemon configuration: {:?}", &config);
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);
-
-    #[cfg(feature = "rgb")]
-    let rgb20_socket_addr = opts
-        .rgb_opts
-        .rgb20_socket
-        .try_into()
-        .expect("RPC socket must be a valid ZMQ local file socket");
 
     /*
     use self::internal::ResultExt;

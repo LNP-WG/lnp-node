@@ -12,13 +12,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 mod opts;
 mod peer_socket;
 pub(self) mod runtime;
 pub mod supervisor;
 
-#[cfg(feature = "shell")]
+#[cfg(feature = "server")]
 pub use opts::{KeyOpts, Opts};
 pub use peer_socket::PeerSocket;
 pub(self) use supervisor::RuntimeParams;
