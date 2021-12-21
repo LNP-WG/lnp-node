@@ -69,7 +69,7 @@ impl StateMachine<BusMsg, Runtime> for ChannelPropose {
         event: Event<BusMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
-        let channel_id = runtime.channel.active_channel_id();
+        let channel_id = runtime.state.channel.active_channel_id();
         debug!("ChannelPropose {:#} received {} event", channel_id, event.message);
         let state = match self {
             ChannelPropose::Proposed => complete_proposed(event, runtime),
@@ -113,7 +113,7 @@ impl ChannelPropose {
         endpoints: &mut Endpoints,
         request: OpenChannelWith,
     ) -> Result<ChannelPropose, automata::Error> {
-        let open_channel = LnMsg::OpenChannel(runtime.channel.compose_open_channel(
+        let open_channel = LnMsg::OpenChannel(runtime.state.channel.compose_open_channel(
             request.funding_sat,
             request.push_msat,
             request.policy,
@@ -178,7 +178,7 @@ fn complete_proposed(
         }
     };
 
-    let channel = &mut runtime.channel;
+    let channel = &mut runtime.state.channel;
     channel.update_from_peer(&LnMsg::AcceptChannel(accept_channel))?;
 
     let fund_channel = FundChannel {
@@ -216,7 +216,7 @@ fn complete_accepted(
     trace!("Funding transaction: {:#?}", funding_psbt);
     debug!("Funding transaction id is {}", funding_psbt.global.unsigned_tx.txid());
 
-    let channel = &mut runtime.channel;
+    let channel = &mut runtime.state.channel;
     let refund_psbt = channel.refund_tx(funding_psbt, true)?;
 
     trace!("Refund transaction: {:#?}", refund_psbt);
@@ -239,7 +239,7 @@ fn complete_signing(
         }
     };
 
-    let channel = &runtime.channel;
+    let channel = &runtime.state.channel;
 
     let funding_pubkey = channel.funding_pubkey();
     let funding_input =
@@ -287,7 +287,7 @@ fn complete_funding(
     debug!("Got remote node signature {}", funding_signed.signature);
 
     // Save signature
-    runtime.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
+    runtime.state.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
 
     runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::PublishFunding)?;
     Ok(ChannelPropose::Signed)
@@ -301,7 +301,7 @@ fn complete_signed(
         return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
     }
 
-    let channel = &runtime.channel;
+    let channel = &runtime.state.channel;
     let txid = channel.funding().txid();
     debug!("Funding transaction {} is published", txid);
 

@@ -52,7 +52,7 @@ impl StateMachine<BusMsg, Runtime> for ChannelAccept {
         event: Event<BusMsg>,
         runtime: &mut Runtime,
     ) -> Result<Option<Self>, Self::Error> {
-        let channel_id = runtime.channel.active_channel_id();
+        let channel_id = runtime.state.channel.active_channel_id();
         debug!("ChannelAccept {:#} received {} event", channel_id, event.message);
         let state = match self {
             ChannelAccept::Accepted => finish_accepted(event, runtime),
@@ -91,7 +91,7 @@ impl ChannelAccept {
         runtime: &mut Runtime,
     ) -> Result<ChannelAccept, Error> {
         let open_channel = Messages::OpenChannel(accept_channel_from.channel_req.clone());
-        runtime.channel.update_from_peer(&open_channel)?;
+        runtime.state.channel.update_from_peer(&open_channel)?;
 
         runtime.send_p2p(endpoints, open_channel)?;
 

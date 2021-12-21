@@ -23,3 +23,4 @@ pub use automata::Error;
 #[cfg(feature = "server")]
 pub use opts::Opts;
 pub use runtime::run;
+pub(self) use state::ChannelState;

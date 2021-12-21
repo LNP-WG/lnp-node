@@ -179,13 +179,13 @@ impl Runtime {
         }
 
         let event = Event::with(endpoints, self.identity(), source, request);
-        let channel_id = self.channel.active_channel_id();
+        let channel_id = self.state.channel.active_channel_id();
         let updated_state = match self.process_event(event) {
             Ok(_) => {
                 // Ignoring possible reporting errors here and after: do not want to
                 // halt the channel just because the client disconnected
-                let _ =
-                    self.report_progress(endpoints, self.state_machine.info_message(channel_id));
+                let _ = self
+                    .report_progress(endpoints, self.state.state_machine.info_message(channel_id));
                 true
             }
             // We pass ESB errors forward such that they can fail the channel.
@@ -211,15 +211,15 @@ impl Runtime {
         if updated_state {
             info!(
                 "ChannelStateMachine {} switched to {} state",
-                self.channel.active_channel_id(),
-                self.state_machine
+                self.state.channel.active_channel_id(),
+                self.state.state_machine
             );
         }
         Ok(updated_state)
     }
 
     fn process_event(&mut self, event: Event<BusMsg>) -> Result<(), Error> {
-        self.state_machine = match self.state_machine {
+        self.state.state_machine = match self.state.state_machine {
             ChannelStateMachine::Launch => self.complete_launch(event),
             ChannelStateMachine::Propose(channel_propose) => {
                 self.process_propose(event, channel_propose)

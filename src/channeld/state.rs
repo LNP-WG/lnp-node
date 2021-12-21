@@ -12,14 +12,19 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::{DumbDefault, Slice32};
+use bitcoin::hashes::Hash;
 use internet2::NodeAddr;
+use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
+use lnp::p2p::legacy::TempChannelId;
 use lnp::{bolt, Channel};
+use lnpbp::chain::Chain;
 
 use super::automata::ChannelStateMachine;
 
 /// State of the channel runtime which can persists and which evolution is automated with
 /// different state machines.
-#[derive(StrictEncode, StrictDecode)]
+#[derive(Default, StrictEncode, StrictDecode)]
 pub(super) struct ChannelState {
     /// State machine managing the evolution of this state
     pub state_machine: ChannelStateMachine,
@@ -30,4 +35,19 @@ pub(super) struct ChannelState {
     /// Runtime-specific (but persistable) part of the channel state: remote peer which is a
     /// counterparty of this channel.
     pub remote_peer: Option<NodeAddr>,
+}
+
+impl ChannelState {
+    pub fn with(temp_channel_id: TempChannelId, chain: &Chain) -> ChannelState {
+        let chain_hash = chain.as_genesis_hash().as_inner();
+        let channel = Channel::with(
+            temp_channel_id,
+            Slice32::from(chain_hash),
+            Policy::default(),
+            CommonParams::default(),
+            PeerParams::default(),
+            LocalKeyset::dumb_default(), // we do not have keyset derived at this stage
+        );
+        ChannelState { state_machine: Default::default(), channel, remote_peer: None }
+    }
 }

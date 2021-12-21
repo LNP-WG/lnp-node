@@ -14,38 +14,22 @@
 
 use std::time::SystemTime;
 
-use amplify::{DumbDefault, Slice32};
-use bitcoin::hashes::Hash;
 use internet2::NodeAddr;
-use lnp::bolt;
-use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::channel::Channel;
 use lnp::p2p::legacy::{Messages as LnMsg, TempChannelId};
 use microservices::esb::{self, Handler};
 
 use super::storage::{self, Driver};
+use super::ChannelState;
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
-use crate::channeld::automata::ChannelStateMachine;
 use crate::rpc::{ClientId, ServiceId};
 use crate::{Config, CtlServer, Endpoints, Error, Service};
 
 pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> {
-    let chain_hash = config.chain.as_genesis_hash().as_inner();
     // TODO: use node configuration to provide custom policy & parameters
-    let channel = Channel::with(
-        temp_channel_id,
-        Slice32::from(chain_hash),
-        Policy::default(),
-        CommonParams::default(),
-        PeerParams::default(),
-        LocalKeyset::dumb_default(), // we do not have keyset derived at this stage
-    );
 
     let runtime = Runtime {
         identity: ServiceId::Channel(temp_channel_id.into()),
-        state_machine: default!(),
-        channel,
-        remote_peer: None,
+        state: ChannelState::with(temp_channel_id, &config.chain),
         started: SystemTime::now(),
         enquirer: None,
         storage: Box::new(storage::DiskDriver::init(
@@ -59,9 +43,7 @@ pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> 
 
 pub struct Runtime {
     identity: ServiceId,
-    pub(super) state_machine: ChannelStateMachine,
-    pub(super) channel: Channel<bolt::ExtensionId>,
-    remote_peer: Option<NodeAddr>,
+    pub(super) state: ChannelState,
     started: SystemTime,
     /// Client which is made an equiry starting the current workflow run by the active state
     /// machine. It is not a part of the state of the machine since it should not persist.
@@ -129,7 +111,7 @@ impl Runtime {
         endpoints: &mut Endpoints,
         message: LnMsg,
     ) -> Result<(), esb::Error<ServiceId>> {
-        let remote_peer = self.remote_peer.clone().expect("unset remote peer in channeld");
+        let remote_peer = self.state.remote_peer.clone().expect("unset remote peer in channeld");
         endpoints.send_to(
             ServiceBus::Msg,
             self.identity(),
@@ -165,7 +147,7 @@ impl Runtime {
                 let peerd = ServiceId::Peer(remote_peer.clone());
                 if self.process(endpoints, peerd, BusMsg::Ln(message))? {
                     // Updating state only if the request was processed
-                    self.remote_peer = Some(remote_peer);
+                    self.state.remote_peer = Some(remote_peer);
                 }
             }
 
@@ -194,7 +176,7 @@ impl Runtime {
                 let remote_peer = open_channel_with.remote_peer.clone();
                 self.enquirer = open_channel_with.report_to.clone();
                 // Updating state only if the request was processed
-                self.remote_peer = Some(remote_peer);
+                self.state.remote_peer = Some(remote_peer);
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
@@ -204,7 +186,7 @@ impl Runtime {
                 let remote_peer = remote_peer.clone();
                 if self.process(endpoints, source, BusMsg::Ctl(request))? {
                     // Updating state only if the request was processed
-                    self.remote_peer = Some(remote_peer);
+                    self.state.remote_peer = Some(remote_peer);
                 }
             }
 
