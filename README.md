@@ -62,41 +62,35 @@ limited extensibility for such things as:
   since they do not separate network communication, channel operation and 
   channel parameters from each other in a well manner, such that it will be 
   possible, for instance, to replace HTLCs with payment points using some 
-  extension/module.
-* Protocols on top of LN (layer 3), like DLCs or proposed
+  extension/module;
+* Protocols on top of LN (layer 3), like [RGB], DLCs or proposed
   [Lightspeed protocol](https://github.com/LNP-BP/lnpbps/issues/24), which 
-  require modification on the structure of the commitment transaction.
+  require modification on the structure of the commitment transaction;
+* Custom non-payment channel types, for instance trustless storage with [Storm]   
+  or computing with [Prometheus].
 
 We name the extensions to Lightning network required to build this rich 
 functionality "Bifrost". With this project 
 [LNP/BP Standards Association](https://github.com/LNP-BP) is trying to build an 
-LN node with extensible and highly-modular architecture, utilizing state of the 
-art Rust approaches like:
-* Microservice architecture
+LN node with extensible and highly-modular architecture, utilizing 
+state-of-the-art Rust approaches like:
+* Mobile-, cloud & web-ready, due to a specially-designed 
+  [microservice architecture](#approach)
 * Dockerization for scalability at the level of separate processes (per-channel 
   scalability etc)
-* Tokio-based async/non-blocking IO and rumtime
-* Fast and performant ZeroMQ for APIs and IPCs
-* Avoiding non-efficient Bitcoin blockchain parsing and instead relying on new 
-  [scalable blockchain indexing service](https://github.com/LNP-BP/txserv) and 
-  new format of [universal bitcoin identifiers](https://github.com/LNP-BP/lnpbps/blob/master/lnpbp-0005.md)
-* Mobile- & web-ready via C- and WASM-bindings & build targets for the core 
-  components
+* Fast and performant ZeroMQ for APIs and IPCs.
 
 This new node will be used to implement:
 
 * Bidirectional channels
-* [Channel factories/multipeer channels](https://tik-old.ee.ethz.ch/file//a20a865ce40d40c8f942cf206a7cba96/Scalable_Funding_Of_Blockchain_Micropayment_Networks%20(1).pdf)
-* [Payment points](https://suredbits.com/payment-points-part-1/)
-* [DLCs on LN](https://hackmd.io/@lpQxZaCeTG6OJZI3awxQPQ/LN-DLC)
-* [RGB & Spectrum](https://github.com/rgb-org/spec)
-* Future [Storm](https://github.com/storm-org/storm-spec) (storage & messaging) 
-  edition for LN
-* Future [Prometheus](https://github.com/pandoracore/prometheus-spec/blob/master/prometheus.pdf) 
-  (high-load computing) edition for LN
-* [Lightspeed payment protocol](https://github.com/LNP-BP/lnpbps/issues/24)
-* RGB smart contracts (client-validated smart contract system)
-* Schnorr's/Taproot
+* [Channel factories/multipeer channels](https://tik-old.ee.ethz.ch/file//a20a865ce40d40c8f942cf206a7cba96/Scalable_Funding_Of_Blockchain_Micropayment_Networks%20(1).pdf);
+* [Payment points](https://suredbits.com/payment-points-part-1/);
+* [DLCs on LN](https://hackmd.io/@lpQxZaCeTG6OJZI3awxQPQ/LN-DLC);
+* [RGB] smart contracts (client-validated smart contract system);
+* Future [Storm] – storage & messaging state channels;
+* Future [Prometheus] – high-load computing state channels;
+* [Lightspeed payment protocol](https://github.com/LNP-BP/lnpbps/issues/24);
+* Schnorr's/Taproot.
 
 ## Design
 
@@ -125,10 +119,10 @@ same architecture include:
   (you may think of it as a more efficient Electrum server alternative)
 
 Other third parties provide their own nodes:
-* [Keyring](https://github.com/pandoracore/keyring) for managing private key
-  accounts, storage and signatures with support for miniscript and PSBTs
 * [MyCitadel](https://github.com/mycitadel/mycitadel-node) Bitcoin, LN & RGB
-  enabled wallet service with support for other LNP/BP protocols
+  enabled wallet service with support for other LNP/BP protocols;
+* [Keyring](https://github.com/pandoracore/keyring) for managing private key
+  accounts, storage and signatures with support for miniscript and PSBTs.
 
 ### LNP Node Architecture Specifics
 
@@ -143,23 +137,19 @@ More information on the service buses used in the node:
 
 ## Project organization & architecture
 
-* [`node/`](node/src) – main node source code;
-* [`client/`](client/src) – CLAP-based command line API talking to message bus;
-* [`rpc/`](rpc/src) – RPC commands for client-server node interface;
-* `node/src/<name>/` – service/daemon-specific code:
+* [`cli/`](cli/src) – command line API talking to LNP Node via RPC (see below);
+* [`rpc/`](rpc/src) – RPC client library for controlling LNP Node;
+* [`src/`](src) – main node source code:
   - [`peerd/`](node/src/peerd) – daemon managing peer connections 
-    within Lightning peer network using LNP (Lightning network protocol). 
-    Specific supported message types are defined as a part of 
-    [LNP/BP Core Library](https://github.com/LNP-BP/rust-lnpbp)
+    within Lightning peer network using LNP (Lightning network protocol).;
   - [`channeld`](node/src/channeld) – daemon managing generalized Lightning
-    channels with their extensions
+    channels with their extensions;
   - [`lnpd`](node/src/lnpd) – daemon initializing creation of new channels and
-    connections
-  - [`routed`](node/src/routed) – daemon managing routing information
-  - [`gossip`](node/src/gossip) – daemon managing gossip data
-  - [`signd`](node/src/signd) - key managing daemon producing signatures over
-    PSBTs using 
-    [Descriptor Wallet library](https://github.com/LNP-BP/descriptor-wallet)
+    connections;
+  - [`routed`](node/src/routed) – daemon managing routing & gossips;
+  - [`watchd`](node/src/watchd) – daemon watching on-chain transaction status;
+  - [`signd`](node/src/signd) - key managing for key derivation & signatures;
+    uses [Descriptor Wallet lib](https://github.com/LNP-BP/descriptor-wallet).
 
 Each daemon (more correctly "microservice", as it can run as a thread, not 
 necessary a process) or other binary (like CLI tool) follows the same
@@ -168,6 +158,7 @@ organization concept for module/file names:
 * `opts.rs` – CLAP arguments & daemon configuration data;
 * `runtime.rs` – singleton managing main daemon thread and keeping all ZMQ/P2P 
   connections and sockets; receiving and processing messages through them;
+* `automata/` - state machines implementing different operation workflows;
 * `index/`, `storage/`, `cache/` – storage interfaces and engines;
 * `db/` – SQL-specific schema and code, if needed.
 
@@ -179,9 +170,9 @@ To compile the node, please install [cargo](https://doc.rust-lang.org/cargo/),
 then run the following commands:
 
 ```bash
-sudo apt install -y libsqlite3-dev libssl-dev libzmq3-dev pkg-config
-cargo install --path . --bins --all-features
-cargo run --color=always --bin lnpd --features=server -- -vvvv
+sudo apt install -y build-essential cmake libsqlite3-dev libssl-dev libzmq3-dev pkg-config
+cargo install --path . --locked --all-features
+lnpd -vvv
 ```
 
 ### In docker
@@ -200,3 +191,7 @@ docker run --rm --name lnp_node lnp-node
     * dr_orlovsky: my account on IRC
 * Lightning Hackdays Mattermost channel:
   <https://mm.fulmo.org/fulmo/channels/x-rust-ln-node>
+
+[Storm]: https://github.com/storm-org/storm-spec
+[Prometheus]: https://github.com/pandoracore/prometheus-spec/blob/master/prometheus.pdf
+[RGB]: https://github.com/rgb-org/
