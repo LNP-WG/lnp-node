@@ -14,6 +14,6 @@
 
 //! State machines orgistrating complex workflows by lnpd daemon
 
-pub mod channel_launch;
+pub mod launch;
 
-pub use channel_launch::ChannelLauncher;
+pub use launch::ChannelLauncher;

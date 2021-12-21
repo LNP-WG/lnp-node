@@ -25,6 +25,7 @@ use crate::Endpoints;
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
+#[derive(StrictEncode, StrictDecode)]
 pub enum ChannelAccept {
     /// remote peer proposed a new channel to accept
     #[display("ACCEPTED")]

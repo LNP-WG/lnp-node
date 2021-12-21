@@ -14,7 +14,7 @@
 
 pub mod automata;
 pub(self) mod daemons;
-pub mod funding_wallet;
+pub mod funding;
 #[cfg(feature = "server")]
 mod opts;
 mod runtime;

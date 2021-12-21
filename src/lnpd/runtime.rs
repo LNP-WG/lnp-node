@@ -32,7 +32,7 @@ use crate::bus::{
 };
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{Daemon, DaemonHandle};
-use crate::lnpd::funding_wallet::{self, FundingWallet};
+use crate::lnpd::funding::{self, FundingWallet};
 use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::peerd::supervisor::read_node_key_file;
 use crate::peerd::PeerSocket;
@@ -70,7 +70,7 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
 }
 
 impl Config {
-    fn funding_wallet(&self) -> Result<FundingWallet, funding_wallet::Error> {
+    fn funding_wallet(&self) -> Result<FundingWallet, funding::Error> {
         let mut wallet_path = self.data_dir.clone();
         wallet_path.push(LNP_NODE_FUNDING_WALLET);
         debug!("Loading funding wallet from '{}'", wallet_path.display());
@@ -542,7 +542,7 @@ impl Runtime {
                         f.script_pubkey.as_inner(),
                         self.funding_wallet.network(),
                     )
-                    .ok_or(funding_wallet::Error::NoAddressRepresentation)?,
+                    .ok_or(funding::Error::NoAddressRepresentation)?,
                 )
                 .or_insert(0) += f.amount;
                 Ok(acc)

@@ -22,8 +22,8 @@ use psbt::sign::SignError;
 
 use crate::bus::ServiceBus;
 use crate::channeld;
-use crate::lnpd::automata::channel_launch;
-use crate::lnpd::{funding_wallet, Daemon, DaemonError};
+use crate::lnpd::automata::launch;
+use crate::lnpd::{funding, Daemon, DaemonError};
 use crate::rpc::{self, ServiceId};
 
 #[derive(Debug, Display, From, Error)]
@@ -56,7 +56,7 @@ pub enum Error {
 
     /// failed to bootstrap channel: {0}
     #[from]
-    ChannelLaunch(channel_launch::Error),
+    ChannelLaunch(launch::Error),
 
     /// encoding failure
     ///
@@ -67,7 +67,7 @@ pub enum Error {
     /// Error during funding wallet operation
     #[from]
     #[display(inner)]
-    FundingWallet(funding_wallet::Error),
+    FundingWallet(funding::Error),
 
     /// unable to deriving keys: {0}
     #[from]

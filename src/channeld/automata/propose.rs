@@ -30,6 +30,7 @@ use crate::{CtlServer, Endpoints};
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
+#[derive(StrictEncode, StrictDecode)]
 pub enum ChannelPropose {
     /// asked remote peer to accept a new channel
     #[display("PROPOSED")]

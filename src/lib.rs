@@ -29,6 +29,8 @@
 extern crate amplify;
 #[macro_use]
 extern crate internet2;
+#[macro_use]
+extern crate strict_encoding;
 
 #[cfg(feature = "server")]
 #[macro_use]

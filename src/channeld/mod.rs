@@ -16,7 +16,7 @@ pub(self) mod automata;
 #[cfg(feature = "server")]
 mod opts;
 mod runtime;
-#[allow(dead_code)]
+mod state;
 pub(self) mod storage;
 
 pub use automata::Error;

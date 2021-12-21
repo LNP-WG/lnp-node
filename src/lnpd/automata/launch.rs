@@ -30,7 +30,7 @@ use microservices::esb::Handler;
 use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
 use crate::lnpd::runtime::Runtime;
-use crate::lnpd::{funding_wallet, Daemon, DaemonError};
+use crate::lnpd::{funding, Daemon, DaemonError};
 use crate::rpc::{ClientId, CreateChannel, Failure, OptionDetails, RpcMsg, ServiceId};
 use crate::Endpoints;
 
@@ -60,7 +60,7 @@ pub enum Error {
     /// failure during channel funding
     #[from]
     #[display(inner)]
-    Funding(funding_wallet::Error),
+    Funding(funding::Error),
 }
 
 impl From<Error> for Failure {

@@ -1060,7 +1060,7 @@ dependencies = [
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#1cdb15f63588f671b9c0944f75af5bc1ea38287c"
+source = "git+https://github.com/LNP-BP/lnp-core#5e248254d72e8b8f07069d0dd9d60a44b14e2acb"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1078,7 +1078,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#1cdb15f63588f671b9c0944f75af5bc1ea38287c"
+source = "git+https://github.com/LNP-BP/lnp-core#5e248254d72e8b8f07069d0dd9d60a44b14e2acb"
 dependencies = [
  "amplify",
  "bitcoin",

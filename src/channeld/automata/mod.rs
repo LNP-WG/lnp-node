@@ -12,8 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-pub mod channel_accept;
-pub mod channel_propose;
+pub mod accept;
+pub mod propose;
 
 use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
@@ -22,10 +22,10 @@ use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
 
-use self::channel_propose::ChannelPropose;
+use self::accept::ChannelAccept;
+use self::propose::ChannelPropose;
 use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg};
-use crate::channeld::automata::channel_accept::ChannelAccept;
 use crate::channeld::runtime::Runtime;
 use crate::rpc::{Failure, ServiceId};
 use crate::service::LogStyle;
@@ -76,7 +76,8 @@ impl Error {
     }
 }
 
-#[derive(Debug, Display, From)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, From)]
+#[derive(StrictEncode, StrictDecode)]
 pub enum ChannelStateMachine {
     /// launching channel daemon
     #[display("LAUNCH")]
@@ -85,12 +86,12 @@ pub enum ChannelStateMachine {
     /// proposing remote peer to open channel
     #[display(inner)]
     #[from]
-    Propose(channel_propose::ChannelPropose),
+    Propose(ChannelPropose),
 
     /// accepting channel proposed by a remote peer
     #[display("ACCEPT")]
     #[from]
-    Accept(channel_accept::ChannelAccept),
+    Accept(ChannelAccept),
 
     /// active channel operations
     #[display("ACTIVE")]
@@ -113,7 +114,7 @@ pub enum ChannelStateMachine {
     Penalize,
 }
 
-// TODO: Replace with method checking persistance data on the disk and initializing state machine
+// TODO: Replace with method checking persistence data on the disk and initializing state machine
 //       according to them
 impl Default for ChannelStateMachine {
     #[inline]
