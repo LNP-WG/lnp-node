@@ -20,6 +20,7 @@ use std::{fs, io};
 
 use amplify::{IoError, Slice32, ToYamlString, Wrapper};
 use bitcoin::secp256k1::{self, Secp256k1};
+use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, Network, OutPoint, SigHashType, Txid};
 use bitcoin_hd::{
     DerivationSubpath, DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount,
@@ -366,6 +367,16 @@ impl FundingWallet {
 
         let descriptor = &self.wallet_data.descriptor;
 
+        let mut root_derivations = map![];
+        descriptor.for_each_key(|account| {
+            let account = account.as_key();
+            if let Some(fingerprint) = account.master_fingerprint() {
+                root_derivations
+                    .insert(account.account_fingerprint(), (fingerprint, &account.account_path));
+            }
+            true
+        });
+
         let script_pubkey = script_pubkey.into_inner();
         let psbt = loop {
             trace!("Constructing PSBT with fee {}", fee_upper_est);
@@ -380,17 +391,19 @@ impl FundingWallet {
                 &self.resolver,
             )
             .expect("funding PSBT construction is broken");
-            // TODO: Update individual inputs instead
-            descriptor.for_each_key(|account| {
-                let account = account.as_key();
-                if let Some(master_fingerprint) = account.master_fingerprint() {
-                    psbt.global.xpub.insert(
-                        account.account_xpub,
-                        (master_fingerprint, account.to_account_derivation_path()),
-                    );
+            // Adding full derivation information to each of the inputs
+            for input in &mut psbt.inputs {
+                for (_, source) in &mut input.bip32_derivation {
+                    if let Some((fingerprint, path)) = root_derivations.get(&source.0) {
+                        source.0 = *fingerprint;
+                        source.1 = path
+                            .iter()
+                            .map(ChildNumber::from)
+                            .chain(source.1.into_iter().copied())
+                            .collect();
+                    }
                 }
-                true
-            });
+            }
             psbt.set_channel_funding_output(0).expect("hardcoded funding output number");
             let transaction = &psbt.global.unsigned_tx;
             // If we use non-standard descriptor we assume its witness will weight 256 bytes per

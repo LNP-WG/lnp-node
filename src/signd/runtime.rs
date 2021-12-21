@@ -126,7 +126,10 @@ where
     ) -> Result<(), Error> {
         match message {
             CtlMsg::Sign(mut psbt) => {
-                psbt.sign_all(&self.provider)?;
+                let sig_count = psbt.sign_all(&self.provider)?;
+                let txid = psbt.global.unsigned_tx.txid();
+                info!("Transaction {} is signed ({} signatures added)", txid, sig_count);
+                trace!("Signed PSBT: {:#?}", psbt);
                 endpoints.send_to(
                     ServiceBus::Ctl,
                     self.identity.clone(),

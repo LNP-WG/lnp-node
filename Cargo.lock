@@ -1216,7 +1216,7 @@ dependencies = [
  "microservices",
  "miniscript",
  "nix",
- "psbt 0.6.0-alpha.10",
+ "psbt 0.6.0-alpha.11",
  "rgb-core",
  "rpassword",
  "serde 1.0.132",
@@ -1552,9 +1552,9 @@ dependencies = [
 
 [[package]]
 name = "psbt"
-version = "0.6.0-alpha.10"
+version = "0.6.0-alpha.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d2f0e11426ca62e85eb89ed42466d0747c56e9854cb3a416e219c211aa6cb32"
+checksum = "5e47929d58c99660e14dc20f48e881c840261bdc1d50e0a3466bc1a6a708793b"
 dependencies = [
  "amplify",
  "bitcoin",
