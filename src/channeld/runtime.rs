@@ -43,12 +43,10 @@ pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> 
 
     let runtime = Runtime {
         identity: ServiceId::Channel(temp_channel_id.into()),
-        peer_service: ServiceId::Loopback,
         state_machine: default!(),
         channel,
         remote_peer: None,
         started: SystemTime::now(),
-        obscuring_factor: 0,
         enquirer: None,
         storage: Box::new(storage::DiskDriver::init(
             temp_channel_id.into(),
@@ -61,19 +59,13 @@ pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> 
 
 pub struct Runtime {
     identity: ServiceId,
-    pub(super) peer_service: ServiceId,
     pub(super) state_machine: ChannelStateMachine,
     pub(super) channel: Channel<bolt::ExtensionId>,
     remote_peer: Option<NodeAddr>,
-
-    // From here till the `enqueror` all parameters should be removed since they are part of
-    // `channel` now
     started: SystemTime,
-    obscuring_factor: u64,
-
-    // TODO: Refactor to use ClientId
+    /// Client which is made an equiry starting the current workflow run by the active state
+    /// machine. It is not a part of the state of the machine since it should not persist.
     enquirer: Option<ClientId>,
-
     storage: Box<dyn storage::Driver>,
 }
 
@@ -152,13 +144,13 @@ impl Runtime {
         endpoints: &mut Endpoints,
         message: LnMsg,
     ) -> Result<(), esb::Error<ServiceId>> {
+        let remote_peer = self.remote_peer.clone().expect("unset remote peer in channeld");
         endpoints.send_to(
             ServiceBus::Msg,
             self.identity(),
-            self.peer_service.clone(),
+            ServiceId::Peer(remote_peer),
             BusMsg::Ln(message),
-        )?;
-        Ok(())
+        )
     }
 
     fn handle_p2p(
@@ -169,11 +161,11 @@ impl Runtime {
     ) -> Result<(), Error> {
         match message {
             LnMsg::OpenChannel(_) => {
-                // TODO: Support repeated messages according to BOLT-2 requirements
-                // if the connection has been re-established after receiving a previous
-                // open_channel, BUT before receiving a funding_created message:
-                //     accept a new open_channel message.
-                //     discard the previous open_channel message.
+                // TODO: Support repeated messages according to BOLT-2 requirements:
+                //       If the connection has been re-established after receiving a previous
+                //       open_channel, BUT before receiving a funding_created message:
+                //       - accept a new open_channel message;
+                //       - discard the previous open_channel message.
                 warn!(
                     "Got `open_channel` P2P message from {}, which is unexpected: the channel \
                      creation was already requested before",
@@ -182,12 +174,12 @@ impl Runtime {
             }
 
             LnMsg::ChannelReestablish(_) => {
+                // TODO: Consider moving setting remote peer and equirer to the state machines
                 self.enquirer = None;
                 let remote_peer = remote_peer.clone();
                 let peerd = ServiceId::Peer(remote_peer.clone());
                 if self.process(endpoints, peerd, BusMsg::Ln(message))? {
                     // Updating state only if the request was processed
-                    self.peer_service = ServiceId::Peer(remote_peer.clone());
                     self.remote_peer = Some(remote_peer);
                 }
             }
@@ -217,7 +209,6 @@ impl Runtime {
                 let remote_peer = open_channel_with.remote_peer.clone();
                 self.enquirer = open_channel_with.report_to.clone();
                 // Updating state only if the request was processed
-                self.peer_service = ServiceId::Peer(remote_peer.clone());
                 self.remote_peer = Some(remote_peer);
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
@@ -228,7 +219,6 @@ impl Runtime {
                 let remote_peer = remote_peer.clone();
                 if self.process(endpoints, source, BusMsg::Ctl(request))? {
                     // Updating state only if the request was processed
-                    self.peer_service = ServiceId::Peer(remote_peer.clone());
                     self.remote_peer = Some(remote_peer);
                 }
             }

@@ -19,7 +19,6 @@ use lnp::Extension;
 use super::Error;
 use crate::bus::{AcceptChannelFrom, BusMsg};
 use crate::channeld::runtime::Runtime;
-use crate::rpc::ServiceId;
 use crate::service::LogStyle;
 use crate::state_machine::{Event, StateMachine};
 use crate::Endpoints;
@@ -90,9 +89,6 @@ impl ChannelAccept {
         accept_channel_from: AcceptChannelFrom,
         runtime: &mut Runtime,
     ) -> Result<ChannelAccept, Error> {
-        let remote_peer = accept_channel_from.remote_peer.clone();
-        runtime.peer_service = ServiceId::Peer(remote_peer);
-
         let open_channel = Messages::OpenChannel(accept_channel_from.channel_req.clone());
         runtime.channel.update_from_peer(&open_channel)?;
 
