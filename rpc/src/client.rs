@@ -33,7 +33,7 @@ impl BusId for RpcBus {
     type Address = ServiceId;
 }
 
-type Bus = esb::SenderList<RpcBus>;
+type Bus = esb::EndpointList<RpcBus>;
 
 #[repr(C)]
 pub struct Client {

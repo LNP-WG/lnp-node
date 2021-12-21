@@ -389,7 +389,7 @@ impl Runtime {
         rng.fill_bytes(&mut noise);
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
-        self.sender.send_message(LnMsg::Ping(Ping { ignored: noise, pong_size }))?;
+        self.sender.send_message(LnMsg::Ping(Ping { ignored: noise.into(), pong_size }))?;
         self.awaited_pong = Some(pong_size);
         Ok(())
     }
@@ -402,7 +402,7 @@ impl Runtime {
             noise[i] = rng.gen();
         }
         self.messages_sent += 1;
-        self.sender.send_message(LnMsg::Pong(noise))?;
+        self.sender.send_message(LnMsg::Pong(noise.into()))?;
         Ok(())
     }
 }

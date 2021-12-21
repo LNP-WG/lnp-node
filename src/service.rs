@@ -102,7 +102,7 @@ where
     }
 }
 
-pub type Endpoints = esb::SenderList<ServiceBus>;
+pub type Endpoints = esb::EndpointList<ServiceBus>;
 
 pub trait TryToServiceId {
     fn try_to_service_id(&self) -> Option<ServiceId>;
