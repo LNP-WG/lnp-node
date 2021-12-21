@@ -312,7 +312,7 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            BusMsg::Ln(LnMsg::OpenChannel(_)) => {
+            BusMsg::Ln(LnMsg::ChannelReestablish(_)) | BusMsg::Ln(LnMsg::OpenChannel(_)) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),

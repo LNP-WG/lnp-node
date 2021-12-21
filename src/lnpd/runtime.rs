@@ -22,7 +22,7 @@ use bitcoin::{secp256k1, Txid};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, Messages as LnMessage, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
@@ -62,7 +62,8 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
         spawning_peers: none!(),
         creating_channels: none!(),
         funding_channels: none!(),
-        accepting_channels: Default::default(),
+        accepting_channels: none!(),
+        reestablishing_channels: none!(),
     };
 
     Service::run(config, runtime, true)
@@ -100,6 +101,7 @@ pub struct Runtime {
     creating_channels: HashMap<ServiceId, ChannelLauncher>,
     funding_channels: HashMap<Txid, ChannelLauncher>,
     accepting_channels: HashMap<ServiceId, AcceptChannelFrom>,
+    reestablishing_channels: HashMap<ServiceId, (NodeAddr, ChannelReestablish)>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -170,15 +172,15 @@ impl esb::Handler<ServiceBus> for Runtime {
 impl Runtime {
     fn handle_p2p(
         &mut self,
-        _: &mut Endpoints,
+        endpoints: &mut Endpoints,
         remote_peer: NodeAddr,
-        message: LnMessage,
+        message: LnMsg,
     ) -> Result<(), Error> {
         match message {
             // Happens when a remote peer connects to a peerd listening for incoming connections.
             // Lisnening peerd forwards this request to lnpd so it can launch a new channeld
             // instance.
-            LnMessage::OpenChannel(open_channel) => {
+            LnMsg::OpenChannel(open_channel) => {
                 // TODO: Replace with state machine-based workflow
                 info!("Creating channel by peer request from {}", remote_peer);
                 self.launch_daemon(
@@ -198,6 +200,23 @@ impl Runtime {
                 };
                 self.accepting_channels.insert(channeld_id, accept_channel);
             }
+
+            LnMsg::ChannelReestablish(channel_reestablish) => {
+                let channel_id = channel_reestablish.channel_id;
+                if let Some(channeld) = self.channels.get(&channel_id) {
+                    endpoints.send_to(
+                        ServiceBus::Msg,
+                        ServiceId::Peer(remote_peer),
+                        ServiceId::Channel(*channeld),
+                        BusMsg::Ln(LnMsg::ChannelReestablish(channel_reestablish)),
+                    )?;
+                } else {
+                    self.launch_daemon(Daemon::Channeld(channel_id), self.config.clone())?;
+                    self.reestablishing_channels
+                        .insert(ServiceId::Channel(channel_id), (remote_peer, channel_reestablish));
+                }
+            }
+
             _ => {} // nothing to do for the rest of LN messages
         }
         Ok(())
@@ -422,21 +441,41 @@ impl Runtime {
 
         if let Some(channel_launcher) = self.creating_channels.remove(&source) {
             // Tell channeld channel options and link it with the peer daemon
-            debug!("Daemon {} reported back. Ordering channel opening", source);
+            debug!(
+                "Ordering {} to open a channel with temp id {}",
+                source,
+                channel_launcher.channel_id()
+            );
             let event = Event::with(endpoints, self.identity(), source.clone(), CtlMsg::Hello);
             if let Some(channel_launcher) = channel_launcher.next(event, self)? {
                 self.creating_channels.insert(source, channel_launcher);
             }
-        } else if let Some(accept_channel) = self.accepting_channels.get(&source) {
+        } else if let Some(accept_channel) = self.accepting_channels.remove(&source) {
             // Tell channeld channel options and link it with the peer daemon
-            debug!("Daemon {} reported back. Ordering channel acceptance", source);
+            debug!(
+                " Ordering {} to accept the channel {}",
+                source, accept_channel.channel_req.temporary_channel_id
+            );
             endpoints.send_to(
                 ServiceBus::Ctl,
                 self.identity(),
                 source.clone(),
-                BusMsg::Ctl(CtlMsg::AcceptChannelFrom(accept_channel.clone())),
+                BusMsg::Ctl(CtlMsg::AcceptChannelFrom(accept_channel)),
             )?;
-            self.accepting_channels.remove(&source);
+        } else if let Some((remote_peer, channel_reestablish)) =
+            self.reestablishing_channels.remove(&source)
+        {
+            // Tell channeld channel options and link it with the peer daemon
+            debug!(
+                "Ordering {} to re-establish the channel {}",
+                source, channel_reestablish.channel_id
+            );
+            endpoints.send_to(
+                ServiceBus::Msg,
+                remote_peer.into(),
+                source.clone(),
+                BusMsg::Ln(LnMsg::ChannelReestablish(channel_reestablish)),
+            )?;
         } else if let Some(enquirer) = self.spawning_peers.get(&source).copied() {
             debug!("Daemon {} reported back", source);
             self.spawning_peers.remove(&source);

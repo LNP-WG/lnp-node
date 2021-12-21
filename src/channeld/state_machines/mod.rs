@@ -18,7 +18,7 @@ pub mod channel_propose;
 use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::ActiveChannelId;
+use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
 
@@ -76,7 +76,7 @@ impl Error {
     }
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, From)]
 pub enum ChannelStateMachine {
     /// launching channel daemon
     #[display("LAUNCH")]
@@ -84,10 +84,12 @@ pub enum ChannelStateMachine {
 
     /// proposing remote peer to open channel
     #[display(inner)]
+    #[from]
     Propose(channel_propose::ChannelPropose),
 
     /// accepting channel proposed by a remote peer
     #[display("ACCEPT")]
+    #[from]
     Accept(channel_accept::ChannelAccept),
 
     /// active channel operations
@@ -111,6 +113,8 @@ pub enum ChannelStateMachine {
     Penalize,
 }
 
+// TODO: Replace with method checking persistance data on the disk and initializing state machine
+//       according to them
 impl Default for ChannelStateMachine {
     #[inline]
     fn default() -> Self { ChannelStateMachine::Launch }
@@ -138,7 +142,7 @@ impl ChannelStateMachine {
             ChannelStateMachine::Propose(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Accept(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Active => todo!(),
-            ChannelStateMachine::Reestablishing => todo!(),
+            ChannelStateMachine::Reestablishing => todo!("Process in reestablishing state machine"),
             ChannelStateMachine::Closing => todo!(),
             ChannelStateMachine::Abort => todo!(),
             ChannelStateMachine::Penalize => todo!(),
@@ -233,13 +237,18 @@ impl Runtime {
 
     fn complete_launch(&mut self, event: Event<BusMsg>) -> Result<ChannelStateMachine, Error> {
         let Event { endpoints, service: _, source, message } = event;
-        let open_channel_with = match message {
-            BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => open_channel_with,
+        Ok(match message {
+            BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
+                ChannelPropose::with(self, endpoints, open_channel_with)?.into()
+            }
+            BusMsg::Ln(LnMsg::ChannelReestablish(_)) => {
+                // TODO: Initialize reestablishing state machine
+                ChannelStateMachine::Reestablishing
+            }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))
             }
-        };
-        Ok(ChannelStateMachine::Propose(ChannelPropose::with(self, endpoints, open_channel_with)?))
+        })
     }
 
     fn process_propose(

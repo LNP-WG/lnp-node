@@ -181,6 +181,17 @@ impl Runtime {
                 );
             }
 
+            LnMsg::ChannelReestablish(_) => {
+                self.enquirer = None;
+                let remote_peer = remote_peer.clone();
+                let peerd = ServiceId::Peer(remote_peer.clone());
+                if self.process(endpoints, peerd, BusMsg::Ln(message))? {
+                    // Updating state only if the request was processed
+                    self.peer_service = ServiceId::Peer(remote_peer.clone());
+                    self.remote_peer = Some(remote_peer);
+                }
+            }
+
             LnMsg::AcceptChannel(_) | LnMsg::FundingSigned(_) | LnMsg::FundingLocked(_) => {
                 self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Ln(message))?;
             }
