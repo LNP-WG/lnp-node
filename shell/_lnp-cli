@@ -173,8 +173,6 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'-h[Print help information]' \
-'--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0

@@ -9,7 +9,7 @@ _routed() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            routed)
+            "$1")
                 cmd="routed"
                 ;;
             *)

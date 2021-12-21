@@ -9,7 +9,7 @@ _signd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            signd)
+            "$1")
                 cmd="signd"
                 ;;
             *)

@@ -89,8 +89,6 @@ _arguments "${_arguments_options[@]}" \
 '--chain=[Blockchain to use]:CHAIN: ' \
 '--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
-'-h[Print help information]' \
-'--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 && ret=0

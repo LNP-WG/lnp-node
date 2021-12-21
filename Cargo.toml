@@ -78,7 +78,7 @@ base64 = { version = "0.12", optional = true }
 # Congig & logging
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 env_logger = "0.7"
-clap = { version = "=3.0.0-beta.5", optional = true }
+clap = { version = "=3.0.0-rc.7", optional = true, features = ["env"] }
 settings = { version = "0.10", package = "config", optional = true }
 configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -101,7 +101,7 @@ rgb-core = { version = "0.5.0", optional = true }
 internet2 = "0.5.12"
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false, features = ["peer"] }
 lazy_static = "1.4"
-clap = "3.0.0-beta.5"
+clap = { version = "3.0.0-rc.7", features = ["env"] }
 clap_generate = "3.0.0-beta.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 shellexpand = "2"

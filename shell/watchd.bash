@@ -9,7 +9,7 @@ _watchd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            watchd)
+            "$1")
                 cmd="watchd"
                 ;;
             *)

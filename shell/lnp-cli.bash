@@ -9,7 +9,7 @@ _lnp-cli() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            lnp-cli)
+            "$1")
                 cmd="lnp__cli"
                 ;;
             channels)
@@ -143,7 +143,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__help)
-            opts="-h -c -v --help --connect --verbose"
+            opts="-c -v --connect --verbose"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

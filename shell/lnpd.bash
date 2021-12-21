@@ -9,7 +9,7 @@ _lnpd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            lnpd)
+            "$1")
                 cmd="lnpd"
                 ;;
             help)
@@ -119,7 +119,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__help)
-            opts="-h -d -c -v -T -r -n --help --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
+            opts="-d -c -v -T -r -n --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

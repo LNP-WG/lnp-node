@@ -9,7 +9,7 @@ _channeld() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            channeld)
+            "$1")
                 cmd="channeld"
                 ;;
             *)

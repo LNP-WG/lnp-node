@@ -9,7 +9,7 @@ _peerd() {
     for i in ${COMP_WORDS[@]}
     do
         case "${i}" in
-            peerd)
+            "$1")
                 cmd="peerd"
                 ;;
             *)

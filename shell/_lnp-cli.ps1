@@ -160,8 +160,6 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         'lnp-cli;help' {
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
             break
