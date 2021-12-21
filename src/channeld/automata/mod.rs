@@ -23,12 +23,12 @@ use microservices::esb;
 use microservices::esb::Handler;
 
 use self::channel_propose::ChannelPropose;
+use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg};
+use crate::channeld::automata::channel_accept::ChannelAccept;
 use crate::channeld::runtime::Runtime;
-use crate::channeld::state_machines::channel_accept::ChannelAccept;
 use crate::rpc::{Failure, ServiceId};
 use crate::service::LogStyle;
-use crate::state_machine::{Event, StateMachine};
 use crate::{CtlServer, Endpoints};
 
 /// Errors for channel proposal workflow

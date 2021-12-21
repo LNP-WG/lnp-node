@@ -38,12 +38,12 @@ extern crate log;
 
 pub use lnp_rpc as rpc;
 
+pub mod automata;
 pub mod bus;
 mod config;
 mod error;
 #[cfg(feature = "server")]
 pub mod opts;
-pub mod state_machine;
 
 pub mod channeld;
 pub mod lnpd;

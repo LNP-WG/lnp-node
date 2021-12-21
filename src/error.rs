@@ -22,7 +22,7 @@ use psbt::sign::SignError;
 
 use crate::bus::ServiceBus;
 use crate::channeld;
-use crate::lnpd::state_machines::channel_launch;
+use crate::lnpd::automata::channel_launch;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
 use crate::rpc::{self, ServiceId};
 

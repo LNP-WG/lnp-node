@@ -12,12 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+pub mod automata;
 pub(self) mod daemons;
 pub mod funding_wallet;
 #[cfg(feature = "server")]
 mod opts;
 mod runtime;
-pub mod state_machines;
 
 pub use daemons::{Daemon, DaemonError};
 #[cfg(feature = "server")]

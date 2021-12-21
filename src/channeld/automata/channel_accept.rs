@@ -17,10 +17,10 @@ use lnp::p2p::legacy::{ActiveChannelId, Messages};
 use lnp::Extension;
 
 use super::Error;
+use crate::automata::{Event, StateMachine};
 use crate::bus::{AcceptChannelFrom, BusMsg};
 use crate::channeld::runtime::Runtime;
 use crate::service::LogStyle;
-use crate::state_machine::{Event, StateMachine};
 use crate::Endpoints;
 
 /// Channel proposal workflow

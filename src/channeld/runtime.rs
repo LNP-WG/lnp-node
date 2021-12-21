@@ -25,7 +25,7 @@ use microservices::esb::{self, Handler};
 
 use super::storage::{self, Driver};
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
-use crate::channeld::state_machines::ChannelStateMachine;
+use crate::channeld::automata::ChannelStateMachine;
 use crate::rpc::{ClientId, ServiceId};
 use crate::{Config, CtlServer, Endpoints, Error, Service};
 

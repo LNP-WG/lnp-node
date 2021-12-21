@@ -20,12 +20,12 @@ use microservices::esb::Handler;
 use wallet::address::AddressCompat;
 
 use super::Error;
+use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith};
+use crate::channeld::automata;
 use crate::channeld::runtime::Runtime;
-use crate::channeld::state_machines;
 use crate::rpc::ServiceId;
 use crate::service::LogStyle;
-use crate::state_machine::{Event, StateMachine};
 use crate::{CtlServer, Endpoints};
 
 /// Channel proposal workflow
@@ -61,7 +61,7 @@ pub enum ChannelPropose {
 }
 
 impl StateMachine<BusMsg, Runtime> for ChannelPropose {
-    type Error = state_machines::Error;
+    type Error = automata::Error;
 
     fn next(
         self,
@@ -111,7 +111,7 @@ impl ChannelPropose {
         runtime: &mut Runtime,
         endpoints: &mut Endpoints,
         request: OpenChannelWith,
-    ) -> Result<ChannelPropose, state_machines::Error> {
+    ) -> Result<ChannelPropose, automata::Error> {
         let open_channel = LnMsg::OpenChannel(runtime.channel.compose_open_channel(
             request.funding_sat,
             request.push_msat,
@@ -169,7 +169,7 @@ impl ChannelPropose {
 fn complete_proposed(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     let accept_channel = match event.message {
         BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => accept_channel,
         wrong_msg => {
@@ -204,7 +204,7 @@ fn complete_proposed(
 fn complete_accepted(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     let funding_psbt = match event.message {
         BusMsg::Ctl(CtlMsg::FundingConstructed(funding_psbt)) => funding_psbt,
         wrong_msg => {
@@ -230,7 +230,7 @@ fn complete_accepted(
 fn complete_signing(
     mut event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     let refund_psbt = match event.message {
         BusMsg::Ctl(CtlMsg::Signed(psbt)) => psbt,
         wrong_msg => {
@@ -246,10 +246,10 @@ fn complete_signing(
     let signature = funding_input
         .partial_sigs
         .get(&bitcoin::PublicKey::new(funding_pubkey))
-        .ok_or(state_machines::Error::FundingPsbtUnsigned(funding_pubkey))?;
+        .ok_or(automata::Error::FundingPsbtUnsigned(funding_pubkey))?;
     // TODO: Use BitcoinSignature type for parsing signature once bitcoin 0.27 is released
     let signature = Signature::from_der(&signature[..signature.len() - 1])
-        .map_err(state_machines::Error::InvalidSig)?;
+        .map_err(automata::Error::InvalidSig)?;
 
     let funding = channel.funding();
     let (funding_txid, funding_output_index) = (funding.txid(), funding.output());
@@ -275,7 +275,7 @@ fn complete_signing(
 fn complete_funding(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     let funding_signed = match event.message {
         BusMsg::Ln(LnMsg::FundingSigned(funding_signed)) => funding_signed,
         wrong_msg => {
@@ -295,7 +295,7 @@ fn complete_funding(
 fn complete_signed(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     if !matches!(event.message, BusMsg::Ctl(CtlMsg::FundingPublished)) {
         return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
     }
@@ -311,13 +311,10 @@ fn complete_signed(
 fn complete_funded(
     _event: Event<BusMsg>,
     _runtime: &mut Runtime,
-) -> Result<ChannelPropose, state_machines::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     todo!()
 }
 
-fn complete_locked(
-    _event: Event<BusMsg>,
-    _runtime: &mut Runtime,
-) -> Result<(), state_machines::Error> {
+fn complete_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), automata::Error> {
     todo!()
 }

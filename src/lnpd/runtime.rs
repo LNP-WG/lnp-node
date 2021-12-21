@@ -26,17 +26,17 @@ use lnp::p2p::legacy::{ChannelId, ChannelReestablish, Messages as LnMsg, TempCha
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
+use crate::automata::{Event, StateMachine};
 use crate::bus::{
     AcceptChannelFrom, BusMsg, CtlMsg, IntoSuccessOrFalure, ServiceBus, Status, ToProgressOrFalure,
 };
+use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{Daemon, DaemonHandle};
 use crate::lnpd::funding_wallet::{self, FundingWallet};
-use crate::lnpd::state_machines::ChannelLauncher;
 use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::peerd::supervisor::read_node_key_file;
 use crate::peerd::PeerSocket;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
-use crate::state_machine::{Event, StateMachine};
 use crate::{Config, Endpoints, Error, LogStyle, Service};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {

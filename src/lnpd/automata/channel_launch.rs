@@ -27,11 +27,11 @@ use lnp::{FundingError, PsbtLnpFunding};
 use microservices::esb;
 use microservices::esb::Handler;
 
+use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding_wallet, Daemon, DaemonError};
 use crate::rpc::{ClientId, CreateChannel, Failure, OptionDetails, RpcMsg, ServiceId};
-use crate::state_machine::{Event, StateMachine};
 use crate::Endpoints;
 
 /// Errors for channel launching workflow
