@@ -68,11 +68,6 @@ pub enum CtlMsg {
     #[display("publish_funding({0})")]
     PublishFunding,
 
-    /// Reports back to channeld that the funding transaction was published and its mining status
-    /// should be monitored onchain.
-    #[display("funding_published()")]
-    FundingPublished,
-
     // On-chain tracking API
     // ---------------------
     /// Asks on-chain tracking service to send updates on the transaction mining status

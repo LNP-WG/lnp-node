@@ -84,9 +84,6 @@ pub enum ServiceId {
     #[display("signer")]
     Signer,
 
-    #[display("chain")]
-    Chain,
-
     #[display("other<{0}>")]
     Other(ClientName),
 }

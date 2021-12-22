@@ -20,20 +20,18 @@ use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime { identity: ServiceId::Watch };
+    let runtime = Runtime {};
 
     Service::run(config, runtime, false)
 }
 
-pub struct Runtime {
-    identity: ServiceId,
-}
+pub struct Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId { ServiceId::Watch }
 
     fn handle(
         &mut self,
@@ -83,10 +81,16 @@ impl Runtime {
         message: CtlMsg,
     ) -> Result<(), Error> {
         match message {
+            CtlMsg::Track(_) => {
+                // TODO: Implement
+            }
+
             wrong_msg => {
                 error!("Request {} is not supported by the CTL interface", wrong_msg);
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_msg));
             }
         }
+
+        Ok(())
     }
 }

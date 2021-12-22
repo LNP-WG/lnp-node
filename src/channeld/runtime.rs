@@ -240,7 +240,6 @@ impl Runtime {
             }
 
             CtlMsg::FundingConstructed(_)
-            | CtlMsg::FundingPublished
             | CtlMsg::Mined(_)
             | CtlMsg::Signed(_)
             | CtlMsg::Error { .. }
