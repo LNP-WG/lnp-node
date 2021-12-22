@@ -60,7 +60,7 @@ pub enum Error {
     /// sign daemon produced invalid signature. {0}
     InvalidSig(secp256k1::Error),
 
-    /// failing to save channel state. Details: {0}
+    /// failed to save channel state. Details: {0}
     #[from]
     Persistence(strict_encoding::Error),
 }
@@ -152,11 +152,11 @@ impl ChannelStateMachine {
             ChannelStateMachine::Launch => s!("Launching channel daemon"),
             ChannelStateMachine::Propose(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Accept(state_machine) => state_machine.info_message(channel_id),
-            ChannelStateMachine::Active => todo!(),
-            ChannelStateMachine::Reestablishing => todo!("Process in reestablishing state machine"),
-            ChannelStateMachine::Closing => todo!(),
-            ChannelStateMachine::Abort => todo!(),
-            ChannelStateMachine::Penalize => todo!(),
+            ChannelStateMachine::Active => s!("Channel is active"),
+            ChannelStateMachine::Reestablishing => s!("Reestablushing channel"),
+            ChannelStateMachine::Closing => s!("Closing channel"),
+            ChannelStateMachine::Abort => s!("Unilaterally closing the channel"),
+            ChannelStateMachine::Penalize => s!("Penalizing incorrect channel"),
         }
     }
 }

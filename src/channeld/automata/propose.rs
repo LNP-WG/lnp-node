@@ -71,15 +71,15 @@ impl StateMachine<BusMsg, Runtime> for ChannelPropose {
             ChannelPropose::Proposed => complete_proposed(event, runtime),
             ChannelPropose::Accepted => complete_accepted(event, runtime),
             ChannelPropose::Signing => complete_signing(event, runtime),
-            ChannelPropose::Funding => {
-                if let Some(next) = complete_funding(event, runtime)? {
+            ChannelPropose::Funding => complete_funding(event, runtime),
+            ChannelPropose::Published => {
+                if let Some(next) = complete_published(event, runtime)? {
                     Ok(next)
                 } else {
                     info!("ChannelPropose {:#} has completed its work", channel_id);
                     return Ok(None);
                 }
             }
-            ChannelPropose::Published => complete_published(event, runtime),
             ChannelPropose::Locked => {
                 complete_locked(event, runtime)?;
                 info!("ChannelPropose {:#} has completed its work", channel_id);
@@ -272,15 +272,9 @@ fn complete_signing(
 fn complete_funding(
     mut event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<Option<ChannelPropose>, automata::Error> {
+) -> Result<ChannelPropose, automata::Error> {
     let funding_signed = match event.message {
         BusMsg::Ln(LnMsg::FundingSigned(funding_signed)) => funding_signed,
-        // We probably crashed, but the funding tx got published anyway, so we have to jump
-        // to the next phase
-        BusMsg::Ln(LnMsg::FundingLocked(_)) => {
-            complete_locked(event, runtime)?;
-            return Ok(None);
-        }
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Funding, event.source))
         }
@@ -293,27 +287,30 @@ fn complete_funding(
 
     let txid = runtime.state.channel.funding().txid();
     debug!("Waiting for funding transaction {} to be mined", txid);
-    runtime.send_ctl(&mut event.endpoints, ServiceId::Watch, CtlMsg::Track(txid))?;
+    // TODO: Uncomment once watching daemon will be running
+    // runtime.send_ctl(&mut event.endpoints, ServiceId::Watch, CtlMsg::Track(txid))?;
 
-    Ok(Some(ChannelPropose::Published))
+    Ok(ChannelPropose::Published)
 }
 
 fn complete_published(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
-) -> Result<ChannelPropose, automata::Error> {
-    let _ = match event.message {
-        BusMsg::Ctl(CtlMsg::Mined(mining_info)) => mining_info,
-        wrong_msg => {
-            return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Signed, event.source))
-        }
-    };
+) -> Result<Option<ChannelPropose>, automata::Error> {
+    if !matches!(event.message, BusMsg::Ctl(CtlMsg::Mined(_)) | BusMsg::Ln(LnMsg::FundingLocked(_)))
+    {
+        return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
+    }
 
     debug!("Funding transaction mined, notifying remote peer");
     let funding_locked = runtime.state.channel.compose_funding_locked();
     runtime.send_p2p(event.endpoints, LnMsg::FundingLocked(funding_locked))?;
 
-    Ok(ChannelPropose::Locked)
+    if let BusMsg::Ln(LnMsg::FundingLocked(_)) = event.message {
+        complete_locked(event, runtime)?;
+    }
+
+    Ok(Some(ChannelPropose::Locked))
 }
 
 fn complete_locked(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
