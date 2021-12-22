@@ -144,18 +144,28 @@ impl Runtime {
     ) -> Result<thread::JoinHandle<Result<(), Error>>, DaemonError<Daemon>> {
         debug!("Spawning {} as a new thread", daemon);
 
-        let builder = thread::Builder::new().name(daemon.to_string());
-        Ok(match daemon.clone() {
-            Daemon::Signd => thread::spawn(move || signd::run(config)),
-            Daemon::Peerd(socket, key_file) => builder
-                .spawn(move || peerd::supervisor::run(config, &key_file, socket))
-                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
-            Daemon::Channeld(channel_id) => builder
-                .spawn(move || channeld::run(config, channel_id))
-                .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
-            Daemon::Routed => todo!(),
-            Daemon::Gossipd => todo!(),
-        })
+        let d = daemon.clone();
+        thread::Builder::new()
+            .name(d.to_string())
+            .spawn(move || {
+                let res = match d.clone() {
+                    Daemon::Signd => signd::run(config),
+                    Daemon::Peerd(socket, key_file) => {
+                        peerd::supervisor::run(config, &key_file, socket)
+                    }
+                    Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
+                    Daemon::Routed => todo!(),
+                    Daemon::Gossipd => todo!(),
+                };
+                match res {
+                    Ok(_) => unreachable!("daemons should never terminate by themselves"),
+                    Err(err) => {
+                        error!("Daemon {} crashed: {}", d, err);
+                        Err(err)
+                    }
+                }
+            })
+            .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))
     }
 
     fn exec_daemon(&self, daemon: Daemon) -> Result<Child, DaemonError<Daemon>> {
