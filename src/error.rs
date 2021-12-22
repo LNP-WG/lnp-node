@@ -52,6 +52,7 @@ pub enum Error {
 
     /// channel operations failure: {0}
     #[from]
+    #[from(lnp::channel::Error)]
     Channel(channeld::Error),
 
     /// failed to bootstrap channel: {0}

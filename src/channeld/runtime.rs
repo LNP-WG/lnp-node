@@ -177,15 +177,12 @@ impl Runtime {
                 );
             }
 
-            LnMsg::ChannelReestablish(_) => {
-                // TODO: Consider moving setting remote peer and equirer to the state machines
-                self.enquirer = None;
-                let remote_peer = remote_peer.clone();
-                let peerd = ServiceId::Peer(remote_peer.clone());
-                if self.process(endpoints, peerd, BusMsg::Ln(message))? {
-                    // Updating state only if the request was processed
-                    self.state.remote_peer = Some(remote_peer);
-                }
+            LnMsg::ChannelReestablish(ref remote_channel_reestablish) => {
+                let local_channel_reestablish =
+                    self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
+                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
+
+                self.state.remote_peer = Some(remote_peer);
             }
 
             LnMsg::AcceptChannel(_) | LnMsg::FundingSigned(_) | LnMsg::FundingLocked(_) => {

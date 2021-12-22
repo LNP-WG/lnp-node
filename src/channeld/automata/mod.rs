@@ -18,7 +18,7 @@ pub mod propose;
 use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
 use lnp::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
+use lnp::p2p::legacy::ActiveChannelId;
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -258,12 +258,6 @@ impl Runtime {
         Ok(match message {
             BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
                 ChannelPropose::with(self, endpoints, open_channel_with)?.into()
-            }
-            BusMsg::Ln(LnMsg::ChannelReestablish(remote_channel_reestablish)) => {
-                let local_channel_reestablish =
-                    self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
-                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
-                ChannelStateMachine::Active
             }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))
