@@ -151,6 +151,7 @@ impl Runtime {
         let identity = ServiceId::Channel(channel_id);
         endpoints.set_identity(ServiceBus::Ctl, identity.clone())?;
         endpoints.set_identity(ServiceBus::Msg, identity.clone())?;
+        endpoints.set_identity(ServiceBus::Rpc, identity.clone())?;
         self.identity = identity;
 
         fs::remove_file(self.config.channel_file(prev_id))?;
