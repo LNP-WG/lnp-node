@@ -23,7 +23,7 @@ use std::{process, thread};
 use amplify::hex::ToHex;
 use amplify::IoError;
 use internet2::RemoteSocketAddr;
-use lnp::p2p::legacy::ChannelId;
+use lnp::p2p::legacy::ActiveChannelId;
 
 use crate::lnpd::runtime::Runtime;
 use crate::peerd::PeerSocket;
@@ -115,7 +115,7 @@ pub enum Daemon {
     Peerd(PeerSocket, PathBuf),
 
     #[display("channeld")]
-    Channeld(ChannelId),
+    Channeld(ActiveChannelId),
 
     #[display("routed")]
     Routed,
@@ -151,7 +151,7 @@ impl Runtime {
                 .spawn(move || peerd::supervisor::run(config, &key_file, socket))
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             Daemon::Channeld(channel_id) => builder
-                .spawn(move || channeld::run(config, channel_id.into()))
+                .spawn(move || channeld::run(config, channel_id))
                 .map_err(|io| DaemonError::ThreadLaunch(daemon, io.into()))?,
             Daemon::Routed => todo!(),
             Daemon::Gossipd => todo!(),
@@ -192,8 +192,11 @@ impl Runtime {
                 // Lightning do not support non-TCP sockets
                 DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101));
             }
-            Daemon::Channeld(temp_channel_id, ..) => {
-                cmd.args(&[temp_channel_id.to_hex()]);
+            Daemon::Channeld(channel_id, ..) => {
+                cmd.args(&[channel_id.as_slice32().to_hex()]);
+                if channel_id.channel_id().is_some() {
+                    cmd.args(&["--reestablish"]);
+                }
             }
             _ => { /* No additional configuration is required here */ }
         }

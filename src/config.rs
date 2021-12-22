@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use internet2::ZmqSocketAddr;
-use lnp::p2p::legacy::ChannelId;
+use lnp::p2p::legacy::ActiveChannelId;
 use lnpbp::chain::Chain;
 
 #[cfg(feature = "server")]
@@ -70,9 +70,9 @@ impl Config {
         channel_dir
     }
 
-    pub fn channel_file(&self, channel_id: ChannelId) -> PathBuf {
+    pub fn channel_file(&self, channel_id: ActiveChannelId) -> PathBuf {
         let mut channel_file = self.channel_dir();
-        channel_file.set_file_name(channel_id.to_string());
+        channel_file.push(channel_id.to_string());
         channel_file.set_extension("channel");
         channel_file
     }

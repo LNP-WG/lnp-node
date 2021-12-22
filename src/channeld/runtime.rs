@@ -15,8 +15,9 @@
 use std::fs;
 use std::time::SystemTime;
 
+use amplify::Wrapper;
 use internet2::NodeAddr;
-use lnp::p2p::legacy::{ChannelId, Messages as LnMsg};
+use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use microservices::esb::{self, Handler};
 use strict_encoding::{StrictDecode, StrictEncode};
 
@@ -24,22 +25,30 @@ use super::storage::{self, Driver};
 use super::ChannelState;
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{ClientId, ServiceId};
-use crate::{Config, CtlServer, Endpoints, Error, Service};
+use crate::{channeld, Config, CtlServer, Endpoints, Error, Service};
 
-pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
+pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {
     // TODO: use node configuration to provide custom policy & parameters
 
     // check and read channel file
     let channel_file = config.channel_file(channel_id);
     let (state, file) = if let Ok(file) = fs::File::open(&channel_file) {
         (ChannelState::strict_decode(&file).map_err(Error::Persistence)?, file)
-    } else {
-        let state = ChannelState::with(channel_id.into(), &config.chain);
+    } else if let Some(temp_channel_id) = channel_id.temp_channel_id() {
+        let state = ChannelState::with(temp_channel_id, &config.chain);
         fs::create_dir_all(config.channel_dir())?;
         let file = fs::File::create(channel_file)?;
         (state, file)
+    } else {
+        error!(
+            "Requested to re-establish channel {}, but its state has not persisted on disk. You \
+             may compose a channel",
+            channel_id
+        );
+        return Err(Error::Channel(channeld::Error::NoPersistantData));
     };
 
+    let channel_id = ChannelId::from_inner(channel_id.as_slice32());
     let runtime = Runtime {
         identity: ServiceId::Channel(channel_id),
         config: config.clone(),
@@ -48,7 +57,7 @@ pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
         started: SystemTime::now(),
         enquirer: None,
         storage: Box::new(storage::DiskDriver::init(
-            channel_id.into(),
+            channel_id,
             Box::new(storage::DiskConfig { path: Default::default() }),
         )?),
     };
@@ -117,10 +126,10 @@ impl Runtime {
         endpoints: &mut Endpoints,
         channel_id: ChannelId,
     ) -> Result<(), Error> {
-        let prev_id = self.state.channel.active_channel_id().as_slice32();
+        let prev_id = self.state.channel.active_channel_id();
 
         self.file.sync_all()?;
-        let file_name = self.config.channel_file(channel_id);
+        let file_name = self.config.channel_file(ActiveChannelId::Static(channel_id));
         self.file = fs::File::create(file_name)?;
         self.state.strict_encode(&self.file).map_err(Error::Persistence)?;
 
@@ -129,7 +138,7 @@ impl Runtime {
         endpoints.set_identity(ServiceBus::Msg, identity.clone())?;
         self.identity = identity;
 
-        fs::remove_file(self.config.channel_file(prev_id.into()))?;
+        fs::remove_file(self.config.channel_file(prev_id))?;
 
         Ok(())
     }

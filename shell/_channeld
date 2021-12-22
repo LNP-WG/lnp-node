@@ -35,6 +35,8 @@ _channeld() {
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
+'-R[Flag indicating that we are re-establishing a channel with the provided `channel_id`]' \
+'--reestablish[Flag indicating that we are re-establishing a channel with the provided `channel_id`]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 '--threaded-daemons[Spawn daemons as threads and not processes]' \

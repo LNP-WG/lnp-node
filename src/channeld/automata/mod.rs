@@ -51,6 +51,9 @@ pub enum Error {
     /// unable to {operation} during {current_state} channel state
     InvalidState { operation: &'static str, current_state: Lifecycle },
 
+    /// channel was not persisted on a disk, so unable to reestablish
+    NoPersistantData,
+
     /// sign daemon was unable to sign funding transaction for our public key {0}
     FundingPsbtUnsigned(PublicKey),
 
@@ -78,6 +81,7 @@ impl Error {
             Error::FundingPsbtUnsigned(_) => 5001,
             Error::InvalidSig(_) => 5002,
             Error::Persistence(_) => 6000,
+            Error::NoPersistantData => 6001,
         }
     }
 }

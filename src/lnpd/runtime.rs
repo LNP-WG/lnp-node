@@ -22,7 +22,9 @@ use bitcoin::{secp256k1, Txid};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId};
+use lnp::p2p::legacy::{
+    ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
+};
 use microservices::esb::{self, Handler};
 use wallet::address::AddressCompat;
 
@@ -211,7 +213,10 @@ impl Runtime {
                         BusMsg::Ln(LnMsg::ChannelReestablish(channel_reestablish)),
                     )?;
                 } else {
-                    self.launch_daemon(Daemon::Channeld(channel_id), self.config.clone())?;
+                    self.launch_daemon(
+                        Daemon::Channeld(ActiveChannelId::Static(channel_id)),
+                        self.config.clone(),
+                    )?;
                     self.reestablishing_channels
                         .insert(ServiceId::Channel(channel_id), (remote_peer, channel_reestablish));
                 }

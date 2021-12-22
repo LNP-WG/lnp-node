@@ -31,6 +31,10 @@ pub struct Opts {
     #[clap(parse(try_from_str = ChannelId::from_hex))]
     pub channel_id: ChannelId,
 
+    /// Flag indicating that we are re-establishing a channel with the provided `channel_id`
+    #[clap(short = 'R', long)]
+    pub reestablish: bool,
+
     /// These params can be read also from the configuration file, not just
     /// command-line args or environment variables
     #[clap(flatten)]

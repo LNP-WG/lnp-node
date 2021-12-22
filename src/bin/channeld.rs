@@ -30,6 +30,7 @@
 extern crate log;
 
 use clap::Parser;
+use lnp::p2p::legacy::ActiveChannelId;
 use lnp_node::channeld::{self, Opts};
 use lnp_node::Config;
 
@@ -56,7 +57,13 @@ fn main() {
      */
 
     debug!("Starting runtime ...");
-    channeld::run(config, opts.channel_id).expect("Error running channeld runtime");
+    let channel_id = if opts.reestablish {
+        info!("Will try to re-establish channel {}", opts.channel_id);
+        ActiveChannelId::Static(opts.channel_id)
+    } else {
+        ActiveChannelId::Temporary(opts.channel_id.into())
+    };
+    channeld::run(config, channel_id).expect("Error running channeld runtime");
 
     unreachable!()
 }
