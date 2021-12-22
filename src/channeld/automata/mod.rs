@@ -239,6 +239,8 @@ impl Runtime {
                 self.process_accept(event, channel_accept)
             }
             ChannelStateMachine::Active => Ok(ChannelStateMachine::Active), // TODO
+            // This is when we were launched by lnpd with a aim of re-establishing channel;
+            // the state is valid _before_ we receive channel_reestablish from the peer.
             ChannelStateMachine::Reestablishing => todo!(),
             ChannelStateMachine::Closing => todo!(),
             ChannelStateMachine::Abort => todo!(),
@@ -253,9 +255,11 @@ impl Runtime {
             BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
                 ChannelPropose::with(self, endpoints, open_channel_with)?.into()
             }
-            BusMsg::Ln(LnMsg::ChannelReestablish(_)) => {
-                // TODO: Initialize reestablishing state machine
-                ChannelStateMachine::Reestablishing
+            BusMsg::Ln(LnMsg::ChannelReestablish(remote_channel_reestablish)) => {
+                let local_channel_reestablish =
+                    self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
+                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
+                ChannelStateMachine::Active
             }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))

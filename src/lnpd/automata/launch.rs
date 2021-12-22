@@ -91,7 +91,7 @@ impl From<Error> for Failure {
 ///             V
 ///           DONE
 /// ```
-#[derive(Debug, Display)]
+#[derive(Clone, PartialEq, Eq, Debug, Display, StrictEncode, StrictDecode)]
 pub enum ChannelLauncher {
     /// Awaiting for channeld to come online and report back to lnpd + for signd to derive keyset
     /// in parallel.
