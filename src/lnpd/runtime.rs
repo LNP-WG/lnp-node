@@ -330,6 +330,7 @@ impl Runtime {
         Ok(())
     }
 
+    // TODO: Replace with `impl Responder for Runtime`
     #[inline]
     pub(crate) fn send_rpc(
         &self,

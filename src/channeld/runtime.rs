@@ -20,6 +20,7 @@ use amplify::{DumbDefault, Wrapper};
 use internet2::NodeAddr;
 use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use lnp::{bolt, Extension};
+use lnp_rpc::{ChannelInfo, RpcMsg};
 use microservices::esb::{self, Handler};
 use strict_encoding::{StrictDecode, StrictEncode};
 
@@ -27,7 +28,7 @@ use super::storage::{self, Driver};
 use super::ChannelState;
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{ClientId, ServiceId};
-use crate::{channeld, Config, CtlServer, Endpoints, Error, Service};
+use crate::{channeld, Config, Endpoints, Error, Responder, Service};
 
 pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {
     // TODO: use node configuration to provide custom policy & parameters
@@ -86,7 +87,7 @@ pub struct Runtime {
     storage: Box<dyn storage::Driver>,
 }
 
-impl CtlServer for Runtime {
+impl Responder for Runtime {
     #[inline]
     fn enquirer(&self) -> Option<ClientId> { self.enquirer.clone() }
 }
@@ -112,7 +113,12 @@ impl esb::Handler<ServiceBus> for Runtime {
                 unreachable!("channeld received peer message not from a peerd but from {}", service)
             }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
-            (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
+            (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
+                self.handle_rpc(endpoints, client_id, msg)
+            }
+            (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
+                unreachable!("lnpd received RPC message not from a client but from {}", service)
+            }
             (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
@@ -213,7 +219,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         // RPC control requests are sent by either clients or lnpd daemon and used to initiate one
         // of channel workflows and to request information about the channel state.
-        match request.clone() {
+        match request {
             // Proposing remote peer to open a channel
             CtlMsg::OpenChannelWith(ref open_channel_with) => {
                 let remote_peer = open_channel_with.remote_peer.clone();
@@ -242,14 +248,39 @@ impl Runtime {
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
-            _ => {
+            wrong_request => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
+                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_request));
             }
         }
         Ok(())
     }
 
+    fn handle_rpc(
+        &mut self,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        request: RpcMsg,
+    ) -> Result<(), Error> {
+        match request {
+            RpcMsg::GetInfo => {
+                let mut state = bolt::ChannelState::dumb_default();
+                self.state.channel.store_state(&mut state);
+                let channel_info =
+                    ChannelInfo { state, remote_peer: self.state.remote_peer.clone() };
+                self.send_rpc(endpoints, client_id, channel_info)?;
+            }
+            RpcMsg::Transfer(_) => todo!("payments are not yet implemented"),
+            wrong_request => {
+                error!("Request is not supported by the RPC interface");
+                return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_request));
+            }
+        }
+
+        Ok(())
+    }
+
+    // TODO: Use storage drivers
     pub fn save_state(&mut self) -> Result<(), strict_encoding::Error> {
         self.file.seek(io::SeekFrom::Start(0))?;
         self.state.strict_encode(&self.file)?;

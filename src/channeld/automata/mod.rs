@@ -30,7 +30,7 @@ use crate::bus::{BusMsg, CtlMsg};
 use crate::channeld::runtime::Runtime;
 use crate::rpc::{Failure, ServiceId};
 use crate::service::LogStyle;
-use crate::{CtlServer, Endpoints};
+use crate::{Endpoints, Responder};
 
 /// Errors for channel proposal workflow
 #[derive(Clone, Debug, Display, From, Error)]

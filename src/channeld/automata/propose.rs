@@ -26,7 +26,7 @@ use crate::channeld::automata;
 use crate::channeld::runtime::Runtime;
 use crate::rpc::ServiceId;
 use crate::service::LogStyle;
-use crate::{CtlServer, Endpoints};
+use crate::{Endpoints, Responder};
 
 /// Channel proposal workflow
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]

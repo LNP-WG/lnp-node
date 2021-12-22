@@ -18,11 +18,11 @@ use std::iter::FromIterator;
 use std::time::Duration;
 
 use amplify::{ToYamlString, Wrapper};
-use bitcoin::{secp256k1, Address, OutPoint};
+use bitcoin::{secp256k1, Address};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
-use lnp::bolt::{self, AssetsBalance, CommonParams, Lifecycle, PeerParams};
-use lnp::p2p::legacy::{ChannelId, ChannelType, TempChannelId};
+use lnp::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
+use lnp::p2p::legacy::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
 use microservices::rpc_connection;
 #[cfg(feature = "serde")]
@@ -102,21 +102,27 @@ pub enum RpcMsg {
     Failure(Failure),
 
     #[display("node_info({0})", alt = "{0:#}")]
+    #[from]
     NodeInfo(NodeInfo),
 
     #[display("node_info({0})", alt = "{0:#}")]
+    #[from]
     PeerInfo(PeerInfo),
 
     #[display("channel_info({0})", alt = "{0:#}")]
+    #[from]
     ChannelInfo(ChannelInfo),
 
     #[display("peer_list({0})", alt = "{0:#}")]
+    #[from]
     PeerList(List<NodeAddr>),
 
     #[display("channel_list({0})", alt = "{0:#}")]
+    #[from]
     ChannelList(List<ChannelId>),
 
     #[display("funds_info({0})", alt = "{0:#}")]
+    #[from]
     FundsInfo(FundsInfo),
 }
 
@@ -253,42 +259,13 @@ pub struct PeerInfo {
 
 pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
 
-//#[serde_as]
 #[cfg_attr(feature = "serde", serde_as)]
-#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[derive(Clone, Debug, Display, NetworkEncode, NetworkDecode)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
-    #[serde_as(as = "Option<DisplayFromStr>")]
-    pub channel_id: Option<ChannelId>,
-    #[serde_as(as = "DisplayFromStr")]
-    pub temporary_channel_id: TempChannelId,
-    pub state: Lifecycle,
-    pub local_capacity: u64,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_capacities: RemotePeerMap<u64>,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub assets: Vec<AssetId>,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub local_balances: AssetsBalance,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, BTreeMap<DisplayFromStr, Same>>")]
-    pub remote_balances: RemotePeerMap<AssetsBalance>,
-    pub funding_outpoint: OutPoint,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub remote_peers: Vec<NodeAddr>,
-    #[serde_as(as = "DurationSeconds")]
-    pub uptime: Duration,
-    pub since: u64,
-    pub commitment_updates: u64,
-    pub total_payments: u64,
-    pub pending_payments: u16,
-    pub is_originator: bool,
-    pub common_params: bolt::CommonParams,
-    pub local_params: bolt::PeerParams,
-    pub remote_params: bolt::PeerParams,
-    pub local_keys: bolt::LocalKeyset,
-    #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub remote_keys: BTreeMap<NodeAddr, bolt::RemoteKeyset>,
+    pub state: ChannelState,
+    pub remote_peer: Option<NodeAddr>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

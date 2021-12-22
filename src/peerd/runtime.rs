@@ -34,7 +34,7 @@ use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 use super::RuntimeParams;
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{CtlServer, Endpoints, Error, LogStyle, Service};
+use crate::{Endpoints, Error, LogStyle, Responder, Service};
 
 pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
@@ -175,7 +175,7 @@ pub struct Runtime {
     awaited_pong: Option<u16>,
 }
 
-impl CtlServer for Runtime {}
+impl Responder for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;

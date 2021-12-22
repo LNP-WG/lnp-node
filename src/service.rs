@@ -42,7 +42,7 @@ where
 
     fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error<ServiceId>> {
         let router = if !broker { Some(ServiceId::router()) } else { None };
-        let mut services = map! {
+        let services = map! {
             ServiceBus::Msg => esb::BusConfig::with_locator(
                 config.msg_endpoint,
                 router.clone()
@@ -50,13 +50,9 @@ where
             ServiceBus::Ctl => esb::BusConfig::with_locator(
                 config.ctl_endpoint,
                 router.clone()
-            )
+            ),
+            ServiceBus::Rpc => esb::BusConfig::with_locator(config.rpc_endpoint, router)
         };
-        // Broker also listens to RPC requests from connecting clients
-        if broker {
-            services
-                .insert(ServiceBus::Rpc, esb::BusConfig::with_locator(config.rpc_endpoint, router));
-        }
         let esb = esb::Controller::with(
             services,
             runtime,
@@ -117,7 +113,7 @@ impl TryToServiceId for Option<ServiceId> {
     fn try_to_service_id(&self) -> Option<ServiceId> { self.clone() }
 }
 
-pub trait CtlServer
+pub trait Responder
 where
     Self: esb::Handler<ServiceBus>,
     esb::Error<ServiceId>: From<Self::Error>,
@@ -194,11 +190,26 @@ where
         }
         Ok(())
     }
+
+    #[inline]
+    fn send_rpc(
+        &self,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        message: impl Into<RpcMsg>,
+    ) -> Result<(), esb::Error<ServiceId>> {
+        endpoints.send_to(
+            ServiceBus::Rpc,
+            self.identity(),
+            ServiceId::Client(client_id),
+            BusMsg::Rpc(message.into()),
+        )
+    }
 }
 
 // TODO: Move to LNP/BP Services library
 use colored::Colorize;
-use lnp_rpc::ClientId;
+use lnp_rpc::{ClientId, RpcMsg};
 
 pub trait LogStyle: ToString {
     fn promo(&self) -> colored::ColoredString { self.to_string().bold().bright_blue() }
