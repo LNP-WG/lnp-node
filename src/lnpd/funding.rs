@@ -310,27 +310,22 @@ impl FundingWallet {
         // Do coin selection:
         let mut funds = self.list_funds()?;
         funds.sort_by_key(|f| f.amount);
-        let sources = funds
+
+        let mut acc = 0u64;
+        let sources: Vec<_> = funds
             .iter()
-            .find(|f| f.amount >= amount_and_fee)
-            .map(|elem| vec![elem])
-            .or_else(|| {
-                let mut acc = 0u64;
-                let selection: Vec<_> = funds
-                    .iter()
-                    .rev()
-                    .filter(|last| {
-                        acc += last.amount;
-                        acc < amount_and_fee
-                    })
-                    .collect();
+            .rev()
+            .take_while(|funding| {
                 if acc >= amount_and_fee {
-                    Some(selection)
-                } else {
-                    None
+                    return false;
                 }
+                acc += funding.amount;
+                true
             })
-            .ok_or(Error::InsufficientFunds)?;
+            .collect();
+        if acc < amount_and_fee {
+            return Err(Error::InsufficientFunds);
+        }
 
         let inputs = sources
             .into_iter()
