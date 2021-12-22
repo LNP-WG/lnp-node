@@ -17,16 +17,16 @@ use std::sync::Arc;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
 
-use amplify::{Bipolar, Wrapper};
+use amplify::Bipolar;
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
 use lnp::p2p::legacy::{
-    ActiveChannelId, ChannelId, FundingCreated, FundingLocked, FundingSigned, Init,
-    Messages as LnMsg, Ping, UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc,
-    UpdateFulfillHtlc,
+    ActiveChannelId, FundingCreated, FundingLocked, FundingSigned, Init, Messages as LnMsg, Ping,
+    UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
 };
+use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
@@ -177,6 +177,7 @@ pub struct Runtime {
 
 impl Responder for Runtime {}
 
+// TODO: Move most of these methods into `Responder` trait
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
@@ -210,7 +211,12 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
-            (ServiceBus::Rpc, ..) => unreachable!("peer daemon must not bind to RPC interface"),
+            (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
+                self.handle_rpc(endpoints, client_id, msg)
+            }
+            (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
+                unreachable!("lnpd received RPC message not from a client but from {}", service)
+            }
             (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
@@ -248,35 +254,6 @@ impl Runtime {
         request: CtlMsg,
     ) -> Result<(), Error> {
         match request {
-            CtlMsg::GetInfo => {
-                let info = PeerInfo {
-                    local_id: self.local_id,
-                    remote_id: self.remote_id.map(|id| vec![id]).unwrap_or_default(),
-                    local_socket: self.local_socket,
-                    remote_socket: vec![self.remote_socket],
-                    uptime: SystemTime::now()
-                        .duration_since(self.started)
-                        .unwrap_or(Duration::from_secs(0)),
-                    since: self
-                        .started
-                        .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or(Duration::from_secs(0))
-                        .as_secs(),
-                    messages_sent: self.messages_sent,
-                    messages_received: self.messages_received,
-                    channels: self
-                        .channels
-                        .iter()
-                        .copied()
-                        .map(ActiveChannelId::as_slice32)
-                        .map(ChannelId::from_inner)
-                        .collect(),
-                    connected: !self.connect,
-                    awaits_pong: self.awaited_pong.is_some(),
-                };
-                self.send_ctl(endpoints, source, CtlMsg::PeerInfo(info))?;
-            }
-
             _ => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
@@ -360,6 +337,50 @@ impl Runtime {
                 return Err(Error::wrong_esb_msg(ServiceBus::Bridge, wrong_msg))?;
             }
         }
+        Ok(())
+    }
+
+    fn handle_rpc(
+        &mut self,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        message: RpcMsg,
+    ) -> Result<(), Error> {
+        match message {
+            RpcMsg::GetInfo => {
+                let peer_info = PeerInfo {
+                    local_id: self.local_id,
+                    remote_id: self.remote_id.map(|id| vec![id]).unwrap_or_default(),
+                    local_socket: self.local_socket,
+                    remote_socket: vec![self.remote_socket],
+                    uptime: SystemTime::now()
+                        .duration_since(self.started)
+                        .unwrap_or(Duration::from_secs(0)),
+                    since: self
+                        .started
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap_or(Duration::from_secs(0))
+                        .as_secs(),
+                    messages_sent: self.messages_sent,
+                    messages_received: self.messages_received,
+                    channels: self
+                        .channels
+                        .iter()
+                        .copied()
+                        .map(ActiveChannelId::as_slice32)
+                        .collect(),
+                    connected: !self.connect,
+                    awaits_pong: self.awaited_pong.is_some(),
+                };
+                self.send_rpc(endpoints, client_id, peer_info)?;
+            }
+
+            wrong_msg => {
+                error!("Request is not supported by the RPC interface");
+                return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_msg));
+            }
+        }
+
         Ok(())
     }
 

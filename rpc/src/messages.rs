@@ -17,7 +17,7 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::iter::FromIterator;
 use std::time::Duration;
 
-use amplify::{ToYamlString, Wrapper};
+use amplify::{Slice32, ToYamlString, Wrapper};
 use bitcoin::{secp256k1, Address};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
@@ -252,7 +252,7 @@ pub struct PeerInfo {
     pub messages_sent: usize,
     pub messages_received: usize,
     #[serde_as(as = "HashSet<DisplayFromStr>")]
-    pub channels: HashSet<ChannelId>,
+    pub channels: HashSet<Slice32>,
     pub connected: bool,
     pub awaits_pong: bool,
 }
