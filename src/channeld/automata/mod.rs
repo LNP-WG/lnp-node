@@ -219,11 +219,7 @@ impl Runtime {
             }
         };
         if updated_state {
-            self.state.strict_encode(&self.file)?;
-            self.file
-                .sync_all()
-                .map_err(strict_encoding::Error::from)
-                .map_err(Error::Persistence)?;
+            self.save_state()?;
             info!(
                 "ChannelStateMachine {} switched to {} state",
                 self.state.channel.active_channel_id(),

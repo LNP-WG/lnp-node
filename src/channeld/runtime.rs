@@ -12,12 +12,14 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::fs;
+use std::io::Seek;
 use std::time::SystemTime;
+use std::{fs, io};
 
-use amplify::Wrapper;
+use amplify::{DumbDefault, Wrapper};
 use internet2::NodeAddr;
 use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages as LnMsg};
+use lnp::{bolt, Extension};
 use microservices::esb::{self, Handler};
 use strict_encoding::{StrictDecode, StrictEncode};
 
@@ -33,8 +35,15 @@ pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {
     // check and read channel file
     let channel_file = config.channel_file(channel_id);
     let (state, file) = if let Ok(file) = fs::File::open(&channel_file) {
-        (ChannelState::strict_decode(&file).map_err(Error::Persistence)?, file)
+        debug!("Restoring channel state from {}", channel_file.display());
+        let state = ChannelState::strict_decode(&file).map_err(Error::Persistence)?;
+        info!("Channel state is restored from persistent storage");
+        let mut inner_state = bolt::ChannelState::dumb_default();
+        state.channel.store_state(&mut inner_state);
+        trace!("Restored state: {}", inner_state);
+        (state, file)
     } else if let Some(temp_channel_id) = channel_id.temp_channel_id() {
+        debug!("Establishing channel de novo");
         let state = ChannelState::with(temp_channel_id, &config.chain);
         fs::create_dir_all(config.channel_dir())?;
         let file = fs::File::create(channel_file)?;
@@ -131,7 +140,7 @@ impl Runtime {
         self.file.sync_all()?;
         let file_name = self.config.channel_file(ActiveChannelId::Static(channel_id));
         self.file = fs::File::create(file_name)?;
-        self.state.strict_encode(&self.file).map_err(Error::Persistence)?;
+        self.save_state().map_err(Error::Persistence)?;
 
         let identity = ServiceId::Channel(channel_id);
         endpoints.set_identity(ServiceBus::Ctl, identity.clone())?;
@@ -238,6 +247,13 @@ impl Runtime {
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
             }
         }
+        Ok(())
+    }
+
+    pub fn save_state(&mut self) -> Result<(), strict_encoding::Error> {
+        self.file.seek(io::SeekFrom::Start(0))?;
+        self.state.strict_encode(&self.file)?;
+        self.file.sync_all().map_err(strict_encoding::Error::from)?;
         Ok(())
     }
 }
