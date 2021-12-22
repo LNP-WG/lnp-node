@@ -35,7 +35,7 @@ pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {
 
     // check and read channel file
     let channel_file = config.channel_file(channel_id);
-    let (state, file) = if let Ok(file) = fs::File::open(&channel_file) {
+    let (state, file) = if let Ok(file) = fs::OpenOptions::new().write(true).open(&channel_file) {
         debug!("Restoring channel state from {}", channel_file.display());
         let state = ChannelState::strict_decode(&file).map_err(Error::Persistence)?;
         info!("Channel state is restored from persistent storage");
