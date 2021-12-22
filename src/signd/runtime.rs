@@ -156,7 +156,8 @@ where
                         self.provider.secp_context(),
                         (account.account_fingerprint(), DerivationPath::from(path.as_ref())),
                         channel_xpriv,
-                        false,
+                        // TODO: Use a key from a funding wallet
+                        None,
                     );
 
                     endpoints.send_to(
