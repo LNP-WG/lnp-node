@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use internet2::ZmqSocketAddr;
+use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 
 #[cfg(feature = "server")]
@@ -59,6 +60,21 @@ fn default_electrum_port(chain: &Chain) -> u16 {
         Chain::LiquidV1 => 50501,
         Chain::Other(_) => 60001,
         _ => 60001,
+    }
+}
+
+impl Config {
+    pub fn channel_dir(&self) -> PathBuf {
+        let mut channel_dir = self.data_dir.clone();
+        channel_dir.push("channels");
+        channel_dir
+    }
+
+    pub fn channel_file(&self, channel_id: ChannelId) -> PathBuf {
+        let mut channel_file = self.channel_dir();
+        channel_file.set_file_name(channel_id.to_string());
+        channel_file.set_extension("channel");
+        channel_file
     }
 }
 

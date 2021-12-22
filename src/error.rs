@@ -58,6 +58,9 @@ pub enum Error {
     #[from]
     ChannelLaunch(launch::Error),
 
+    /// failing to restore channel state. Details: {0}
+    Persistence(strict_encoding::Error),
+
     /// encoding failure
     ///
     /// Details: {0}

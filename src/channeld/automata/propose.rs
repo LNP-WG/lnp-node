@@ -263,9 +263,9 @@ fn complete_signing(
         signature,
     };
 
-    let new_id = ServiceId::Channel(ChannelId::with(funding_txid, funding_output_index));
-    debug!("Changing channeld identifier from {} to {}", runtime.identity(), new_id);
-    runtime.set_identity(&mut event.endpoints, new_id).expect("unrecoverable ZMQ failure");
+    let channel_id = ChannelId::with(funding_txid, funding_output_index);
+    debug!("Changing channel id from {} to {}", runtime.identity(), channel_id);
+    runtime.set_identity(&mut event.endpoints, channel_id).expect("unrecoverable ZMQ failure");
     // needed to update ESB routing map
     runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::Hello)?;
 

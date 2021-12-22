@@ -12,11 +12,13 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::fs;
 use std::time::SystemTime;
 
 use internet2::NodeAddr;
-use lnp::p2p::legacy::{Messages as LnMsg, TempChannelId};
+use lnp::p2p::legacy::{ChannelId, Messages as LnMsg};
 use microservices::esb::{self, Handler};
+use strict_encoding::{StrictDecode, StrictEncode};
 
 use super::storage::{self, Driver};
 use super::ChannelState;
@@ -24,16 +26,29 @@ use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{ClientId, ServiceId};
 use crate::{Config, CtlServer, Endpoints, Error, Service};
 
-pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> {
+pub fn run(config: Config, channel_id: ChannelId) -> Result<(), Error> {
     // TODO: use node configuration to provide custom policy & parameters
 
+    // check and read channel file
+    let channel_file = config.channel_file(channel_id);
+    let (state, file) = if let Ok(file) = fs::File::open(&channel_file) {
+        (ChannelState::strict_decode(&file).map_err(Error::Persistence)?, file)
+    } else {
+        let state = ChannelState::with(channel_id.into(), &config.chain);
+        fs::create_dir_all(config.channel_dir())?;
+        let file = fs::File::create(channel_file)?;
+        (state, file)
+    };
+
     let runtime = Runtime {
-        identity: ServiceId::Channel(temp_channel_id.into()),
-        state: ChannelState::with(temp_channel_id, &config.chain),
+        identity: ServiceId::Channel(channel_id),
+        config: config.clone(),
+        state,
+        file,
         started: SystemTime::now(),
         enquirer: None,
         storage: Box::new(storage::DiskDriver::init(
-            temp_channel_id.into(),
+            channel_id.into(),
             Box::new(storage::DiskConfig { path: Default::default() }),
         )?),
     };
@@ -43,7 +58,9 @@ pub fn run(config: Config, temp_channel_id: TempChannelId) -> Result<(), Error> 
 
 pub struct Runtime {
     identity: ServiceId,
+    config: Config,
     pub(super) state: ChannelState,
+    pub(super) file: fs::File,
     started: SystemTime,
     /// Client which is made an equiry starting the current workflow run by the active state
     /// machine. It is not a part of the state of the machine since it should not persist.
@@ -98,11 +115,22 @@ impl Runtime {
     pub(super) fn set_identity(
         &mut self,
         endpoints: &mut Endpoints,
-        identity: ServiceId,
+        channel_id: ChannelId,
     ) -> Result<(), Error> {
+        let prev_id = self.state.channel.active_channel_id().as_slice32();
+
+        self.file.sync_all()?;
+        let file_name = self.config.channel_file(channel_id);
+        self.file = fs::File::create(file_name)?;
+        self.state.strict_encode(&self.file).map_err(Error::Persistence)?;
+
+        let identity = ServiceId::Channel(channel_id);
         endpoints.set_identity(ServiceBus::Ctl, identity.clone())?;
         endpoints.set_identity(ServiceBus::Msg, identity.clone())?;
         self.identity = identity;
+
+        fs::remove_file(self.config.channel_file(prev_id.into()))?;
+
         Ok(())
     }
 

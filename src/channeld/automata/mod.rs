@@ -21,6 +21,7 @@ use lnp::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
+use strict_encoding::StrictEncode;
 
 use self::accept::ChannelAccept;
 use self::propose::ChannelPropose;
@@ -55,6 +56,10 @@ pub enum Error {
 
     /// sign daemon produced invalid signature. {0}
     InvalidSig(secp256k1::Error),
+
+    /// failing to save channel state. Details: {0}
+    #[from]
+    Persistence(strict_encoding::Error),
 }
 
 impl Error {
@@ -72,6 +77,7 @@ impl Error {
             Error::InvalidState { .. } => 4001,
             Error::FundingPsbtUnsigned(_) => 5001,
             Error::InvalidSig(_) => 5002,
+            Error::Persistence(_) => 6000,
         }
     }
 }
@@ -209,6 +215,11 @@ impl Runtime {
             }
         };
         if updated_state {
+            self.state.strict_encode(&self.file)?;
+            self.file
+                .sync_all()
+                .map_err(strict_encoding::Error::from)
+                .map_err(Error::Persistence)?;
             info!(
                 "ChannelStateMachine {} switched to {} state",
                 self.state.channel.active_channel_id(),
