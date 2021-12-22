@@ -23,8 +23,9 @@ use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
 use lnp::p2p::legacy::{
-    ActiveChannelId, FundingCreated, FundingLocked, FundingSigned, Init, Messages as LnMsg, Ping,
-    UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc, UpdateFulfillHtlc,
+    ActiveChannelId, ChannelId, FundingCreated, FundingLocked, FundingSigned, Init,
+    Messages as LnMsg, Ping, UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc,
+    UpdateFulfillHtlc,
 };
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
@@ -243,14 +244,41 @@ impl Runtime {
         debug!("Sending remote peer {}", message);
         trace!("{:#?}", message);
         self.messages_sent += 1;
-        self.sender.send_message(message)?;
+        self.sender.send_message(message.clone())?;
+
+        match message {
+            LnMsg::OpenChannel(open_channel) => {
+                self.channels.insert(ActiveChannelId::Temporary(open_channel.temporary_channel_id));
+            }
+            LnMsg::AcceptChannel(accept_channel) => {
+                self.channels
+                    .insert(ActiveChannelId::Temporary(accept_channel.temporary_channel_id));
+            }
+            LnMsg::FundingCreated(funding_created) => {
+                self.channels
+                    .remove(&ActiveChannelId::Temporary(funding_created.temporary_channel_id));
+                self.channels.insert(ActiveChannelId::Static(ChannelId::with(
+                    funding_created.funding_txid,
+                    funding_created.funding_output_index,
+                )));
+            }
+            LnMsg::FundingSigned(_) => {
+                // We ingore this message since we rename the channel upon receiving of
+                // `FundingCreated`
+            }
+            LnMsg::ChannelReestablish(channel_reestablish) => {
+                self.channels.insert(ActiveChannelId::Static(channel_reestablish.channel_id));
+            }
+            _ => {} // Do nothing here
+        }
+
         Ok(())
     }
 
     fn handle_ctl(
         &mut self,
-        endpoints: &mut Endpoints,
-        source: ServiceId,
+        _endpoints: &mut Endpoints,
+        _source: ServiceId,
         request: CtlMsg,
     ) -> Result<(), Error> {
         match request {
@@ -259,7 +287,6 @@ impl Runtime {
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
             }
         }
-        Ok(())
     }
 
     fn handle_bridge(&mut self, endpoints: &mut Endpoints, request: BusMsg) -> Result<(), Error> {
@@ -303,13 +330,23 @@ impl Runtime {
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            BusMsg::Ln(LnMsg::FundingCreated(FundingCreated { temporary_channel_id, .. })) => {
+            BusMsg::Ln(LnMsg::FundingCreated(FundingCreated {
+                temporary_channel_id,
+                funding_txid,
+                funding_output_index,
+                ..
+            })) => {
+                let temp_channel_id = ActiveChannelId::Temporary(*temporary_channel_id);
+                let channel_id =
+                    ActiveChannelId::Static(ChannelId::with(*funding_txid, *funding_output_index));
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     temporary_channel_id.clone().into(),
                     request,
                 )?;
+                self.channels.remove(&temp_channel_id);
+                self.channels.insert(channel_id);
             }
 
             BusMsg::Ln(LnMsg::FundingSigned(FundingSigned { channel_id, .. }))
