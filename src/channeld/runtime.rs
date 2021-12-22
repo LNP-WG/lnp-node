@@ -35,28 +35,29 @@ pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {
 
     // check and read channel file
     let channel_file = config.channel_file(channel_id);
-    let (state, file) = if let Ok(file) = fs::OpenOptions::new().write(true).open(&channel_file) {
-        debug!("Restoring channel state from {}", channel_file.display());
-        let state = ChannelState::strict_decode(&file).map_err(Error::Persistence)?;
-        info!("Channel state is restored from persistent storage");
-        let mut inner_state = bolt::ChannelState::dumb_default();
-        state.channel.store_state(&mut inner_state);
-        trace!("Restored state: {}", inner_state);
-        (state, file)
-    } else if let Some(temp_channel_id) = channel_id.temp_channel_id() {
-        debug!("Establishing channel de novo");
-        let state = ChannelState::with(temp_channel_id, &config.chain);
-        fs::create_dir_all(config.channel_dir())?;
-        let file = fs::File::create(channel_file)?;
-        (state, file)
-    } else {
-        error!(
-            "Requested to re-establish channel {}, but its state has not persisted on disk. You \
-             may compose a channel",
-            channel_id
-        );
-        return Err(Error::Channel(channeld::Error::NoPersistantData));
-    };
+    let (state, file) =
+        if let Ok(file) = fs::OpenOptions::new().read(true).write(true).open(&channel_file) {
+            debug!("Restoring channel state from {}", channel_file.display());
+            let state = ChannelState::strict_decode(&file).map_err(Error::Persistence)?;
+            info!("Channel state is restored from persistent storage");
+            let mut inner_state = bolt::ChannelState::dumb_default();
+            state.channel.store_state(&mut inner_state);
+            trace!("Restored state: {}", inner_state);
+            (state, file)
+        } else if let Some(temp_channel_id) = channel_id.temp_channel_id() {
+            debug!("Establishing channel de novo");
+            let state = ChannelState::with(temp_channel_id, &config.chain);
+            fs::create_dir_all(config.channel_dir())?;
+            let file = fs::File::create(channel_file)?;
+            (state, file)
+        } else {
+            error!(
+                "Requested to re-establish channel {}, but its state has not persisted on disk. \
+                 You may compose a channel",
+                channel_id
+            );
+            return Err(Error::Channel(channeld::Error::NoPersistantData));
+        };
 
     let channel_id = ChannelId::from_inner(channel_id.as_slice32());
     let runtime = Runtime {
