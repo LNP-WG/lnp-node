@@ -21,7 +21,7 @@ use amplify::{DumbDefault, Wrapper};
 use bitcoin::{secp256k1, Txid};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
-use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
+use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
@@ -110,7 +110,9 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");

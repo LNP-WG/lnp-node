@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use bitcoin::secp256k1::Signature;
-use lnp::bolt::Lifecycle;
+use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
 use microservices::esb::Handler;

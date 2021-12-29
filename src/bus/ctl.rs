@@ -16,7 +16,7 @@ use amplify::Slice32;
 use bitcoin::Txid;
 use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::NodeAddr;
-use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
+use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::OpenChannel;
 use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use psbt::Psbt;

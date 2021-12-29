@@ -17,7 +17,7 @@ use std::fs;
 use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::{ChildNumber, DerivationPath};
-use lnp::bolt::LocalKeyset;
+use lnp::channel::bolt::LocalKeyset;
 use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
@@ -75,7 +75,9 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn handle(
         &mut self,

@@ -24,7 +24,7 @@ use bitcoin::{secp256k1, Address};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lightning_invoice::Invoice;
-use lnp::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
+use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
 use lnp::p2p::legacy::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
 use microservices::rpc_connection;

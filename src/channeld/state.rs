@@ -15,9 +15,9 @@
 use amplify::{DumbDefault, Slice32};
 use bitcoin::hashes::Hash;
 use internet2::NodeAddr;
-use lnp::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
+use lnp::channel::bolt::{BoltExt, CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::TempChannelId;
-use lnp::{bolt, Channel};
+use lnp::Channel;
 use lnpbp::chain::Chain;
 
 use super::automata::ChannelStateMachine;
@@ -30,7 +30,7 @@ pub(super) struct ChannelState {
     pub state_machine: ChannelStateMachine,
 
     /// Standard part of the channel state (defined in BOLTs)
-    pub channel: Channel<bolt::ExtensionId>,
+    pub channel: Channel<BoltExt>,
 
     /// Runtime-specific (but persistable) part of the channel state: remote peer which is a
     /// counterparty of this channel.

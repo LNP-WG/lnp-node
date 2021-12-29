@@ -18,8 +18,9 @@ use std::{fs, io};
 
 use amplify::{DumbDefault, Wrapper};
 use internet2::NodeAddr;
+use lnp::channel::bolt;
 use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages as LnMsg};
-use lnp::{bolt, Extension};
+use lnp::Extension;
 use lnp_rpc::{ChannelInfo, RpcMsg};
 use microservices::esb::{self, Handler};
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -90,14 +91,18 @@ pub struct Runtime {
 
 impl Responder for Runtime {
     #[inline]
-    fn enquirer(&self) -> Option<ClientId> { self.enquirer.clone() }
+    fn enquirer(&self) -> Option<ClientId> {
+        self.enquirer.clone()
+    }
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn handle(
         &mut self,

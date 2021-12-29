@@ -30,8 +30,8 @@ use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
 use descriptors::locks::{LockTime, SeqNo};
 use descriptors::InputDescriptor;
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
+use lnp::channel::PsbtLnpFunding;
 use lnp::p2p::legacy::TempChannelId;
-use lnp::PsbtLnpFunding;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
 use psbt::construct::Construct;
@@ -218,13 +218,19 @@ impl FundingWallet {
     }
 
     #[inline]
-    pub fn network(&self) -> Network { self.network }
+    pub fn network(&self) -> Network {
+        self.network
+    }
 
     #[inline]
-    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> { &self.wallet_data.descriptor }
+    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> {
+        &self.wallet_data.descriptor
+    }
 
     #[inline]
-    pub fn feerate_per_kw(&self) -> u32 { self.feerate_per_kw }
+    pub fn feerate_per_kw(&self) -> u32 {
+        self.feerate_per_kw
+    }
 
     /// Scans blockchain for available funds.
     /// Updates last derivation index basing on the scanned information.
@@ -288,10 +294,11 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = DescriptorDerive::address(&self.wallet_data.descriptor, &self.secp, &[
-            UnhardenedIndex::zero(),
-            self.wallet_data.last_normal_index,
-        ])?;
+        let address = DescriptorDerive::address(
+            &self.wallet_data.descriptor,
+            &self.secp,
+            &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
+        )?;
         Ok(address)
     }
 
@@ -401,12 +408,15 @@ impl FundingWallet {
         };
 
         let txid = psbt.global.unsigned_tx.txid();
-        self.wallet_data.pending_fundings.insert(txid, PendingFunding {
-            temp_channel_id,
-            funding_txid: txid,
-            prev_outpoints: inputs.iter().map(|inp| inp.outpoint).collect(),
-            psbt: psbt.clone(),
-        });
+        self.wallet_data.pending_fundings.insert(
+            txid,
+            PendingFunding {
+                temp_channel_id,
+                funding_txid: txid,
+                prev_outpoints: inputs.iter().map(|inp| inp.outpoint).collect(),
+                psbt: psbt.clone(),
+            },
+        );
 
         Ok(psbt)
     }

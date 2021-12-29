@@ -12,7 +12,7 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnp::bolt::Lifecycle;
+use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, Messages};
 use lnp::Extension;
 
@@ -123,4 +123,6 @@ fn finish_funded(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<Channe
     todo!()
 }
 
-fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> {
+    todo!()
+}
