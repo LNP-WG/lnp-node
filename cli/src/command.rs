@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr, ToRemoteNodeAddr};
 use lnp::p2p::legacy::{ChannelId, LNP2P_LEGACY_PORT};
-use lnp_rpc::{self, Client, CreateChannel, Error, RpcMsg, ServiceId};
+use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
 use crate::opts::Command;
@@ -126,8 +126,15 @@ impl Exec for Command {
                 )?;
                 runtime.report_progress()?;
             }
+            Command::Invoice { .. } => todo!("Implement invoice generation"),
 
-            _ => todo!(),
+            Command::Pay { invoice, channel: channel_id } => {
+                runtime.request(
+                    ServiceId::Router,
+                    RpcMsg::PayInvoice(PayInvoice { invoice, channel_id }),
+                )?;
+                runtime.report_progress()?;
+            }
         }
         Ok(())
     }

@@ -67,7 +67,7 @@ pub enum ServiceId {
     Watch,
 
     #[display("routed")]
-    Routing,
+    Router,
 
     #[display("peerd<{0}>")]
     #[from]

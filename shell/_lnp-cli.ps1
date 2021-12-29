@@ -36,7 +36,6 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('peers', 'peers', [CompletionResultType]::ParameterValue, 'Lists existing peer connections')
             [CompletionResult]::new('channels', 'channels', [CompletionResultType]::ParameterValue, 'Lists existing channels')
             [CompletionResult]::new('open', 'open', [CompletionResultType]::ParameterValue, 'Opens a new channel with a remote peer, which must be already connected')
-            [CompletionResult]::new('transfer', 'transfer', [CompletionResultType]::ParameterValue, 'Do an invoiceless direct payment')
             [CompletionResult]::new('invoice', 'invoice', [CompletionResultType]::ParameterValue, 'Create an invoice')
             [CompletionResult]::new('pay', 'pay', [CompletionResultType]::ParameterValue, 'Pay the invoice')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
@@ -122,15 +121,6 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--htlc-min-value', 'htlc-min-value', [CompletionResultType]::ParameterName, 'Indicates the smallest value of an HTLC this node will accept, in milli-satoshi')
             [CompletionResult]::new('--htlc-max-total-value', 'htlc-max-total-value', [CompletionResultType]::ParameterName, 'The maximum inbound HTLC value in flight towards this node, in milli-satoshi')
             [CompletionResult]::new('--channel-reserve', 'channel-reserve', [CompletionResultType]::ParameterName, 'The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis')
-            [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
-            [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
-            break
-        }
-        'lnp-cli;transfer' {
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')

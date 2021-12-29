@@ -17,6 +17,7 @@ name = "lnp-cli"
 amplify = "3.10.0"
 lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
 lnp_rpc = { version = "0.5.0", path = "../rpc" }
+lightning-invoice = "0.12.0" # TODO: Replace with own implementation
 internet2 = "0.5.12"
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false, features = ["cli"] }
 clap = { version = "=3.0.0-rc.7", features = ["derive"] }

@@ -271,7 +271,7 @@ impl Runtime {
                     ChannelInfo { state, remote_peer: self.state.remote_peer.clone() };
                 self.send_rpc(endpoints, client_id, channel_info)?;
             }
-            RpcMsg::Transfer(_) => todo!("payments are not yet implemented"),
+            RpcMsg::Send(_) => todo!("payments are not yet implemented"),
             wrong_request => {
                 error!("Request is not supported by the RPC interface");
                 return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_request));

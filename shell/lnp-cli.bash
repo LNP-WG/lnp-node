@@ -45,9 +45,6 @@ _lnp-cli() {
             ping)
                 cmd+="__ping"
                 ;;
-            transfer)
-                cmd+="__transfer"
-                ;;
             *)
                 ;;
         esac
@@ -55,7 +52,7 @@ _lnp-cli() {
 
     case "${cmd}" in
         lnp__cli)
-            opts="-h -V -c -v --help --version --connect --verbose listen connect ping info funds peers channels open transfer invoice pay help"
+            opts="-h -V -c -v --help --version --connect --verbose listen connect ping info funds peers channels open invoice pay help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -362,28 +359,6 @@ _lnp-cli() {
             ;;
         lnp__cli__ping)
             opts="-h -c -v --help --connect --verbose <PEER>"
-            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
-                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-                return 0
-            fi
-            case "${prev}" in
-                --connect)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                -c)
-                    COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                *)
-                    COMPREPLY=()
-                    ;;
-            esac
-            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-            return 0
-            ;;
-        lnp__cli__transfer)
-            opts="-h -c -v --help --connect --verbose <CHANNEL> <AMOUNT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

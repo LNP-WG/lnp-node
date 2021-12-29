@@ -14,13 +14,16 @@
 
 use std::collections::{BTreeMap, HashSet};
 use std::fmt::{self, Debug, Display, Formatter};
+use std::io;
 use std::iter::FromIterator;
+use std::str::FromStr;
 use std::time::Duration;
 
 use amplify::{Slice32, ToYamlString, Wrapper};
 use bitcoin::{secp256k1, Address};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
+use lightning_invoice::Invoice;
 use lnp::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
 use lnp::p2p::legacy::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
@@ -79,15 +82,14 @@ pub enum RpcMsg {
     #[display("create_channel({0})")]
     CreateChannel(CreateChannel),
 
-    // Can be issued from `cli` to a specific `peerd`
-    #[display("transfer({0})")]
-    Transfer(Transfer),
+    // Can be issued from a `cli` to `routed`
+    #[display("send({0})")]
+    Send(Send),
 
-    /* TODO: Activate after lightning-invoice library update
-    // Can be issued from `cli` to a specific `peerd`
+    // Can be issued from a `cli` to `routed`
     #[display("pay_invoice({0})")]
-    PayInvoice(Invoice),
-     */
+    PayInvoice(PayInvoice),
+
     // Responses to CLI
     // ----------------
     #[display("progress(\"{0}\")")]
@@ -211,9 +213,36 @@ impl CreateChannel {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[display("{invoice}, {channel_id}")]
+pub struct PayInvoice {
+    pub channel_id: ChannelId,
+    pub invoice: Invoice,
+}
+
+impl StrictEncode for PayInvoice {
+    fn strict_encode<E: io::Write>(&self, mut e: E) -> Result<usize, strict_encoding::Error> {
+        Ok(strict_encode_list!(e; self.channel_id, self.invoice.to_string()))
+    }
+}
+
+impl StrictDecode for PayInvoice {
+    fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, strict_encoding::Error> {
+        Ok(PayInvoice {
+            channel_id: ChannelId::strict_decode(&mut d)?,
+            invoice: Invoice::from_str(&String::strict_decode(d)?).map_err(|err| {
+                strict_encoding::Error::DataIntegrityError(format!(
+                    "invalid bech32 lightning invoice: {}",
+                    err
+                ))
+            })?,
+        })
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
 #[display("{amount} {asset:?} to {channeld}")]
-pub struct Transfer {
+pub struct Send {
     pub channeld: ServiceId,
     pub amount: u64,
     pub asset: Option<AssetId>,
@@ -362,25 +391,37 @@ impl Display for OptionDetails {
 }
 
 impl OptionDetails {
-    pub fn with(s: impl ToString) -> Self { Self(Some(s.to_string())) }
+    pub fn with(s: impl ToString) -> Self {
+        Self(Some(s.to_string()))
+    }
 
-    pub fn new() -> Self { Self(None) }
+    pub fn new() -> Self {
+        Self(None)
+    }
 }
 
 impl From<String> for OptionDetails {
-    fn from(s: String) -> Self { OptionDetails(Some(s)) }
+    fn from(s: String) -> Self {
+        OptionDetails(Some(s))
+    }
 }
 
 impl From<&str> for OptionDetails {
-    fn from(s: &str) -> Self { OptionDetails(Some(s.to_string())) }
+    fn from(s: &str) -> Self {
+        OptionDetails(Some(s.to_string()))
+    }
 }
 
 impl From<crate::Error> for RpcMsg {
-    fn from(err: crate::Error) -> Self { RpcMsg::Failure(Failure::from(&err)) }
+    fn from(err: crate::Error) -> Self {
+        RpcMsg::Failure(Failure::from(&err))
+    }
 }
 
 impl From<&str> for RpcMsg {
-    fn from(s: &str) -> Self { RpcMsg::Progress(s.to_owned()) }
+    fn from(s: &str) -> Self {
+        RpcMsg::Progress(s.to_owned())
+    }
 }
 
 impl<E: std::error::Error> From<&E> for Failure {

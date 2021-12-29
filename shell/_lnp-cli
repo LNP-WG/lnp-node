@@ -133,18 +133,6 @@ _arguments "${_arguments_options[@]}" \
 ':funding-sat -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
 && ret=0
 ;;
-(transfer)
-_arguments "${_arguments_options[@]}" \
-'-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'-h[Print help information]' \
-'--help[Print help information]' \
-'*-v[Set verbosity level]' \
-'*--verbose[Set verbosity level]' \
-':channel -- Channel to which the funding must be added:' \
-':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
-&& ret=0
-;;
 (invoice)
 _arguments "${_arguments_options[@]}" \
 '-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
@@ -193,7 +181,6 @@ _lnp-cli_commands() {
 'peers:Lists existing peer connections' \
 'channels:Lists existing channels' \
 'open:Opens a new channel with a remote peer, which must be already connected' \
-'transfer:Do an invoiceless direct payment' \
 'invoice:Create an invoice' \
 'pay:Pay the invoice' \
 'help:Print this message or the help of the given subcommand(s)' \
@@ -254,11 +241,6 @@ _lnp-cli__peers_commands() {
 _lnp-cli__ping_commands() {
     local commands; commands=()
     _describe -t commands 'lnp-cli ping commands' commands "$@"
-}
-(( $+functions[_lnp-cli__transfer_commands] )) ||
-_lnp-cli__transfer_commands() {
-    local commands; commands=()
-    _describe -t commands 'lnp-cli transfer commands' commands "$@"
 }
 
 _lnp-cli "$@"

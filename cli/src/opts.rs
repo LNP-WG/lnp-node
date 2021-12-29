@@ -16,6 +16,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 
 use internet2::{FramingProtocol, PartialNodeAddr};
+use lightning_invoice::Invoice;
 use lnp::p2p::legacy::{ChannelId, ChannelType};
 use lnp_rpc::LNP_NODE_RPC_SOCKET;
 
@@ -193,16 +194,6 @@ pub enum Command {
         channel_reserve: Option<u64>,
     },
 
-    /// Do an invoiceless direct payment
-    Transfer {
-        /// Channel to which the funding must be added
-        channel: ChannelId,
-
-        /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
-        /// unit type)
-        amount: u64,
-    },
-
     /// Create an invoice
     Invoice {
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
@@ -218,9 +209,7 @@ pub enum Command {
     Pay {
         /// Invoice bech32 string
         #[clap()]
-        // TODO: Replace with `Invoice` type once our fix will get merged:
-        //       <<https://github.com/rust-bitcoin/rust-lightning-invoice/pull/43>>
-        invoice: String,
+        invoice: Invoice,
 
         /// Channel from which the payment should happen
         #[clap()]
