@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnp::p2p::legacy::Messages as LnMsg;
+use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
@@ -20,7 +21,7 @@ use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime { identity: ServiceId::Routing };
+    let runtime = Runtime { identity: ServiceId::Router };
 
     Service::run(config, runtime, false)
 }
@@ -33,7 +34,9 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn handle(
         &mut self,
@@ -45,6 +48,12 @@ impl esb::Handler<ServiceBus> for Runtime {
         match (bus, message, source) {
             (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
+            (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
+                self.handle_rpc(endpoints, client_id, msg)
+            }
+            (ServiceBus::Rpc, BusMsg::Rpc(_), service) => {
+                unreachable!("lnpd received RPC message not from a client but from {}", service)
+            }
             (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
     }
@@ -73,6 +82,23 @@ impl Runtime {
                 // TODO: Process message
             }
         }
+        Ok(())
+    }
+    fn handle_rpc(
+        &mut self,
+        endpoints: &mut Endpoints,
+        client_id: ClientId,
+        message: RpcMsg,
+    ) -> Result<(), Error> {
+        match message {
+            RpcMsg::PayInvoice(pay_invoice) => {}
+
+            wrong_msg => {
+                error!("Request is not supported by the RPC interface");
+                return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_msg));
+            }
+        }
+
         Ok(())
     }
 
