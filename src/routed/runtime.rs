@@ -12,8 +12,11 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnp::p2p::legacy::Messages as LnMsg;
-use lnp_rpc::{ClientId, RpcMsg};
+use lnp::p2p::legacy::{ChannelId, Messages as LnMsg};
+use lnp::router::gossip::GossipExt;
+use lnp::router::Router;
+use lnp::Extension;
+use lnp_rpc::{ClientId, PayInvoice, RpcMsg};
 use microservices::esb;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
@@ -21,13 +24,17 @@ use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime { identity: ServiceId::Router };
+    let runtime = Runtime { identity: ServiceId::Router, router: Router::default() };
 
     Service::run(config, runtime, false)
 }
 
 pub struct Runtime {
     identity: ServiceId,
+
+    router: Router<GossipExt>,
+
+    enquirer: Option<ClientId>,
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
@@ -77,13 +84,9 @@ impl Runtime {
         _source: ServiceId,
         message: LnMsg,
     ) -> Result<(), Error> {
-        match message {
-            _ => {
-                // TODO: Process message
-            }
-        }
-        Ok(())
+        self.router.update_from_peer(&message).map_err(Error::from)
     }
+
     fn handle_rpc(
         &mut self,
         endpoints: &mut Endpoints,
@@ -91,7 +94,10 @@ impl Runtime {
         message: RpcMsg,
     ) -> Result<(), Error> {
         match message {
-            RpcMsg::PayInvoice(pay_invoice) => {}
+            RpcMsg::PayInvoice(PayInvoice { channel_id, invoice }) => {
+                self.enquirer = Some(client_id);
+                self.pay_invoice(channel_id, invoice)?
+            }
 
             wrong_msg => {
                 error!("Request is not supported by the RPC interface");
@@ -114,5 +120,12 @@ impl Runtime {
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_msg));
             }
         }
+    }
+
+    fn pay_invoice(&mut self, channel_id: ChannelId, invoice: Invoice) -> Result<(), Error> {
+        // TODO: Add private channel information from invoice to router (use dedicated PrivateRouter)
+        let route = self.router.compute_route(channel_id, invoice.into())?;
+
+        Ok(())
     }
 }

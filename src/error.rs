@@ -17,6 +17,7 @@ use std::io;
 use amplify::IoError;
 use bitcoin::util::bip32;
 use internet2::{presentation, transport};
+use lnp::router;
 use microservices::esb;
 use psbt::sign::SignError;
 
@@ -52,8 +53,12 @@ pub enum Error {
 
     /// channel operations failure: {0}
     #[from]
-    #[from(lnp::channel::Error)]
+    #[from(lnp::channel::bolt::Error)]
     Channel(channeld::Error),
+
+    /// router failure: {0}
+    #[from]
+    GossipRouter(router::gossip::Error),
 
     /// failed to bootstrap channel: {0}
     #[from]

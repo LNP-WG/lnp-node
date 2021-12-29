@@ -17,6 +17,7 @@ pub mod propose;
 
 use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
+use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::legacy::ActiveChannelId;
 use microservices::esb;
@@ -42,7 +43,7 @@ pub enum Error {
     /// generic LNP channel error
     #[from]
     #[display(inner)]
-    Channel(lnp::channel::Error),
+    Channel(lnp::channel::bolt::Error),
 
     /// error sending RPC request during state transition. Details: {0}
     #[from]
@@ -71,11 +72,11 @@ impl Error {
     pub fn errno(&self) -> u16 {
         match self {
             Error::UnexpectedMessage(_, _, _) => 1001,
-            Error::Channel(lnp::channel::Error::Extension(_)) => 2001,
-            Error::Channel(lnp::channel::Error::Htlc(_)) => 2002,
-            Error::Channel(lnp::channel::Error::Policy(_)) => 2003,
-            Error::Channel(lnp::channel::Error::LifecycleMismatch { .. }) => 2004,
-            Error::Channel(lnp::channel::Error::Funding(_)) => 2005,
+            Error::Channel(channel::bolt::Error::Extension(_)) => 2001,
+            Error::Channel(channel::bolt::Error::Htlc(_)) => 2002,
+            Error::Channel(channel::bolt::Error::Policy(_)) => 2003,
+            Error::Channel(channel::bolt::Error::LifecycleMismatch { .. }) => 2004,
+            Error::Channel(channel::bolt::Error::Funding(_)) => 2005,
             Error::Esb(_) => 3001,
             Error::InvalidState { .. } => 4001,
             Error::FundingPsbtUnsigned(_) => 5001,
