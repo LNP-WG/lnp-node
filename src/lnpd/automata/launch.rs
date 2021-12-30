@@ -32,7 +32,7 @@ use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding, Daemon, DaemonError};
 use crate::rpc::{ClientId, CreateChannel, Failure, OptionDetails, RpcMsg, ServiceId};
-use crate::Endpoints;
+use crate::{Endpoints, Responder};
 
 /// Errors for channel launching workflow
 #[derive(Debug, Display, From, Error)]

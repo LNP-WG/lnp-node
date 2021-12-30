@@ -128,10 +128,10 @@ impl Exec for Command {
             }
             Command::Invoice { .. } => todo!("Implement invoice generation"),
 
-            Command::Pay { invoice, channel: channel_id } => {
+            Command::Pay { invoice, channel: channel_id, amount_msat } => {
                 runtime.request(
                     ServiceId::Router,
-                    RpcMsg::PayInvoice(PayInvoice { invoice, channel_id }),
+                    RpcMsg::PayInvoice(PayInvoice { invoice, channel_id, amount_msat }),
                 )?;
                 runtime.report_progress()?;
             }

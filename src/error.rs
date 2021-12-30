@@ -25,6 +25,7 @@ use crate::bus::ServiceBus;
 use crate::channeld;
 use crate::lnpd::automata::launch;
 use crate::lnpd::{funding, Daemon, DaemonError};
+use crate::routed::PaymentError;
 use crate::rpc::{self, ServiceId};
 
 #[derive(Debug, Display, From, Error)]
@@ -63,6 +64,10 @@ pub enum Error {
     /// failed to bootstrap channel: {0}
     #[from]
     ChannelLaunch(launch::Error),
+
+    /// failed to perform the payment. Details: {0}
+    #[from]
+    Payment(PaymentError),
 
     /// failing to restore channel state. Details: {0}
     Persistence(strict_encoding::Error),

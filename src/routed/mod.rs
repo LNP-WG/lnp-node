@@ -19,3 +19,13 @@ mod runtime;
 #[cfg(feature = "server")]
 pub use opts::Opts;
 pub use runtime::run;
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Display, Error)]
+#[display(doc_comments)]
+pub enum PaymentError {
+    /// the invoice does not have amount specified; please add amount information
+    AmountUnknown,
+
+    /// there is no known route to the payee
+    RouteNotFound,
+}

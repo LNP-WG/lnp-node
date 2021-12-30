@@ -199,15 +199,10 @@ impl Runtime {
                 );
             }
 
-            LnMsg::ChannelReestablish(ref remote_channel_reestablish) => {
-                let local_channel_reestablish =
-                    self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
-                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
-
-                self.state.remote_peer = Some(remote_peer);
-            }
-
-            LnMsg::AcceptChannel(_) | LnMsg::FundingSigned(_) | LnMsg::FundingLocked(_) => {
+            LnMsg::ChannelReestablish(_)
+            | LnMsg::AcceptChannel(_)
+            | LnMsg::FundingSigned(_)
+            | LnMsg::FundingLocked(_) => {
                 self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Ln(message))?;
             }
 

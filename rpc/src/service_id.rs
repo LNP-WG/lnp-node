@@ -89,11 +89,20 @@ pub enum ServiceId {
 }
 
 impl ServiceId {
-    pub fn router() -> ServiceId { ServiceId::LnpBroker }
+    pub fn router() -> ServiceId {
+        ServiceId::LnpBroker
+    }
 
     pub fn client() -> ServiceId {
         use bitcoin::secp256k1::rand;
         ServiceId::Client(rand::random())
+    }
+
+    pub fn to_remote_peer(&self) -> Option<NodeAddr> {
+        match self {
+            ServiceId::Peer(node_addr) => Some(node_addr.clone()),
+            _ => None,
+        }
     }
 }
 

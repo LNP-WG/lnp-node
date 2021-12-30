@@ -14,6 +14,7 @@
 
 use amplify::{DumbDefault, Slice32};
 use bitcoin::hashes::Hash;
+use bitcoin::secp256k1::PublicKey;
 use internet2::NodeAddr;
 use lnp::channel::bolt::{BoltExt, CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::TempChannelId;
@@ -49,5 +50,13 @@ impl ChannelState {
             LocalKeyset::dumb_default(), // we do not have keyset derived at this stage
         );
         ChannelState { state_machine: Default::default(), channel, remote_peer: None }
+    }
+
+    pub fn remote_id(&self) -> PublicKey {
+        // TODO: Use proper remote address conversion
+        match self.remote_peer.as_ref().expect("remote peer must be present at this stage") {
+            NodeAddr::Local(_) => unreachable!(),
+            NodeAddr::Remote(remote_addr) => remote_addr.node_id,
+        }
     }
 }

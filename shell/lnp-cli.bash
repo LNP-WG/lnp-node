@@ -314,7 +314,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__pay)
-            opts="-h -c -v --help --connect --verbose <INVOICE> <CHANNEL>"
+            opts="-h -c -v --help --connect --verbose <INVOICE> <CHANNEL> <AMOUNT_MSAT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

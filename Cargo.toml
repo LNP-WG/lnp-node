@@ -63,6 +63,7 @@ microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-
 bitcoin = { version = "0.27.1", features = ["rand"] }
 miniscript = "6.0.1"
 electrum-client = "0.8"
+lightning-invoice = "0.12.0"
 # OS
 chrono = "0.4"
 nix = "0.19"

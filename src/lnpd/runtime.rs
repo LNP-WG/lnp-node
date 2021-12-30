@@ -39,7 +39,7 @@ use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::peerd::supervisor::read_node_key_file;
 use crate::peerd::PeerSocket;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, Service};
+use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let mut listens = HashSet::with_capacity(1);
@@ -105,6 +105,8 @@ pub struct Runtime {
     accepting_channels: HashMap<ServiceId, AcceptChannelFrom>,
     reestablishing_channels: HashMap<ServiceId, (NodeAddr, ChannelReestablish)>,
 }
+
+impl Responder for Runtime {}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
@@ -330,22 +332,6 @@ impl Runtime {
         }
 
         Ok(())
-    }
-
-    // TODO: Replace with `impl Responder for Runtime`
-    #[inline]
-    pub(crate) fn send_rpc(
-        &self,
-        endpoints: &mut Endpoints,
-        client_id: ClientId,
-        message: impl Into<RpcMsg>,
-    ) -> Result<(), esb::Error<ServiceId>> {
-        endpoints.send_to(
-            ServiceBus::Rpc,
-            ServiceId::LnpBroker,
-            ServiceId::Client(client_id),
-            BusMsg::Rpc(message.into()),
-        )
     }
 
     fn handle_ctl(

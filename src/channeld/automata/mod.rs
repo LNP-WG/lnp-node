@@ -19,7 +19,7 @@ use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
 use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
-use lnp::p2p::legacy::ActiveChannelId;
+use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -72,7 +72,7 @@ impl Error {
     pub fn errno(&self) -> u16 {
         match self {
             Error::UnexpectedMessage(_, _, _) => 1001,
-            Error::Channel(channel::bolt::Error::Extension(_)) => 2001,
+            Error::Channel(channel::bolt::Error::ChannelReestablish(_)) => 2001,
             Error::Channel(channel::bolt::Error::Htlc(_)) => 2002,
             Error::Channel(channel::bolt::Error::Policy(_)) => 2003,
             Error::Channel(channel::bolt::Error::LifecycleMismatch { .. }) => 2004,
@@ -257,6 +257,25 @@ impl Runtime {
         Ok(match message {
             BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
                 ChannelPropose::with(self, endpoints, open_channel_with)?.into()
+            }
+            BusMsg::Ln(LnMsg::ChannelReestablish(remote_channel_reestablish)) => {
+                let local_channel_reestablish =
+                    self.state.channel.compose_reestablish_channel(&remote_channel_reestablish)?;
+                let remote_peer = source
+                    .to_remote_peer()
+                    .expect("channel reestablish BOLT message from non-remoter peer");
+                self.state.remote_peer = Some(remote_peer);
+                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
+
+                // We swallow error since we do not want to fail the channel if we just can't add it to the router
+                trace!("Notifying remote peer about channel reestablishing");
+                let _ = self.send_ctl(
+                    endpoints,
+                    ServiceId::Router,
+                    CtlMsg::ChannelCreated(self.state.channel.channel_info(self.state.remote_id())),
+                );
+
+                ChannelStateMachine::Active
             }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))

@@ -208,12 +208,14 @@ pub enum Command {
     /// Pay the invoice
     Pay {
         /// Invoice bech32 string
-        #[clap()]
         invoice: Invoice,
 
         /// Channel from which the payment should happen
-        #[clap()]
         channel: ChannelId,
+
+        /// Amount of milli-satoshis to pay. Required for invoices lacking
+        /// amount. Overrides amount provided by the invoice.
+        amount_msat: Option<u64>,
     },
 }
 

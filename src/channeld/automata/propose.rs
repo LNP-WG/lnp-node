@@ -313,13 +313,21 @@ fn complete_published(
     Ok(Some(ChannelPropose::Locked))
 }
 
-fn complete_locked(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
+fn complete_locked(mut event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
     let funding_locked = match event.message {
         BusMsg::Ln(LnMsg::FundingLocked(funding_locked)) => funding_locked,
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Locked, event.source))
         }
     };
+
+    // We swallow error since we do not want to fail the channel if we just can't add it to the router
+    trace!("Notifying remote peer about channel creation");
+    let _ = runtime.send_ctl(
+        &mut event.endpoints,
+        ServiceId::Router,
+        CtlMsg::ChannelCreated(runtime.state.channel.channel_info(runtime.state.remote_id())),
+    );
 
     debug!("Remote peer confirmed that channel funding got mined");
     // Save next per commitment point

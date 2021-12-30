@@ -218,11 +218,12 @@ impl CreateChannel {
 pub struct PayInvoice {
     pub channel_id: ChannelId,
     pub invoice: Invoice,
+    pub amount_msat: Option<u64>,
 }
 
 impl StrictEncode for PayInvoice {
     fn strict_encode<E: io::Write>(&self, mut e: E) -> Result<usize, strict_encoding::Error> {
-        Ok(strict_encode_list!(e; self.channel_id, self.invoice.to_string()))
+        Ok(strict_encode_list!(e; self.channel_id, self.invoice.to_string(), self.amount_msat))
     }
 }
 
@@ -230,12 +231,13 @@ impl StrictDecode for PayInvoice {
     fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, strict_encoding::Error> {
         Ok(PayInvoice {
             channel_id: ChannelId::strict_decode(&mut d)?,
-            invoice: Invoice::from_str(&String::strict_decode(d)?).map_err(|err| {
+            invoice: Invoice::from_str(&String::strict_decode(&mut d)?).map_err(|err| {
                 strict_encoding::Error::DataIntegrityError(format!(
                     "invalid bech32 lightning invoice: {}",
                     err
                 ))
             })?,
+            amount_msat: StrictDecode::strict_decode(&mut d)?,
         })
     }
 }

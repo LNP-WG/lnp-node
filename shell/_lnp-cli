@@ -155,6 +155,7 @@ _arguments "${_arguments_options[@]}" \
 '*--verbose[Set verbosity level]' \
 ':invoice -- Invoice bech32 string:' \
 ':channel -- Channel from which the payment should happen:' \
+'::amount-msat -- Amount of milli-satoshis to pay. Required for invoices lacking amount. Overrides amount provided by the invoice:' \
 && ret=0
 ;;
 (help)

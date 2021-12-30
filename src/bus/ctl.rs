@@ -15,9 +15,11 @@
 use amplify::Slice32;
 use bitcoin::Txid;
 use bitcoin_onchain::blockchain::MiningStatus;
+use internet2::presentation::sphinx::Hop;
 use internet2::NodeAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::OpenChannel;
+use lnp::p2p::legacy::{ChannelId, OpenChannel, PaymentOnion};
+use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use psbt::Psbt;
 use strict_encoding::{NetworkDecode, NetworkEncode};
@@ -82,6 +84,23 @@ pub enum CtlMsg {
     /// on-chain service
     #[display("mined({0})")]
     Mined(MiningInfo),
+
+    // Routing & payments
+    /// Request to channel daemon to perform payment using provided route
+    #[display("payment(...)")]
+    Payment(Vec<Hop<PaymentOnion>>),
+
+    /// Notifies routing daemon about a new local channel
+    #[display("channel_created({0})")]
+    ChannelCreated(LocalChannelInfo),
+
+    /// Notifies routing daemon to remove information about a local channel
+    #[display("channel_closed({0})")]
+    ChannelClosed(ChannelId),
+
+    /// Notifies routing daemon new balance of a local channel
+    #[display("channel_balance_update({channel_id}, {local_amount_msat}+{remote_amount_msat})")]
+    ChannelBalanceUpdate { channel_id: ChannelId, local_amount_msat: u64, remote_amount_msat: u64 },
 
     // Key-related tasks
     // -----------------
