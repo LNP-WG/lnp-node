@@ -19,7 +19,7 @@ use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
 use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, Messages as LnMsg};
+use lnp::p2p::legacy::{ActiveChannelId, ChannelReestablish, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -159,7 +159,7 @@ impl ChannelStateMachine {
             ChannelStateMachine::Propose(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Accept(state_machine) => state_machine.info_message(channel_id),
             ChannelStateMachine::Active => s!("Channel is active"),
-            ChannelStateMachine::Reestablishing => s!("Reestablushing channel"),
+            ChannelStateMachine::Reestablishing => s!("Reestablishing channel"),
             ChannelStateMachine::Closing => s!("Closing channel"),
             ChannelStateMachine::Abort => s!("Unilaterally closing the channel"),
             ChannelStateMachine::Penalize => s!("Penalizing incorrect channel"),
@@ -236,6 +236,18 @@ impl Runtime {
     }
 
     fn process_event(&mut self, event: Event<BusMsg>) -> Result<(), Error> {
+        // We have to handle channel reestablishment separately, since this is
+        // shared across multiple channel states
+        if let BusMsg::Ln(LnMsg::ChannelReestablish(ref remote_channel_reestablish)) = event.message
+        {
+            self.state.state_machine = self.complete_reestalblish(
+                event.endpoints,
+                event.source,
+                remote_channel_reestablish,
+            )?;
+            return Ok(());
+        }
+
         self.state.state_machine = match self.state.state_machine {
             ChannelStateMachine::Launch => self.complete_launch(event),
             ChannelStateMachine::Propose(channel_propose) => {
@@ -255,30 +267,34 @@ impl Runtime {
         Ok(())
     }
 
+    fn complete_reestalblish(
+        &mut self,
+        endpoints: &mut Endpoints,
+        source: ServiceId,
+        remote_channel_reestablish: &ChannelReestablish,
+    ) -> Result<ChannelStateMachine, Error> {
+        let local_channel_reestablish =
+            self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
+        let remote_peer = source
+            .to_remote_peer()
+            .expect("channel reestablish BOLT message from non-remoter peer");
+        self.state.remote_peer = Some(remote_peer);
+        self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
+
+        // We swallow error since we do not want to fail the channel if we just can't add it to the router
+        trace!("Notifying remote peer about channel reestablishing");
+        let remote_id = self.state.remote_id();
+        let message = CtlMsg::ChannelCreated(self.state.channel.channel_info(remote_id));
+        let _ = self.send_ctl(endpoints, ServiceId::Router, message);
+
+        Ok(ChannelStateMachine::Active)
+    }
+
     fn complete_launch(&mut self, event: Event<BusMsg>) -> Result<ChannelStateMachine, Error> {
         let Event { endpoints, service: _, source, message } = event;
         Ok(match message {
             BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
                 ChannelPropose::with(self, endpoints, open_channel_with)?.into()
-            }
-            BusMsg::Ln(LnMsg::ChannelReestablish(remote_channel_reestablish)) => {
-                let local_channel_reestablish =
-                    self.state.channel.compose_reestablish_channel(&remote_channel_reestablish)?;
-                let remote_peer = source
-                    .to_remote_peer()
-                    .expect("channel reestablish BOLT message from non-remoter peer");
-                self.state.remote_peer = Some(remote_peer);
-                self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
-
-                // We swallow error since we do not want to fail the channel if we just can't add it to the router
-                trace!("Notifying remote peer about channel reestablishing");
-                let _ = self.send_ctl(
-                    endpoints,
-                    ServiceId::Router,
-                    CtlMsg::ChannelCreated(self.state.channel.channel_info(self.state.remote_id())),
-                );
-
-                ChannelStateMachine::Active
             }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))
