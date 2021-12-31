@@ -118,6 +118,9 @@ impl Runtime {
                 let hash_lock =
                     HashLock::from_inner(Slice32::from_inner(invoice.payment_hash().into_inner()));
                 let route = self.compute_route(endpoints, invoice, amount_msat)?;
+                if route.is_empty() {
+                    return Err(PaymentError::RouteNotFound.into());
+                }
                 let msg = CtlMsg::Payment { route, hash_lock, enquirer: client_id };
                 self.send_ctl(endpoints, ServiceId::Channel(channel_id), msg)?;
             }

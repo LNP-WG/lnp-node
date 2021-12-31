@@ -119,6 +119,10 @@ impl esb::Handler<ServiceBus> for Runtime {
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");
         self.launch_daemon(Daemon::Signd, self.config.clone())?;
+        info!("Starting routing daemon...");
+        self.launch_daemon(Daemon::Routed, self.config.clone())?;
+        info!("Starting chain watch daemon...");
+        self.launch_daemon(Daemon::Watchd, self.config.clone())?;
         for addr in self.listens.clone() {
             self.listen(addr)?;
         }

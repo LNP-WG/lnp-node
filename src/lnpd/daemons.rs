@@ -27,7 +27,7 @@ use lnp::p2p::legacy::ActiveChannelId;
 
 use crate::lnpd::runtime::Runtime;
 use crate::peerd::PeerSocket;
-use crate::{channeld, peerd, signd, Config, Error};
+use crate::{channeld, peerd, routed, signd, watchd, Config, Error};
 
 // TODO: Move `DaemonHandle` to microservices crate
 /// Handle for a daemon launched by LNPd
@@ -120,8 +120,8 @@ pub enum Daemon {
     #[display("routed")]
     Routed,
 
-    #[display("gossipd")]
-    Gossipd,
+    #[display("watchd")]
+    Watchd,
 }
 
 impl Daemon {
@@ -131,7 +131,7 @@ impl Daemon {
             Daemon::Peerd(..) => "peerd",
             Daemon::Channeld(..) => "channeld",
             Daemon::Routed => "routed",
-            Daemon::Gossipd => "gossipd",
+            Daemon::Watchd => "watchd",
         }
     }
 }
@@ -154,8 +154,8 @@ impl Runtime {
                         peerd::supervisor::run(config, &key_file, socket)
                     }
                     Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
-                    Daemon::Routed => todo!(),
-                    Daemon::Gossipd => todo!(),
+                    Daemon::Routed => routed::run(config),
+                    Daemon::Watchd => watchd::run(config),
                 };
                 match res {
                     Ok(_) => unreachable!("daemons should never terminate by themselves"),

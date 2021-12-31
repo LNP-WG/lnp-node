@@ -28,6 +28,7 @@ use strict_encoding::{StrictDecode, StrictEncode};
 use super::storage::{self, Driver};
 use super::ChannelState;
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
+use crate::routed::PaymentError;
 use crate::rpc::{ClientId, ServiceId};
 use crate::{channeld, Config, Endpoints, Error, Responder, Service};
 
@@ -250,8 +251,9 @@ impl Runtime {
             }
 
             CtlMsg::Payment { route, hash_lock, enquirer } => {
+                // TODO: Move into a state machine
                 self.enquirer = Some(enquirer);
-                let payment = &route[0].payload;
+                let payment = &route.get(0).ok_or(PaymentError::RouteNotFound)?.payload;
                 let message = self.state.channel.compose_add_update_htlc(
                     payment.amt_to_forward,
                     hash_lock,
@@ -259,6 +261,9 @@ impl Runtime {
                     route,
                 )?;
                 self.send_p2p(endpoints, message)?;
+                // TODO: Report progress here, wait for new commitment to be signed before reporting
+                //       success. Do not clear enquirer
+                let _ = self.report_success(endpoints, Some("HTLC added to the channel"));
                 self.enquirer = None;
             }
 
