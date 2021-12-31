@@ -1105,7 +1105,7 @@ dependencies = [
 [[package]]
 name = "lnp-core"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#0f004b7e7a50e11083feabcb0b41b2fb7230bb27"
+source = "git+https://github.com/LNP-BP/lnp-core#b2d06014abd25e7feb9b84eceadc4b347fcebc56"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1123,7 +1123,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.5.3"
-source = "git+https://github.com/LNP-BP/lnp-core#0f004b7e7a50e11083feabcb0b41b2fb7230bb27"
+source = "git+https://github.com/LNP-BP/lnp-core#b2d06014abd25e7feb9b84eceadc4b347fcebc56"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1426,9 +1426,9 @@ dependencies = [
 
 [[package]]
 name = "ppv-lite86"
-version = "0.2.15"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed0cfbc8191465bed66e1718596ee0b0b35d5ee1f41c5df2189d0fe8bde535ba"
+checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "proc-macro-error"

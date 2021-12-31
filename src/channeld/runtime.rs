@@ -249,6 +249,19 @@ impl Runtime {
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
+            CtlMsg::Payment { route, hash_lock, enquirer } => {
+                self.enquirer = Some(enquirer);
+                let payment = &route[0].payload;
+                let message = self.state.channel.compose_add_update_htlc(
+                    payment.amt_to_forward,
+                    hash_lock,
+                    payment.outgoing_cltv_value,
+                    route,
+                )?;
+                self.send_p2p(endpoints, message)?;
+                self.enquirer = None;
+            }
+
             wrong_request => {
                 error!("Request is not supported by the CTL interface");
                 return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &wrong_request));

@@ -23,6 +23,7 @@ use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use psbt::Psbt;
 use strict_encoding::{NetworkDecode, NetworkEncode};
+use wallet::hlc::HashLock;
 use wallet::scripts::PubkeyScript;
 
 use crate::rpc::{ClientId, ServiceId};
@@ -88,7 +89,7 @@ pub enum CtlMsg {
     // Routing & payments
     /// Request to channel daemon to perform payment using provided route
     #[display("payment(...)")]
-    Payment(Vec<Hop<PaymentOnion>>),
+    Payment { route: Vec<Hop<PaymentOnion>>, hash_lock: HashLock, enquirer: ClientId },
 
     /// Notifies routing daemon about a new local channel
     #[display("channel_created({0})")]
