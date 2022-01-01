@@ -1,7 +1,7 @@
 [package]
 name = "lnp_rpc"
 description = "LNP node RPC API"
-version = "0.5.0"
+version = "0.6.0-beta.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rpc"]
@@ -14,7 +14,7 @@ name = "lnp_rpc"
 [dependencies]
 amplify = "3.9.1"
 strict_encoding = "1.7.5"
-lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
+lnp-core = { version = "0.6.0-beta.1", git = "https://github.com/LNP-BP/lnp-core" }
 lnpbp = "0.5.0"
 bitcoin = { version = "0.27.1", features = ["rand"] }
 lightning-invoice = "0.12.0"

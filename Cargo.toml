@@ -5,7 +5,7 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.5.0"
+version = "0.6.0-beta.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
@@ -55,8 +55,8 @@ slip132 = "0.5.0"
 # <<<
 lnpbp = "0.5.0"
 bp-core = "0.5.0"
-lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
-lnp_rpc = { version = "0.5", path = "./rpc" }
+lnp-core = { version = "0.6.0-beta.1", git = "https://github.com/LNP-BP/lnp-core" }
+lnp_rpc = { version = "0.6.0-beta.1", path = "./rpc" }
 internet2 = { version = "0.5.12", features = ["keygen", "url"] }
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false, features = ["node", "peer"] }
 # Bitcoin
@@ -87,8 +87,8 @@ amplify = "3.9.1"
 lnpbp = "0.5.0"
 bitcoin = "0.27.1"
 lightning-invoice = "0.12.0"
-lnp-core = { version = "0.5.2", git = "https://github.com/LNP-BP/lnp-core" }
-lnp_rpc = { version = "0.5", path = "./rpc" }
+lnp-core = { version = "0.6.0-beta.1", git = "https://github.com/LNP-BP/lnp-core" }
+lnp_rpc = { version = "0.6.0-beta.1", path = "./rpc" }
 internet2 = "0.5.12"
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false, features = ["peer"] }
 clap = { version = "3.0.0-rc.7", features = ["env"] }
