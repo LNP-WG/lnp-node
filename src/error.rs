@@ -100,6 +100,9 @@ pub enum Error {
     #[from]
     Bridge(transport::Error),
 
+    /// unable to connect Electrum server
+    ElectrumConnectivity,
+
     /// message `{1}` is not supported on {0} message bus
     NotSupported(ServiceBus, String),
 

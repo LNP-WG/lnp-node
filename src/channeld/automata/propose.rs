@@ -297,8 +297,10 @@ fn complete_published(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<Option<ChannelPropose>, automata::Error> {
-    if !matches!(event.message, BusMsg::Ctl(CtlMsg::Mined(_)) | BusMsg::Ln(LnMsg::FundingLocked(_)))
-    {
+    if !matches!(
+        event.message,
+        BusMsg::Ctl(CtlMsg::TxFound(_)) | BusMsg::Ln(LnMsg::FundingLocked(_))
+    ) {
         return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
     }
 

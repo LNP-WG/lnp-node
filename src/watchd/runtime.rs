@@ -12,6 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::collections::HashMap;
+
+use bitcoin::Txid;
+use electrum_client::Client as ElectrumClient;
 use lnp::p2p::legacy::Messages as LnMsg;
 use microservices::esb;
 
@@ -20,12 +24,19 @@ use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime = Runtime {};
+    let electrum =
+        ElectrumClient::new(&config.electrum_url).map_err(|_| Error::ElectrumConnectivity)?;
+
+    let runtime = Runtime { electrum, track_list: empty!() };
 
     Service::run(config, runtime, false)
 }
 
-pub struct Runtime {}
+pub struct Runtime {
+    electrum: ElectrumClient,
+
+    track_list: HashMap<Txid, (u32, ServiceId)>,
+}
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
@@ -78,12 +89,20 @@ impl Runtime {
     fn handle_ctl(
         &mut self,
         _: &mut Endpoints,
-        _: ServiceId,
+        source: ServiceId,
         message: CtlMsg,
     ) -> Result<(), Error> {
         match message {
-            CtlMsg::Track(_) => {
-                // TODO: Implement
+            CtlMsg::Track { txid, depth } => {
+                debug!("Tracking status for tx {}", txid);
+                self.track_list.insert(txid, (depth, source));
+            }
+
+            CtlMsg::Untrack(txid) => {
+                debug!("Stopping tracking tx {}", txid);
+                if self.track_list.remove(&txid).is_none() {
+                    warn!("Transaction {} was not tracked before", txid);
+                }
             }
 
             wrong_msg => {

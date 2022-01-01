@@ -12,9 +12,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use amplify::num::u24;
 use amplify::Slice32;
 use bitcoin::Txid;
-use bitcoin_onchain::blockchain::MiningStatus;
 use internet2::presentation::sphinx::Hop;
 use internet2::NodeAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
@@ -74,8 +74,8 @@ pub enum CtlMsg {
     // On-chain tracking API
     // ---------------------
     /// Asks on-chain tracking service to send updates on the transaction mining status
-    #[display("track({0})")]
-    Track(Txid),
+    #[display("track({txid}, {depth})")]
+    Track { txid: Txid, depth: u32 },
 
     /// Asks on-chain tracking service to stop sending updates on the transaction mining status
     #[display("untrack({0})")]
@@ -83,8 +83,8 @@ pub enum CtlMsg {
 
     /// Reports changes in the mining status for previously requested transaction tracked by an
     /// on-chain service
-    #[display("mined({0})")]
-    Mined(MiningInfo),
+    #[display("tx_found({0})")]
+    TxFound(TxStatus),
 
     // Routing & payments
     /// Request to channel daemon to perform payment using provided route
@@ -227,13 +227,19 @@ pub struct FundChannel {
 /// Update on a transaction mining status
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
 #[derive(NetworkEncode, NetworkDecode)]
-#[display("{txid}, {status}")]
-pub struct MiningInfo {
+#[display("{txid}, {depth}")]
+pub struct TxStatus {
     /// Id of a transaction previously requested to be tracked
     pub txid: Txid,
 
-    /// Updated on-chain status of the transaction
-    pub status: MiningStatus,
+    /// Depths from the chain tip
+    pub depth: u24,
+
+    /// Height of the block containing transaction
+    pub height: u24,
+
+    /// Transaction position within the block
+    pub pos: u24,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, NetworkEncode, NetworkDecode)]

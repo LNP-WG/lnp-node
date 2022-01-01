@@ -239,7 +239,7 @@ impl Runtime {
             }
 
             CtlMsg::FundingConstructed(_)
-            | CtlMsg::Mined(_)
+            | CtlMsg::TxFound(_)
             | CtlMsg::Signed(_)
             | CtlMsg::Error { .. }
             | CtlMsg::EsbError { .. } => {
