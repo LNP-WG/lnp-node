@@ -66,6 +66,7 @@ impl Runtime {
         _source: ServiceId,
         message: LnMsg,
     ) -> Result<(), Error> {
+        #[allow(clippy::match_single_binding)]
         match message {
             _ => {
                 // TODO: Process message

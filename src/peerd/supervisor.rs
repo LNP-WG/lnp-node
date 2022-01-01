@@ -56,12 +56,16 @@ impl RuntimeParams {
 }
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
-    let local_node = LocalNode::strict_decode(fs::File::open(key_file).expect(&format!(
-        "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
-         access rights to it",
-        key_file.display()
-    )))
-    .expect(&format!("Unable understand format of node key file '{}'", key_file.display()));
+    let file = fs::File::open(key_file).unwrap_or_else(|_| {
+        panic!(
+            "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
+             access rights to it",
+            key_file.display()
+        )
+    });
+    let local_node = LocalNode::strict_decode(file).unwrap_or_else(|_| {
+        panic!("Unable understand format of node key file '{}'", key_file.display())
+    });
 
     let local_id = local_node.node_id();
     info!("{}: {}", "Local node id".ended(), local_id.addr());

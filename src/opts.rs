@@ -26,7 +26,7 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/{chain}";
 #[cfg(any(target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
 pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/{chain}";
 #[cfg(target_os = "macos")]
-pub const LNP_NODE_DATA_DIR: &'static str = "~/Library/Application Support/LNP Node/{chain}";
+pub const LNP_NODE_DATA_DIR: &str = "~/Library/Application Support/LNP Node/{chain}";
 #[cfg(target_os = "windows")]
 pub const LNP_NODE_DATA_DIR: &'static str = "~\\AppData\\Local\\LNP Node\\{chain}";
 #[cfg(target_os = "ios")]
@@ -34,22 +34,20 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/{chain}";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = "./{chain}";
 
-pub const LNP_NODE_MSG_SOCKET: &'static str = "{data_dir}/msg";
-pub const LNP_NODE_CTL_SOCKET: &'static str = "{data_dir}/ctl";
+pub const LNP_NODE_MSG_SOCKET: &str = "{data_dir}/msg";
+pub const LNP_NODE_CTL_SOCKET: &str = "{data_dir}/ctl";
 
-pub const LNP_NODE_CONFIG: &'static str = "{data_dir}/lnp_node.toml";
-pub const LNP_NODE_TOR_PROXY: &'static str = "127.0.0.1:9050";
-pub const LNP_NODE_KEY_FILE: &'static str = "{data_dir}/node.key";
+pub const LNP_NODE_CONFIG: &str = "{data_dir}/lnp_node.toml";
+pub const LNP_NODE_TOR_PROXY: &str = "127.0.0.1:9050";
+pub const LNP_NODE_KEY_FILE: &str = "{data_dir}/node.key";
 
-pub const LNP_NODE_MASTER_KEY_FILE: &'static str = "master.key";
-pub const LNP_NODE_FUNDING_WALLET: &'static str = "funding.wallet";
+pub const LNP_NODE_MASTER_KEY_FILE: &str = "master.key";
+pub const LNP_NODE_FUNDING_WALLET: &str = "funding.wallet";
 
 /// Shared options used by different binaries
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct Opts {
-    /// Data directory path.
-    ///
-    /// Path to the directory that contains LNP Node data, and where ZMQ RPC socket files
+    /// <[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten()
     /// are located.
     #[clap(
         short,
@@ -175,17 +173,13 @@ impl Opts {
 
         let mut data_dir = me.data_dir.display().to_string();
         data_dir = data_dir.replace("{chain}", &self.chain.to_string());
-        self.data_dir = PathBuf::from(shellexpand::tilde(&data_dir.to_string()).to_string());
-        fs::create_dir_all(&self.data_dir)
-            .expect(&format!("Unable to access data directory '{}'", &self.data_dir.display()));
+        self.data_dir = PathBuf::from(shellexpand::tilde(&data_dir).to_string());
+        fs::create_dir_all(&self.data_dir).unwrap_or_else(|_| {
+            panic!("Unable to access data directory '{}'", &self.data_dir.display())
+        });
 
-        for s in vec![&mut self.msg_socket, &mut self.ctl_socket] {
-            match s {
-                Some(path) => {
-                    me.process_dir(path);
-                }
-                _ => {}
-            }
+        for s in self.msg_socket.iter_mut().chain(self.ctl_socket.iter_mut()) {
+            me.process_dir(s);
         }
     }
 
@@ -195,6 +189,6 @@ impl Opts {
 }
 
 pub fn process_dir(path: &mut String, data_dir: &str) {
-    *path = path.replace("{data_dir}", &data_dir);
+    *path = path.replace("{data_dir}", data_dir);
     *path = shellexpand::tilde(path).to_string();
 }

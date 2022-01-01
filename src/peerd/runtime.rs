@@ -114,7 +114,7 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
         err: esb::Error<ServiceId>,
     ) -> Result<(), Self::Error> {
         // We simply propagate the error since it's already being reported
-        Err(err)?
+        Err(err.into())
     }
 }
 
@@ -281,10 +281,11 @@ impl Runtime {
         _source: ServiceId,
         request: CtlMsg,
     ) -> Result<(), Error> {
+        #[allow(clippy::match_single_binding)]
         match request {
             _ => {
                 error!("Request is not supported by the CTL interface");
-                return Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request));
+                Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request))
             }
         }
     }
@@ -342,7 +343,7 @@ impl Runtime {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    temporary_channel_id.clone().into(),
+                    (*temporary_channel_id).into(),
                     request,
                 )?;
                 self.channels.remove(&temp_channel_id);
@@ -358,7 +359,7 @@ impl Runtime {
                 channel_id,
                 ..
             })) => {
-                let channeld: ServiceId = channel_id.clone().into();
+                let channeld: ServiceId = (*channel_id).into();
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
@@ -371,7 +372,7 @@ impl Runtime {
 
             wrong_msg => {
                 error!("Request is not supported by the BRIDGE interface");
-                return Err(Error::wrong_esb_msg(ServiceBus::Bridge, wrong_msg))?;
+                return Err(Error::wrong_esb_msg(ServiceBus::Bridge, wrong_msg));
             }
         }
         Ok(())
@@ -392,11 +393,11 @@ impl Runtime {
                     remote_socket: vec![self.remote_socket],
                     uptime: SystemTime::now()
                         .duration_since(self.started)
-                        .unwrap_or(Duration::from_secs(0)),
+                        .unwrap_or_else(|_| Duration::from_secs(0)),
                     since: self
                         .started
                         .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or(Duration::from_secs(0))
+                        .unwrap_or_else(|_| Duration::from_secs(0))
                         .as_secs(),
                     messages_sent: self.messages_sent,
                     messages_received: self.messages_received,
@@ -445,8 +446,8 @@ impl Runtime {
         trace!("Replying with pong to the remote peer");
         let mut noise = vec![0u8; pong_size as usize];
         let mut rng = rand::thread_rng();
-        for i in 0..noise.len() {
-            noise[i] = rng.gen();
+        for byte in &mut noise {
+            *byte = rng.gen();
         }
         self.messages_sent += 1;
         self.sender.send_message(LnMsg::Pong(noise.into()))?;

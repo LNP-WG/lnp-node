@@ -252,14 +252,14 @@ impl FromStr for AmountOfAsset {
             asset = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             amount = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             if split.count() > 0 {
-                Err(AmountOfAssetParseError::NeedsValuePair)?
+                return Err(AmountOfAssetParseError::NeedsValuePair);
             }
         } else if s.contains(' ') {
             let mut split = s.split(' ');
             amount = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             asset = split.next().ok_or(AmountOfAssetParseError::NeedsValuePair)?;
             if split.count() > 0 {
-                Err(AmountOfAssetParseError::NeedsValuePair)?
+                return Err(AmountOfAssetParseError::NeedsValuePair);
             }
         } else {
             return Err(AmountOfAssetParseError::NeedsValuePair);

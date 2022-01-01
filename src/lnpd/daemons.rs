@@ -189,8 +189,7 @@ impl Runtime {
 
         match &daemon {
             Daemon::Peerd(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {
-                let socket_addr =
-                    SocketAddr::try_from(inet.clone()).expect("invalid connection address");
+                let socket_addr = SocketAddr::try_from(*inet).expect("invalid connection address");
                 let ip = socket_addr.ip();
                 let port = socket_addr.port();
                 cmd.args(&["--listen", &ip.to_string(), "--port", &port.to_string()]);
@@ -200,7 +199,7 @@ impl Runtime {
             }
             Daemon::Peerd(PeerSocket::Listen(_), _) => {
                 // Lightning do not support non-TCP sockets
-                DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101));
+                return Err(DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101)));
             }
             Daemon::Channeld(channel_id, ..) => {
                 cmd.args(&[channel_id.as_slice32().to_hex()]);
@@ -213,7 +212,7 @@ impl Runtime {
 
         trace!("Executing `{:?}`", cmd);
         cmd.spawn().map_err(|err| {
-            error!("Error launching {}: {}", daemon.clone(), err);
+            error!("Error launching {}: {}", daemon, err);
             DaemonError::ProcessLaunch(daemon, err.into())
         })
     }

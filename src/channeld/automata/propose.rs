@@ -225,7 +225,7 @@ fn complete_accepted(
 }
 
 fn complete_signing(
-    mut event: Event<BusMsg>,
+    event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, automata::Error> {
     let refund_psbt = match event.message {
@@ -261,7 +261,7 @@ fn complete_signing(
 
     let channel_id = ChannelId::with(funding_txid, funding_output_index);
     debug!("Changing channel id from {} to {}", runtime.identity(), channel_id);
-    runtime.set_identity(&mut event.endpoints, channel_id).expect("unrecoverable ZMQ failure");
+    runtime.set_identity(event.endpoints, channel_id).expect("unrecoverable ZMQ failure");
     // needed to update ESB routing map
     runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::Hello)?;
 
@@ -270,7 +270,7 @@ fn complete_signing(
 }
 
 fn complete_funding(
-    mut event: Event<BusMsg>,
+    event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, automata::Error> {
     let funding_signed = match event.message {
@@ -283,7 +283,7 @@ fn complete_funding(
     debug!("Got remote node signature {}", funding_signed.signature);
     // Save signature
     runtime.state.channel.update_from_peer(&LnMsg::FundingSigned(funding_signed))?;
-    runtime.send_ctl(&mut event.endpoints, ServiceId::LnpBroker, CtlMsg::PublishFunding)?;
+    runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::PublishFunding)?;
 
     let txid = runtime.state.channel.funding().txid();
     debug!("Waiting for funding transaction {} to be mined", txid);
@@ -313,7 +313,7 @@ fn complete_published(
     Ok(Some(ChannelPropose::Locked))
 }
 
-fn complete_locked(mut event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
+fn complete_locked(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
     let funding_locked = match event.message {
         BusMsg::Ln(LnMsg::FundingLocked(funding_locked)) => funding_locked,
         wrong_msg => {
@@ -321,10 +321,11 @@ fn complete_locked(mut event: Event<BusMsg>, runtime: &mut Runtime) -> Result<()
         }
     };
 
-    // We swallow error since we do not want to fail the channel if we just can't add it to the router
+    // We swallow error since we do not want to fail the channel if we just can't add it to the
+    // router
     trace!("Notifying remote peer about channel creation");
     let _ = runtime.send_ctl(
-        &mut event.endpoints,
+        event.endpoints,
         ServiceId::Router,
         CtlMsg::ChannelCreated(runtime.state.channel.channel_info(runtime.state.remote_id())),
     );

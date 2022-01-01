@@ -75,9 +75,7 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -145,7 +143,7 @@ where
                 buf.copy_from_slice(&slice32.as_inner()[..4]);
                 let le = u32::from_be_bytes(buf);
                 let channel_index = le & 0x7FFFFFFF;
-                for account in &self.provider {
+                if let Some(account) = self.provider.into_iter().next() {
                     let account_xpriv = account.account_xpriv();
                     let chain_index = self.chain.chain_params().is_testnet as u32;
                     let path = &[chain_index, 1, 0, channel_index]
@@ -165,13 +163,12 @@ where
                     endpoints.send_to(
                         ServiceBus::Ctl,
                         self.identity(),
-                        source.clone(),
+                        source,
                         BusMsg::Ctl(CtlMsg::Keyset(
                             ServiceId::Channel(ChannelId::from_inner(slice32)),
                             keyset,
                         )),
                     )?;
-                    break;
                 }
             }
 

@@ -14,6 +14,7 @@
 
 #![recursion_limit = "256"]
 // Coding conventions
+#![allow(clippy::large_enum_variant)]
 #![deny(
     non_upper_case_globals,
     non_camel_case_types,
@@ -49,4 +50,4 @@ pub use error::Error;
 pub use messages::*;
 pub use service_id::{ClientId, ClientName, ServiceId};
 
-pub const LNP_NODE_RPC_SOCKET: &'static str = "127.0.0.1:62962";
+pub const LNP_NODE_RPC_SOCKET: &str = "127.0.0.1:62962";

@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+#![allow(clippy::needless_borrow)] // due to a bug in `display(Debug)`
+
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;

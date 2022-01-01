@@ -218,19 +218,13 @@ impl FundingWallet {
     }
 
     #[inline]
-    pub fn network(&self) -> Network {
-        self.network
-    }
+    pub fn network(&self) -> Network { self.network }
 
     #[inline]
-    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> {
-        &self.wallet_data.descriptor
-    }
+    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> { &self.wallet_data.descriptor }
 
     #[inline]
-    pub fn feerate_per_kw(&self) -> u32 {
-        self.feerate_per_kw
-    }
+    pub fn feerate_per_kw(&self) -> u32 { self.feerate_per_kw }
 
     /// Scans blockchain for available funds.
     /// Updates last derivation index basing on the scanned information.
@@ -269,7 +263,7 @@ impl FundingWallet {
                         if index >= *last_index {
                             *last_index = index.checked_inc().unwrap_or_else(UnhardenedIndex::zero);
                         }
-                        let script_pubkey = PubkeyScript::from(script.clone());
+                        let script_pubkey = PubkeyScript::from(script);
                         utxo.into_iter().map(move |utxo| Funds {
                             outpoint: *utxo.outpoint(),
                             terminal: vec![case, index],
@@ -294,11 +288,10 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = DescriptorDerive::address(
-            &self.wallet_data.descriptor,
-            &self.secp,
-            &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
-        )?;
+        let address = DescriptorDerive::address(&self.wallet_data.descriptor, &self.secp, &[
+            UnhardenedIndex::zero(),
+            self.wallet_data.last_normal_index,
+        ])?;
         Ok(address)
     }
 
@@ -319,7 +312,7 @@ impl FundingWallet {
         funds.sort_by_key(|f| f.amount);
 
         let mut acc = 0u64;
-        let sources: Vec<_> = funds
+        let inputs = funds
             .iter()
             .rev()
             .take_while(|funding| {
@@ -329,13 +322,6 @@ impl FundingWallet {
                 acc += funding.amount;
                 true
             })
-            .collect();
-        if acc < amount_and_fee {
-            return Err(Error::InsufficientFunds);
-        }
-
-        let inputs = sources
-            .into_iter()
             .map(|funds| InputDescriptor {
                 outpoint: funds.outpoint,
                 terminal: DerivationSubpath::from(funds.terminal.clone()),
@@ -344,6 +330,9 @@ impl FundingWallet {
                 sighash_type: SigHashType::All,
             })
             .collect::<Vec<_>>();
+        if acc < amount_and_fee {
+            return Err(Error::InsufficientFunds);
+        }
 
         let change_index = self.wallet_data.last_change_index;
         self.wallet_data.last_change_index =
@@ -377,7 +366,7 @@ impl FundingWallet {
             .expect("funding PSBT construction is broken");
             // Adding full derivation information to each of the inputs
             for input in &mut psbt.inputs {
-                for (_, source) in &mut input.bip32_derivation {
+                for source in input.bip32_derivation.values_mut() {
                     if let Some((fingerprint, path)) = root_derivations.get(&source.0) {
                         source.0 = *fingerprint;
                         source.1 = path
@@ -408,15 +397,12 @@ impl FundingWallet {
         };
 
         let txid = psbt.global.unsigned_tx.txid();
-        self.wallet_data.pending_fundings.insert(
-            txid,
-            PendingFunding {
-                temp_channel_id,
-                funding_txid: txid,
-                prev_outpoints: inputs.iter().map(|inp| inp.outpoint).collect(),
-                psbt: psbt.clone(),
-            },
-        );
+        self.wallet_data.pending_fundings.insert(txid, PendingFunding {
+            temp_channel_id,
+            funding_txid: txid,
+            prev_outpoints: inputs.iter().map(|inp| inp.outpoint).collect(),
+            psbt: psbt.clone(),
+        });
 
         Ok(psbt)
     }

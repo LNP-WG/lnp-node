@@ -112,9 +112,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");
@@ -162,7 +160,6 @@ impl esb::Handler<ServiceBus> for Runtime {
         if let esb::Error::Send(source, dest, err) = err {
             // We need to report back that one of the daemons is offline so the client will not hang
             // waiting for updates forever
-            let dest = ServiceId::from(dest);
             error!("Daemon {} is offline", dest);
             let _ = endpints.send_to(
                 ServiceBus::Ctl,
@@ -248,11 +245,11 @@ impl Runtime {
                     listens: self.listens.iter().cloned().collect(),
                     uptime: SystemTime::now()
                         .duration_since(self.started)
-                        .unwrap_or(Duration::from_secs(0)),
+                        .unwrap_or_else(|_| Duration::from_secs(0)),
                     since: self
                         .started
                         .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or(Duration::from_secs(0))
+                        .unwrap_or_else(|_| Duration::from_secs(0))
                         .as_secs(),
                     peers: self.connections.iter().cloned().collect(),
                     channels: self.channels.iter().cloned().collect(),
@@ -352,7 +349,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&service_id)
-                    .expect(&format!("unregistered channel launcher for {}", service_id));
+                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", service_id));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source, message), self)?
                     .expect("channel launcher should not be complete");
@@ -363,7 +360,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&source)
-                    .expect(&format!("unregistered channel launcher for {}", source));
+                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", source));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
                     .expect("channel launcher should not be complete");
@@ -375,7 +372,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&source)
-                    .expect(&format!("unregistered channel launcher for {}", source));
+                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", source));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?
                     .expect("channel launcher should not be complete");
@@ -389,7 +386,7 @@ impl Runtime {
                 let launcher = self
                     .funding_channels
                     .remove(&txid)
-                    .expect(&format!("unregistered channel launcher for {}", source));
+                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", source));
                 let none = launcher
                     .next(Event::with(endpoints, self.identity(), source.clone(), message), self)?;
                 debug_assert!(
@@ -401,8 +398,8 @@ impl Runtime {
             CtlMsg::Error { destination, .. } | CtlMsg::EsbError { destination, .. } => {
                 let launcher = self
                     .creating_channels
-                    .remove(&destination)
-                    .expect(&format!("unregistered channel launcher for {}", destination));
+                    .remove(destination)
+                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", destination));
                 // We swallow `None` here
                 let _ = launcher.next(
                     Event::with(endpoints, self.identity(), destination.clone(), message),
@@ -418,7 +415,7 @@ impl Runtime {
                 };
                 // If the client is disconnected, just swallow the error - there is no reason to
                 // propagate it anywhere
-                if let Err(_) = self.send_rpc(endpoints, report.client, msg) {
+                if self.send_rpc(endpoints, report.client, msg).is_err() {
                     error!("Client #{} got disconnected", report.client);
                 }
             }
@@ -503,7 +500,7 @@ impl Runtime {
                     connection_id
                 );
             }
-            ServiceId::Channel(channel_id) if self.channels.insert(channel_id.clone()) => {
+            ServiceId::Channel(channel_id) if self.channels.insert(channel_id) => {
                 info!(
                     "Channel {} is registered; total {} channels are known",
                     channel_id,
@@ -525,7 +522,7 @@ impl Runtime {
     fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
         info!("Starting peer connection listening daemon on {}...", addr);
         let handle = self.launch_daemon(
-            Daemon::Peerd(PeerSocket::Listen(addr.clone()), self.node_key_path.clone()),
+            Daemon::Peerd(PeerSocket::Listen(addr), self.node_key_path.clone()),
             self.config.clone(),
         )?;
         Ok(format!("Launched new instance of {}", handle))

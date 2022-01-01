@@ -92,18 +92,14 @@ pub struct Runtime {
 
 impl Responder for Runtime {
     #[inline]
-    fn enquirer(&self) -> Option<ClientId> {
-        self.enquirer.clone()
-    }
+    fn enquirer(&self) -> Option<ClientId> { self.enquirer }
 }
 
 impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -226,7 +222,7 @@ impl Runtime {
             // Proposing remote peer to open a channel
             CtlMsg::OpenChannelWith(ref open_channel_with) => {
                 let remote_peer = open_channel_with.remote_peer.clone();
-                self.enquirer = open_channel_with.report_to.clone();
+                self.enquirer = open_channel_with.report_to;
                 // Updating state only if the request was processed
                 self.state.remote_peer = Some(remote_peer);
                 self.process(endpoints, source, BusMsg::Ctl(request))?;

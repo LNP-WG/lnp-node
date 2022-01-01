@@ -15,8 +15,8 @@ _routed() {
 
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
+'--data-dir=[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
 '-c+[Path for the configuration file]:CONFIG:_files' \
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \

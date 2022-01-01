@@ -14,6 +14,7 @@
 
 #![recursion_limit = "256"]
 // Coding conventions
+#![allow(clippy::large_enum_variant)]
 #![deny(
     non_upper_case_globals,
     non_camel_case_types,

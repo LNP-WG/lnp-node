@@ -90,7 +90,7 @@ impl ChannelAccept {
         accept_channel_from: AcceptChannelFrom,
         runtime: &mut Runtime,
     ) -> Result<ChannelAccept, Error> {
-        let open_channel = Messages::OpenChannel(accept_channel_from.channel_req.clone());
+        let open_channel = Messages::OpenChannel(accept_channel_from.channel_req);
         runtime.state.channel.update_from_peer(&open_channel)?;
 
         runtime.send_p2p(endpoints, open_channel)?;
@@ -123,6 +123,4 @@ fn finish_funded(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<Channe
     todo!()
 }
 
-fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> {
-    todo!()
-}
+fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }

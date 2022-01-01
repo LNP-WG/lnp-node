@@ -65,6 +65,7 @@ where
         Self::with(config, runtime, true)
     }
 
+    #[allow(clippy::self_named_constructors)]
     pub fn service(config: Config, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
         Self::with(config, runtime, false)
     }
@@ -120,7 +121,7 @@ where
 {
     /// Returns client which should receive status update reports
     #[inline]
-    fn enquirer(&self) -> Option<ClientId> { return None }
+    fn enquirer(&self) -> Option<ClientId> { None }
 
     fn report_success(
         &mut self,

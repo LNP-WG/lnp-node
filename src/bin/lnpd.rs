@@ -174,10 +174,12 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
         let node_seckey = signing_account.derive_seckey(&secp, &derivation_path);
         let node_id = PublicKey::from_secret_key(&secp, &node_seckey);
         let local_node = LocalNode::with(node_seckey, node_id);
-        let key_file = fs::File::create(key_path).expect(&format!(
-            "Unable to create node key file '{}'; please check that the path exists",
-            key_path.display()
-        ));
+        let key_file = fs::File::create(key_path).unwrap_or_else(|_| {
+            panic!(
+                "Unable to create node key file '{}'; please check that the path exists",
+                key_path.display()
+            )
+        });
         local_node.strict_encode(key_file).expect("Unable to save generated node key file");
         local_node
     } else {

@@ -64,9 +64,7 @@ pub enum Error {
 }
 
 impl From<Error> for Failure {
-    fn from(err: Error) -> Self {
-        Failure { code: 6000, info: err.to_string() }
-    }
+    fn from(err: Error) -> Self { Failure { code: 6000, info: err.to_string() } }
 }
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
@@ -277,7 +275,7 @@ fn complete_launch(
         event.endpoints,
         format!(
             "Channel daemon connecting to remote peer {} is launched",
-            create_channel.remote_peer.clone()
+            create_channel.remote_peer
         ),
     );
     Ok(ChannelLauncher::Deriving(temp_channel_id, create_channel, enquirer))
@@ -343,7 +341,7 @@ fn start_negotiation2(
         event.endpoints,
         format!(
             "Channel daemon connecting to remote peer {} is launched",
-            create_channel.remote_peer.clone()
+            create_channel.remote_peer
         ),
     );
     start_negotiation(event, runtime, temp_channel_id, keyset, create_channel, enquirer)
@@ -555,7 +553,7 @@ where
     let enquirer = ServiceId::Client(client_id);
     let report = match &result {
         Ok(val) => RpcMsg::Progress(val.to_string()),
-        Err(err) => RpcMsg::Failure(err.clone().into()),
+        Err(err) => RpcMsg::Failure(err.into()),
     };
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client

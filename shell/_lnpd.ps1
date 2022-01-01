@@ -22,8 +22,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
         'lnpd' {
             [CompletionResult]::new('-k', 'k', [CompletionResultType]::ParameterName, 'Node key file')
             [CompletionResult]::new('--key-file', 'key-file', [CompletionResultType]::ParameterName, 'Node key file')
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
@@ -52,8 +52,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             break
         }
         'lnpd;init' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
@@ -73,8 +73,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             break
         }
         'lnpd;help' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')

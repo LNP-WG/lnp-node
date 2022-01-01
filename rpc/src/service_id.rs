@@ -89,9 +89,7 @@ pub enum ServiceId {
 }
 
 impl ServiceId {
-    pub fn router() -> ServiceId {
-        ServiceId::LnpBroker
-    }
+    pub fn router() -> ServiceId { ServiceId::LnpBroker }
 
     pub fn client() -> ServiceId {
         use bitcoin::secp256k1::rand;

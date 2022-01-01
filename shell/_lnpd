@@ -17,8 +17,8 @@ _lnpd() {
     _arguments "${_arguments_options[@]}" \
 '-k+[Node key file]:KEY_FILE:_files' \
 '--key-file=[Node key file]:KEY_FILE:_files' \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
+'--data-dir=[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
 '-c+[Path for the configuration file]:CONFIG:_files' \
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
@@ -53,8 +53,8 @@ _lnpd() {
         case $line[1] in
             (init)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
+'--data-dir=[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
 '-c+[Path for the configuration file]:CONFIG:_files' \
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
@@ -75,8 +75,8 @@ _arguments "${_arguments_options[@]}" \
 ;;
 (help)
 _arguments "${_arguments_options[@]}" \
-'-d+[Data directory path]:DATA_DIR:_files -/' \
-'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
+'-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
+'--data-dir=[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
 '-c+[Path for the configuration file]:CONFIG:_files' \
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \

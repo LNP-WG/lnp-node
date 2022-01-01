@@ -20,8 +20,8 @@ Register-ArgumentCompleter -Native -CommandName 'routed' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'routed' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')

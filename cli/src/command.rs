@@ -47,7 +47,9 @@ impl Exec for Command {
                     RpcMsg::PeerInfo(info) => println!("{}", info),
                     RpcMsg::ChannelInfo(info) => println!("{}", info),
                     _ => {
-                        Err(Error::Other(format!("{}", "Server returned unrecognizable response")))?
+                        return Err(Error::Other(
+                            "Server returned unrecognizable response".to_string(),
+                        ))
                     }
                 }
             }

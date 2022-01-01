@@ -88,7 +88,7 @@ impl Client {
                 }
             }
         }
-        return Ok(self.response_queue.pop().expect("We always have at least one element"));
+        Ok(self.response_queue.pop().expect("We always have at least one element"))
     }
 
     pub fn report_failure(&mut self) -> Result<RpcMsg, Error> {
@@ -131,7 +131,7 @@ impl Client {
                         "Unexpected message".bright_yellow(),
                         other.to_string().yellow()
                     );
-                    Err(Error::Other(s!("Unexpected server response")))?
+                    return Err(Error::Other(s!("Unexpected server response")));
                 }
             }
         }
@@ -162,6 +162,6 @@ impl esb::Handler<RpcBus> for Handler {
 
     fn handle_err(&mut self, _: &mut Bus, err: esb::Error<ServiceId>) -> Result<(), Self::Error> {
         // We simply propagate the error since it already has been reported
-        Err(err)?
+        Err(err.into())
     }
 }

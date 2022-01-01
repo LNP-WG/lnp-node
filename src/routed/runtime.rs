@@ -46,9 +46,7 @@ pub struct Runtime {
 
 impl Responder for Runtime {
     #[inline]
-    fn enquirer(&self) -> Option<ClientId> {
-        self.enquirer
-    }
+    fn enquirer(&self) -> Option<ClientId> { self.enquirer }
 }
 
 impl esb::Handler<ServiceBus> for Runtime
@@ -58,9 +56,7 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,
@@ -170,7 +166,8 @@ impl Runtime {
         invoice: Invoice,
         amount_msat: Option<u64>,
     ) -> Result<Vec<Hop<PaymentOnion>>, PaymentError> {
-        // TODO: Add private channel information from invoice to router (use dedicated PrivateRouter)
+        // TODO: Add private channel information from invoice to router (use dedicated
+        // PrivateRouter)
 
         let payment = PaymentRequest {
             amount_msat: amount_msat
