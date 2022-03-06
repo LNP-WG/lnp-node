@@ -35,7 +35,6 @@ pub mod lnpd {
     include!("src/lnpd/opts.rs");
 }
 pub mod peerd {
-    include!("src/peerd/peer_socket.rs");
     include!("src/peerd/opts.rs");
 }
 pub mod channeld {

@@ -30,14 +30,14 @@ use lnp::p2p::legacy::{
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
+use microservices::peer::supervisor::RuntimeParams;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
-use super::RuntimeParams;
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{Endpoints, Error, LogStyle, Responder, Service};
+use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
 
-pub(super) fn run(connection: PeerConnection, params: RuntimeParams) -> Result<(), Error> {
+pub fn run(connection: PeerConnection, params: RuntimeParams<Config>) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
@@ -95,7 +95,9 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { ServiceId::Loopback }
+    fn identity(&self) -> ServiceId {
+        ServiceId::Loopback
+    }
 
     fn handle(
         &mut self,
@@ -183,7 +185,9 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {

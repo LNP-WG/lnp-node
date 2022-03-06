@@ -35,8 +35,7 @@ use std::path::{Path, PathBuf};
 use bitcoin::secp256k1::PublicKey;
 use clap::Parser;
 use internet2::LocalNode;
-use lnp_node::lnpd::{self, Command, Opts};
-use lnp_node::peerd::supervisor::read_node_key_file;
+use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
 use lnp_node::{Config, Error, LogStyle};
 use strict_encoding::StrictEncode;
 

@@ -26,6 +26,7 @@ use lnp::p2p::legacy::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
 use microservices::esb::{self, Handler};
+use microservices::peer::PeerSocket;
 use wallet::address::AddressCompat;
 
 use crate::automata::{Event, StateMachine};
@@ -33,11 +34,9 @@ use crate::bus::{
     AcceptChannelFrom, BusMsg, CtlMsg, IntoSuccessOrFalure, ServiceBus, Status, ToProgressOrFalure,
 };
 use crate::lnpd::automata::ChannelLauncher;
-use crate::lnpd::daemons::{Daemon, DaemonHandle};
+use crate::lnpd::daemons::{read_node_key_file, Daemon, DaemonHandle};
 use crate::lnpd::funding::{self, FundingWallet};
 use crate::opts::LNP_NODE_FUNDING_WALLET;
-use crate::peerd::supervisor::read_node_key_file;
-use crate::peerd::PeerSocket;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
 
@@ -112,7 +111,9 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");

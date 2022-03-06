@@ -14,20 +14,41 @@
 
 use std::convert::TryFrom;
 use std::fmt::{self, Debug, Display, Formatter};
+use std::fs;
 use std::net::SocketAddr;
 use std::os::unix::process::ExitStatusExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ExitStatus};
 use std::{process, thread};
 
 use amplify::hex::ToHex;
 use amplify::IoError;
-use internet2::RemoteSocketAddr;
+use internet2::{LocalNode, RemoteSocketAddr};
 use lnp::p2p::legacy::ActiveChannelId;
+use microservices::peer::{supervisor, PeerSocket};
+use strict_encoding::StrictDecode;
 
 use crate::lnpd::runtime::Runtime;
-use crate::peerd::PeerSocket;
+use crate::service::LogStyle;
 use crate::{channeld, peerd, routed, signd, watchd, Config, Error};
+
+pub fn read_node_key_file(key_file: &Path) -> LocalNode {
+    let file = fs::File::open(key_file).unwrap_or_else(|_| {
+        panic!(
+            "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
+             access rights to it",
+            key_file.display()
+        )
+    });
+    let local_node = LocalNode::strict_decode(file).unwrap_or_else(|_| {
+        panic!("Unable understand format of node key file '{}'", key_file.display())
+    });
+
+    let local_id = local_node.node_id();
+    info!("{}: {}", "Local node id".ended(), local_id.addr());
+
+    local_node
+}
 
 // TODO: Move `DaemonHandle` to microservices crate
 /// Handle for a daemon launched by LNPd
@@ -151,7 +172,9 @@ impl Runtime {
                 let res = match d.clone() {
                     Daemon::Signd => signd::run(config),
                     Daemon::Peerd(socket, key_file) => {
-                        peerd::supervisor::run(config, &key_file, socket)
+                        let threaded = config.threaded;
+                        let local_node = read_node_key_file(&key_file);
+                        supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
                     }
                     Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
                     Daemon::Routed => routed::run(config),

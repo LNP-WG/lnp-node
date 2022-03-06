@@ -92,8 +92,10 @@ extern crate log;
 use std::path::PathBuf;
 
 use clap::Parser;
-use lnp_node::peerd::{self, Opts, PeerSocket};
+use lnp_node::lnpd::read_node_key_file;
+use lnp_node::peerd::{self, Opts};
 use lnp_node::Config;
+use microservices::peer::PeerSocket;
 
 /*
 mod internal {
@@ -125,10 +127,19 @@ fn main() {
      */
 
     let key_file = PathBuf::from(opts.key_opts.key_file.clone());
+    let local_node = read_node_key_file(&key_file);
     let peer_socket = PeerSocket::from(opts);
 
     debug!("Starting runtime ...");
-    peerd::supervisor::run(config, &key_file, peer_socket).expect("Error running peerd runtime");
+    let threaded = config.threaded;
+    microservices::peer::supervisor::run(
+        config,
+        threaded,
+        &local_node,
+        peer_socket,
+        peerd::runtime::run,
+    )
+    .expect("Error running peerd runtime");
 
     unreachable!()
 }

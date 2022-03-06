@@ -14,11 +14,7 @@
 
 #[cfg(feature = "server")]
 mod opts;
-mod peer_socket;
-pub(self) mod runtime;
-pub mod supervisor;
+pub mod runtime;
 
 #[cfg(feature = "server")]
 pub use opts::{KeyOpts, Opts};
-pub use peer_socket::PeerSocket;
-pub(self) use supervisor::RuntimeParams;

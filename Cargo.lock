@@ -1285,8 +1285,8 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.6.0-beta.1"
-source = "git+https://github.com/internet2-org/rust-microservices#d0e0baa925dc98d0255fd5280b11dff555f124a6"
+version = "0.6.0-beta.2"
+source = "git+https://github.com/internet2-org/rust-microservices#8da873c9680b6e3288004308c0558727cb06b3aa"
 dependencies = [
  "amplify",
  "clap",
@@ -1295,6 +1295,8 @@ dependencies = [
  "internet2",
  "lightning_encoding",
  "log",
+ "nix",
+ "secp256k1",
  "serde 1.0.132",
  "serde_with",
  "strict_encoding",

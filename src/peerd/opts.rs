@@ -17,6 +17,7 @@ use std::net::{IpAddr, Ipv4Addr};
 use clap::{ArgGroup, ValueHint};
 use internet2::addr::InetSocketAddr;
 use internet2::{FramingProtocol, RemoteNodeAddr, RemoteSocketAddr};
+use microservices::peer::PeerSocket;
 
 use crate::opts::LNP_NODE_KEY_FILE;
 
@@ -115,7 +116,7 @@ impl KeyOpts {
     }
 }
 
-impl From<Opts> for crate::peerd::PeerSocket {
+impl From<Opts> for PeerSocket {
     fn from(opts: Opts) -> Self {
         if let Some(peer_addr) = opts.connect {
             Self::Connect(peer_addr)
