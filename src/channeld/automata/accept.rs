@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -123,4 +123,6 @@ fn finish_funded(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<Channe
     todo!()
 }
 
-fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }
+fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> {
+    todo!()
+}

@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -75,7 +75,9 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId {
+        self.identity.clone()
+    }
 
     fn handle(
         &mut self,

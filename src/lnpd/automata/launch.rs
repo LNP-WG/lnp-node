@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -64,7 +64,9 @@ pub enum Error {
 }
 
 impl From<Error> for Failure {
-    fn from(err: Error) -> Self { Failure { code: 6000, info: err.to_string() } }
+    fn from(err: Error) -> Self {
+        Failure { code: 6000, info: err.to_string() }
+    }
 }
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.

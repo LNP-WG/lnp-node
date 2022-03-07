@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -89,7 +89,9 @@ pub enum ServiceId {
 }
 
 impl ServiceId {
-    pub fn router() -> ServiceId { ServiceId::LnpBroker }
+    pub fn router() -> ServiceId {
+        ServiceId::LnpBroker
+    }
 
     pub fn client() -> ServiceId {
         use bitcoin::secp256k1::rand;

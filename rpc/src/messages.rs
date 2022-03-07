@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -393,25 +393,37 @@ impl Display for OptionDetails {
 }
 
 impl OptionDetails {
-    pub fn with(s: impl ToString) -> Self { Self(Some(s.to_string())) }
+    pub fn with(s: impl ToString) -> Self {
+        Self(Some(s.to_string()))
+    }
 
-    pub fn new() -> Self { Self(None) }
+    pub fn new() -> Self {
+        Self(None)
+    }
 }
 
 impl From<String> for OptionDetails {
-    fn from(s: String) -> Self { OptionDetails(Some(s)) }
+    fn from(s: String) -> Self {
+        OptionDetails(Some(s))
+    }
 }
 
 impl From<&str> for OptionDetails {
-    fn from(s: &str) -> Self { OptionDetails(Some(s.to_string())) }
+    fn from(s: &str) -> Self {
+        OptionDetails(Some(s.to_string()))
+    }
 }
 
 impl From<crate::Error> for RpcMsg {
-    fn from(err: crate::Error) -> Self { RpcMsg::Failure(Failure::from(&err)) }
+    fn from(err: crate::Error) -> Self {
+        RpcMsg::Failure(Failure::from(&err))
+    }
 }
 
 impl From<&str> for RpcMsg {
-    fn from(s: &str) -> Self { RpcMsg::Progress(s.to_owned()) }
+    fn from(s: &str) -> Self {
+        RpcMsg::Progress(s.to_owned())
+    }
 }
 
 impl<E: std::error::Error> From<&E> for Failure {

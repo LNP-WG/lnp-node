@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020 by
+// Written in 2020-2022 by
 //     Dr. Maxim Orlovsky <orlovsky@pandoracore.com>
 //
 // To the extent possible under law, the author(s) have dedicated all
@@ -25,5 +25,7 @@ pub struct Opts {
 }
 
 impl Opts {
-    pub fn process(&mut self) { self.shared.process() }
+    pub fn process(&mut self) {
+        self.shared.process()
+    }
 }
