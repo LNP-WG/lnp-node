@@ -123,6 +123,4 @@ fn finish_funded(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<Channe
     todo!()
 }
 
-fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> {
-    todo!()
-}
+fn finish_locked(_event: Event<BusMsg>, _runtime: &mut Runtime) -> Result<(), Error> { todo!() }

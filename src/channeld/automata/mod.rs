@@ -132,9 +132,7 @@ pub enum ChannelStateMachine {
 //       according to them
 impl Default for ChannelStateMachine {
     #[inline]
-    fn default() -> Self {
-        ChannelStateMachine::Launch
-    }
+    fn default() -> Self { ChannelStateMachine::Launch }
 }
 
 impl ChannelStateMachine {
@@ -209,18 +207,18 @@ impl Runtime {
             // message later without channel halting.
             Err(err @ Error::Esb(_)) => {
                 error!("{} due to ESB failure: {}", "Failing channel".err(), err.err_details());
-                self.report_failure(
-                    endpoints,
-                    Failure { code: err.errno(), info: err.to_string() },
-                );
+                self.report_failure(endpoints, Failure {
+                    code: err.errno(),
+                    info: err.to_string(),
+                });
                 return Err(err);
             }
             Err(other_err) => {
                 error!("{}: {}", "Channel error".err(), other_err.err_details());
-                self.report_failure(
-                    endpoints,
-                    Failure { code: other_err.errno(), info: other_err.to_string() },
-                );
+                self.report_failure(endpoints, Failure {
+                    code: other_err.errno(),
+                    info: other_err.to_string(),
+                });
                 false
             }
         };

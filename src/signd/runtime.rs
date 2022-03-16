@@ -24,9 +24,10 @@ use microservices::esb::{self, Handler};
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
-use crate::opts::LNP_NODE_MASTER_KEY_FILE;
 use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Service};
+
+use crate::LNP_NODE_MASTER_KEY_FILE;
 
 pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();
@@ -75,9 +76,7 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn handle(
         &mut self,

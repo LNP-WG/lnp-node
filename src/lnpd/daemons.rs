@@ -14,12 +14,11 @@
 
 use std::convert::TryFrom;
 use std::fmt::{self, Debug, Display, Formatter};
-use std::fs;
 use std::net::SocketAddr;
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ExitStatus};
-use std::{process, thread};
+use std::{fs, process, thread};
 
 use amplify::hex::ToHex;
 use amplify::IoError;

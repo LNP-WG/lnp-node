@@ -25,7 +25,5 @@ pub struct Opts {
 }
 
 impl Opts {
-    pub fn process(&mut self) {
-        self.shared.process()
-    }
+    pub fn process(&mut self) { self.shared.process() }
 }

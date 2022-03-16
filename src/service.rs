@@ -15,7 +15,6 @@
 use internet2::{zmqsocket, ZmqType};
 use microservices::esb;
 use microservices::node::TryService;
-
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
 use crate::rpc::{Failure, ServiceId};
 use crate::{Config, Error};

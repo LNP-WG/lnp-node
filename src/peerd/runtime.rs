@@ -95,9 +95,7 @@ impl esb::Handler<ServiceBus> for BridgeHandler {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        ServiceId::Loopback
-    }
+    fn identity(&self) -> ServiceId { ServiceId::Loopback }
 
     fn handle(
         &mut self,
@@ -185,9 +183,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {
