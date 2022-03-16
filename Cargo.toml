@@ -73,7 +73,7 @@ clap = { version = "=3.0.0-rc.7", optional = true, features = ["env", "derive"] 
 settings = { version = "0.10", package = "config", optional = true }
 configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
-colored = { version = "2", optional = true }
+colored = "2.0.0"
 shellexpand = { version = "2", optional = true }
 rpassword = { version = "5.0.1", optional = true }
 # IPC
@@ -111,7 +111,7 @@ all = ["server", "tor"] # "rgb"
 # Required for all apps that can be launched from command-line shell as binaries
 # (i.e. both servers and cli)
 server = ["microservices/server", "dotenv", "clap", "settings", "configure_me",
-          "amplify/parse_arg", "shellexpand", "colored", "rpassword"]
+          "amplify/parse_arg", "shellexpand", "rpassword"]
 # Embedded is an app that contains embedded node and that talks to it through
 # integration layer
 embedded = ["microservices/embedded"]
