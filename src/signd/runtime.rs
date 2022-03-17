@@ -25,9 +25,7 @@ use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAl
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::ServiceId;
-use crate::{Config, Endpoints, Error, Service};
-
-use crate::LNP_NODE_MASTER_KEY_FILE;
+use crate::{Config, Endpoints, Error, Service, LNP_NODE_MASTER_KEY_FILE};
 
 pub fn run(config: Config) -> Result<(), Error> {
     let secp = Secp256k1::new();

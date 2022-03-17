@@ -37,10 +37,7 @@ use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon, DaemonHandle};
 use crate::lnpd::funding::{self, FundingWallet};
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
-
-use crate::LNP_NODE_FUNDING_WALLET;
-
+use crate::{Config, Endpoints, Error, LogStyle, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let mut listens = HashSet::with_capacity(1);

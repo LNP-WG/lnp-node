@@ -16,10 +16,10 @@
 
 use std::path::PathBuf;
 
-#[cfg(feature = "all")]
+#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::net::SocketAddr;
 
-#[cfg(feature = "all")]
+#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::str::FromStr;
 
 use internet2::ZmqSocketAddr;
