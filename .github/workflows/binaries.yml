@@ -30,4 +30,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --bin lnp-cli --features cli
+          args: --bin lnp-cli

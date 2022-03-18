@@ -89,7 +89,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
     use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
     use bitcoin_hd::{TerminalStep, TrackingAccount};
     use lnp_node::lnpd::funding::FundingWallet;
-    use lnp_node::opts::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_KEY_FILE};
+    use lnp_node::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_KEY_FILE};
     use miniscript::descriptor::{Descriptor, Wpkh};
     use psbt::sign::MemorySigningAccount;
 

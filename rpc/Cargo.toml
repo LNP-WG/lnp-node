@@ -17,7 +17,7 @@ strict_encoding = "1.7.5"
 lnp-core = { version = "0.6.0-beta.1", git = "https://github.com/LNP-BP/lnp-core" }
 lnpbp = "0.5.0"
 bitcoin = { version = "0.27.1", features = ["rand"] }
-lightning-invoice = "0.12.0"
+lightning-invoice = "0.13.0"
 internet2 = "0.5.16"
 microservices = { version = "0.6.0-beta.1", git = "https://github.com/internet2-org/rust-microservices", default-features = false }
 descriptor-wallet = "0.5.1"

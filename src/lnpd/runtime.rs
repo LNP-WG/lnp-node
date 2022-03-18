@@ -36,9 +36,8 @@ use crate::bus::{
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon, DaemonHandle};
 use crate::lnpd::funding::{self, FundingWallet};
-use crate::opts::LNP_NODE_FUNDING_WALLET;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
+use crate::{Config, Endpoints, Error, LogStyle, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let mut listens = HashSet::with_capacity(1);
@@ -111,9 +110,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId {
-        self.identity.clone()
-    }
+    fn identity(&self) -> ServiceId { self.identity.clone() }
 
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");

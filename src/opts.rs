@@ -41,9 +41,6 @@ pub const LNP_NODE_CONFIG: &str = "{data_dir}/lnp_node.toml";
 pub const LNP_NODE_TOR_PROXY: &str = "127.0.0.1:9050";
 pub const LNP_NODE_KEY_FILE: &str = "{data_dir}/node.key";
 
-pub const LNP_NODE_MASTER_KEY_FILE: &str = "master.key";
-pub const LNP_NODE_FUNDING_WALLET: &str = "funding.wallet";
-
 /// Shared options used by different binaries
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct Opts {

@@ -14,8 +14,12 @@
 
 #![allow(clippy::needless_borrow)] // due to a bug in `display(Debug)`
 
-use std::net::SocketAddr;
 use std::path::PathBuf;
+
+#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
+use std::net::SocketAddr;
+
+#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::str::FromStr;
 
 use internet2::ZmqSocketAddr;
@@ -23,8 +27,7 @@ use lnp::p2p::legacy::ActiveChannelId;
 use lnpbp::chain::Chain;
 
 #[cfg(feature = "server")]
-use crate::opts::Opts;
-use crate::opts::{LNP_NODE_CTL_SOCKET, LNP_NODE_MSG_SOCKET};
+use crate::opts::{Opts, LNP_NODE_CTL_SOCKET, LNP_NODE_MSG_SOCKET};
 
 /// Final configuration resulting from data contained in config file environment
 /// variables and command-line options. For security reasons node key is kept
