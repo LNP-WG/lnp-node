@@ -78,6 +78,12 @@ pub enum Error {
     #[from]
     BitcoinEncoding(bitcoin::consensus::encode::Error),
 
+    /// encoding failure
+    ///
+    /// Details: {0}
+    #[from]
+    StrictEncoding(strict_encoding::Error),
+
     /// Error during funding wallet operation
     #[from]
     #[display(inner)]

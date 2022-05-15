@@ -16,12 +16,14 @@ use std::fs;
 
 use amplify::Wrapper;
 use bitcoin::secp256k1::{self, Secp256k1};
-use bitcoin::util::bip32::{ChildNumber, DerivationPath};
+use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
+use bitcoin::XpubIdentifier;
 use lnp::channel::bolt::LocalKeyset;
 use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
+use strict_encoding::StrictDecode;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::ServiceId;
@@ -60,8 +62,15 @@ where
     ) -> Result<MemoryKeyProvider<'secp, secp256k1::All>, Error> {
         let mut wallet_path = config.data_dir.clone();
         wallet_path.push(LNP_NODE_MASTER_KEY_FILE);
-        let signing_account = MemorySigningAccount::read(secp, fs::File::open(wallet_path)?)?;
-        let mut provider = MemoryKeyProvider::with(secp);
+
+        let mut file = fs::File::open(wallet_path)?;
+        let master_id = XpubIdentifier::strict_decode(&mut file)?;
+        let derivation = DerivationPath::strict_decode(&mut file)?;
+        let account_xpriv = ExtendedPrivKey::strict_decode(&mut file)?;
+        let signing_account =
+            MemorySigningAccount::with(secp, master_id, derivation, account_xpriv);
+
+        let mut provider = MemoryKeyProvider::with(secp, true);
         provider.add_account(signing_account);
         Ok(provider)
     }
@@ -126,7 +135,7 @@ where
         match message {
             CtlMsg::Sign(mut psbt) => {
                 let sig_count = psbt.sign_all(&self.provider)?;
-                let txid = psbt.global.unsigned_tx.txid();
+                let txid = psbt.unsigned_tx.txid();
                 info!("Transaction {} is signed ({} signatures added)", txid, sig_count);
                 trace!("Signed PSBT: {:#?}", psbt);
                 endpoints.send_to(

@@ -479,7 +479,7 @@ fn complete_signatures(
         }
     };
 
-    let psbt_txid = funding_psbt.global.unsigned_tx.txid();
+    let psbt_txid = funding_psbt.unsigned_tx.txid();
     if psbt_txid != txid {
         let err = Error::SignedTxidChanged { unsigned_txid: txid, signed_txid: psbt_txid };
         report_failure(enquirer, event.endpoints, err)?;

@@ -33,11 +33,12 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 
 use bitcoin::secp256k1::PublicKey;
+use bitcoin::XpubIdentifier;
 use clap::Parser;
 use internet2::LocalNode;
 use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
 use lnp_node::{Config, Error, LogStyle};
-use strict_encoding::StrictEncode;
+use strict_encoding::{StrictDecode, StrictEncode};
 
 fn main() -> Result<(), Error> {
     println!("lnpd: lightning node management microservice");
@@ -113,15 +114,21 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
         let xpriv = ExtendedPrivKey::from_str(&xpriv)?;
         let derivation = DerivationPath::from_str("m/9735h").expect("hardcoded derivation path");
         let xpriv_account = xpriv.derive_priv(&secp, &derivation)?;
-        let fingerprint = xpriv.identifier(&secp);
-        let signing_account =
-            MemorySigningAccount::with(&secp, fingerprint, derivation, xpriv_account);
-        let file = fs::File::create(wallet_path)?;
-        signing_account.write(file)?;
-        signing_account
+        let xpubid = xpriv.identifier(&secp);
+
+        let mut file = fs::File::create(wallet_path)?;
+        xpubid.strict_encode(&mut file)?;
+        derivation.strict_encode(&mut file)?;
+        xpriv_account.strict_encode(&mut file)?;
+
+        MemorySigningAccount::with(&secp, xpubid, derivation, xpriv_account)
     } else {
         println!("Signing account '{}' ... {}", LNP_NODE_MASTER_KEY_FILE, "found".progress());
-        MemorySigningAccount::read(&secp, fs::File::open(wallet_path)?)?
+        let mut file = fs::File::open(wallet_path)?;
+        let master_id = XpubIdentifier::strict_decode(&mut file)?;
+        let derivation = DerivationPath::strict_decode(&mut file)?;
+        let account_xpriv = ExtendedPrivKey::strict_decode(&mut file)?;
+        MemorySigningAccount::with(&secp, master_id, derivation, account_xpriv)
     };
     println!(
         "Signing account: {}",

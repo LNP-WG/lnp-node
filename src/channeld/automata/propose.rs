@@ -12,7 +12,6 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use bitcoin::secp256k1::Signature;
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::legacy::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
@@ -210,7 +209,7 @@ fn complete_accepted(
     };
 
     trace!("Funding transaction: {:#?}", funding_psbt);
-    debug!("Funding transaction id is {}", funding_psbt.global.unsigned_tx.txid());
+    debug!("Funding transaction id is {}", funding_psbt.unsigned_tx.txid());
 
     let channel = &mut runtime.state.channel;
     let refund_psbt = channel.refund_tx(funding_psbt, true)?;
@@ -218,7 +217,7 @@ fn complete_accepted(
     trace!("Refund transaction: {:#?}", refund_psbt);
     trace!("Local keyset: {:#}", channel.constructor().local_keys());
     trace!("Remote keyset: {:#}", channel.constructor().remote_keys());
-    debug!("Refund transaction id is {}", refund_psbt.global.unsigned_tx.txid());
+    debug!("Refund transaction id is {}", refund_psbt.unsigned_tx.txid());
 
     runtime.send_ctl(event.endpoints, ServiceId::Signer, CtlMsg::Sign(refund_psbt))?;
     Ok(ChannelPropose::Signing)
@@ -244,9 +243,6 @@ fn complete_signing(
         .partial_sigs
         .get(&bitcoin::PublicKey::new(funding_pubkey))
         .ok_or(automata::Error::FundingPsbtUnsigned(funding_pubkey))?;
-    // TODO: Use BitcoinSignature type for parsing signature once bitcoin 0.27 is released
-    let signature = Signature::from_der(&signature[..signature.len() - 1])
-        .map_err(automata::Error::InvalidSig)?;
 
     let funding = channel.funding();
     let (funding_txid, funding_output_index) = (funding.txid(), funding.output());
@@ -256,7 +252,7 @@ fn complete_signing(
             .expect("channel at funding stage must have temporary channel id"),
         funding_txid,
         funding_output_index,
-        signature,
+        signature: signature.sig,
     };
 
     let channel_id = ChannelId::with(funding_txid, funding_output_index);

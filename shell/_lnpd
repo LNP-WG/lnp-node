@@ -91,6 +91,7 @@ _arguments "${_arguments_options[@]}" \
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+'*::subcommand -- The subcommand whose help message to display:' \
 && ret=0
 ;;
         esac

@@ -14,6 +14,7 @@
 
 use amplify::{Slice32, Wrapper};
 use bitcoin::hashes::Hash;
+use bitcoin::secp256k1::PublicKey;
 use internet2::presentation::sphinx::Hop;
 use lightning_invoice::Invoice;
 use lnp::p2p::legacy::{Messages as LnMsg, PaymentOnion, PaymentRequest};
@@ -167,8 +168,9 @@ impl Runtime {
         amount_msat: Option<u64>,
     ) -> Result<Vec<Hop<PaymentOnion>>, PaymentError> {
         // TODO: Add private channel information from invoice to router (use dedicated
-        // PrivateRouter)
+        //       PrivateRouter)
 
+        let pk = invoice.recover_payee_pub_key().serialize();
         let payment = PaymentRequest {
             amount_msat: amount_msat
                 .or_else(|| invoice.amount_milli_satoshis())
@@ -176,7 +178,7 @@ impl Runtime {
             payment_hash: HashLock::from_inner(Slice32::from_inner(
                 invoice.payment_hash().into_inner(),
             )),
-            node_id: invoice.recover_payee_pub_key(),
+            node_id: PublicKey::from_slice(&pk).expect("Invoice library is broken"),
             min_final_cltv_expiry: invoice.min_final_cltv_expiry() as u32,
         };
         let route = self.router.compute_route(payment);

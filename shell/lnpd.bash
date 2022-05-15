@@ -119,7 +119,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__help)
-            opts="-d -c -v -T -r -n --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
+            opts="-d -c -v -T -r -n --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port <SUBCOMMAND>..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

@@ -380,7 +380,7 @@ impl Runtime {
             }
 
             CtlMsg::Signed(psbt) => {
-                let txid = psbt.global.unsigned_tx.txid();
+                let txid = psbt.unsigned_tx.txid();
                 let launcher = self
                     .funding_channels
                     .remove(&txid)
@@ -531,11 +531,8 @@ impl Runtime {
             bmap! {},
             |mut acc, f| -> Result<_, Error> {
                 *acc.entry(
-                    AddressCompat::from_script(
-                        f.script_pubkey.as_inner(),
-                        self.funding_wallet.network(),
-                    )
-                    .ok_or(funding::Error::NoAddressRepresentation)?,
+                    AddressCompat::from_script(&f.script_pubkey, self.funding_wallet.network())
+                        .ok_or(funding::Error::NoAddressRepresentation)?,
                 )
                 .or_insert(0) += f.amount;
                 Ok(acc)

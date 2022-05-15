@@ -56,7 +56,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '\''<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]'\'' format:' \
 && ret=0
 ;;
 (ping)
@@ -67,7 +67,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '\''<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]'\'' format:' \
 && ret=0
 ;;
 (info)
@@ -129,7 +129,7 @@ _arguments "${_arguments_options[@]}" \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-':peer -- Address of the remote node, in '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]' format:' \
+':peer -- Address of the remote node, in '\''<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]'\'' format:' \
 ':funding-sat -- Amount of satoshis to allocate to the channel (the actual allocation will happen later using `fund` command after the channel acceptance):' \
 && ret=0
 ;;
@@ -164,6 +164,7 @@ _arguments "${_arguments_options[@]}" \
 '--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+'*::subcommand -- The subcommand whose help message to display:' \
 && ret=0
 ;;
         esac

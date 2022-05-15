@@ -140,7 +140,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__help)
-            opts="-c -v --connect --verbose"
+            opts="-c -v --connect --verbose <SUBCOMMAND>..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

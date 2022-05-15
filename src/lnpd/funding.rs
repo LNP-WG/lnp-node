@@ -21,9 +21,9 @@ use std::{fs, io};
 use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
-use bitcoin::{Address, Network, OutPoint, SigHashType, Txid};
+use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
 use bitcoin_hd::{
-    DerivationSubpath, DeriveError, DescriptorDerive, SegmentIndexes, TrackingAccount,
+    DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes, TrackingAccount,
     UnhardenedIndex,
 };
 use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
@@ -33,6 +33,7 @@ use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::channel::PsbtLnpFunding;
 use lnp::p2p::legacy::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
+use miniscript::psbt::PsbtExt;
 use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
 use psbt::construct::Construct;
 use psbt::Psbt;
@@ -86,9 +87,9 @@ pub enum Error {
     /// Insufficient funds for the funding transaction
     InsufficientFunds,
 
-    /// error finalizing transaction, probably not all signatures are present. Details: {0}
-    #[from]
-    Finalizing(miniscript::psbt::Error),
+    /// error finalizing transaction, probably not all signatures are present.
+    // TODO: Print out details once apmplify library will have `DisplayVec` type.
+    Finalizing(Vec<miniscript::psbt::Error>),
 }
 
 /// Information about funding which is already used in channels pending
@@ -164,7 +165,7 @@ impl FundingWallet {
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
 
         let network = chain.try_into()?;
-        if wallet_data.descriptor.network()? != network {
+        if DescriptorExt::<bitcoin::PublicKey>::network(&wallet_data.descriptor)? != network {
             return Err(Error::ChainMismatch);
         }
 
@@ -288,10 +289,11 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = DescriptorDerive::address(&self.wallet_data.descriptor, &self.secp, &[
-            UnhardenedIndex::zero(),
-            self.wallet_data.last_normal_index,
-        ])?;
+        let address = DescriptorExt::<bitcoin::PublicKey>::address(
+            &self.wallet_data.descriptor,
+            &self.secp,
+            &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
+        )?;
         Ok(address)
     }
 
@@ -327,7 +329,7 @@ impl FundingWallet {
                 terminal: DerivationSubpath::from(funds.terminal.clone()),
                 seq_no: SeqNo::with_rbf(0),
                 tweak: None,
-                sighash_type: SigHashType::All,
+                sighash_type: EcdsaSighashType::All,
             })
             .collect::<Vec<_>>();
         if acc < amount_and_fee {
@@ -378,10 +380,10 @@ impl FundingWallet {
                 }
             }
             psbt.set_channel_funding_output(0).expect("hardcoded funding output number");
-            let transaction = &psbt.global.unsigned_tx;
+            let transaction = &psbt.unsigned_tx;
             // If we use non-standard descriptor we assume its witness will weight 256 bytes per
             // input
-            let tx_weight = transaction.get_weight() as u64;
+            let tx_weight = transaction.weight() as u64;
             let witness_weight = descriptor.max_satisfaction_weight().unwrap_or(256) * inputs.len();
             let precise_fee = (tx_weight + witness_weight as u64) * feerate_per_kw as u64 / 1000;
             if precise_fee == fee_upper_est {
@@ -396,7 +398,7 @@ impl FundingWallet {
             fee_upper_est = precise_fee;
         };
 
-        let txid = psbt.global.unsigned_tx.txid();
+        let txid = psbt.unsigned_tx.txid();
         self.wallet_data.pending_fundings.insert(txid, PendingFunding {
             temp_channel_id,
             funding_txid: txid,
@@ -413,8 +415,8 @@ impl FundingWallet {
     }
 
     #[inline]
-    pub fn publish(&self, mut psbt: Psbt) -> Result<(), Error> {
-        miniscript::psbt::finalize(&mut psbt, &self.secp)?;
+    pub fn publish(&self, psbt: Psbt) -> Result<(), Error> {
+        let psbt = psbt.finalize(&self.secp).map_err(|(_, errs)| Error::Finalizing(errs))?;
         let tx = psbt.extract_tx();
         self.resolver.transaction_broadcast(&tx)?;
         Ok(())
