@@ -18,8 +18,8 @@ lnp-core = { version = "0.6.0-beta.2", git = "https://github.com/LNP-BP/lnp-core
 lnpbp = "0.6.0"
 bitcoin = { version = "0.28.1", features = ["rand"] }
 lightning-invoice = "0.14.0"
-internet2 = "0.6.0"
-microservices = { version = "0.6.0", default-features = false }
+internet2 = "0.6.1"
+microservices = { version = "0.6.1", default-features = false }
 descriptor-wallet = "0.6.1"
 serde_crate = { package = "serde", version = "1", features = ["derive"], optional = true }
 serde_with = { version = "1.8", optional = true }
