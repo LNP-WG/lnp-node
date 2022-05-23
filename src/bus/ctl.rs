@@ -21,9 +21,9 @@ use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::legacy::{ChannelId, OpenChannel, PaymentOnion};
 use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
-use psbt::Psbt;
 use strict_encoding::{NetworkDecode, NetworkEncode};
 use wallet::hlc::HashLock;
+use wallet::psbt::Psbt;
 use wallet::scripts::PubkeyScript;
 
 use crate::rpc::{ClientId, ServiceId};

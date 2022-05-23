@@ -22,22 +22,22 @@ use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
-use bitcoin_hd::{
-    DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes, TrackingAccount,
-    UnhardenedIndex,
-};
-use bitcoin_onchain::{ResolveUtxo, UtxoResolverError};
-use descriptors::locks::{LockTime, SeqNo};
-use descriptors::InputDescriptor;
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::channel::PsbtLnpFunding;
 use lnp::p2p::legacy::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::psbt::PsbtExt;
 use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
-use psbt::construct::Construct;
-use psbt::Psbt;
 use strict_encoding::{StrictDecode, StrictEncode};
+use wallet::descriptors::locks::{LockTime, SeqNo};
+use wallet::descriptors::InputDescriptor;
+use wallet::hd::{
+    DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes, TrackingAccount,
+    UnhardenedIndex,
+};
+use wallet::onchain::{ResolveUtxo, UtxoResolverError};
+use wallet::psbt::construct::Construct;
+use wallet::psbt::Psbt;
 use wallet::scripts::PubkeyScript;
 
 // The default fee rate is 2 sats per kilo-vbyte

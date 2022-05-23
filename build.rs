@@ -13,8 +13,6 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 #[macro_use]
-extern crate amplify;
-#[macro_use]
 extern crate clap;
 
 use clap::IntoApp;
@@ -25,12 +23,6 @@ pub mod opts {
     include!("src/opts.rs");
 }
 
-pub mod cli {
-    pub mod lnp_node {
-        pub use crate::opts;
-    }
-    include!("cli/src/opts.rs");
-}
 pub mod lnpd {
     include!("src/lnpd/opts.rs");
 }
@@ -60,7 +52,6 @@ fn main() -> Result<(), configure_me_codegen::Error> {
         watchd::Opts::command(),
         routed::Opts::command(),
         signd::Opts::command(),
-        cli::Opts::command(),
     ]
     .iter_mut()
     {

@@ -19,8 +19,7 @@ use std::time::Duration;
 
 use colored::Colorize;
 use internet2::ZmqType;
-use microservices::esb;
-use microservices::esb::BusId;
+use microservices::esb::{self, BusId};
 
 use crate::{BusMsg, ClientId, Error, OptionDetails, RpcMsg, ServiceId};
 

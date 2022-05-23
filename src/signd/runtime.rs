@@ -22,8 +22,8 @@ use lnp::channel::bolt::LocalKeyset;
 use lnp::p2p::legacy::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
-use psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
 use strict_encoding::StrictDecode;
+use wallet::psbt::sign::{MemoryKeyProvider, MemorySigningAccount, SecretProvider, SignAll};
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::ServiceId;

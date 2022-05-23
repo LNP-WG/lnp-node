@@ -19,7 +19,7 @@ use bitcoin::util::bip32;
 use internet2::{presentation, transport};
 use lnp::router;
 use microservices::esb;
-use psbt::sign::SignError;
+use wallet::psbt::sign::SignError;
 
 use crate::bus::ServiceBus;
 use crate::channeld;

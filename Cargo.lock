@@ -589,6 +589,8 @@ dependencies = [
  "chrono",
  "commit_verify",
  "descriptors",
+ "electrum-client",
+ "miniscript",
  "psbt",
  "serde 1.0.137",
  "serde_with",
@@ -1025,7 +1027,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
 name = "lnp-cli"
-version = "0.6.0-beta.2"
+version = "0.6.0"
 dependencies = [
  "amplify",
  "clap",
@@ -1039,8 +1041,9 @@ dependencies = [
 
 [[package]]
 name = "lnp-core"
-version = "0.6.0-beta.2"
-source = "git+https://github.com/LNP-BP/lnp-core#559a7591aec8ceb59b603919be8e60faf2f5e5c0"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2f2f02b9eb509abc884f94444063e4fa312a3b783ca259f89a5fce55f3bfd9f"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1057,8 +1060,9 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.6.0-beta.2"
-source = "git+https://github.com/LNP-BP/lnp-core#559a7591aec8ceb59b603919be8e60faf2f5e5c0"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3dddb0d38332bcbc4ec19c58d9ff2317c4726dc280531cb83f6649a6e2bdcd2c"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1076,12 +1080,10 @@ dependencies = [
 
 [[package]]
 name = "lnp_node"
-version = "0.6.0-beta.2"
+version = "0.6.0"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
- "bitcoin_hd",
- "bitcoin_onchain",
  "chrono",
  "clap",
  "clap_complete",
@@ -1090,7 +1092,6 @@ dependencies = [
  "configure_me",
  "configure_me_codegen",
  "descriptor-wallet",
- "descriptors",
  "dotenv",
  "electrum-client",
  "env_logger",
@@ -1103,10 +1104,8 @@ dependencies = [
  "microservices",
  "miniscript",
  "nix",
- "psbt",
  "rpassword",
  "shellexpand",
- "slip132",
  "strict_encoding",
  "strict_encoding_test",
  "zmq",
@@ -1114,7 +1113,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_rpc"
-version = "0.6.0-beta.2"
+version = "0.6.0"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
