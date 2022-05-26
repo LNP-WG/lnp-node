@@ -135,7 +135,7 @@ where
         match message {
             CtlMsg::Sign(mut psbt) => {
                 let sig_count = psbt.sign_all(&self.provider)?;
-                let txid = psbt.unsigned_tx.txid();
+                let txid = psbt.to_txid();
                 info!("Transaction {} is signed ({} signatures added)", txid, sig_count);
                 trace!("Signed PSBT: {:#?}", psbt);
                 endpoints.send_to(

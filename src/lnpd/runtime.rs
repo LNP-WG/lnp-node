@@ -380,7 +380,7 @@ impl Runtime {
             }
 
             CtlMsg::Signed(psbt) => {
-                let txid = psbt.unsigned_tx.txid();
+                let txid = psbt.to_txid();
                 let launcher = self
                     .funding_channels
                     .remove(&txid)

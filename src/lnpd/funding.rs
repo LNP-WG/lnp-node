@@ -19,6 +19,7 @@ use std::path::Path;
 use std::{fs, io};
 
 use amplify::{IoError, Slice32, Wrapper};
+use bitcoin::psbt::PartiallySignedTransaction;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
@@ -380,7 +381,7 @@ impl FundingWallet {
                 }
             }
             psbt.set_channel_funding_output(0).expect("hardcoded funding output number");
-            let transaction = &psbt.unsigned_tx;
+            let transaction = psbt.clone().into_transaction();
             // If we use non-standard descriptor we assume its witness will weight 256 bytes per
             // input
             let tx_weight = transaction.weight() as u64;
@@ -398,7 +399,7 @@ impl FundingWallet {
             fee_upper_est = precise_fee;
         };
 
-        let txid = psbt.unsigned_tx.txid();
+        let txid = psbt.to_txid();
         self.wallet_data.pending_fundings.insert(txid, PendingFunding {
             temp_channel_id,
             funding_txid: txid,
@@ -416,6 +417,7 @@ impl FundingWallet {
 
     #[inline]
     pub fn publish(&self, psbt: Psbt) -> Result<(), Error> {
+        let psbt = PartiallySignedTransaction::from(psbt);
         let psbt = psbt.finalize(&self.secp).map_err(|(_, errs)| Error::Finalizing(errs))?;
         let tx = psbt.extract_tx();
         self.resolver.transaction_broadcast(&tx)?;
