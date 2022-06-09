@@ -16,7 +16,9 @@ use std::net::{IpAddr, Ipv4Addr};
 
 use clap::{ArgGroup, ValueHint};
 use internet2::addr::InetSocketAddr;
-use internet2::{FramingProtocol, RemoteNodeAddr, RemoteSocketAddr};
+use internet2::{RemoteNodeAddr, RemoteSocketAddr};
+use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
+use lnp::p2p::bolt::LNP2P_LEGACY_PORT;
 use microservices::peer::PeerSocket;
 
 use crate::opts::LNP_NODE_KEY_FILE;
@@ -65,17 +67,16 @@ pub struct Opts {
     ///
     /// Optional argument specifying local or remote TCP port to use with the address
     /// given to `--listen` or `--connect` argument.
-    #[clap(short, long, default_value = "9735")]
-    pub port: u16,
+    #[clap(short, long)]
+    pub port: Option<u16>,
 
-    /// Overlay peer communications through different transport protocol.
-    #[clap(
-        short,
-        long,
-        default_value = "tcp",
-        possible_values = &["tcp", "zmq", "http", "websocket", "smtp"]
-    )]
-    pub overlay: FramingProtocol,
+    /// Use BOLT lightning network protocol.
+    #[clap(long, required_unless_present = "bifrost")]
+    pub bolt: bool,
+
+    /// Use Bifrost lightning network protocol.
+    #[clap(long)]
+    pub bifrost: bool,
 
     /// Node key configuration
     #[clap(flatten)]
@@ -108,6 +109,16 @@ impl Opts {
         self.shared.process();
         self.key_opts.process(&self.shared);
     }
+
+    pub fn port(&self) -> u16 {
+        if self.bolt {
+            LNP2P_LEGACY_PORT
+        } else if self.bifrost {
+            LNP2P_BIFROST_PORT
+        } else {
+            unreachable!()
+        }
+    }
 }
 
 impl KeyOpts {
@@ -121,14 +132,10 @@ impl From<Opts> for PeerSocket {
         if let Some(peer_addr) = opts.connect {
             Self::Connect(peer_addr)
         } else if let Some(bind_addr) = opts.listen {
-            Self::Listen(match opts.overlay {
-                FramingProtocol::FramedRaw => RemoteSocketAddr::Ftcp(InetSocketAddr {
-                    address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
-                    port: opts.port,
-                }),
-                // TODO: (v2) implement overlay protocols
-                _ => unimplemented!(),
-            })
+            Self::Listen(RemoteSocketAddr::Ftcp(InetSocketAddr {
+                address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
+                port: opts.port(),
+            }))
         } else {
             unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
         }

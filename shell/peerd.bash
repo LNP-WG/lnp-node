@@ -19,7 +19,7 @@ _peerd() {
 
     case "${cmd}" in
         peerd)
-            opts="-h -V -L -C -p -o -k -d -c -v -T -r -n --help --version --listen --connect --port --overlay --key-file --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons"
+            opts="-h -V -L -C -p -k -d -c -v -T -r -n --help --version --listen --connect --port --bolt --bifrost --key-file --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -47,14 +47,6 @@ _peerd() {
                     ;;
                 -p)
                     COMPREPLY=($(compgen -f "${cur}"))
-                    return 0
-                    ;;
-                --overlay)
-                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
-                    return 0
-                    ;;
-                -o)
-                    COMPREPLY=($(compgen -W "tcp zmq http websocket smtp" -- "${cur}"))
                     return 0
                     ;;
                 --key-file)

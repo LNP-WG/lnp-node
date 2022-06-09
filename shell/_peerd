@@ -21,8 +21,6 @@ _peerd() {
 '--connect=[Connect to a remote peer with the provided address after start]:CONNECT: ' \
 '-p+[Customize port used by lightning peer network]:PORT: ' \
 '--port=[Customize port used by lightning peer network]:PORT: ' \
-'-o+[Overlay peer communications through different transport protocol]:OVERLAY:(tcp zmq http websocket smtp)' \
-'--overlay=[Overlay peer communications through different transport protocol]:OVERLAY:(tcp zmq http websocket smtp)' \
 '-k+[Node key file]:KEY_FILE:_files' \
 '--key-file=[Node key file]:KEY_FILE:_files' \
 '-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
@@ -43,6 +41,8 @@ _peerd() {
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
+'--bolt[Use BOLT lightning network protocol]' \
+'--bifrost[Use Bifrost lightning network protocol]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 '--threaded-daemons[Spawn daemons as threads and not processes]' \
