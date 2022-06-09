@@ -88,6 +88,7 @@ pub fn run(
 
     debug!("Staring main service runtime");
     let runtime = Runtime {
+        config: params.config.ext.clone(),
         identity,
         local_id: params.local_id,
         remote_id: params.remote_id,
@@ -101,8 +102,7 @@ pub fn run(
         messages_received: 0,
         awaited_pong: None,
     };
-    let ext = params.config.ext.clone();
-    let config = Config::with(params.config, ext);
+    let config = Config::with(params.config, runtime.config.clone());
     let mut service = Service::service(config, runtime)?;
     service.add_loopback(rx)?;
     service.run_loop()?;
@@ -183,6 +183,7 @@ where
 }
 
 pub struct Runtime {
+    config: super::Config,
     identity: ServiceId,
     local_id: PublicKey,
     remote_id: Option<PublicKey>,
@@ -513,8 +514,20 @@ impl Runtime {
         rng.fill_bytes(&mut noise);
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
-        self.sender
-            .send_message(bolt::Messages::Ping(bolt::Ping { ignored: noise.into(), pong_size }))?;
+        match self.config.protocol {
+            P2pProtocol::Bolt => {
+                self.sender.send_message(bolt::Messages::Ping(bolt::Ping {
+                    ignored: noise.into(),
+                    pong_size,
+                }))?;
+            }
+            P2pProtocol::Bifrost => {
+                self.sender.send_message(bifrost::Messages::Ping(bifrost::Ping {
+                    ignored: noise.into(),
+                    pong_size,
+                }))?;
+            }
+        }
         self.awaited_pong = Some(pong_size);
         Ok(())
     }
@@ -527,7 +540,14 @@ impl Runtime {
             *byte = rng.gen();
         }
         self.messages_sent += 1;
-        self.sender.send_message(bolt::Messages::Pong(noise.into()))?;
+        match self.config.protocol {
+            P2pProtocol::Bolt => {
+                self.sender.send_message(bolt::Messages::Pong(noise.into()))?;
+            }
+            P2pProtocol::Bifrost => {
+                self.sender.send_message(bifrost::Messages::Pong(noise.into()))?;
+            }
+        }
         Ok(())
     }
 }
