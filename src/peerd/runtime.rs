@@ -213,12 +213,23 @@ impl esb::Handler<ServiceBus> for Runtime {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".promo());
 
-            self.sender.send_message(bolt::Messages::Init(bolt::Init {
-                global_features: none!(),
-                local_features: none!(),
-                assets: none!(),
-                unknown_tlvs: none!(),
-            }))?;
+            match self.config.protocol {
+                P2pProtocol::Bolt => {
+                    self.sender.send_message(bolt::Messages::Init(bolt::Init {
+                        global_features: none!(),
+                        local_features: none!(),
+                        assets: none!(),
+                        unknown_tlvs: none!(),
+                    }))?;
+                }
+                P2pProtocol::Bifrost => {
+                    self.sender.send_message(bifrost::Messages::Init(bifrost::Init {
+                        protocols: empty!(),
+                        assets: none!(),
+                        unknown_tlvs: none!(),
+                    }))?;
+                }
+            }
 
             self.connect = false;
         }
