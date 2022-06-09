@@ -96,8 +96,11 @@ configure_me_codegen = "0.4"
 # 4. Mobile app with embedded node: `embedded` (auto includes `client` + `node`)
 # 5. Simple cli utility app: `shell`
 [features]
-default = ["server"]
+default = ["server", "bolt", "bifrost"]
 all = ["server", "tor"] # "rgb"
+
+bolt = ["lnp-core/bolt", "lnp_rpc/bolt"]
+bifrost = ["lnp-core/bifrost", "lnp_rpc/bifrost"]
 
 # Server is a standalone application that runs daemons.
 # Required for all apps that can be launched from command-line shell as binaries

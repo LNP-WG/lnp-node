@@ -15,10 +15,17 @@ name = "lnp-cli"
 
 [dependencies]
 amplify = "3.12.0"
-lnp-core = "0.7.0-beta.1"
+lnp-core = { version = "0.7.0-beta.1", default-features = false }
 lnp_rpc = { version = "0.7.0-beta.1", path = "../rpc" }
-lightning-invoice = "0.14.0"
+lightning-invoice = { version = "0.14.0", optional = true }
 internet2 = "0.7.0-rc.1"
 microservices = { version = "0.7.0-rc.1", default-features = false, features = ["cli"] }
 clap = { version = "3.1", features = ["derive", "env"] }
 log = "0.4.14"
+
+[features]
+default = ["bolt", "bifrost"]
+all = ["bolt", "bifrost"]
+
+bolt = ["lnp-core/bolt", "lightning-invoice", "lnp_rpc/bolt"]
+bifrost = ["lnp-core/bifrost", "lnp_rpc/bifrost"]

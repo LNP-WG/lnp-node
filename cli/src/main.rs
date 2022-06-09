@@ -36,6 +36,9 @@ extern crate clap;
 mod command;
 mod opts;
 
+#[cfg(not(any(feature = "bolt", feature = "bifrost")))]
+compile_error!("either 'bolt' or 'bifrost' feature must be used");
+
 use clap::Parser;
 use lnp_rpc::Client;
 use microservices::shell::{Exec, LogLevel};

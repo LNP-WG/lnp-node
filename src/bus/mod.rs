@@ -53,11 +53,19 @@ impl BusId for ServiceBus {
 #[api(encoding = "strict")]
 #[non_exhaustive]
 pub enum BusMsg {
-    /// Wrapper for LN P2P messages to be transmitted over control bus
+    /// Wrapper for Bolt P2P messages to be transmitted over control bus
+    #[cfg(feature = "bolt")]
     #[api(type = 1)]
     #[display(inner)]
     #[from]
     Bolt(p2p::bolt::Messages),
+
+    /// Wrapper for Bifrost P2P messages to be transmitted over control bus
+    #[cfg(feature = "bifrost")]
+    #[api(type = 3)]
+    #[display(inner)]
+    #[from]
+    Birfost(p2p::bifrost::Messages),
 
     /// Wrapper for inner type of control messages to be transmitted over control bus
     #[api(type = 2)]

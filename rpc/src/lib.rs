@@ -40,6 +40,9 @@ extern crate serde_crate as serde;
 #[macro_use]
 extern crate serde_with;
 
+#[cfg(not(any(feature = "bolt", feature = "bifrost")))]
+compile_error!("either 'bolt' or 'bifrost' feature must be used");
+
 mod client;
 mod error;
 mod messages;
