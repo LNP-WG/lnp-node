@@ -29,7 +29,7 @@ use strict_encoding::StrictDecode;
 
 use crate::lnpd::runtime::Runtime;
 use crate::service::LogStyle;
-use crate::{channeld, peerd, routed, signd, watchd, Config, Error};
+use crate::{channeld, peerd, routed, signd, watchd, Config, Error, P2pProtocol};
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
     let file = fs::File::open(key_file).unwrap_or_else(|_| {
@@ -131,8 +131,11 @@ pub enum Daemon {
     #[display("signd")]
     Signd,
 
-    #[display("peerd")]
-    Peerd(PeerSocket, PathBuf),
+    #[display("peerd --bolt")]
+    PeerdBolt(PeerSocket, PathBuf),
+
+    #[display("peerd --bifrost")]
+    PeerdBifrost(PeerSocket, PathBuf),
 
     #[display("channeld")]
     Channeld(ActiveChannelId),
@@ -148,7 +151,8 @@ impl Daemon {
     pub fn bin_name(&self) -> &'static str {
         match self {
             Daemon::Signd => "signd",
-            Daemon::Peerd(..) => "peerd",
+            Daemon::PeerdBolt(..) => "peerd",
+            Daemon::PeerdBifrost(..) => "peerd",
             Daemon::Channeld(..) => "channeld",
             Daemon::Routed => "routed",
             Daemon::Watchd => "watchd",
@@ -170,10 +174,18 @@ impl Runtime {
             .spawn(move || {
                 let res = match d.clone() {
                     Daemon::Signd => signd::run(config),
-                    Daemon::Peerd(socket, key_file) => {
+                    Daemon::PeerdBolt(socket, key_file) => {
                         let threaded = config.threaded;
                         let local_node = read_node_key_file(&key_file);
-                        let config = Config::with(config, peerd::Config {});
+                        let config =
+                            Config::with(config, peerd::Config { protocol: P2pProtocol::Bolt });
+                        supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
+                    }
+                    Daemon::PeerdBifrost(socket, key_file) => {
+                        let threaded = config.threaded;
+                        let local_node = read_node_key_file(&key_file);
+                        let config =
+                            Config::with(config, peerd::Config { protocol: P2pProtocol::Bifrost });
                         supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
                     }
                     Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
@@ -211,16 +223,16 @@ impl Runtime {
         cmd.args(std::env::args().skip(1).filter(|arg| !arg.starts_with("--listen")));
 
         match &daemon {
-            Daemon::Peerd(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {
+            Daemon::PeerdBolt(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {
                 let socket_addr = SocketAddr::try_from(*inet).expect("invalid connection address");
                 let ip = socket_addr.ip();
                 let port = socket_addr.port();
                 cmd.args(&["--listen", &ip.to_string(), "--port", &port.to_string()]);
             }
-            Daemon::Peerd(PeerSocket::Connect(node_addr), _) => {
+            Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
                 cmd.args(&["--connect", &node_addr.to_string()]);
             }
-            Daemon::Peerd(PeerSocket::Listen(_), _) => {
+            Daemon::PeerdBolt(PeerSocket::Listen(_), _) => {
                 // Lightning do not support non-TCP sockets
                 return Err(DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101)));
             }

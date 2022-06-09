@@ -83,7 +83,8 @@ pub fn run(
         messages_received: 0,
         awaited_pong: None,
     };
-    let config = Config::with(params.config, super::Config {});
+    let ext = params.config.ext.clone();
+    let config = Config::with(params.config, ext);
     let mut service = Service::service(config, runtime)?;
     service.add_loopback(rx)?;
     service.run_loop()?;

@@ -302,8 +302,10 @@ impl Runtime {
 
             RpcMsg::ConnectPeer(addr) => {
                 info!("{} to remote peer {}", "Connecting".promo(), addr.promoter());
-                let peerd =
-                    Daemon::Peerd(PeerSocket::Connect(addr.clone()), self.node_key_path.clone());
+                let peerd = Daemon::PeerdBolt(
+                    PeerSocket::Connect(addr.clone()),
+                    self.node_key_path.clone(),
+                );
                 let resp = match self.launch_daemon(peerd, self.config.clone()) {
                     Ok(handle) => {
                         self.spawning_peers.insert(ServiceId::Peer(addr.into()), client_id);
@@ -520,7 +522,7 @@ impl Runtime {
     fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
         info!("Starting peer connection listening daemon on {}...", addr);
         let handle = self.launch_daemon(
-            Daemon::Peerd(PeerSocket::Listen(addr), self.node_key_path.clone()),
+            Daemon::PeerdBolt(PeerSocket::Listen(addr), self.node_key_path.clone()),
             self.config.clone(),
         )?;
         Ok(format!("Launched new instance of {}", handle))

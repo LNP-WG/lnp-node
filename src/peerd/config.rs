@@ -14,14 +14,26 @@
 
 use crate::opts::Options;
 use crate::peerd::Opts;
+use crate::P2pProtocol;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
-pub struct Config {}
+pub struct Config {
+    pub protocol: P2pProtocol,
+}
 
 impl Options for Opts {
     type Conf = Config;
 
     fn shared(&self) -> &crate::opts::Opts { &self.shared }
 
-    fn config(&self) -> Self::Conf { Config {} }
+    fn config(&self) -> Self::Conf {
+        let protocol = if self.bolt {
+            P2pProtocol::Bolt
+        } else if self.bifrost {
+            P2pProtocol::Bifrost
+        } else {
+            unreachable!()
+        };
+        Config { protocol }
+    }
 }
