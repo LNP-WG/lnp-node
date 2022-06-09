@@ -19,7 +19,7 @@ lnpbp = "0.7.0"
 bitcoin = { version = "0.28.1", features = ["rand"] }
 lightning-invoice = "0.14.0"
 internet2 = "0.7.0-rc.1"
-microservices = { version = "0.7.0-rc.1", default-features = false, features = ["client"] }
+microservices = { version = "0.7.0-rc.2", default-features = false, features = ["client"] }
 descriptor-wallet = "0.7.1"
 serde_crate = { package = "serde", version = "1", features = ["derive"], optional = true }
 serde_with = { version = "1.8", optional = true }
