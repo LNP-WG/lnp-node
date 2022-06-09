@@ -66,6 +66,16 @@ pub const LNP_NODE_FUNDING_WALLET: &str = "funding.wallet";
 #[cfg(not(any(feature = "bolt", feature = "bifrost")))]
 compile_error!("either 'bolt' or 'bifrost' feature must be used");
 
+// TODO: Move to LNP Core library
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display)]
+pub enum P2pProtocol {
+    #[display(bolt)]
+    Bolt,
+
+    #[display(bifrost)]
+    Bifrost,
+}
+
 // TODO: React on reestablish message
 // TODO: Lnpd must store channel launcher state
 // TODO: Channel daemon must store its own state to data directory and re-load it
