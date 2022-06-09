@@ -57,7 +57,7 @@ pub enum BusMsg {
     #[api(type = 1)]
     #[display(inner)]
     #[from]
-    Ln(p2p::legacy::Messages),
+    Bolt(p2p::bolt::Messages),
 
     /// Wrapper for inner type of control messages to be transmitted over control bus
     #[api(type = 2)]

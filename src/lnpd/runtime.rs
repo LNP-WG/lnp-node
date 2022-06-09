@@ -22,7 +22,7 @@ use bitcoin::{secp256k1, Txid};
 use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteSocketAddr};
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::{
+use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
 use microservices::esb::{self, Handler};
@@ -133,10 +133,10 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Ln(msg), ServiceId::Peer(remote_peer)) => {
+            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::Peer(remote_peer)) => {
                 self.handle_p2p(endpoints, remote_peer, msg)
             }
-            (ServiceBus::Msg, BusMsg::Ln(_), service) => {
+            (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
                 unreachable!("lnpd received peer message not from a peerd but from {}", service)
             }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
@@ -213,7 +213,7 @@ impl Runtime {
                         ServiceBus::Msg,
                         ServiceId::Peer(remote_peer),
                         ServiceId::Channel(*channeld),
-                        BusMsg::Ln(LnMsg::ChannelReestablish(channel_reestablish)),
+                        BusMsg::Bolt(LnMsg::ChannelReestablish(channel_reestablish)),
                     )?;
                 } else {
                     self.launch_daemon(
@@ -467,7 +467,7 @@ impl Runtime {
                 ServiceBus::Msg,
                 remote_peer.into(),
                 source.clone(),
-                BusMsg::Ln(LnMsg::ChannelReestablish(channel_reestablish)),
+                BusMsg::Bolt(LnMsg::ChannelReestablish(channel_reestablish)),
             )?;
         } else if let Some(enquirer) = self.spawning_peers.get(&source).copied() {
             debug!("Daemon {} reported back", source);

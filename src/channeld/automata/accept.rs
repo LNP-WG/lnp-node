@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnp::channel::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, Messages};
+use lnp::p2p::bolt::{ActiveChannelId, Messages};
 use lnp::Extension;
 
 use super::Error;

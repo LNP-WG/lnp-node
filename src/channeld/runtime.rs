@@ -19,7 +19,7 @@ use std::{fs, io};
 use amplify::{DumbDefault, Wrapper};
 use internet2::NodeAddr;
 use lnp::channel::bolt;
-use lnp::p2p::legacy::{ActiveChannelId, ChannelId, Messages as LnMsg};
+use lnp::p2p::bolt::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use lnp::Extension;
 use lnp_rpc::{ChannelInfo, RpcMsg};
 use microservices::esb::{self, Handler};
@@ -109,10 +109,10 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Ln(msg), ServiceId::Peer(remote_peer)) => {
+            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::Peer(remote_peer)) => {
                 self.handle_p2p(endpoints, remote_peer, msg)
             }
-            (ServiceBus::Msg, BusMsg::Ln(_), service) => {
+            (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
                 unreachable!("channeld received peer message not from a peerd but from {}", service)
             }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
@@ -172,7 +172,7 @@ impl Runtime {
             ServiceBus::Msg,
             self.identity(),
             ServiceId::Peer(remote_peer),
-            BusMsg::Ln(message),
+            BusMsg::Bolt(message),
         )
     }
 
@@ -200,7 +200,7 @@ impl Runtime {
             | LnMsg::AcceptChannel(_)
             | LnMsg::FundingSigned(_)
             | LnMsg::FundingLocked(_) => {
-                self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Ln(message))?;
+                self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Bolt(message))?;
             }
 
             _ => {

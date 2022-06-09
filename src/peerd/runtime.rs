@@ -22,7 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
-use lnp::p2p::legacy::{
+use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, FundingCreated, FundingLocked, FundingSigned, Init,
     Messages as LnMsg, Ping, UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc,
     UpdateFulfillHtlc,
@@ -138,7 +138,7 @@ impl peer::Handler<LnMsg> for ListenerRuntime {
         // Forwarding all received messages to the runtime
         debug!("New message from remote peer: {}", message);
         trace!("{:#?}", message);
-        self.send_over_bridge(BusMsg::Ln((*message).clone()))
+        self.send_over_bridge(BusMsg::Bolt((*message).clone()))
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
@@ -209,7 +209,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
+            (ServiceBus::Msg, BusMsg::Bolt(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
             (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
@@ -293,7 +293,7 @@ impl Runtime {
     fn handle_bridge(&mut self, endpoints: &mut Endpoints, request: BusMsg) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
 
-        if let BusMsg::Ln(_) = request {
+        if let BusMsg::Bolt(_) = request {
             self.messages_received += 1;
         }
 
@@ -302,11 +302,11 @@ impl Runtime {
                 self.ping()?;
             }
 
-            BusMsg::Ln(LnMsg::Ping(Ping { pong_size, .. })) => {
+            BusMsg::Bolt(LnMsg::Ping(Ping { pong_size, .. })) => {
                 self.pong(*pong_size)?;
             }
 
-            BusMsg::Ln(LnMsg::Pong(noise)) => {
+            BusMsg::Bolt(LnMsg::Pong(noise)) => {
                 match self.awaited_pong {
                     None => warn!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => {
@@ -317,7 +317,7 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            BusMsg::Ln(LnMsg::ChannelReestablish(_)) | BusMsg::Ln(LnMsg::OpenChannel(_)) => {
+            BusMsg::Bolt(LnMsg::ChannelReestablish(_)) | BusMsg::Bolt(LnMsg::OpenChannel(_)) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -326,12 +326,12 @@ impl Runtime {
                 )?;
             }
 
-            BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => {
+            BusMsg::Bolt(LnMsg::AcceptChannel(accept_channel)) => {
                 let channeld: ServiceId = accept_channel.temporary_channel_id.into();
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            BusMsg::Ln(LnMsg::FundingCreated(FundingCreated {
+            BusMsg::Bolt(LnMsg::FundingCreated(FundingCreated {
                 temporary_channel_id,
                 funding_txid,
                 funding_output_index,
@@ -350,12 +350,12 @@ impl Runtime {
                 self.channels.insert(channel_id);
             }
 
-            BusMsg::Ln(LnMsg::FundingSigned(FundingSigned { channel_id, .. }))
-            | BusMsg::Ln(LnMsg::FundingLocked(FundingLocked { channel_id, .. }))
-            | BusMsg::Ln(LnMsg::UpdateAddHtlc(UpdateAddHtlc { channel_id, .. }))
-            | BusMsg::Ln(LnMsg::UpdateFulfillHtlc(UpdateFulfillHtlc { channel_id, .. }))
-            | BusMsg::Ln(LnMsg::UpdateFailHtlc(UpdateFailHtlc { channel_id, .. }))
-            | BusMsg::Ln(LnMsg::UpdateFailMalformedHtlc(UpdateFailMalformedHtlc {
+            BusMsg::Bolt(LnMsg::FundingSigned(FundingSigned { channel_id, .. }))
+            | BusMsg::Bolt(LnMsg::FundingLocked(FundingLocked { channel_id, .. }))
+            | BusMsg::Bolt(LnMsg::UpdateAddHtlc(UpdateAddHtlc { channel_id, .. }))
+            | BusMsg::Bolt(LnMsg::UpdateFulfillHtlc(UpdateFulfillHtlc { channel_id, .. }))
+            | BusMsg::Bolt(LnMsg::UpdateFailHtlc(UpdateFailHtlc { channel_id, .. }))
+            | BusMsg::Bolt(LnMsg::UpdateFailMalformedHtlc(UpdateFailMalformedHtlc {
                 channel_id,
                 ..
             })) => {
@@ -363,7 +363,7 @@ impl Runtime {
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            BusMsg::Ln(message) => {
+            BusMsg::Bolt(message) => {
                 // TODO:
                 //  1. Check permissions
                 //  2. Forward to the corresponding daemon

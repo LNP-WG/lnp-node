@@ -15,7 +15,7 @@
 use std::str::FromStr;
 
 use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr, ToRemoteNodeAddr};
-use lnp::p2p::legacy::{ChannelId, LNP2P_LEGACY_PORT};
+use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
 use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 

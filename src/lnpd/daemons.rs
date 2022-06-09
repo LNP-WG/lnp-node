@@ -23,7 +23,7 @@ use std::{fs, process, thread};
 use amplify::hex::ToHex;
 use amplify::IoError;
 use internet2::{LocalNode, RemoteSocketAddr};
-use lnp::p2p::legacy::ActiveChannelId;
+use lnp::p2p::bolt::ActiveChannelId;
 use microservices::peer::{supervisor, PeerSocket};
 use strict_encoding::StrictDecode;
 

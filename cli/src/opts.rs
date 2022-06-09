@@ -17,7 +17,7 @@ use std::str::FromStr;
 
 use internet2::{FramingProtocol, PartialNodeAddr};
 use lightning_invoice::Invoice;
-use lnp::p2p::legacy::{ChannelId, ChannelType};
+use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnp_rpc::LNP_NODE_RPC_SOCKET;
 
 /// Command-line tool for working with LNP node

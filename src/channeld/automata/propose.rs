@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnp::channel::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
+use lnp::p2p::bolt::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
 use microservices::esb::Handler;
 use wallet::address::AddressCompat;
@@ -167,7 +167,7 @@ fn complete_proposed(
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, automata::Error> {
     let accept_channel = match event.message {
-        BusMsg::Ln(LnMsg::AcceptChannel(accept_channel)) => accept_channel,
+        BusMsg::Bolt(LnMsg::AcceptChannel(accept_channel)) => accept_channel,
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Proposed, event.source))
         }
@@ -270,7 +270,7 @@ fn complete_funding(
     runtime: &mut Runtime,
 ) -> Result<ChannelPropose, automata::Error> {
     let funding_signed = match event.message {
-        BusMsg::Ln(LnMsg::FundingSigned(funding_signed)) => funding_signed,
+        BusMsg::Bolt(LnMsg::FundingSigned(funding_signed)) => funding_signed,
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Funding, event.source))
         }
@@ -295,7 +295,7 @@ fn complete_published(
 ) -> Result<Option<ChannelPropose>, automata::Error> {
     if !matches!(
         event.message,
-        BusMsg::Ctl(CtlMsg::TxFound(_)) | BusMsg::Ln(LnMsg::FundingLocked(_))
+        BusMsg::Ctl(CtlMsg::TxFound(_)) | BusMsg::Bolt(LnMsg::FundingLocked(_))
     ) {
         return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
     }
@@ -304,7 +304,7 @@ fn complete_published(
     let funding_locked = runtime.state.channel.compose_funding_locked();
     runtime.send_p2p(event.endpoints, LnMsg::FundingLocked(funding_locked))?;
 
-    if let BusMsg::Ln(LnMsg::FundingLocked(_)) = event.message {
+    if let BusMsg::Bolt(LnMsg::FundingLocked(_)) = event.message {
         complete_locked(event, runtime)?;
     }
 
@@ -313,7 +313,7 @@ fn complete_published(
 
 fn complete_locked(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
     let funding_locked = match event.message {
-        BusMsg::Ln(LnMsg::FundingLocked(funding_locked)) => funding_locked,
+        BusMsg::Bolt(LnMsg::FundingLocked(funding_locked)) => funding_locked,
         wrong_msg => {
             return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Locked, event.source))
         }

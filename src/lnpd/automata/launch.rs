@@ -23,7 +23,7 @@ use amplify::{Slice32, Wrapper};
 use bitcoin::Txid;
 use lnp::channel::bolt::LocalKeyset;
 use lnp::channel::{FundingError, PsbtLnpFunding};
-use lnp::p2p::legacy::{ChannelId, TempChannelId};
+use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;
 use microservices::esb::Handler;
 

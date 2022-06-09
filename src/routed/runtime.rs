@@ -17,7 +17,7 @@ use bitcoin::hashes::Hash;
 use bitcoin::secp256k1::PublicKey;
 use internet2::presentation::sphinx::Hop;
 use lightning_invoice::Invoice;
-use lnp::p2p::legacy::{Messages as LnMsg, PaymentOnion, PaymentRequest};
+use lnp::p2p::bolt::{Messages as LnMsg, PaymentOnion, PaymentRequest};
 use lnp::router::gossip::{GossipExt, UpdateMsg};
 use lnp::router::Router;
 use lnp::Extension;
@@ -67,7 +67,7 @@ where
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
+            (ServiceBus::Msg, BusMsg::Bolt(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
                 self.handle_rpc(endpoints, client_id, msg)

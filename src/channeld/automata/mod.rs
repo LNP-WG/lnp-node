@@ -19,7 +19,7 @@ use bitcoin::secp256k1;
 use bitcoin::secp256k1::PublicKey;
 use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
-use lnp::p2p::legacy::{ActiveChannelId, ChannelReestablish, Messages as LnMsg};
+use lnp::p2p::bolt::{ActiveChannelId, ChannelReestablish, Messages as LnMsg};
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -236,7 +236,8 @@ impl Runtime {
     fn process_event(&mut self, event: Event<BusMsg>) -> Result<(), Error> {
         // We have to handle channel reestablishment separately, since this is
         // shared across multiple channel states
-        if let BusMsg::Ln(LnMsg::ChannelReestablish(ref remote_channel_reestablish)) = event.message
+        if let BusMsg::Bolt(LnMsg::ChannelReestablish(ref remote_channel_reestablish)) =
+            event.message
         {
             self.state.state_machine = self.complete_reestalblish(
                 event.endpoints,

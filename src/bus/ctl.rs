@@ -18,7 +18,7 @@ use bitcoin::Txid;
 use internet2::presentation::sphinx::Hop;
 use internet2::NodeAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::{ChannelId, OpenChannel, PaymentOnion};
+use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion};
 use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, OptionDetails, PeerInfo};
 use strict_encoding::{NetworkDecode, NetworkEncode};

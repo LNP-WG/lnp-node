@@ -25,7 +25,7 @@ use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::channel::PsbtLnpFunding;
-use lnp::p2p::legacy::TempChannelId;
+use lnp::p2p::bolt::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::psbt::PsbtExt;
 use miniscript::{Descriptor, DescriptorTrait, ForEachKey};

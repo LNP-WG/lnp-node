@@ -25,7 +25,7 @@ use internet2::addr::InetSocketAddr;
 use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
 use lightning_invoice::Invoice;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
-use lnp::p2p::legacy::{ChannelId, ChannelType};
+use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
 use microservices::rpc_connection;
 #[cfg(feature = "serde")]

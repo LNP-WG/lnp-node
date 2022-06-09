@@ -19,7 +19,7 @@ use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPrivKey};
 use bitcoin::XpubIdentifier;
 use lnp::channel::bolt::LocalKeyset;
-use lnp::p2p::legacy::ChannelId;
+use lnp::p2p::bolt::ChannelId;
 use lnpbp::chain::Chain;
 use microservices::esb::{self, Handler};
 use strict_encoding::StrictDecode;

@@ -13,7 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::hex::FromHex;
-use lnp::p2p::legacy::ChannelId;
+use lnp::p2p::bolt::ChannelId;
 
 use crate::peerd::KeyOpts;
 

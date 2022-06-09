@@ -30,7 +30,7 @@
 extern crate log;
 
 use clap::Parser;
-use lnp::p2p::legacy::ActiveChannelId;
+use lnp::p2p::bolt::ActiveChannelId;
 use lnp_node::channeld::{self, Opts};
 use lnp_node::Config;
 

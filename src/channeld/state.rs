@@ -17,7 +17,7 @@ use bitcoin::hashes::Hash;
 use bitcoin::secp256k1::PublicKey;
 use internet2::NodeAddr;
 use lnp::channel::bolt::{BoltExt, CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::legacy::TempChannelId;
+use lnp::p2p::bolt::TempChannelId;
 use lnp::Channel;
 use lnpbp::chain::Chain;
 

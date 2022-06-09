@@ -15,7 +15,7 @@
 use std::any::Any;
 use std::path::PathBuf;
 
-use lnp::p2p::legacy::ChannelId;
+use lnp::p2p::bolt::ChannelId;
 
 use super::Driver;
 use crate::Error;

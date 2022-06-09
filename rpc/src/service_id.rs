@@ -18,7 +18,7 @@ use std::str::FromStr;
 use amplify::hex;
 use amplify::hex::ToHex;
 use internet2::NodeAddr;
-use lnp::p2p::legacy::{ChannelId, TempChannelId};
+use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;
 use strict_encoding::{strict_deserialize, strict_serialize};
 

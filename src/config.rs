@@ -14,16 +14,14 @@
 
 #![allow(clippy::needless_borrow)] // due to a bug in `display(Debug)`
 
-use std::path::PathBuf;
-
 #[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::net::SocketAddr;
-
+use std::path::PathBuf;
 #[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::str::FromStr;
 
 use internet2::ZmqSocketAddr;
-use lnp::p2p::legacy::ActiveChannelId;
+use lnp::p2p::bolt::ActiveChannelId;
 use lnpbp::chain::Chain;
 
 #[cfg(feature = "server")]

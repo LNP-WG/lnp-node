@@ -1,7 +1,7 @@
 [package]
 name = "lnp-cli"
 description = "LNP node command-line interface"
-version = "0.7.0-alpha.1"
+version = "0.7.0-beta.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "lnp"]
@@ -15,8 +15,8 @@ name = "lnp-cli"
 
 [dependencies]
 amplify = "3.12.0"
-lnp-core = "0.7.0-alpha.1"
-lnp_rpc = { version = "0.7.0-alpha.1", path = "../rpc" }
+lnp-core = "0.7.0-beta.1"
+lnp_rpc = { version = "0.7.0-beta.1", path = "../rpc" }
 lightning-invoice = "0.14.0"
 internet2 = "0.7.0-rc.1"
 microservices = { version = "0.7.0-rc.1", default-features = false, features = ["cli"] }

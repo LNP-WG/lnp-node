@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 use bitcoin::Txid;
 use electrum_client::Client as ElectrumClient;
-use lnp::p2p::legacy::Messages as LnMsg;
+use lnp::p2p::bolt::Messages as LnMsg;
 use microservices::esb;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
@@ -52,7 +52,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Ln(msg), source) => self.handle_p2p(endpoints, source, msg),
+            (ServiceBus::Msg, BusMsg::Bolt(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
         }
