@@ -13,6 +13,7 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::collections::HashSet;
+use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use std::thread::spawn;
 use std::time::{Duration, SystemTime};
@@ -21,7 +22,9 @@ use amplify::Bipolar;
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
-use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
+use internet2::{
+    presentation, transport, zmqsocket, CreateUnmarshaller, TypedEnum, ZmqType, ZMQ_CONTEXT,
+};
 use lnp::p2p::{bifrost, bolt};
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
@@ -31,7 +34,7 @@ use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
+use crate::{Config, Endpoints, Error, LogStyle, P2pProtocol, Responder, Service};
 
 pub fn run(
     connection: PeerConnection,
@@ -63,9 +66,24 @@ pub fn run(
             ZmqType::Rep,
         )?,
     };
-    let listener =
-        peer::Listener::with(receiver, bridge_handler, bolt::Messages::create_unmarshaller());
-    spawn(move || listener.run_or_panic("peerd-listener"));
+    match params.config.ext.protocol {
+        P2pProtocol::Bolt => {
+            let listener = peer::Listener::with(
+                receiver,
+                bridge_handler,
+                bolt::Messages::create_unmarshaller(),
+            );
+            spawn(move || listener.run_or_panic("bolt-listener"));
+        }
+        P2pProtocol::Bifrost => {
+            let listener = peer::Listener::with(
+                receiver,
+                bridge_handler,
+                bifrost::Messages::create_unmarshaller(),
+            );
+            spawn(move || listener.run_or_panic("bifrost-listener"));
+        }
+    }
     // TODO: Use the handle returned by spawn to track the child process
 
     debug!("Staring main service runtime");
@@ -126,21 +144,24 @@ pub struct ListenerRuntime {
 }
 
 impl ListenerRuntime {
-    fn send_over_bridge(&mut self, req: BusMsg) -> Result<(), Error> {
+    pub(super) fn send_over_bridge(&mut self, req: BusMsg) -> Result<(), Error> {
         debug!("Forwarding LN P2P message over BRIDGE interface to the runtime");
         self.bridge.send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
         Ok(())
     }
 }
 
-impl peer::Handler<bolt::Messages> for ListenerRuntime {
+impl<Msg> peer::Handler<Msg> for ListenerRuntime
+where
+    Msg: TypedEnum + Into<BusMsg> + Debug + Display,
+{
     type Error = crate::Error;
 
-    fn handle(&mut self, message: Arc<bolt::Messages>) -> Result<(), Self::Error> {
+    fn handle(&mut self, message: Arc<Msg>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         debug!("New message from remote peer: {}", message);
         trace!("{:#?}", message);
-        self.send_over_bridge(BusMsg::Bolt((*message).clone()))
+        self.send_over_bridge((*message).clone().into())
     }
 
     fn handle_err(&mut self, err: Self::Error) -> Result<(), Self::Error> {
