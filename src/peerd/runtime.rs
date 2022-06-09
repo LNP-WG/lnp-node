@@ -232,11 +232,9 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            #[cfg(feature = "bolt")]
             (ServiceBus::Msg, BusMsg::Bolt(msg), source) => {
                 self.handle_bolt(endpoints, source, msg)
             }
-            #[cfg(feature = "bifrost")]
             (ServiceBus::Msg, BusMsg::Birfost(msg), source) => {
                 self.handle_bifrost(endpoints, source, msg)
             }
@@ -265,7 +263,6 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    #[cfg(feature = "bolt")]
     fn handle_bolt(
         &mut self,
         _: &mut Endpoints,
@@ -308,7 +305,6 @@ impl Runtime {
         Ok(())
     }
 
-    #[cfg(feature = "bifrost")]
     fn handle_bifrost(
         &mut self,
         _: &mut Endpoints,
@@ -345,20 +341,32 @@ impl Runtime {
     fn handle_bridge(&mut self, endpoints: &mut Endpoints, request: BusMsg) -> Result<(), Error> {
         debug!("BRIDGE RPC request: {}", request);
 
-        if let BusMsg::Bolt(_) = request {
-            self.messages_received += 1;
-        }
+        match request {
+            BusMsg::Ctl(CtlMsg::PingPeer) => self.ping(),
 
-        match &request {
-            BusMsg::Ctl(CtlMsg::PingPeer) => {
-                self.ping()?;
+            BusMsg::Bolt(msg) => self.handle_bridge_bolt(endpoints, msg),
+            BusMsg::Birfost(msg) => self.handle_bridge_bifrost(endpoints, msg),
+
+            wrong_msg => {
+                error!("Request is not supported by the BRIDGE interface");
+                Err(Error::wrong_esb_msg(ServiceBus::Bridge, &wrong_msg))
             }
+        }
+    }
 
-            BusMsg::Bolt(bolt::Messages::Ping(bolt::Ping { pong_size, .. })) => {
+    fn handle_bridge_bolt(
+        &mut self,
+        endpoints: &mut Endpoints,
+        msg: bolt::Messages,
+    ) -> Result<(), Error> {
+        self.messages_received += 1;
+
+        match &msg {
+            bolt::Messages::Ping(bolt::Ping { pong_size, .. }) => {
                 self.pong(*pong_size)?;
             }
 
-            BusMsg::Bolt(bolt::Messages::Pong(noise)) => {
+            bolt::Messages::Pong(noise) => {
                 match self.awaited_pong {
                     None => warn!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => {
@@ -369,27 +377,26 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            BusMsg::Bolt(bolt::Messages::ChannelReestablish(_))
-            | BusMsg::Bolt(bolt::Messages::OpenChannel(_)) => {
+            bolt::Messages::ChannelReestablish(_) | bolt::Messages::OpenChannel(_) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
                     ServiceId::LnpBroker,
-                    request,
+                    BusMsg::Bolt(msg),
                 )?;
             }
 
-            BusMsg::Bolt(bolt::Messages::AcceptChannel(accept_channel)) => {
+            bolt::Messages::AcceptChannel(accept_channel) => {
                 let channeld: ServiceId = accept_channel.temporary_channel_id.into();
-                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
+                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, BusMsg::Bolt(msg))?;
             }
 
-            BusMsg::Bolt(bolt::Messages::FundingCreated(bolt::FundingCreated {
+            bolt::Messages::FundingCreated(bolt::FundingCreated {
                 temporary_channel_id,
                 funding_txid,
                 funding_output_index,
                 ..
-            })) => {
+            }) => {
                 let temp_channel_id = bolt::ActiveChannelId::Temporary(*temporary_channel_id);
                 let channel_id = bolt::ActiveChannelId::Static(bolt::ChannelId::with(
                     *funding_txid,
@@ -399,48 +406,51 @@ impl Runtime {
                     ServiceBus::Msg,
                     self.identity(),
                     (*temporary_channel_id).into(),
-                    request,
+                    BusMsg::Bolt(msg),
                 )?;
                 self.channels.remove(&temp_channel_id);
                 self.channels.insert(channel_id);
             }
 
-            BusMsg::Bolt(bolt::Messages::FundingSigned(bolt::FundingSigned {
-                channel_id, ..
-            }))
-            | BusMsg::Bolt(bolt::Messages::FundingLocked(bolt::FundingLocked {
-                channel_id, ..
-            }))
-            | BusMsg::Bolt(bolt::Messages::UpdateAddHtlc(bolt::UpdateAddHtlc {
-                channel_id, ..
-            }))
-            | BusMsg::Bolt(bolt::Messages::UpdateFulfillHtlc(bolt::UpdateFulfillHtlc {
+            bolt::Messages::FundingSigned(bolt::FundingSigned { channel_id, .. })
+            | bolt::Messages::FundingLocked(bolt::FundingLocked { channel_id, .. })
+            | bolt::Messages::UpdateAddHtlc(bolt::UpdateAddHtlc { channel_id, .. })
+            | bolt::Messages::UpdateFulfillHtlc(bolt::UpdateFulfillHtlc { channel_id, .. })
+            | bolt::Messages::UpdateFailHtlc(bolt::UpdateFailHtlc { channel_id, .. })
+            | bolt::Messages::UpdateFailMalformedHtlc(bolt::UpdateFailMalformedHtlc {
                 channel_id,
                 ..
-            }))
-            | BusMsg::Bolt(bolt::Messages::UpdateFailHtlc(bolt::UpdateFailHtlc {
-                channel_id,
-                ..
-            }))
-            | BusMsg::Bolt(bolt::Messages::UpdateFailMalformedHtlc(
-                bolt::UpdateFailMalformedHtlc { channel_id, .. },
-            )) => {
+            }) => {
                 let channeld: ServiceId = (*channel_id).into();
-                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
+                endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, BusMsg::Bolt(msg))?;
             }
 
-            BusMsg::Bolt(message) => {
+            message => {
                 // TODO:
                 //  1. Check permissions
                 //  2. Forward to the corresponding daemon
-                debug!("Got peer LN P2P message {}", message);
-            }
-
-            wrong_msg => {
-                error!("Request is not supported by the BRIDGE interface");
-                return Err(Error::wrong_esb_msg(ServiceBus::Bridge, wrong_msg));
+                debug!("Got BOLT P2P message {}", message);
             }
         }
+        Ok(())
+    }
+
+    fn handle_bridge_bifrost(
+        &mut self,
+        _endpoints: &mut Endpoints,
+        msg: bifrost::Messages,
+    ) -> Result<(), Error> {
+        self.messages_received += 1;
+
+        match msg {
+            message => {
+                // TODO:
+                //  1. Check permissions
+                //  2. Forward to the corresponding daemon
+                debug!("Got Bifrost P2P message {}", message);
+            }
+        }
+
         Ok(())
     }
 
