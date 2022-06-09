@@ -16,6 +16,7 @@ use std::net::IpAddr;
 
 use clap::ValueHint;
 
+use crate::opts::Options;
 use crate::peerd::KeyOpts;
 
 /// Lightning node management daemon; part of LNP Node.
@@ -55,6 +56,14 @@ pub struct Opts {
     /// Optional command to execute and exit
     #[clap(subcommand)]
     pub command: Option<Command>,
+}
+
+impl Options for Opts {
+    type Conf = ();
+
+    fn shared(&self) -> &crate::opts::Opts { &self.shared }
+
+    fn config(&self) -> Self::Conf { () }
 }
 
 #[derive(Subcommand, Clone, PartialEq, Eq, Debug)]

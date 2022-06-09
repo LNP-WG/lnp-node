@@ -12,15 +12,16 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-#[cfg(feature = "bifrost")]
-pub mod bifrost;
-#[cfg(feature = "bolt")]
-pub mod bolt;
-mod config;
-#[cfg(feature = "server")]
-mod opts;
-pub mod runtime;
+use crate::opts::Options;
+use crate::peerd::Opts;
 
-pub use config::Config;
-#[cfg(feature = "server")]
-pub use opts::{KeyOpts, Opts};
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
+pub struct Config {}
+
+impl Options for Opts {
+    type Conf = Config;
+
+    fn shared(&self) -> &crate::opts::Opts { &self.shared }
+
+    fn config(&self) -> Self::Conf { Config {} }
+}

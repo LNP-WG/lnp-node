@@ -48,7 +48,7 @@ fn main() -> Result<(), Error> {
     opts.process();
     trace!("Processed arguments: {:?}", &opts);
 
-    let config: Config = opts.shared.clone().into();
+    let config: Config = opts.clone().into();
     trace!("Daemon configuration: {:?}", &config);
     debug!("MSG RPC socket {}", &config.msg_endpoint);
     debug!("CTL RPC socket {}", &config.ctl_endpoint);

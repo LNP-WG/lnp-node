@@ -33,7 +33,10 @@ use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
 use crate::{Config, Endpoints, Error, LogStyle, Responder, Service};
 
-pub fn run(connection: PeerConnection, params: RuntimeParams<Config>) -> Result<(), Error> {
+pub fn run(
+    connection: PeerConnection,
+    params: RuntimeParams<Config<super::Config>>,
+) -> Result<(), Error> {
     debug!("Splitting connection into receiver and sender parts");
     let (receiver, sender) = connection.split();
 
@@ -80,7 +83,8 @@ pub fn run(connection: PeerConnection, params: RuntimeParams<Config>) -> Result<
         messages_received: 0,
         awaited_pong: None,
     };
-    let mut service = Service::service(params.config, runtime)?;
+    let config = Config::with(params.config, super::Config {});
+    let mut service = Service::service(config, runtime)?;
     service.add_loopback(rx)?;
     service.run_loop()?;
     unreachable!()

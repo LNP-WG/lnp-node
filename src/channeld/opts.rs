@@ -15,6 +15,7 @@
 use amplify::hex::FromHex;
 use lnp::p2p::bolt::ChannelId;
 
+use crate::opts::Options;
 use crate::peerd::KeyOpts;
 
 /// Lightning peer network channel daemon; part of LNP Node.
@@ -39,6 +40,14 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
+}
+
+impl Options for Opts {
+    type Conf = ();
+
+    fn shared(&self) -> &crate::opts::Opts { &self.shared }
+
+    fn config(&self) -> Self::Conf { () }
 }
 
 impl Opts {

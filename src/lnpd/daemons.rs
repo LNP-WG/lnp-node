@@ -173,6 +173,7 @@ impl Runtime {
                     Daemon::Peerd(socket, key_file) => {
                         let threaded = config.threaded;
                         let local_node = read_node_key_file(&key_file);
+                        let config = Config::with(config, peerd::Config {});
                         supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
                     }
                     Daemon::Channeld(channel_id) => channeld::run(config, channel_id),

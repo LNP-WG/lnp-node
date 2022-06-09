@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::fmt::Debug;
+
 use internet2::{zmqsocket, ZmqType};
 use microservices::esb;
 use microservices::node::TryService;
@@ -34,13 +36,20 @@ where
     Runtime: esb::Handler<ServiceBus, Request = BusMsg>,
     esb::Error<ServiceId>: From<Runtime::Error>,
 {
-    pub fn run(config: Config, runtime: Runtime, broker: bool) -> Result<(), Error> {
+    pub fn run(config: Config<()>, runtime: Runtime, broker: bool) -> Result<(), Error> {
         let service = Self::with(config, runtime, broker)?;
         service.run_loop()?;
         unreachable!()
     }
 
-    fn with(config: Config, runtime: Runtime, broker: bool) -> Result<Self, esb::Error<ServiceId>> {
+    fn with<Ext>(
+        config: Config<Ext>,
+        runtime: Runtime,
+        broker: bool,
+    ) -> Result<Self, esb::Error<ServiceId>>
+    where
+        Ext: Clone + Eq + Debug,
+    {
         let router = if !broker { Some(ServiceId::router()) } else { None };
         let services = map! {
             ServiceBus::Msg => esb::BusConfig::with_locator(
@@ -61,12 +70,18 @@ where
         Ok(Self { esb, broker })
     }
 
-    pub fn broker(config: Config, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
+    pub fn broker(config: Config<()>, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
         Self::with(config, runtime, true)
     }
 
     #[allow(clippy::self_named_constructors)]
-    pub fn service(config: Config, runtime: Runtime) -> Result<Self, esb::Error<ServiceId>> {
+    pub fn service<Ext>(
+        config: Config<Ext>,
+        runtime: Runtime,
+    ) -> Result<Self, esb::Error<ServiceId>>
+    where
+        Ext: Clone + Eq + Debug,
+    {
         Self::with(config, runtime, false)
     }
 

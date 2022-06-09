@@ -12,6 +12,8 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use crate::opts::Options;
+
 /// Lightning peer network channel daemon; part of LNP Node.
 ///
 /// The daemon is controlled though RPC socket (see `rpc-socket`).
@@ -22,6 +24,14 @@ pub struct Opts {
     /// command-line args or environment variables
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
+}
+
+impl Options for Opts {
+    type Conf = ();
+
+    fn shared(&self) -> &crate::opts::Opts { &self.shared }
+
+    fn config(&self) -> Self::Conf { () }
 }
 
 impl Opts {
