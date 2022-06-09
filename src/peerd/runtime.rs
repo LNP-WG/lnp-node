@@ -22,11 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use bitcoin::secp256k1::PublicKey;
 use internet2::addr::InetSocketAddr;
 use internet2::{presentation, transport, zmqsocket, CreateUnmarshaller, ZmqType, ZMQ_CONTEXT};
-use lnp::p2p::bolt::{
-    ActiveChannelId, ChannelId, FundingCreated, FundingLocked, FundingSigned, Init,
-    Messages as LnMsg, Ping, UpdateAddHtlc, UpdateFailHtlc, UpdateFailMalformedHtlc,
-    UpdateFulfillHtlc,
-};
+use lnp::p2p::{bifrost, bolt};
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
@@ -64,7 +60,8 @@ pub fn run(connection: PeerConnection, params: RuntimeParams<Config>) -> Result<
             ZmqType::Rep,
         )?,
     };
-    let listener = peer::Listener::with(receiver, bridge_handler, LnMsg::create_unmarshaller());
+    let listener =
+        peer::Listener::with(receiver, bridge_handler, bolt::Messages::create_unmarshaller());
     spawn(move || listener.run_or_panic("peerd-listener"));
     // TODO: Use the handle returned by spawn to track the child process
 
@@ -131,10 +128,10 @@ impl ListenerRuntime {
     }
 }
 
-impl peer::Handler<LnMsg> for ListenerRuntime {
+impl peer::Handler<bolt::Messages> for ListenerRuntime {
     type Error = crate::Error;
 
-    fn handle(&mut self, message: Arc<LnMsg>) -> Result<(), Self::Error> {
+    fn handle(&mut self, message: Arc<bolt::Messages>) -> Result<(), Self::Error> {
         // Forwarding all received messages to the runtime
         debug!("New message from remote peer: {}", message);
         trace!("{:#?}", message);
@@ -169,7 +166,7 @@ pub struct Runtime {
     sender: PeerSender,
     connect: bool,
 
-    channels: HashSet<ActiveChannelId>,
+    channels: HashSet<bolt::ActiveChannelId>,
     started: SystemTime,
     messages_sent: usize,
     messages_received: usize,
@@ -189,7 +186,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".promo());
 
-            self.sender.send_message(LnMsg::Init(Init {
+            self.sender.send_message(bolt::Messages::Init(bolt::Init {
                 global_features: none!(),
                 local_features: none!(),
                 assets: none!(),
@@ -209,7 +206,14 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Bolt(msg), source) => self.handle_p2p(endpoints, source, msg),
+            #[cfg(feature = "bolt")]
+            (ServiceBus::Msg, BusMsg::Bolt(msg), source) => {
+                self.handle_bolt(endpoints, source, msg)
+            }
+            #[cfg(feature = "bifrost")]
+            (ServiceBus::Msg, BusMsg::Birfost(msg), source) => {
+                self.handle_bifrost(endpoints, source, msg)
+            }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Bridge, msg, _) => self.handle_bridge(endpoints, msg),
             (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
@@ -235,11 +239,12 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
-    fn handle_p2p(
+    #[cfg(feature = "bolt")]
+    fn handle_bolt(
         &mut self,
         _: &mut Endpoints,
         _source: ServiceId,
-        message: LnMsg,
+        message: bolt::Messages,
     ) -> Result<(), Error> {
         debug!("Sending remote peer {}", message);
         trace!("{:#?}", message);
@@ -247,28 +252,49 @@ impl Runtime {
         self.sender.send_message(message.clone())?;
 
         match message {
-            LnMsg::OpenChannel(open_channel) => {
-                self.channels.insert(ActiveChannelId::Temporary(open_channel.temporary_channel_id));
-            }
-            LnMsg::AcceptChannel(accept_channel) => {
+            bolt::Messages::OpenChannel(open_channel) => {
                 self.channels
-                    .insert(ActiveChannelId::Temporary(accept_channel.temporary_channel_id));
+                    .insert(bolt::ActiveChannelId::Temporary(open_channel.temporary_channel_id));
             }
-            LnMsg::FundingCreated(funding_created) => {
+            bolt::Messages::AcceptChannel(accept_channel) => {
                 self.channels
-                    .remove(&ActiveChannelId::Temporary(funding_created.temporary_channel_id));
-                self.channels.insert(ActiveChannelId::Static(ChannelId::with(
+                    .insert(bolt::ActiveChannelId::Temporary(accept_channel.temporary_channel_id));
+            }
+            bolt::Messages::FundingCreated(funding_created) => {
+                self.channels.remove(&bolt::ActiveChannelId::Temporary(
+                    funding_created.temporary_channel_id,
+                ));
+                self.channels.insert(bolt::ActiveChannelId::Static(bolt::ChannelId::with(
                     funding_created.funding_txid,
                     funding_created.funding_output_index,
                 )));
             }
-            LnMsg::FundingSigned(_) => {
+            bolt::Messages::FundingSigned(_) => {
                 // We ingore this message since we rename the channel upon receiving of
                 // `FundingCreated`
             }
-            LnMsg::ChannelReestablish(channel_reestablish) => {
-                self.channels.insert(ActiveChannelId::Static(channel_reestablish.channel_id));
+            bolt::Messages::ChannelReestablish(channel_reestablish) => {
+                self.channels.insert(bolt::ActiveChannelId::Static(channel_reestablish.channel_id));
             }
+            _ => {} // Do nothing here
+        }
+
+        Ok(())
+    }
+
+    #[cfg(feature = "bifrost")]
+    fn handle_bifrost(
+        &mut self,
+        _: &mut Endpoints,
+        _source: ServiceId,
+        message: bifrost::Messages,
+    ) -> Result<(), Error> {
+        debug!("Sending remote peer {}", message);
+        trace!("{:#?}", message);
+        self.messages_sent += 1;
+        self.sender.send_message(message.clone())?;
+
+        match message {
             _ => {} // Do nothing here
         }
 
@@ -302,11 +328,11 @@ impl Runtime {
                 self.ping()?;
             }
 
-            BusMsg::Bolt(LnMsg::Ping(Ping { pong_size, .. })) => {
+            BusMsg::Bolt(bolt::Messages::Ping(bolt::Ping { pong_size, .. })) => {
                 self.pong(*pong_size)?;
             }
 
-            BusMsg::Bolt(LnMsg::Pong(noise)) => {
+            BusMsg::Bolt(bolt::Messages::Pong(noise)) => {
                 match self.awaited_pong {
                     None => warn!("Unexpected pong from the remote peer"),
                     Some(len) if len as usize != noise.len() => {
@@ -317,7 +343,8 @@ impl Runtime {
                 self.awaited_pong = None;
             }
 
-            BusMsg::Bolt(LnMsg::ChannelReestablish(_)) | BusMsg::Bolt(LnMsg::OpenChannel(_)) => {
+            BusMsg::Bolt(bolt::Messages::ChannelReestablish(_))
+            | BusMsg::Bolt(bolt::Messages::OpenChannel(_)) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -326,20 +353,22 @@ impl Runtime {
                 )?;
             }
 
-            BusMsg::Bolt(LnMsg::AcceptChannel(accept_channel)) => {
+            BusMsg::Bolt(bolt::Messages::AcceptChannel(accept_channel)) => {
                 let channeld: ServiceId = accept_channel.temporary_channel_id.into();
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
 
-            BusMsg::Bolt(LnMsg::FundingCreated(FundingCreated {
+            BusMsg::Bolt(bolt::Messages::FundingCreated(bolt::FundingCreated {
                 temporary_channel_id,
                 funding_txid,
                 funding_output_index,
                 ..
             })) => {
-                let temp_channel_id = ActiveChannelId::Temporary(*temporary_channel_id);
-                let channel_id =
-                    ActiveChannelId::Static(ChannelId::with(*funding_txid, *funding_output_index));
+                let temp_channel_id = bolt::ActiveChannelId::Temporary(*temporary_channel_id);
+                let channel_id = bolt::ActiveChannelId::Static(bolt::ChannelId::with(
+                    *funding_txid,
+                    *funding_output_index,
+                ));
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -350,15 +379,26 @@ impl Runtime {
                 self.channels.insert(channel_id);
             }
 
-            BusMsg::Bolt(LnMsg::FundingSigned(FundingSigned { channel_id, .. }))
-            | BusMsg::Bolt(LnMsg::FundingLocked(FundingLocked { channel_id, .. }))
-            | BusMsg::Bolt(LnMsg::UpdateAddHtlc(UpdateAddHtlc { channel_id, .. }))
-            | BusMsg::Bolt(LnMsg::UpdateFulfillHtlc(UpdateFulfillHtlc { channel_id, .. }))
-            | BusMsg::Bolt(LnMsg::UpdateFailHtlc(UpdateFailHtlc { channel_id, .. }))
-            | BusMsg::Bolt(LnMsg::UpdateFailMalformedHtlc(UpdateFailMalformedHtlc {
+            BusMsg::Bolt(bolt::Messages::FundingSigned(bolt::FundingSigned {
+                channel_id, ..
+            }))
+            | BusMsg::Bolt(bolt::Messages::FundingLocked(bolt::FundingLocked {
+                channel_id, ..
+            }))
+            | BusMsg::Bolt(bolt::Messages::UpdateAddHtlc(bolt::UpdateAddHtlc {
+                channel_id, ..
+            }))
+            | BusMsg::Bolt(bolt::Messages::UpdateFulfillHtlc(bolt::UpdateFulfillHtlc {
                 channel_id,
                 ..
-            })) => {
+            }))
+            | BusMsg::Bolt(bolt::Messages::UpdateFailHtlc(bolt::UpdateFailHtlc {
+                channel_id,
+                ..
+            }))
+            | BusMsg::Bolt(bolt::Messages::UpdateFailMalformedHtlc(
+                bolt::UpdateFailMalformedHtlc { channel_id, .. },
+            )) => {
                 let channeld: ServiceId = (*channel_id).into();
                 endpoints.send_to(ServiceBus::Msg, self.identity(), channeld, request)?;
             }
@@ -405,7 +445,7 @@ impl Runtime {
                         .channels
                         .iter()
                         .copied()
-                        .map(ActiveChannelId::as_slice32)
+                        .map(bolt::ActiveChannelId::as_slice32)
                         .collect(),
                     connected: !self.connect,
                     awaits_pong: self.awaited_pong.is_some(),
@@ -437,7 +477,8 @@ impl Runtime {
         rng.fill_bytes(&mut noise);
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
-        self.sender.send_message(LnMsg::Ping(Ping { ignored: noise.into(), pong_size }))?;
+        self.sender
+            .send_message(bolt::Messages::Ping(bolt::Ping { ignored: noise.into(), pong_size }))?;
         self.awaited_pong = Some(pong_size);
         Ok(())
     }
@@ -450,7 +491,7 @@ impl Runtime {
             *byte = rng.gen();
         }
         self.messages_sent += 1;
-        self.sender.send_message(LnMsg::Pong(noise.into()))?;
+        self.sender.send_message(bolt::Messages::Pong(noise.into()))?;
         Ok(())
     }
 }
