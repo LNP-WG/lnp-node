@@ -227,10 +227,10 @@ impl Runtime {
                 let socket_addr = SocketAddr::try_from(*inet).expect("invalid connection address");
                 let ip = socket_addr.ip();
                 let port = socket_addr.port();
-                cmd.args(&["--listen", &ip.to_string(), "--port", &port.to_string()]);
+                cmd.args(&["--bolt", "--listen", &ip.to_string(), "--port", &port.to_string()]);
             }
             Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
-                cmd.args(&["--connect", &node_addr.to_string()]);
+                cmd.args(&["--bolt", "--connect", &node_addr.to_string()]);
             }
             Daemon::PeerdBolt(PeerSocket::Listen(_), _) => {
                 // Lightning do not support non-TCP sockets

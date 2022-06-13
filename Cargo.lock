@@ -254,9 +254,9 @@ dependencies = [
 
 [[package]]
 name = "bp-dbc"
-version = "0.7.0-beta.5"
+version = "0.7.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e76232aa81bacacae1fcdc4dd9e32c3ed810bd0edf54bec351185b2072d26f86"
+checksum = "0834da51ce7aec534f7d2094521d3bdbd356047cdcc04f6494cffb3d5cd96c27"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -467,9 +467,9 @@ dependencies = [
 
 [[package]]
 name = "commit_verify"
-version = "0.7.0-rc.4"
+version = "0.7.0-rc.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6ca6bd99dfb0c72d56e73bab18c7cf333c34ce73f40a20e51f200a3e7f39e77"
+checksum = "ad25aed1344b18f28ac3c59e843b11e4da25785abda49ad7ab85a4a510dd262f"
 dependencies = [
  "amplify",
  "bitcoin_hashes",
@@ -1828,9 +1828,9 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cb243bdfdb5936c8dc3c45762a19d12ab4550cdc753bc247637d4ec35a040fd"
+checksum = "a41d061efea015927ac527063765e73601444cdc344ba855bc7bd44578b25e1c"
 
 [[package]]
 name = "serde"
@@ -2033,9 +2033,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "strict_encoding"
-version = "1.8.3"
+version = "1.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a13dd4e8a467f81b70dfbfde6d2e9bd38dfd5a62ad8dbd399f7017f0e2808292"
+checksum = "d1bbb5109701ede3df3e20b82a134d601036f02b8b2f259965266a6a784cc749"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
