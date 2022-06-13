@@ -5,7 +5,7 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.7.0-beta.1"
+version = "0.7.0"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
@@ -47,10 +47,10 @@ amplify = "3.12.0"
 strict_encoding = { version = "1.8.1", features = ["miniscript"] }
 descriptor-wallet = { version = "0.7.1", features = ["keygen", "miniscript", "electrum"] }
 lnpbp = "0.7.0"
-lnp-core = "0.7.0-beta.1"
-lnp_rpc = { version = "0.7.0-beta.1", path = "./rpc" }
-internet2 = { version = "0.7.0-rc.1", features = ["keygen", "url"] }
-microservices = { version = "0.7.0-rc.3", default-features = false, features = ["node", "peer"] }
+lnp-core = "0.7.0"
+lnp_rpc = { version = "0.7.0", path = "./rpc" }
+internet2 = { version = "0.7.0", features = ["keygen", "url"] }
+microservices = { version = "0.7.0", default-features = false, features = ["node", "peer"] }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
@@ -61,7 +61,7 @@ chrono = "0.4"
 nix = "0.19"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 env_logger = "0.7"
-clap = { version = "3.1", optional = true, features = ["env", "derive"] }
+clap = { version = "~3.1.18", optional = true, features = ["env", "derive"] }
 settings = { version = "0.10", package = "config", optional = true }
 configure_me = { version = "0.4", optional = true }
 dotenv = { version = "0.15", optional = true }
@@ -80,11 +80,11 @@ lnpbp = "0.7.0"
 bitcoin = "0.28.1"
 lightning-invoice = "0.14.0"
 lnp-core = "0.7.0-beta.1"
-lnp_rpc = { version = "0.7.0-beta.1", path = "./rpc" }
-internet2 = "0.7.0-rc.1"
-microservices = { version = "0.7.0-rc.3", default-features = false, features = ["peer"] }
-clap = { version = "3.1", features = ["env"] }
-clap_complete = "3.1"
+lnp_rpc = { version = "0.7.0", path = "./rpc" }
+internet2 = "0.7.0"
+microservices = { version = "0.7.0", default-features = false, features = ["peer"] }
+clap = { version = "~3.1.18", features = ["env"] }
+clap_complete = "~3.1.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 shellexpand = "2"
 configure_me_codegen = "0.4"

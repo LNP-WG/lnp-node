@@ -239,9 +239,9 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "bp-core"
-version = "0.7.0-beta.5"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "792394e923d0ecca58da379e88d412833cf1748663318eb7ab4a8bb4dea50ae9"
+checksum = "f158ea441214a0f0387dc3843a882b4941bcfe7f5eb539f50ead5971e7fa514f"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -254,9 +254,9 @@ dependencies = [
 
 [[package]]
 name = "bp-dbc"
-version = "0.7.0-rc.2"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0834da51ce7aec534f7d2094521d3bdbd356047cdcc04f6494cffb3d5cd96c27"
+checksum = "e11c02d47740cb59dfd80b8d8a3739f2e06afb26c72ad11ae419728831ca5a48"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -268,16 +268,16 @@ dependencies = [
 
 [[package]]
 name = "bp-seals"
-version = "0.7.0-beta.5"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c6a5e28d5fe3f06b25cd025a539eb07e43f80eda36e1452929195569e9c2203"
+checksum = "c00b2b7e438404690109baa7da2434dbfc4fe29f4965b31e3ebb60f73015ce30"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
  "bitcoin_onchain",
  "bp-dbc",
  "commit_verify",
- "lnpbp_bech32 0.6.0",
+ "lnpbp_bech32",
  "single_use_seals",
  "strict_encoding",
 ]
@@ -429,9 +429,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.2.0"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a37c35f1112dad5e6e0b1adaff798507497a18fceeb30cceb3bae7d1427b9213"
+checksum = "5538cd660450ebeb4234cfecf8f2284b844ffc4c50531e66d584ad5b91293613"
 dependencies = [
  "os_str_bytes",
 ]
@@ -467,9 +467,9 @@ dependencies = [
 
 [[package]]
 name = "commit_verify"
-version = "0.7.0-rc.6"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad25aed1344b18f28ac3c59e843b11e4da25785abda49ad7ab85a4a510dd262f"
+checksum = "eac05c39ea303b263fff5ac3af85110e8ed306bccf4222ba11d434db3b4f78ba"
 dependencies = [
  "amplify",
  "bitcoin_hashes",
@@ -939,9 +939,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.7.0-rc.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "684c61496d7edee8528c36cf4c1f0fb11922f31dd7824ee926f4f8644c63070a"
+checksum = "aa879ff19a8de89c828f2bb6343bb87228e91f3e1fe98f9090cd7cc4e4e44656"
 dependencies = [
  "amplify",
  "bitcoin_hashes",
@@ -1074,7 +1074,7 @@ checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
 name = "lnp-cli"
-version = "0.7.0-beta.1"
+version = "0.7.0"
 dependencies = [
  "amplify",
  "clap",
@@ -1088,9 +1088,9 @@ dependencies = [
 
 [[package]]
 name = "lnp-core"
-version = "0.7.0-beta.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fd4fe154a8c901842f80cdeea0bea9b586c658220cae8c7df63cd401a712781"
+checksum = "bbac97634015a958f7ac6aedf2eeaba9e42565536557a4787b7f9aa5408d51f7"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1107,9 +1107,9 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.7.0-beta.2"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d70310b6c133694f4191504c189a90f4c1d21cfd7af621077b5d5ad67258c88"
+checksum = "80f5bd2d9b4a2b5a4c12779d536e3bd49d83263bff25c9f7a8c88a7e112aa450"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_node"
-version = "0.7.0-beta.1"
+version = "0.7.0"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1163,7 +1163,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_rpc"
-version = "0.7.0-beta.1"
+version = "0.7.0"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1188,22 +1188,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79c8405e2d0eec3f9898d9a2fbbd2c9b2dcc80d64c3efde987e2b1075822e72d"
 dependencies = [
  "amplify",
- "lnpbp_bech32 0.7.0",
+ "lnpbp_bech32",
  "lnpbp_chain",
  "serde 1.0.137",
  "serde_with",
-]
-
-[[package]]
-name = "lnpbp_bech32"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df3dd0d4d712b845b2981058cffb359202464a6f127dd78fa24951e1df882551"
-dependencies = [
- "amplify",
- "bech32",
- "bitcoin_hashes",
- "strict_encoding",
 ]
 
 [[package]]
@@ -1281,9 +1269,9 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.7.0-rc.3"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "815f6b0b607daf931711ef8b7f085382efe643d541f492b87720c4e95c5a82e9"
+checksum = "ff4230e1f570ee09e699be6e5334bfd32fce25dcf375ebbad58cd5e784e40132"
 dependencies = [
  "amplify",
  "clap",
@@ -1978,9 +1966,9 @@ checksum = "f054c6c1a6e95179d6f23ed974060dcefb2d9388bb7256900badad682c499de4"
 
 [[package]]
 name = "single_use_seals"
-version = "0.7.0-rc.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa09c03c4cc349e6767cc3cfbbc9043ddb25210fd59720390a9e23f58d838c6f"
+checksum = "e15e3bb0130780a5ffe11965dfd80a1b9ee608d13e5c1afed9817bdb560c0326"
 dependencies = [
  "amplify_derive",
 ]
