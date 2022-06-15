@@ -449,12 +449,33 @@ impl Runtime {
 
     fn handle_bridge_bifrost(
         &mut self,
-        _endpoints: &mut Endpoints,
+        endpoints: &mut Endpoints,
         msg: bifrost::Messages,
     ) -> Result<(), Error> {
         self.messages_received += 1;
 
         match msg {
+            bifrost::Messages::Message(bifrost::msg::Msg {
+                application: bifrost::msg::MsgApp::Storm,
+                ..
+            }) => {
+                endpoints.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    ServiceId::Storm,
+                    BusMsg::Birfost(msg),
+                )?;
+            }
+
+            bifrost::Messages::Message(bifrost::msg::Msg { application, .. }) => {
+                endpoints.send_to(
+                    ServiceBus::Msg,
+                    self.identity(),
+                    ServiceId::MsgApp(application),
+                    BusMsg::Birfost(msg),
+                )?;
+            }
+
             message => {
                 // TODO:
                 //  1. Check permissions

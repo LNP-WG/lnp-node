@@ -47,7 +47,7 @@ amplify = "3.12.0"
 strict_encoding = { version = "1.8.1", features = ["miniscript"] }
 descriptor-wallet = { version = "0.7.1", features = ["keygen", "miniscript", "electrum"] }
 lnpbp = "0.7.0"
-lnp-core = "0.7.0"
+lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core" }
 lnp_rpc = { version = "0.7.0", path = "./rpc" }
 internet2 = { version = "0.7.0", features = ["keygen", "url"] }
 microservices = { version = "0.7.0", default-features = false, features = ["node", "peer"] }
@@ -79,7 +79,7 @@ amplify = "3.12.0"
 lnpbp = "0.7.0"
 bitcoin = "0.28.1"
 lightning-invoice = "0.14.0"
-lnp-core = "0.7.0-beta.1"
+lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core" }
 lnp_rpc = { version = "0.7.0", path = "./rpc" }
 internet2 = "0.7.0"
 microservices = { version = "0.7.0", default-features = false, features = ["peer"] }

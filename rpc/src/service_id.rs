@@ -18,6 +18,7 @@ use std::str::FromStr;
 use amplify::hex;
 use amplify::hex::ToHex;
 use internet2::NodeAddr;
+use lnp::p2p::bifrost;
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;
 use strict_encoding::{strict_deserialize, strict_serialize};
@@ -83,6 +84,12 @@ pub enum ServiceId {
 
     #[display("signer")]
     Signer,
+
+    #[display("storm")]
+    Storm,
+
+    #[display("msgapp({0})")]
+    MsgApp(bifrost::msg::MsgApp),
 
     #[display("other<{0}>")]
     Other(ClientName),
