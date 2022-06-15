@@ -12,7 +12,9 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnp_rpc::{Failure, OptionDetails, RpcMsg};
+use lnp_rpc::{Failure, FailureCode, OptionDetails, RpcMsg};
+
+use crate::lnpd::{Daemon, DaemonError};
 
 pub trait ToProgressOrFalure {
     fn to_progress_or_failure(&self) -> RpcMsg;
@@ -21,32 +23,20 @@ pub trait IntoSuccessOrFalure {
     fn into_success_or_failure(self) -> RpcMsg;
 }
 
-impl<E> ToProgressOrFalure for Result<String, E>
-where
-    E: std::error::Error,
-{
+impl ToProgressOrFalure for Result<String, DaemonError<Daemon>> {
     fn to_progress_or_failure(&self) -> RpcMsg {
         match self {
             Ok(val) => RpcMsg::Progress(val.clone()),
-            Err(err) => RpcMsg::Failure(Failure::from(err)),
+            Err(err) => RpcMsg::from(Failure { code: FailureCode::Launch, info: err.to_string() }),
         }
     }
 }
 
-impl IntoSuccessOrFalure for Result<String, crate::Error> {
+impl IntoSuccessOrFalure for Result<String, DaemonError<Daemon>> {
     fn into_success_or_failure(self) -> RpcMsg {
         match self {
             Ok(val) => RpcMsg::Success(OptionDetails::with(val)),
-            Err(err) => RpcMsg::from(Failure::from(&err)),
-        }
-    }
-}
-
-impl IntoSuccessOrFalure for Result<(), crate::Error> {
-    fn into_success_or_failure(self) -> RpcMsg {
-        match self {
-            Ok(_) => RpcMsg::Success(OptionDetails::new()),
-            Err(err) => RpcMsg::from(Failure::from(&err)),
+            Err(err) => RpcMsg::from(Failure { code: FailureCode::Launch, info: err.to_string() }),
         }
     }
 }

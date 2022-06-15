@@ -16,23 +16,24 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt::{self, Debug, Display, Formatter};
 use std::io;
 use std::iter::FromIterator;
+use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
 
 use amplify::{Slice32, ToYamlString, Wrapper};
-use bitcoin::{secp256k1, Address};
-use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteNodeAddr, RemoteSocketAddr};
+use bitcoin::Address;
+use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lightning_invoice::Invoice;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
-use microservices::rpc_connection;
+use microservices::rpc;
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
+use crate::error::FailureCode;
 use crate::{ClientId, ServiceId};
 
 /// We need this wrapper type to be compatible with LNP Node having multiple message buses
@@ -46,7 +47,7 @@ pub(crate) enum BusMsg {
     Rpc(RpcMsg),
 }
 
-impl rpc_connection::Request for BusMsg {}
+impl rpc::Request for BusMsg {}
 
 /// RPC API requests between LNP Node daemons and clients.
 #[derive(Clone, Debug, Display, From)]
@@ -66,12 +67,12 @@ pub enum RpcMsg {
     ListFunds,
 
     #[display("listen({0})")]
-    Listen(RemoteSocketAddr),
+    Listen(SocketAddr),
 
     // Node connectivity API
     // ---------------------
     #[display("connect({0})")]
-    ConnectPeer(RemoteNodeAddr),
+    ConnectPeer(NodeAddr),
 
     #[display("ping_peer()")]
     PingPeer,
@@ -255,8 +256,8 @@ pub struct Send {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(NodeInfo::to_yaml_string)]
 pub struct NodeInfo {
-    pub node_id: secp256k1::PublicKey,
-    pub listens: Vec<RemoteSocketAddr>,
+    pub node_id: NodeId,
+    pub listens: Vec<InetSocketAddr>,
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: u64,
@@ -271,8 +272,8 @@ pub struct NodeInfo {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
 #[display(PeerInfo::to_yaml_string)]
 pub struct PeerInfo {
-    pub local_id: secp256k1::PublicKey,
-    pub remote_id: Vec<secp256k1::PublicKey>,
+    pub local_id: NodeId,
+    pub remote_id: Vec<NodeId>,
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub local_socket: Option<InetSocketAddr>,
     #[serde_as(as = "Vec<DisplayFromStr>")]
@@ -367,15 +368,15 @@ where
 #[display("{info}", alt = "Server returned failure #{code}: {info}")]
 pub struct Failure {
     /// Failure code
-    pub code: u16,
+    pub code: FailureCode,
 
     /// Detailed information about the failure
     pub info: String,
 }
 
 impl Failure {
-    pub fn into_microservice_failure(self) -> microservices::rpc::Failure {
-        microservices::rpc::Failure { code: self.code, info: self.info }
+    pub fn into_microservice_failure(self) -> rpc::Failure<FailureCode> {
+        rpc::Failure { code: self.code.into(), info: self.info }
     }
 }
 
@@ -406,19 +407,6 @@ impl From<&str> for OptionDetails {
     fn from(s: &str) -> Self { OptionDetails(Some(s.to_string())) }
 }
 
-impl From<crate::Error> for RpcMsg {
-    fn from(err: crate::Error) -> Self { RpcMsg::Failure(Failure::from(&err)) }
-}
-
 impl From<&str> for RpcMsg {
     fn from(s: &str) -> Self { RpcMsg::Progress(s.to_owned()) }
-}
-
-impl<E: std::error::Error> From<&E> for Failure {
-    fn from(err: &E) -> Self {
-        Failure {
-            code: 9000, // TODO: do code types
-            info: err.to_string(),
-        }
-    }
 }

@@ -12,13 +12,12 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::net::SocketAddr;
-use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
 
 use colored::Colorize;
-use internet2::ZmqType;
+use internet2::addr::ServiceAddr;
+use internet2::ZmqSocketType;
 use microservices::esb::{self, BusId};
 
 use crate::{BusMsg, ClientId, Error, OptionDetails, RpcMsg, ServiceId};
@@ -42,27 +41,21 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn with(connect: &str) -> Result<Self, Error> {
+    pub fn with(connect_addr: ServiceAddr, ctx: zmq::Context) -> Result<Self, Error> {
         use bitcoin::secp256k1::rand;
 
-        debug!("RPC socket {}", connect);
+        debug!("RPC socket {}", connect_addr);
 
         debug!("Setting up RPC client...");
         let identity = rand::random();
-        let rpc_endpoint = match SocketAddr::from_str(connect) {
-            Ok(_) => format!("tcp://{}", connect),
-            Err(_) => format!("ipc://{}", connect),
-        };
-        let bus_config = esb::BusConfig::with_locator(
-            rpc_endpoint.parse().expect("Only ZMQ RPC is currently supported"),
-            Some(ServiceId::router()),
-        );
+        let bus_config = esb::BusConfig::with_addr(connect_addr, Some(ServiceId::router()));
         let esb = esb::Controller::with(
             map! {
                 RpcBus => bus_config
             },
             Handler { identity: ServiceId::Client(identity) },
-            ZmqType::RouterConnect,
+            ZmqSocketType::RouterConnect,
+            ctx,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap
@@ -81,8 +74,8 @@ impl Client {
 
     pub fn response(&mut self) -> Result<RpcMsg, Error> {
         if self.response_queue.is_empty() {
-            for (_, _, rep) in self.esb.recv_poll()? {
-                match rep {
+            for poll in self.esb.recv_poll()? {
+                match poll.request {
                     BusMsg::Rpc(msg) => self.response_queue.push(msg),
                 }
             }

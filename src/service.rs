@@ -14,13 +14,18 @@
 
 use std::fmt::Debug;
 
-use internet2::{zmqsocket, ZmqType};
+use clap::lazy_static::lazy_static;
+use internet2::zeromq::{self, ZmqSocketType};
 use microservices::esb;
 use microservices::node::TryService;
 
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
 use crate::rpc::{Failure, ServiceId};
 use crate::{Config, Error};
+
+lazy_static! {
+    pub static ref ZMQ_CONTEXT: zmq::Context = zmq::Context::new();
+}
 
 pub struct Service<Runtime>
 where
@@ -52,20 +57,21 @@ where
     {
         let router = if !broker { Some(ServiceId::router()) } else { None };
         let services = map! {
-            ServiceBus::Msg => esb::BusConfig::with_locator(
+            ServiceBus::Msg => esb::BusConfig::with_addr(
                 config.msg_endpoint,
                 router.clone()
             ),
-            ServiceBus::Ctl => esb::BusConfig::with_locator(
+            ServiceBus::Ctl => esb::BusConfig::with_addr(
                 config.ctl_endpoint,
                 router.clone()
             ),
-            ServiceBus::Rpc => esb::BusConfig::with_locator(config.rpc_endpoint, router)
+            ServiceBus::Rpc => esb::BusConfig::with_addr(config.rpc_endpoint, router)
         };
         let esb = esb::Controller::with(
             services,
             runtime,
-            if broker { ZmqType::RouterBind } else { ZmqType::RouterConnect },
+            if broker { ZmqSocketType::RouterBind } else { ZmqSocketType::RouterConnect },
+            ZMQ_CONTEXT.clone(),
         )?;
         Ok(Self { esb, broker })
     }
@@ -89,7 +95,7 @@ where
 
     pub fn add_loopback(&mut self, socket: zmq::Socket) -> Result<(), esb::Error<ServiceId>> {
         self.esb.add_service_bus(ServiceBus::Bridge, esb::BusConfig {
-            carrier: zmqsocket::Carrier::Socket(socket),
+            carrier: zeromq::Carrier::Socket(socket),
             router: None,
             queued: true,
         })

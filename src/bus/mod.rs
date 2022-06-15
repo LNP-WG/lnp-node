@@ -19,7 +19,7 @@ pub use ctl::*;
 use lnp::p2p;
 use lnp_rpc::RpcMsg;
 use microservices::esb::BusId;
-use microservices::rpc_connection;
+use microservices::rpc;
 pub use reports::{IntoSuccessOrFalure, ToProgressOrFalure};
 
 use crate::rpc::ServiceId;
@@ -80,4 +80,4 @@ pub enum BusMsg {
     Rpc(RpcMsg),
 }
 
-impl rpc_connection::Request for BusMsg {}
+impl rpc::Request for BusMsg {}

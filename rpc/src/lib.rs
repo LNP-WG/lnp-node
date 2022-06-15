@@ -49,7 +49,7 @@ mod messages;
 mod service_id;
 
 pub use client::Client;
-pub use error::Error;
+pub use error::{Error, FailureCode};
 pub use messages::*;
 pub use service_id::{ClientId, ClientName, ServiceId};
 

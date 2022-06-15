@@ -17,7 +17,7 @@ use std::str::FromStr;
 
 use amplify::hex;
 use amplify::hex::ToHex;
-use internet2::NodeAddr;
+use internet2::addr::NodeAddr;
 use lnp::p2p::bifrost;
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;

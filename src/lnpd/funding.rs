@@ -36,7 +36,7 @@ use wallet::hd::{
     DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes, TrackingAccount,
     UnhardenedIndex,
 };
-use wallet::onchain::{ResolveUtxo, UtxoResolverError};
+use wallet::onchain::ResolveUtxo;
 use wallet::psbt::construct::Construct;
 use wallet::psbt::Psbt;
 use wallet::scripts::PubkeyScript;
@@ -59,12 +59,7 @@ pub enum Error {
 
     /// error resolving funding wallet transactions with Electrum server.
     /// Details: {0}
-    #[from]
-    Electrum(electrum_client::Error),
-
-    /// error resolving funding wallet transactions. Details: {0}
-    #[from]
-    Resolver(UtxoResolverError),
+    Electrum(String),
 
     /// funding wallet uses custom descriptor which can't be represented as a
     /// valid bitcoin addresses, making channel funding impossible
@@ -91,6 +86,10 @@ pub enum Error {
     /// error finalizing transaction, probably not all signatures are present.
     // TODO: Print out details once apmplify library will have `DisplayVec` type.
     Finalizing(Vec<miniscript::psbt::Error>),
+}
+
+impl From<electrum_client::Error> for Error {
+    fn from(err: electrum_client::Error) -> Self { Error::Electrum(err.to_string()) }
 }
 
 /// Information about funding which is already used in channels pending
@@ -248,7 +247,8 @@ impl FundingWallet {
                         &[case],
                         UnhardenedIndex::zero(),
                         last_index.last_index().saturating_add(20),
-                    )?
+                    )
+                    .map_err(|err| Error::Electrum(err.to_string()))?
                     .into_iter()
                     .map(|mut data| {
                         let utxo_set = &mut data.1 .1;

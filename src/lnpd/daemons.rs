@@ -12,36 +12,40 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::fmt::{self, Debug, Display, Formatter};
-use std::net::SocketAddr;
-use std::os::unix::process::ExitStatusExt;
+use std::io::Read;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::process::{Child, ExitStatus};
 use std::{fs, process, thread};
 
 use amplify::hex::ToHex;
 use amplify::IoError;
-use internet2::{LocalNode, RemoteSocketAddr};
+use bitcoin::secp256k1::{SecretKey, SECP256K1};
+use internet2::addr::LocalNode;
+use internet2::session::noise::FramingProtocol;
+use internet2::transport;
 use lnp::p2p::bolt::ActiveChannelId;
 use microservices::peer::{supervisor, PeerSocket};
-use strict_encoding::StrictDecode;
 
 use crate::lnpd::runtime::Runtime;
 use crate::service::LogStyle;
 use crate::{channeld, peerd, routed, signd, watchd, Config, Error, P2pProtocol};
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
-    let file = fs::File::open(key_file).unwrap_or_else(|_| {
+    let mut file = fs::File::open(key_file).unwrap_or_else(|_| {
         panic!(
             "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
              access rights to it",
             key_file.display()
         )
     });
-    let local_node = LocalNode::strict_decode(file).unwrap_or_else(|_| {
-        panic!("Unable understand format of node key file '{}'", key_file.display())
-    });
+    let mut node_secret = [0u8; 32];
+    file.read_exact(&mut node_secret).expect("incorrect format of the node key file");
+    let node_secret =
+        SecretKey::from_slice(&node_secret).expect("incorrect format of the node key file");
+    let local_node = LocalNode::with(&SECP256K1, node_secret);
 
     let local_id = local_node.node_id();
     info!("{}: {}", "Local node id".ended(), local_id.addr());
@@ -74,7 +78,11 @@ impl<DaemonName: Debug + Display + Clone> Display for DaemonHandle<DaemonName> {
 /// Errors during daemon launching
 #[derive(Debug, Error, Display, From)]
 #[display(doc_comments)]
-pub enum DaemonError<DaemonName: Debug + Display + Clone> {
+pub enum DaemonError<DaemonName: Debug + Display> {
+    /// Tor is not yet supported
+    #[from(transport::Error)]
+    TorNotSupportedYet,
+
     /// thread `{0}` has exited with an error.
     ///
     /// Error details: {1}
@@ -179,14 +187,28 @@ impl Runtime {
                         let local_node = read_node_key_file(&key_file);
                         let config =
                             Config::with(config, peerd::Config { protocol: P2pProtocol::Bolt });
-                        supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
+                        supervisor::run(
+                            config,
+                            threaded,
+                            FramingProtocol::Brontide,
+                            local_node,
+                            socket,
+                            peerd::runtime::run,
+                        )
                     }
                     Daemon::PeerdBifrost(socket, key_file) => {
                         let threaded = config.threaded;
                         let local_node = read_node_key_file(&key_file);
                         let config =
                             Config::with(config, peerd::Config { protocol: P2pProtocol::Bifrost });
-                        supervisor::run(config, threaded, &local_node, socket, peerd::runtime::run)
+                        supervisor::run(
+                            config,
+                            threaded,
+                            FramingProtocol::Brontozaur,
+                            local_node,
+                            socket,
+                            peerd::runtime::run,
+                        )
                     }
                     Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
                     Daemon::Routed => routed::run(config),
@@ -223,18 +245,17 @@ impl Runtime {
         cmd.args(std::env::args().skip(1).filter(|arg| !arg.starts_with("--listen")));
 
         match &daemon {
-            Daemon::PeerdBolt(PeerSocket::Listen(RemoteSocketAddr::Ftcp(inet)), _) => {
-                let socket_addr = SocketAddr::try_from(*inet).expect("invalid connection address");
-                let ip = socket_addr.ip();
-                let port = socket_addr.port();
+            Daemon::PeerdBolt(PeerSocket::Listen(node_addr), _) => {
+                let ip: IpAddr = node_addr
+                    .addr
+                    .address()
+                    .try_into()
+                    .map_err(|_| transport::Error::TorNotSupportedYet)?;
+                let port = node_addr.addr.port().ok_or(transport::Error::TorNotSupportedYet)?;
                 cmd.args(&["--bolt", "--listen", &ip.to_string(), "--port", &port.to_string()]);
             }
             Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
                 cmd.args(&["--bolt", "--connect", &node_addr.to_string()]);
-            }
-            Daemon::PeerdBolt(PeerSocket::Listen(_), _) => {
-                // Lightning do not support non-TCP sockets
-                return Err(DaemonError::ProcessAborted(daemon.clone(), ExitStatus::from_raw(101)));
             }
             Daemon::Channeld(channel_id, ..) => {
                 cmd.args(&[channel_id.as_slice32().to_hex()]);

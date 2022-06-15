@@ -20,6 +20,7 @@ use bitcoin::secp256k1::PublicKey;
 use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelReestablish, Messages as LnMsg};
+use lnp_rpc::FailureCode;
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -177,7 +178,7 @@ impl Runtime {
         if let BusMsg::Ctl(CtlMsg::EsbError { destination, error: _ }) = &request {
             let (code, info) = match destination {
                 ServiceId::Peer(remote_peer) => (
-                    9001,
+                    FailureCode::Channel,
                     format!(
                         "There is no connection with the remote peer {}; you have to `connect` to \
                          it first",
@@ -185,7 +186,7 @@ impl Runtime {
                     ),
                 ),
                 _ => (
-                    9000,
+                    FailureCode::Channel,
                     format!("Unable to complete: daemon {} is offline or crashed", destination),
                 ),
             };
@@ -208,7 +209,7 @@ impl Runtime {
             Err(err @ Error::Esb(_)) => {
                 error!("{} due to ESB failure: {}", "Failing channel".err(), err.err_details());
                 self.report_failure(endpoints, Failure {
-                    code: err.errno(),
+                    code: FailureCode::Channel,
                     info: err.to_string(),
                 });
                 return Err(err);
@@ -216,7 +217,7 @@ impl Runtime {
             Err(other_err) => {
                 error!("{}: {}", "Channel error".err(), other_err.err_details());
                 self.report_failure(endpoints, Failure {
-                    code: other_err.errno(),
+                    code: FailureCode::Channel,
                     info: other_err.to_string(),
                 });
                 false

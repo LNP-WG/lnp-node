@@ -24,6 +24,7 @@ use bitcoin::Txid;
 use lnp::channel::bolt::LocalKeyset;
 use lnp::channel::{FundingError, PsbtLnpFunding};
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
+use lnp_rpc::FailureCode;
 use microservices::esb;
 use microservices::esb::Handler;
 
@@ -63,8 +64,8 @@ pub enum Error {
     Funding(funding::Error),
 }
 
-impl From<Error> for Failure {
-    fn from(err: Error) -> Self { Failure { code: 6000, info: err.to_string() } }
+impl From<&Error> for Failure {
+    fn from(err: &Error) -> Self { Failure { code: FailureCode::Launch, info: err.to_string() } }
 }
 
 /// State machine for launching new channeld by lnpd in response to user channel opening requests.
@@ -136,7 +137,7 @@ impl StateMachine<CtlMsg, Runtime> for ChannelLauncher {
         debug!("ChannelLauncher {:#} received {} event", self.channel_id(), event.message);
         let channel_id = self.channel_id();
         if let CtlMsg::Error { error, .. } = &event.message {
-            let failure = Failure { code: 10000, info: error.clone() };
+            let failure = Failure { code: FailureCode::Channel, info: error.clone() };
             runtime.send_rpc(event.endpoints, self.enquirer(), RpcMsg::Failure(failure))?;
             return Ok(None);
         }
@@ -501,10 +502,7 @@ fn complete_signatures(
     Ok(())
 }
 
-fn report_failure<E>(client_id: ClientId, endpoints: &mut Endpoints, err: E) -> Result<(), Error>
-where
-    E: Into<Failure> + Into<Error> + std::error::Error,
-{
+fn report_failure(client_id: ClientId, endpoints: &mut Endpoints, err: Error) -> Result<(), Error> {
     let enquirer = ServiceId::Client(client_id);
     let report = RpcMsg::Failure(Failure::from(&err));
     // Swallowing error since we do not want to break channel creation workflow just because of
@@ -541,24 +539,23 @@ where
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
 }
 
-fn report_progress_or_failure<T, E>(
+fn report_progress_or_failure<T>(
     client_id: ClientId,
     endpoints: &mut Endpoints,
-    result: Result<T, E>,
+    result: Result<T, Error>,
 ) -> Result<(), Error>
 where
     T: ToString,
-    E: Into<Failure> + Into<Error> + std::error::Error,
 {
     let enquirer = ServiceId::Client(client_id);
-    let report = match &result {
-        Ok(val) => RpcMsg::Progress(val.to_string()),
-        Err(err) => RpcMsg::Failure(err.into()),
+    let report = match result {
+        Ok(ref val) => RpcMsg::Progress(val.to_string()),
+        Err(ref err) => RpcMsg::Failure(Failure::from(err)),
     };
     // Swallowing error since we do not want to break channel creation workflow just because of
     // not able to report back to the client
     let _ = endpoints
         .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
         .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
-    result.map(|_| ()).map_err(E::into)
+    result.map(|_| ()).map_err(Error::into)
 }

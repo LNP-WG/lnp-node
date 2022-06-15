@@ -138,18 +138,6 @@ impl From<Error> for esb::Error<ServiceId> {
     }
 }
 
-impl From<Error> for microservices::rpc::Error {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::Rpc(err) => err.into(),
-            err => microservices::rpc::Error::ServerFailure(microservices::rpc::Failure {
-                code: 2000,
-                info: err.to_string(),
-            }),
-        }
-    }
-}
-
 impl Error {
     pub fn wrong_esb_msg(bus: ServiceBus, message: &impl ToString) -> Error {
         Error::NotSupported(bus, message.to_string())

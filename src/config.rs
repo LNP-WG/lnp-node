@@ -21,7 +21,7 @@ use std::path::PathBuf;
 #[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
 use std::str::FromStr;
 
-use internet2::ZmqSocketAddr;
+use internet2::addr::ServiceAddr;
 use lnp::p2p::bolt::ActiveChannelId;
 use lnpbp::chain::Chain;
 
@@ -45,13 +45,13 @@ where
     pub data_dir: PathBuf,
 
     /// ZMQ socket for lightning peer network message bus
-    pub msg_endpoint: ZmqSocketAddr,
+    pub msg_endpoint: ServiceAddr,
 
     /// ZMQ socket for internal service control bus
-    pub ctl_endpoint: ZmqSocketAddr,
+    pub ctl_endpoint: ServiceAddr,
 
     /// ZMQ socket for daemon RCP interface
-    pub rpc_endpoint: ZmqSocketAddr,
+    pub rpc_endpoint: ServiceAddr,
 
     /// URL for the electrum server connection
     pub electrum_url: String,

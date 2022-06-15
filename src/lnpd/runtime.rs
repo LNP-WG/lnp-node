@@ -18,13 +18,13 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use amplify::{DumbDefault, Wrapper};
-use bitcoin::{secp256k1, Txid};
-use internet2::addr::InetSocketAddr;
-use internet2::{NodeAddr, RemoteSocketAddr};
+use bitcoin::Txid;
+use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
+use lnp_rpc::FailureCode;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
 use wallet::address::AddressCompat;
@@ -36,16 +36,17 @@ use crate::bus::{
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon, DaemonHandle};
 use crate::lnpd::funding::{self, FundingWallet};
+use crate::lnpd::DaemonError;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, LogStyle, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
+    let node_id = read_node_key_file(&key_file).node_id();
+
     let mut listens = HashSet::with_capacity(1);
     if let Some(addr) = listen {
-        listens.insert(RemoteSocketAddr::Ftcp(InetSocketAddr::from(addr)));
+        listens.insert(addr.into());
     }
-
-    let node_id = read_node_key_file(&key_file).node_id();
 
     let runtime = Runtime {
         identity: ServiceId::LnpBroker,
@@ -89,8 +90,8 @@ pub struct Runtime {
     identity: ServiceId,
     pub(super) config: Config,
     node_key_path: PathBuf,
-    node_id: secp256k1::PublicKey,
-    listens: HashSet<RemoteSocketAddr>,
+    node_id: NodeId,
+    listens: HashSet<InetSocketAddr>,
     started: SystemTime,
     handles: Vec<DaemonHandle<Daemon>>,
     pub(super) funding_wallet: FundingWallet,
@@ -120,7 +121,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         info!("Starting chain watch daemon...");
         self.launch_daemon(Daemon::Watchd, self.config.clone())?;
         for addr in self.listens.clone() {
-            self.listen(addr)?;
+            self.listen(NodeAddr::new(self.node_id, addr))?;
         }
         Ok(())
     }
@@ -272,9 +273,9 @@ impl Runtime {
                 self.send_rpc(endpoints, client_id, RpcMsg::FundsInfo(funds_info))?;
             }
 
-            RpcMsg::Listen(addr) if self.listens.contains(&addr) => {
+            RpcMsg::Listen(addr) if self.listens.contains(&addr.into()) => {
                 let failure = Failure {
-                    code: 1, /* TODO: Update code */
+                    code: FailureCode::Lnpd,
                     info: format!("Listener on {} already exists, ignoring request", addr),
                 };
                 warn!("{}", failure.info.err());
@@ -282,13 +283,13 @@ impl Runtime {
             }
             RpcMsg::Listen(addr) => {
                 let addr_str = addr.addr();
-                self.listens.insert(addr);
+                self.listens.insert(addr.into());
                 info!(
                     "{} for incoming LN peer connections on {}",
                     "Starting listener".promo(),
                     addr_str
                 );
-                let resp = self.listen(addr);
+                let resp = self.listen(NodeAddr::new(self.node_id, addr));
                 match resp {
                     Ok(_) => info!(
                         "Connection daemon is {} for incoming LN peer connections on {}",
@@ -313,7 +314,7 @@ impl Runtime {
                     }
                     Err(err) => {
                         error!("{}", err.err());
-                        Err(Error::from(err))
+                        Err(err)
                     }
                 };
                 self.send_rpc(endpoints, client_id, resp.to_progress_or_failure())?;
@@ -519,7 +520,7 @@ impl Runtime {
         }
     }
 
-    fn listen(&mut self, addr: RemoteSocketAddr) -> Result<String, Error> {
+    fn listen(&mut self, addr: NodeAddr) -> Result<String, DaemonError<Daemon>> {
         info!("Starting peer connection listening daemon on {}...", addr);
         let handle = self.launch_daemon(
             Daemon::PeerdBolt(PeerSocket::Listen(addr), self.node_key_path.clone()),

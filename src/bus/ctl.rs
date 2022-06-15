@@ -15,8 +15,8 @@
 use amplify::num::u24;
 use amplify::Slice32;
 use bitcoin::Txid;
+use internet2::addr::NodeAddr;
 use internet2::presentation::sphinx::Hop;
-use internet2::NodeAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion};
 use lnp::router::gossip::LocalChannelInfo;

@@ -29,13 +29,13 @@
 #[macro_use]
 extern crate log;
 
+use std::io::Write;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 
-use bitcoin::secp256k1::PublicKey;
 use bitcoin::XpubIdentifier;
 use clap::Parser;
-use internet2::LocalNode;
+use internet2::addr::LocalNode;
 use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
 use lnp_node::{Config, Error, LogStyle};
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -177,16 +177,15 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
 
         let derivation_path = DerivationPath::from_str(&format!("m/9735h/{}h/0h", chain_index))
             .expect("hardcoded derivation path");
-        let node_seckey = signing_account.derive_seckey(&secp, &derivation_path);
-        let node_id = PublicKey::from_secret_key(&secp, &node_seckey);
-        let local_node = LocalNode::with(node_seckey, node_id);
-        let key_file = fs::File::create(key_path).unwrap_or_else(|_| {
+        let node_secret = signing_account.derive_seckey(&secp, &derivation_path);
+        let local_node = LocalNode::with(&secp, node_secret);
+        let mut key_file = fs::File::create(key_path).unwrap_or_else(|_| {
             panic!(
                 "Unable to create node key file '{}'; please check that the path exists",
                 key_path.display()
             )
         });
-        local_node.strict_encode(key_file).expect("Unable to save generated node key file");
+        key_file.write_all(&node_secret[..]).expect("Unable to save generated node key file");
         local_node
     } else {
         println!("Node key file '{}' ... {}", key_path.display(), "found".action());

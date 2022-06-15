@@ -15,8 +15,7 @@
 use std::net::{IpAddr, Ipv4Addr};
 
 use clap::{ArgGroup, ValueHint};
-use internet2::addr::InetSocketAddr;
-use internet2::{RemoteNodeAddr, RemoteSocketAddr};
+use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
 use lnp::p2p::bolt::LNP2P_LEGACY_PORT;
 use microservices::peer::PeerSocket;
@@ -61,7 +60,7 @@ pub struct Opts {
     /// IPv4, IPv6 or Onion address (v2 or v3); in the former case you will be also
     /// required to provide `--tor` argument.
     #[clap(short = 'C', long, group = "action")]
-    pub connect: Option<RemoteNodeAddr>,
+    pub connect: Option<NodeAddr>,
 
     /// Customize port used by lightning peer network.
     ///
@@ -127,15 +126,16 @@ impl KeyOpts {
     }
 }
 
-impl From<Opts> for PeerSocket {
-    fn from(opts: Opts) -> Self {
-        if let Some(peer_addr) = opts.connect {
-            Self::Connect(peer_addr)
-        } else if let Some(bind_addr) = opts.listen {
-            Self::Listen(RemoteSocketAddr::Ftcp(InetSocketAddr {
-                address: bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
-                port: opts.port(),
-            }))
+impl Opts {
+    pub fn peer_socket(&self, node_id: NodeId) -> PeerSocket {
+        if let Some(peer_addr) = self.connect {
+            PeerSocket::Connect(peer_addr)
+        } else if let Some(bind_addr) = self.listen {
+            let addr = InetSocketAddr::socket(
+                bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
+                self.port(),
+            );
+            PeerSocket::Listen(NodeAddr::new(node_id, addr))
         } else {
             unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
         }

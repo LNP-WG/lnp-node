@@ -12,9 +12,10 @@
 // along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use std::net::SocketAddr;
 use std::str::FromStr;
 
-use internet2::{NodeAddr, RemoteSocketAddr, ToNodeAddr, ToRemoteNodeAddr};
+use internet2::addr::NodeAddr;
 use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
 use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
@@ -69,24 +70,21 @@ impl Exec for Command {
                 runtime.report_response()?;
             }
 
-            Command::Listen { ip_addr, port, overlay } => {
-                let socket = RemoteSocketAddr::with_ip_addr(overlay, ip_addr, port);
+            Command::Listen { ip_addr, port } => {
+                let socket = SocketAddr::new(ip_addr, port);
                 runtime.request(ServiceId::LnpBroker, RpcMsg::Listen(socket))?;
                 runtime.report_progress()?;
             }
 
-            Command::Connect { peer: node_locator } => {
-                let peer = node_locator
-                    .to_remote_node_addr(LNP2P_LEGACY_PORT)
-                    .expect("Provided node address is invalid");
+            Command::Connect { peer } => {
+                let peer = peer.node_addr(LNP2P_LEGACY_PORT);
 
                 runtime.request(ServiceId::LnpBroker, RpcMsg::ConnectPeer(peer))?;
                 runtime.report_progress()?;
             }
 
             Command::Ping { peer } => {
-                let node_addr =
-                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
+                let node_addr = peer.node_addr(LNP2P_LEGACY_PORT);
 
                 runtime.request(ServiceId::Peer(node_addr), RpcMsg::PingPeer)?;
             }
@@ -105,8 +103,7 @@ impl Exec for Command {
                 htlc_max_total_value,
                 channel_reserve,
             } => {
-                let node_addr =
-                    peer.to_node_addr(LNP2P_LEGACY_PORT).expect("node address is invalid");
+                let node_addr = peer.node_addr(LNP2P_LEGACY_PORT);
 
                 runtime.request(
                     ServiceId::LnpBroker,

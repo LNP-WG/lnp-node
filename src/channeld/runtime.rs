@@ -17,7 +17,7 @@ use std::time::SystemTime;
 use std::{fs, io};
 
 use amplify::{DumbDefault, Wrapper};
-use internet2::NodeAddr;
+use internet2::addr::NodeAddr;
 use lnp::channel::bolt;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use lnp::Extension;

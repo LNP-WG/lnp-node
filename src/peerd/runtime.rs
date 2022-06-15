@@ -20,11 +20,9 @@ use std::time::{Duration, SystemTime};
 
 use amplify::Bipolar;
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
-use bitcoin::secp256k1::PublicKey;
-use internet2::addr::InetSocketAddr;
-use internet2::{
-    presentation, transport, zmqsocket, CreateUnmarshaller, TypedEnum, ZmqType, ZMQ_CONTEXT,
-};
+use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use internet2::zeromq::ZmqSocketType;
+use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
 use lnp::p2p::{bifrost, bolt};
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb::{self, Handler};
@@ -34,6 +32,7 @@ use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
+use crate::service::ZMQ_CONTEXT;
 use crate::{Config, Endpoints, Error, LogStyle, P2pProtocol, Responder, Service};
 
 pub fn run(
@@ -49,7 +48,12 @@ pub fn run(
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    let identity = ServiceId::Peer(params.id);
+    let remote_node = match (params.remote_id, params.local_socket) {
+        (None, Some(local_socket)) => NodeAddr::new(params.local_id, local_socket),
+        (Some(remote_id), _) => NodeAddr::new(remote_id, params.remote_socket),
+        (None, None) => unreachable!(),
+    };
+    let identity = ServiceId::Peer(remote_node);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {
@@ -57,13 +61,14 @@ pub fn run(
         bridge: esb::Controller::with(
             map! {
                 ServiceBus::Bridge => esb::BusConfig {
-                    carrier: zmqsocket::Carrier::Socket(tx),
+                    carrier: zeromq::Carrier::Socket(tx),
                     router: None,
                     queued: true,
                 }
             },
             BridgeHandler,
-            ZmqType::Rep,
+            ZmqSocketType::Rep,
+            ZMQ_CONTEXT.clone(),
         )?,
     };
     match params.config.ext.protocol {
@@ -185,8 +190,8 @@ where
 pub struct Runtime {
     config: super::Config,
     identity: ServiceId,
-    local_id: PublicKey,
-    remote_id: Option<PublicKey>,
+    local_id: NodeId,
+    remote_id: Option<NodeId>,
     local_socket: Option<InetSocketAddr>,
     remote_socket: InetSocketAddr,
 

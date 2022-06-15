@@ -15,7 +15,7 @@
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use internet2::{FramingProtocol, PartialNodeAddr};
+use internet2::addr::{PartialNodeAddr, ServiceAddr};
 use lightning_invoice::Invoice;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnp_rpc::LNP_NODE_RPC_SOCKET;
@@ -37,7 +37,7 @@ pub struct Opts {
         default_value = LNP_NODE_RPC_SOCKET,
         env = "LNP_NODE_RPC_SOCKET"
     )]
-    pub connect: String,
+    pub connect: ServiceAddr,
 
     /// Set verbosity level.
     ///
@@ -54,7 +54,7 @@ pub struct Opts {
 #[derive(Subcommand, Clone, PartialEq, Eq, Debug, Display)]
 pub enum Command {
     /// Bind to a socket and start listening for incoming LN peer connections
-    #[display("listen<{overlay}://{ip_addr}:{port}>")]
+    #[display("listen<{ip_addr}:{port}>")]
     Listen {
         /// IPv4 or IPv6 address to bind to
         #[clap(short, long = "ip", default_value = "0.0.0.0")]
@@ -63,10 +63,6 @@ pub enum Command {
         /// Port to use; defaults to the native LN port.
         #[clap(short, long, default_value = "9735")]
         port: u16,
-
-        /// Use overlay protocol (http, websocket etc)
-        #[clap(short, long, default_value = "tcp")]
-        overlay: FramingProtocol,
     },
 
     /// Connect to the remote lightning network peer
