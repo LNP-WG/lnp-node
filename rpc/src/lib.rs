@@ -51,6 +51,6 @@ mod service_id;
 pub use client::Client;
 pub use error::{Error, FailureCode};
 pub use messages::*;
-pub use service_id::{ClientId, ClientName, ServiceId};
+pub use service_id::{ClientId, ServiceId, ServiceName};
 
 pub const LNP_NODE_RPC_SOCKET: &str = "127.0.0.1:62962";

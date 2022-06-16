@@ -18,16 +18,16 @@ use std::str::FromStr;
 use amplify::hex;
 use amplify::hex::ToHex;
 use internet2::addr::NodeAddr;
-use lnp::p2p::bifrost;
+use lnp::p2p::bifrost::BifrostApp;
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;
 use strict_encoding::{strict_deserialize, strict_serialize};
 
 #[derive(Wrapper, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, From, Default)]
 #[derive(StrictEncode, StrictDecode)]
-pub struct ClientName([u8; 32]);
+pub struct ServiceName([u8; 32]);
 
-impl Display for ClientName {
+impl Display for ServiceName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if f.alternate() {
             write!(f, "{}..{}", self.0[..4].to_hex(), self.0[(self.0.len() - 4)..].to_hex())
@@ -37,7 +37,7 @@ impl Display for ClientName {
     }
 }
 
-impl FromStr for ClientName {
+impl FromStr for ServiceName {
     type Err = hex::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -85,14 +85,17 @@ pub enum ServiceId {
     #[display("signer")]
     Signer,
 
-    #[display("storm")]
-    Storm,
+    #[display("msgapp<{0}>")]
+    MsgApp(BifrostApp),
 
-    #[display("msgapp({0})")]
-    MsgApp(bifrost::msg::MsgApp),
+    #[display("chapp<{0}>")]
+    ChannelApp(BifrostApp),
+
+    #[display("<{0}>")]
+    Layer3App(u16),
 
     #[display("other<{0}>")]
-    Other(ClientName),
+    Other(ServiceName),
 }
 
 impl ServiceId {
@@ -123,7 +126,7 @@ impl From<Vec<u8>> for ServiceId {
     fn from(vec: Vec<u8>) -> Self {
         strict_deserialize(&vec).unwrap_or_else(|_| {
             ServiceId::Other(
-                ClientName::from_str(&String::from_utf8_lossy(&vec))
+                ServiceName::from_str(&String::from_utf8_lossy(&vec))
                     .expect("ClientName conversion never fails"),
             )
         })

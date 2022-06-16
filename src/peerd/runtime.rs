@@ -459,23 +459,11 @@ impl Runtime {
         self.messages_received += 1;
 
         match msg {
-            bifrost::Messages::Message(bifrost::msg::Msg {
-                application: bifrost::msg::MsgApp::Storm,
-                ..
-            }) => {
+            bifrost::Messages::Message(bifrost::Msg { app, .. }) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
-                    ServiceId::Storm,
-                    BusMsg::Birfost(msg),
-                )?;
-            }
-
-            bifrost::Messages::Message(bifrost::msg::Msg { application, .. }) => {
-                endpoints.send_to(
-                    ServiceBus::Msg,
-                    self.identity(),
-                    ServiceId::MsgApp(application),
+                    ServiceId::MsgApp(app),
                     BusMsg::Birfost(msg),
                 )?;
             }

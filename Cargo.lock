@@ -558,9 +558,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aaa7bd5fb665c6864b5f963dd9097905c54125909c7aa94c9e18507cdbe6c53"
+checksum = "4c02a4d71819009c192cf4872265391563fd6a84c81ff2c0f2a7026ca4c1d85c"
 dependencies = [
  "cfg-if",
  "crossbeam-utils",
@@ -579,15 +579,15 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.8"
+version = "0.9.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1145cf131a2c6ba0615079ab6a638f7e1973ac9c2634fcbeaaad6114246efe8c"
+checksum = "07db9d94cbd326813772c968ccd25999e5f8ae22f4f8d1b11effa37ef6ce281d"
 dependencies = [
  "autocfg 1.1.0",
  "cfg-if",
  "crossbeam-utils",
- "lazy_static",
  "memoffset",
+ "once_cell",
  "scopeguard",
 ]
 
@@ -603,12 +603,12 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.8"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bf124c720b7686e3c2663cf54062ab0f68a88af2fb6a030e87e30bf721fcb38"
+checksum = "8ff1f980957787286a554052d03c7aee98d99cc32e09f6d45f0a814133c87978"
 dependencies = [
  "cfg-if",
- "lazy_static",
+ "once_cell",
 ]
 
 [[package]]
@@ -1019,9 +1019,9 @@ dependencies = [
 
 [[package]]
 name = "internet2"
-version = "0.8.0-rc.2"
+version = "0.8.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d5d1c8d52b754e3fecd7f40dfe1d8fe8668f6200b7344cdadb29021453dbc68"
+checksum = "a0225d064f237c2daec7affd5ce65b605f9eb18167a705887d22773df4d218bd"
 dependencies = [
  "amplify",
  "bitcoin_hashes",
@@ -1186,7 +1186,7 @@ dependencies = [
 [[package]]
 name = "lnp-core"
 version = "0.8.0"
-source = "git+https://github.com/LNP-WG/lnp-core#84ebacfea7e5dc6b9a5c9501607fea77898c695a"
+source = "git+https://github.com/LNP-WG/lnp-core#85fc6546f34dc05a41e3bc93baaf62e6729f19ce"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1204,7 +1204,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.8.0"
-source = "git+https://github.com/LNP-WG/lnp-core#84ebacfea7e5dc6b9a5c9501607fea77898c695a"
+source = "git+https://github.com/LNP-WG/lnp-core#85fc6546f34dc05a41e3bc93baaf62e6729f19ce"
 dependencies = [
  "amplify",
  "bitcoin 0.28.1",
@@ -1212,10 +1212,10 @@ dependencies = [
  "bp-core",
  "chrono",
  "internet2",
- "lazy_static",
  "lightning_encoding",
  "lnpbp",
  "miniscript",
+ "once_cell",
  "psbt",
  "secp256k1 0.22.1",
  "serde 1.0.137",
