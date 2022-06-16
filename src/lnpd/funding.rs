@@ -165,12 +165,20 @@ impl FundingWallet {
             fs::OpenOptions::new().read(true).write(true).create(false).open(wallet_path)?;
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
 
-        let network = chain.try_into()?;
-        if DescriptorExt::<bitcoin::PublicKey>::network(&wallet_data.descriptor)? != network {
+        let target_network = chain.try_into()?;
+        let wallet_network = DescriptorExt::<bitcoin::PublicKey>::network(&wallet_data.descriptor)?;
+
+        let is_correct_network = match (wallet_network, target_network) {
+            (Network::Bitcoin, Network::Bitcoin) => true,
+            (Network::Testnet, Network::Testnet | Network::Regtest | Network::Signet) => true,
+            _ => false,
+        };
+
+        if !is_correct_network {
             return Err(Error::ChainMismatch);
         }
 
-        FundingWallet::init(network, wallet_data, wallet_file, electrum_url)
+        FundingWallet::init(target_network, wallet_data, wallet_file, electrum_url)
     }
 
     fn init(
