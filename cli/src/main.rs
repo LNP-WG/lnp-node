@@ -53,8 +53,7 @@ fn main() {
 
     trace!("Command-line arguments: {:?}", opts);
 
-    let ctx = zmq::Context::new();
-    let mut client = Client::with(opts.connect, ctx).expect("Error initializing client");
+    let mut client = Client::with(opts.connect).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
     opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err));

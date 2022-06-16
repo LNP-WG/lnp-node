@@ -68,7 +68,6 @@ pub fn run(
                 }
             },
             BridgeHandler,
-            ZMQ_CONTEXT.clone(),
         )?,
     };
     match params.config.ext.protocol {

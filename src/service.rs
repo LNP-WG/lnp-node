@@ -15,8 +15,8 @@
 use std::fmt::Debug;
 
 use internet2::zeromq::{self, ZmqSocketType};
+use microservices::esb;
 use microservices::node::TryService;
-use microservices::{esb, ZMQ_CONTEXT};
 
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
 use crate::rpc::{Failure, ServiceId};
@@ -66,7 +66,7 @@ where
             ),
             ServiceBus::Rpc => esb::BusConfig::with_addr(config.rpc_endpoint, api_type, router)
         };
-        let esb = esb::Controller::with(services, runtime, ZMQ_CONTEXT.clone())?;
+        let esb = esb::Controller::with(services, runtime)?;
         Ok(Self { esb, broker })
     }
 

@@ -41,7 +41,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn with(connect_addr: ServiceAddr, ctx: zmq::Context) -> Result<Self, Error> {
+    pub fn with(connect_addr: ServiceAddr) -> Result<Self, Error> {
         use bitcoin::secp256k1::rand;
 
         debug!("RPC socket {}", connect_addr);
@@ -58,7 +58,6 @@ impl Client {
                 RpcBus => bus_config
             },
             Handler { identity: ServiceId::Client(identity) },
-            ctx,
         )?;
 
         // We have to sleep in order for ZMQ to bootstrap
