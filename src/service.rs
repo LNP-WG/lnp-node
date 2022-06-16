@@ -14,18 +14,13 @@
 
 use std::fmt::Debug;
 
-use clap::lazy_static::lazy_static;
 use internet2::zeromq::{self, ZmqSocketType};
-use microservices::esb;
 use microservices::node::TryService;
+use microservices::{esb, ZMQ_CONTEXT};
 
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
 use crate::rpc::{Failure, ServiceId};
 use crate::{Config, Error};
-
-lazy_static! {
-    pub static ref ZMQ_CONTEXT: zmq::Context = zmq::Context::new();
-}
 
 pub struct Service<Runtime>
 where

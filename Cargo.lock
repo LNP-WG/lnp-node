@@ -1241,7 +1241,6 @@ dependencies = [
  "electrum-client",
  "env_logger",
  "internet2",
- "lazy_static",
  "lightning-invoice",
  "lnp-core",
  "lnp_rpc",
@@ -1358,9 +1357,9 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.8.0-rc.2"
+version = "0.8.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da3dae2a4fdc8ff79de8aaa1d455681dc04dabd60be67f8a1db612c8230cd0b2"
+checksum = "2fa27125c7d78505fd673e1672667eae4e28630dc582a17583de3dc6d7b1918d"
 dependencies = [
  "amplify",
  "clap",
@@ -1370,6 +1369,7 @@ dependencies = [
  "lightning_encoding",
  "log",
  "nix 0.19.1",
+ "once_cell",
  "secp256k1 0.22.1",
  "serde 1.0.137",
  "serde_with",

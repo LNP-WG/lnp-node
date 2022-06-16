@@ -50,7 +50,7 @@ lnpbp = "0.7.0"
 lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core" }
 lnp_rpc = { version = "0.8.0", path = "./rpc" }
 internet2 = { version = "0.8.0-beta.1", features = ["keygen"] }
-microservices = { version = "0.8.0-rc.2", default-features = false, features = ["node", "peer"] }
+microservices = { version = "0.8.0-rc.3", default-features = false, features = ["node", "peer"] }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
@@ -70,7 +70,6 @@ shellexpand = { version = "2", optional = true }
 rpassword = { version = "5.0.1", optional = true }
 # IPC
 zmq = { package = "zmq2", version = "0.5.0" }
-lazy_static = "1.4.0"
 
 [dev-dependencies]
 strict_encoding_test = "1.7.4"

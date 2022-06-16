@@ -29,10 +29,10 @@ use microservices::esb::{self, Handler};
 use microservices::node::TryService;
 use microservices::peer::supervisor::RuntimeParams;
 use microservices::peer::{self, PeerConnection, PeerSender, SendMessage};
+use microservices::ZMQ_CONTEXT;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::service::ZMQ_CONTEXT;
 use crate::{Config, Endpoints, Error, LogStyle, P2pProtocol, Responder, Service};
 
 pub fn run(
