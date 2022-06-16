@@ -48,13 +48,16 @@ impl Client {
 
         debug!("Setting up RPC client...");
         let identity = rand::random();
-        let bus_config = esb::BusConfig::with_addr(connect_addr, Some(ServiceId::router()));
+        let bus_config = esb::BusConfig::with_addr(
+            connect_addr,
+            ZmqSocketType::RouterConnect,
+            Some(ServiceId::router()),
+        );
         let esb = esb::Controller::with(
             map! {
                 RpcBus => bus_config
             },
             Handler { identity: ServiceId::Client(identity) },
-            ZmqSocketType::RouterConnect,
             ctx,
         )?;
 

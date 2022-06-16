@@ -51,23 +51,22 @@ where
         Ext: Clone + Eq + Debug,
     {
         let router = if !broker { Some(ServiceId::router()) } else { None };
+        let api_type =
+            if broker { ZmqSocketType::RouterBind } else { ZmqSocketType::RouterConnect };
         let services = map! {
             ServiceBus::Msg => esb::BusConfig::with_addr(
                 config.msg_endpoint,
+                api_type,
                 router.clone()
             ),
             ServiceBus::Ctl => esb::BusConfig::with_addr(
                 config.ctl_endpoint,
+                api_type,
                 router.clone()
             ),
-            ServiceBus::Rpc => esb::BusConfig::with_addr(config.rpc_endpoint, router)
+            ServiceBus::Rpc => esb::BusConfig::with_addr(config.rpc_endpoint, api_type, router)
         };
-        let esb = esb::Controller::with(
-            services,
-            runtime,
-            if broker { ZmqSocketType::RouterBind } else { ZmqSocketType::RouterConnect },
-            ZMQ_CONTEXT.clone(),
-        )?;
+        let esb = esb::Controller::with(services, runtime, ZMQ_CONTEXT.clone())?;
         Ok(Self { esb, broker })
     }
 
@@ -90,6 +89,8 @@ where
 
     pub fn add_loopback(&mut self, socket: zmq::Socket) -> Result<(), esb::Error<ServiceId>> {
         self.esb.add_service_bus(ServiceBus::Bridge, esb::BusConfig {
+            // This type is ignored, since we in fact create ZMQ_PAIR type
+            api_type: ZmqSocketType::Push,
             carrier: zeromq::Carrier::Socket(socket),
             router: None,
             queued: true,

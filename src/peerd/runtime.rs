@@ -61,13 +61,13 @@ pub fn run(
         bridge: esb::Controller::with(
             map! {
                 ServiceBus::Bridge => esb::BusConfig {
+                    api_type: ZmqSocketType::Rep,
                     carrier: zeromq::Carrier::Socket(tx),
                     router: None,
                     queued: true,
                 }
             },
             BridgeHandler,
-            ZmqSocketType::Rep,
             ZMQ_CONTEXT.clone(),
         )?,
     };
