@@ -32,15 +32,12 @@ use crate::rpc::ServiceId;
 use crate::{Config, Endpoints, Error, Responder, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let runtime =
-        Runtime { identity: ServiceId::Router, router: Router::default(), enquirer: None };
+    let runtime = Runtime { router: Router::default(), enquirer: None };
 
     Service::run(config, runtime, false)
 }
 
 pub struct Runtime {
-    identity: ServiceId,
-
     router: Router<GossipExt>,
 
     enquirer: Option<ClientId>,
@@ -58,7 +55,7 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId { ServiceId::Router }
 
     fn handle(
         &mut self,

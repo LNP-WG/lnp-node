@@ -40,7 +40,6 @@ where
     Self: 'secp,
 {
     chain: Chain,
-    identity: ServiceId,
     provider: MemoryKeyProvider<'secp, secp256k1::All>,
 }
 
@@ -49,11 +48,7 @@ where
     Self: 'secp,
 {
     pub fn with(secp: &'secp Secp256k1<secp256k1::All>, config: &Config) -> Result<Self, Error> {
-        Ok(Runtime {
-            chain: config.chain.clone(),
-            identity: ServiceId::Signer,
-            provider: Runtime::provider(secp, config)?,
-        })
+        Ok(Runtime { chain: config.chain.clone(), provider: Runtime::provider(secp, config)? })
     }
 
     fn provider(
@@ -83,7 +78,7 @@ where
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId { ServiceId::Signer }
 
     fn handle(
         &mut self,
@@ -140,7 +135,7 @@ where
                 trace!("Signed PSBT: {:#?}", psbt);
                 endpoints.send_to(
                     ServiceBus::Ctl,
-                    self.identity.clone(),
+                    ServiceId::Signer,
                     source,
                     BusMsg::Ctl(CtlMsg::Signed(psbt)),
                 )?;

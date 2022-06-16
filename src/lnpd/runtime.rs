@@ -49,7 +49,6 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
     }
 
     let runtime = Runtime {
-        identity: ServiceId::LnpBroker,
         config: config.clone(),
         node_key_path: key_file,
         node_id,
@@ -87,7 +86,6 @@ impl Config {
 }
 
 pub struct Runtime {
-    identity: ServiceId,
     pub(super) config: Config,
     node_key_path: PathBuf,
     node_id: NodeId,
@@ -111,7 +109,7 @@ impl esb::Handler<ServiceBus> for Runtime {
     type Request = BusMsg;
     type Error = Error;
 
-    fn identity(&self) -> ServiceId { self.identity.clone() }
+    fn identity(&self) -> ServiceId { ServiceId::LnpBroker }
 
     fn on_ready(&mut self, _senders: &mut Endpoints) -> Result<(), Self::Error> {
         info!("Starting signer daemon...");
