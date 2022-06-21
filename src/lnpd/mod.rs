@@ -19,7 +19,7 @@ pub mod funding;
 mod opts;
 mod runtime;
 
-pub use daemons::{read_node_key_file, Daemon, DaemonError};
+pub use daemons::{read_node_key_file, Daemon};
 #[cfg(feature = "server")]
 pub use opts::{Command, Opts};
 pub use runtime::run;

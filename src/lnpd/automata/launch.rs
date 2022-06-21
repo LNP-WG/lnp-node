@@ -25,13 +25,13 @@ use lnp::channel::bolt::LocalKeyset;
 use lnp::channel::{FundingError, PsbtLnpFunding};
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use lnp_rpc::FailureCode;
-use microservices::esb;
 use microservices::esb::Handler;
+use microservices::{esb, LauncherError};
 
 use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
 use crate::lnpd::runtime::Runtime;
-use crate::lnpd::{funding, Daemon, DaemonError};
+use crate::lnpd::{funding, Daemon};
 use crate::rpc::{ClientId, CreateChannel, Failure, OptionDetails, RpcMsg, ServiceId};
 use crate::{Endpoints, Responder};
 
@@ -55,8 +55,8 @@ pub enum Error {
     Esb(esb::Error<ServiceId>),
 
     /// unable to launch channel daemon. Details: {0}
-    #[from(DaemonError<Daemon>)]
-    DaemonLaunch(Box<DaemonError<Daemon>>),
+    #[from(LauncherError<Daemon>)]
+    DaemonLaunch(Box<LauncherError<Daemon>>),
 
     /// failure during channel funding
     #[from]

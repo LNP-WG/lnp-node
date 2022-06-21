@@ -18,13 +18,13 @@ use amplify::IoError;
 use bitcoin::util::bip32;
 use internet2::{presentation, transport};
 use lnp::router;
-use microservices::esb;
+use microservices::{esb, LauncherError};
 use wallet::psbt::sign::SignError;
 
 use crate::bus::ServiceBus;
 use crate::channeld;
 use crate::lnpd::automata::launch;
-use crate::lnpd::{funding, Daemon, DaemonError};
+use crate::lnpd::{funding, Daemon};
 use crate::routed::PaymentError;
 use crate::rpc::{self, ServiceId};
 
@@ -45,8 +45,8 @@ pub enum Error {
     Rpc(rpc::Error),
 
     /// failed to launch a daemon: {0}
-    #[from(DaemonError<Daemon>)]
-    DaemonLaunch(Box<DaemonError<Daemon>>),
+    #[from(LauncherError<Daemon>)]
+    DaemonLaunch(Box<LauncherError<Daemon>>),
 
     /// peer interface error: {0}
     #[from]

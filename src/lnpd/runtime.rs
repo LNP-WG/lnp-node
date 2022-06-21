@@ -27,6 +27,7 @@ use lnp::p2p::bolt::{
 use lnp_rpc::FailureCode;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
+use microservices::{DaemonHandle, LauncherError};
 use wallet::address::AddressCompat;
 
 use crate::automata::{Event, StateMachine};
@@ -34,9 +35,8 @@ use crate::bus::{
     AcceptChannelFrom, BusMsg, CtlMsg, IntoSuccessOrFalure, ServiceBus, Status, ToProgressOrFalure,
 };
 use crate::lnpd::automata::ChannelLauncher;
-use crate::lnpd::daemons::{read_node_key_file, Daemon, DaemonHandle};
+use crate::lnpd::daemons::{read_node_key_file, Daemon};
 use crate::lnpd::funding::{self, FundingWallet};
-use crate::lnpd::DaemonError;
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, LogStyle, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
@@ -518,7 +518,7 @@ impl Runtime {
         }
     }
 
-    fn listen(&mut self, addr: NodeAddr) -> Result<String, DaemonError<Daemon>> {
+    fn listen(&mut self, addr: NodeAddr) -> Result<String, LauncherError<Daemon>> {
         info!("Starting peer connection listening daemon on {}...", addr);
         let handle = self.launch_daemon(
             Daemon::PeerdBolt(PeerSocket::Listen(addr), self.node_key_path.clone()),

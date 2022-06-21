@@ -1359,8 +1359,7 @@ dependencies = [
 [[package]]
 name = "microservices"
 version = "0.8.0-rc.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2ff0dfe414fdf502c29a32d9b9009526251e0aacc172aec6b88d995e263668f"
+source = "git+https://github.com/Internet2-WG/rust-microservices#e1a5228e117ed2238fea12ab29be6f7fe3de1d72"
 dependencies = [
  "amplify",
  "clap",

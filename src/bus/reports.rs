@@ -13,8 +13,9 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use lnp_rpc::{Failure, FailureCode, OptionDetails, RpcMsg};
+use microservices::LauncherError;
 
-use crate::lnpd::{Daemon, DaemonError};
+use crate::lnpd::Daemon;
 
 pub trait ToProgressOrFalure {
     fn to_progress_or_failure(&self) -> RpcMsg;
@@ -23,7 +24,7 @@ pub trait IntoSuccessOrFalure {
     fn into_success_or_failure(self) -> RpcMsg;
 }
 
-impl ToProgressOrFalure for Result<String, DaemonError<Daemon>> {
+impl ToProgressOrFalure for Result<String, LauncherError<Daemon>> {
     fn to_progress_or_failure(&self) -> RpcMsg {
         match self {
             Ok(val) => RpcMsg::Progress(val.clone()),
@@ -32,7 +33,7 @@ impl ToProgressOrFalure for Result<String, DaemonError<Daemon>> {
     }
 }
 
-impl IntoSuccessOrFalure for Result<String, DaemonError<Daemon>> {
+impl IntoSuccessOrFalure for Result<String, LauncherError<Daemon>> {
     fn into_success_or_failure(self) -> RpcMsg {
         match self {
             Ok(val) => RpcMsg::Success(OptionDetails::with(val)),
