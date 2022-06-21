@@ -53,4 +53,4 @@ pub use error::{Error, FailureCode};
 pub use messages::*;
 pub use service_id::{ClientId, ServiceId, ServiceName};
 
-pub const LNP_NODE_RPC_SOCKET: &str = "127.0.0.1:62962";
+pub const LNP_NODE_RPC_ENDPOINT: &str = "0.0.0.0:62962";

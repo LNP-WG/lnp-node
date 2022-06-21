@@ -17,16 +17,18 @@ _channeld() {
     _arguments "${_arguments_options[@]}" \
 '-k+[Node key file]:KEY_FILE:_files' \
 '--key-file=[Node key file]:KEY_FILE:_files' \
-'-d+[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
-'--data-dir=[<\[_\]<\[_\]>::into_vec(box \[$($x),+\]).into_iter().flatten() are located]:DATA_DIR:_files -/' \
+'-d+[Data directory path]:DATA_DIR:_files -/' \
+'--data-dir=[Data directory path]:DATA_DIR:_files -/' \
 '-c+[Path for the configuration file]:CONFIG:_files' \
 '--config=[Path for the configuration file]:CONFIG:_files' \
 '-T+[Use Tor]:TOR_PROXY:_hosts' \
 '--tor-proxy=[Use Tor]:TOR_PROXY:_hosts' \
-'--msg=[ZMQ socket for internal message bus]:MSG_SOCKET:_files' \
-'--ctl=[ZMQ socket for internal service bus]:CTL_SOCKET:_files' \
-'-r+[ZMQ socket for connecting daemon RPC interface]:RPC_SOCKET: ' \
-'--rpc=[ZMQ socket for connecting daemon RPC interface]:RPC_SOCKET: ' \
+'-M+[ZMQ socket for peer message bus used to communicate with LNP node peerd service]:MSG_ENDPOINT:_files' \
+'--msg=[ZMQ socket for peer message bus used to communicate with LNP node peerd service]:MSG_ENDPOINT:_files' \
+'-X+[ZMQ socket for internal service control bus]:CTL_ENDPOINT:_files' \
+'--ctl=[ZMQ socket for internal service control bus]:CTL_ENDPOINT:_files' \
+'-R+[ZMQ socket for LNP Node client-server RPC API]:RPC_ENDPOINT: ' \
+'--rpc=[ZMQ socket for LNP Node client-server RPC API]:RPC_ENDPOINT: ' \
 '-n+[Blockchain to use]:CHAIN: ' \
 '--chain=[Blockchain to use]:CHAIN: ' \
 '--electrum-server=[Electrum server to use]:ELECTRUM_SERVER:_hosts' \
@@ -35,11 +37,12 @@ _channeld() {
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
-'-R[Flag indicating that we are re-establishing a channel with the provided `channel_id`]' \
+'-r[Flag indicating that we are re-establishing a channel with the provided `channel_id`]' \
 '--reestablish[Flag indicating that we are re-establishing a channel with the provided `channel_id`]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-'--threaded-daemons[Spawn daemons as threads and not processes]' \
+'-t[Spawn daemons as threads and not processes]' \
+'--threaded[Spawn daemons as threads and not processes]' \
 ':channel-id -- Channel id:' \
 && ret=0
 }

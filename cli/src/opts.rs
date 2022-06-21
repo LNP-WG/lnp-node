@@ -18,7 +18,7 @@ use std::str::FromStr;
 use internet2::addr::{PartialNodeAddr, ServiceAddr};
 use lightning_invoice::Invoice;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
-use lnp_rpc::LNP_NODE_RPC_SOCKET;
+use lnp_rpc::LNP_NODE_RPC_ENDPOINT;
 
 /// Command-line tool for working with LNP node
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
@@ -31,11 +31,11 @@ pub struct Opts {
     ///
     /// Defaults to `127.0.0.1:62962`.
     #[clap(
-        short,
+        short = 'R',
         long,
         global = true,
-        default_value = LNP_NODE_RPC_SOCKET,
-        env = "LNP_NODE_RPC_SOCKET"
+        default_value = LNP_NODE_RPC_ENDPOINT,
+        env = "LNP_NODE_RPC_ENDPOINT"
     )]
     pub connect: ServiceAddr,
 

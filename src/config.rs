@@ -15,19 +15,13 @@
 #![allow(clippy::needless_borrow)] // due to a bug in `display(Debug)`
 
 use std::fmt::Debug;
-#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
-use std::net::SocketAddr;
 use std::path::PathBuf;
-#[cfg(any(feature = "server", feature = "tor", feature = "embedded"))]
-use std::str::FromStr;
 
 use internet2::addr::ServiceAddr;
 use lnp::p2p::bolt::ActiveChannelId;
 use lnpbp::chain::Chain;
 
 use crate::opts::Options;
-#[cfg(feature = "server")]
-use crate::opts::{LNP_NODE_CTL_SOCKET, LNP_NODE_MSG_SOCKET};
 
 /// Final configuration resulting from data contained in config file environment
 /// variables and command-line options. For security reasons node key is kept
@@ -123,46 +117,17 @@ where
             opts.electrum_port.unwrap_or_else(|| default_electrum_port(&opts.chain))
         );
 
-        let (msg_default, ctl_default) = match opts.threaded_daemons {
-            true => (s!("inproc://msg"), s!("inproc://ctl")),
-            false => {
-                let mut msg_default = LNP_NODE_MSG_SOCKET.to_owned();
-                let mut ctl_default = LNP_NODE_CTL_SOCKET.to_owned();
-                opts.process_dir(&mut msg_default);
-                opts.process_dir(&mut ctl_default);
-                (format!("ipc://{}", msg_default), format!("ipc://{}", ctl_default))
-            }
-        };
-
-        let msg_endpoint = opts.msg_socket.as_ref().map(|s| match SocketAddr::from_str(&s) {
-            Ok(_) => format!("tcp://{}", s),
-            Err(_) => format!("ipc://{}", s),
-        });
-
-        let ctl_endpoint = opts.ctl_socket.as_ref().map(|s| match SocketAddr::from_str(&s) {
-            Ok(_) => format!("tcp://{}", s),
-            Err(_) => format!("ipc://{}", s),
-        });
-
-        let rpc_endpoint = match SocketAddr::from_str(&opts.rpc_socket) {
-            Ok(_) => format!("tcp://{}", opts.rpc_socket),
-            Err(_) => format!("ipc://{}", opts.rpc_socket),
+        let ctl_endpoint = match opts.threaded_daemons {
+            true => ServiceAddr::Inproc(s!("lnp-ctl")),
+            false => opts.ctl_endpoint.clone(),
         };
 
         Config {
             chain: opts.chain.clone(),
             data_dir: opts.data_dir.clone(),
-            msg_endpoint: msg_endpoint
-                .unwrap_or(msg_default)
-                .parse()
-                .expect("ZMQ sockets should be either TCP addresses or files"),
-            ctl_endpoint: ctl_endpoint
-                .unwrap_or(ctl_default)
-                .parse()
-                .expect("ZMQ sockets should be either TCP addresses or files"),
-            rpc_endpoint: rpc_endpoint
-                .parse()
-                .expect("ZMQ sockets should be either TCP addresses or files"),
+            msg_endpoint: opts.msg_endpoint.clone(),
+            ctl_endpoint,
+            rpc_endpoint: opts.rpc_endpoint.clone(),
             electrum_url,
             threaded: opts.threaded_daemons,
             ext: opt.config(),

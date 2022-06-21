@@ -21,16 +21,18 @@ Register-ArgumentCompleter -Native -CommandName 'watchd' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'watchd' {
-            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
-            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, '<[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten() are located')
+            [CompletionResult]::new('-d', 'd', [CompletionResultType]::ParameterName, 'Data directory path')
+            [CompletionResult]::new('--data-dir', 'data-dir', [CompletionResultType]::ParameterName, 'Data directory path')
             [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Path for the configuration file')
             [CompletionResult]::new('-T', 'T', [CompletionResultType]::ParameterName, 'Use Tor')
             [CompletionResult]::new('--tor-proxy', 'tor-proxy', [CompletionResultType]::ParameterName, 'Use Tor')
-            [CompletionResult]::new('--msg', 'msg', [CompletionResultType]::ParameterName, 'ZMQ socket for internal message bus')
-            [CompletionResult]::new('--ctl', 'ctl', [CompletionResultType]::ParameterName, 'ZMQ socket for internal service bus')
-            [CompletionResult]::new('-r', 'r', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('-M', 'M', [CompletionResultType]::ParameterName, 'ZMQ socket for peer message bus used to communicate with LNP node peerd service')
+            [CompletionResult]::new('--msg', 'msg', [CompletionResultType]::ParameterName, 'ZMQ socket for peer message bus used to communicate with LNP node peerd service')
+            [CompletionResult]::new('-X', 'X', [CompletionResultType]::ParameterName, 'ZMQ socket for internal service control bus')
+            [CompletionResult]::new('--ctl', 'ctl', [CompletionResultType]::ParameterName, 'ZMQ socket for internal service control bus')
+            [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for LNP Node client-server RPC API')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for LNP Node client-server RPC API')
             [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterName, 'Blockchain to use')
             [CompletionResult]::new('--chain', 'chain', [CompletionResultType]::ParameterName, 'Blockchain to use')
             [CompletionResult]::new('--electrum-server', 'electrum-server', [CompletionResultType]::ParameterName, 'Electrum server to use')
@@ -41,7 +43,8 @@ Register-ArgumentCompleter -Native -CommandName 'watchd' -ScriptBlock {
             [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Print version information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
-            [CompletionResult]::new('--threaded-daemons', 'threaded-daemons', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
+            [CompletionResult]::new('-t', 't', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
+            [CompletionResult]::new('--threaded', 'threaded', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
             break
         }
     })

@@ -959,9 +959,9 @@ checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
 
 [[package]]
 name = "indexmap"
-version = "1.9.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c6392766afd7964e2531940894cffe4bd8d7d17dbc3c1c4857040fd4b33bdb3"
+checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
 dependencies = [
  "autocfg 1.1.0",
  "hashbrown",
@@ -1358,8 +1358,8 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.8.0-rc.6"
-source = "git+https://github.com/Internet2-WG/rust-microservices#ec0660832615b2f0afeeb6dc45be894d3bf291bf"
+version = "0.8.0-rc.8"
+source = "git+https://github.com/Internet2-WG/rust-microservices#6fd6b7aa2e2025fd454b40011e2ca5a2a5726fef"
 dependencies = [
  "amplify",
  "clap",
@@ -1374,6 +1374,7 @@ dependencies = [
  "secp256k1 0.22.1",
  "serde 1.0.137",
  "serde_with",
+ "shellexpand",
  "strict_encoding",
  "toml",
  "zmq2",

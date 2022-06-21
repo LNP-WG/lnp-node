@@ -19,7 +19,7 @@ _signd() {
 
     case "${cmd}" in
         signd)
-            opts="-h -V -d -c -v -T -r -n --help --version --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons"
+            opts="-h -V -v -d -c -T -M -X -R -n -t --help --version --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -53,7 +53,15 @@ _signd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                -M)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --ctl)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -X)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -61,7 +69,7 @@ _signd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -r)
+                -R)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

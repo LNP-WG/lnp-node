@@ -25,7 +25,7 @@ _lnpd() {
 
     case "${cmd}" in
         lnpd)
-            opts="-h -V -k -d -c -v -T -r -n -L -p --help --version --key-file --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded-daemons --listen --port init help"
+            opts="-h -V -k -v -d -c -T -M -X -R -n -t -L -p --help --version --key-file --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded --listen --port init help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -67,7 +67,15 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                -M)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --ctl)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -X)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -75,7 +83,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -r)
+                -R)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -119,7 +127,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__help)
-            opts="-d -c -v -T -r -n --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port <SUBCOMMAND>..."
+            opts="-v -d -c -T -M -X -R -n --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port <SUBCOMMAND>..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -153,7 +161,15 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                -M)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --ctl)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -X)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -161,7 +177,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -r)
+                -R)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -189,7 +205,7 @@ _lnpd() {
             return 0
             ;;
         lnpd__init)
-            opts="-h -d -c -v -T -r -n --help --data-dir --config --verbose --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
+            opts="-h -v -d -c -T -M -X -R -n --help --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -223,7 +239,15 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                -M)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --ctl)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -X)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
@@ -231,7 +255,7 @@ _lnpd() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
-                -r)
+                -R)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

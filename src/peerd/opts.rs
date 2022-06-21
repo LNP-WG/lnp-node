@@ -19,6 +19,7 @@ use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
 use lnp::p2p::bolt::LNP2P_LEGACY_PORT;
 use microservices::peer::PeerSocket;
+use microservices::shell::shell_expand_dir;
 
 use crate::opts::LNP_NODE_KEY_FILE;
 
@@ -122,7 +123,7 @@ impl Opts {
 
 impl KeyOpts {
     pub fn process(&mut self, shared: &crate::opts::Opts) {
-        shared.process_dir(&mut self.key_file);
+        shell_expand_dir(&mut self.key_file, &shared.data_dir.display().to_string(), &[]);
     }
 }
 

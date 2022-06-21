@@ -13,14 +13,16 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::fmt::Debug;
-use std::fs;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::ValueHint;
-use lnp_rpc::LNP_NODE_RPC_SOCKET;
+use internet2::addr::ServiceAddr;
+use lnp_rpc::LNP_NODE_RPC_ENDPOINT;
 use lnpbp::chain::Chain;
-use microservices::shell::LogLevel;
+use microservices::shell::shell_setup;
+
+const LNP_NODE_CTL_ENDPOINT: &str = "{data_dir}/ctl";
 
 #[cfg(any(target_os = "linux"))]
 pub const LNP_NODE_DATA_DIR: &'static str = "~/.lnp_node/{chain}";
@@ -35,8 +37,7 @@ pub const LNP_NODE_DATA_DIR: &'static str = "~/Documents/{chain}";
 #[cfg(target_os = "android")]
 pub const LNP_NODE_DATA_DIR: &'static str = "./{chain}";
 
-pub const LNP_NODE_MSG_SOCKET: &str = "{data_dir}/msg";
-pub const LNP_NODE_CTL_SOCKET: &str = "{data_dir}/ctl";
+pub const LNP_NODE_MSG_ENDPOINT: &str = "{data_dir}/msg";
 
 pub const LNP_NODE_CONFIG: &str = "{data_dir}/lnp_node.toml";
 pub const LNP_NODE_TOR_PROXY: &str = "127.0.0.1:9050";
@@ -57,8 +58,16 @@ pub trait Options: Clone + Eq + Debug {
 /// Shared options used by different binaries
 #[derive(Parser, Clone, PartialEq, Eq, Debug)]
 pub struct Opts {
-    /// <[_]<[_]>::into_vec(box [$($x),+]).into_iter().flatten()
-    /// are located.
+    /// Set verbosity level.
+    ///
+    /// Can be used multiple times to increase verbosity.
+    #[clap(short, long, global = true, parse(from_occurrences))]
+    pub verbose: u8,
+
+    /// Data directory path.
+    ///
+    /// Path to the directory that contains stored data, and where ZMQ RPC
+    /// socket files are located.
     #[clap(
         short,
         long,
@@ -81,12 +90,6 @@ pub struct Opts {
     )]
     pub config: Option<PathBuf>,
 
-    /// Set verbosity level.
-    ///
-    /// Can be used multiple times to increase verbosity.
-    #[clap(short, long, global = true, parse(from_occurrences))]
-    pub verbose: u8,
-
     /// Use Tor.
     ///
     /// If set, specifies SOCKS5 proxy used for Tor connectivity and directs all network
@@ -102,7 +105,8 @@ pub struct Opts {
     )]
     pub tor_proxy: Option<Option<SocketAddr>>,
 
-    /// ZMQ socket for internal message bus.
+    /// ZMQ socket for peer message bus used to communicate with LNP node peerd
+    /// service.
     ///
     /// A user needs to specify this socket usually if it likes to distribute daemons
     /// over different server instances. In this case all daemons within the same node
@@ -111,12 +115,18 @@ pub struct Opts {
     /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
     /// to an IPC file.
     ///
-    /// Defaults to `msg` file inside `--data-dir` directory, unless `--threaded-daemons`
-    /// is specified; in that cases uses in-memory communication protocol.
-    #[clap(long = "msg", global = true, env = "LNP_NODE_MSG_SOCKET", value_hint = ValueHint::FilePath)]
-    pub msg_socket: Option<String>,
+    /// Defaults to `msg` file inside `--data-dir` directory.
+    #[clap(
+        short = 'M',
+        long = "msg",
+        global = true,
+        env = "LNP_NODE_MSG_ENDPOINT",
+        default_value = LNP_NODE_MSG_ENDPOINT,
+        value_hint = ValueHint::FilePath
+    )]
+    pub msg_endpoint: ServiceAddr,
 
-    /// ZMQ socket for internal service bus.
+    /// ZMQ socket for internal service control bus.
     ///
     /// A user needs to specify this socket usually if it likes to distribute daemons
     /// over different server instances. In this case all daemons within the same node
@@ -126,24 +136,30 @@ pub struct Opts {
     /// to an IPC file.
     ///
     /// Defaults to `ctl` file inside `--data-dir` directory, unless `--threaded-daemons`
-    /// is specified; in that cases uses in-memory communication protocol.
-    #[clap(long = "ctl", global = true, env = "LNP_NODE_CTL_SOCKET", value_hint = ValueHint::FilePath)]
-    pub ctl_socket: Option<String>,
+    /// is specified; in that cases parameter in-memory communication protocol is used
+    /// by default (see ZMQ inproc socket specification).
+    #[clap(
+        short = 'X',
+        long = "ctl",
+        global = true,
+        env = "LNP_NODE_CTL_ENDPOINT",
+        default_value = LNP_NODE_CTL_ENDPOINT,
+        value_hint = ValueHint::FilePath
+    )]
+    pub ctl_endpoint: ServiceAddr,
 
-    /// ZMQ socket for connecting daemon RPC interface.
+    /// ZMQ socket for LNP Node client-server RPC API.
     ///
     /// Socket can be either TCP address in form of `<ipv4 | ipv6>:<port>` – or a path
     /// to an IPC file.
-    ///
-    /// Defaults to `127.0.0.1:62962`.
     #[clap(
-        short = 'r',
+        short = 'R',
         long = "rpc",
         global = true,
-        default_value = LNP_NODE_RPC_SOCKET,
-        env = "LNP_NODE_RPC_SOCKET"
+        default_value = LNP_NODE_RPC_ENDPOINT,
+        env = "LNP_NODE_RPC_ENDPOINT"
     )]
-    pub rpc_socket: String,
+    pub rpc_endpoint: ServiceAddr,
 
     /// Blockchain to use
     #[clap(
@@ -172,33 +188,17 @@ pub struct Opts {
     pub electrum_port: Option<u16>,
 
     /// Spawn daemons as threads and not processes
-    #[clap(long)]
+    #[clap(short = 't', long = "threaded")]
     pub threaded_daemons: bool,
 }
 
 impl Opts {
     pub fn process(&mut self) {
-        LogLevel::from_verbosity_flag_count(self.verbose).apply();
-        let me = self.clone();
-
-        let mut data_dir = me.data_dir.display().to_string();
-        data_dir = data_dir.replace("{chain}", &self.chain.to_string());
-        self.data_dir = PathBuf::from(shellexpand::tilde(&data_dir).to_string());
-        fs::create_dir_all(&self.data_dir).unwrap_or_else(|_| {
-            panic!("Unable to access data directory '{}'", &self.data_dir.display())
-        });
-
-        for s in self.msg_socket.iter_mut().chain(self.ctl_socket.iter_mut()) {
-            me.process_dir(s);
-        }
+        shell_setup(
+            self.verbose,
+            [&mut self.msg_endpoint, &mut self.ctl_endpoint, &mut self.rpc_endpoint],
+            &mut self.data_dir,
+            &[("chain", self.chain.to_string())],
+        );
     }
-
-    pub fn process_dir(&self, path: &mut String) {
-        process_dir(path, &self.data_dir.display().to_string());
-    }
-}
-
-pub fn process_dir(path: &mut String, data_dir: &str) {
-    *path = path.replace("{data_dir}", data_dir);
-    *path = shellexpand::tilde(path).to_string();
 }

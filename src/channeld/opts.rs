@@ -33,7 +33,7 @@ pub struct Opts {
     pub channel_id: ChannelId,
 
     /// Flag indicating that we are re-establishing a channel with the provided `channel_id`
-    #[clap(short = 'R', long)]
+    #[clap(short, long)]
     pub reestablish: bool,
 
     /// These params can be read also from the configuration file, not just

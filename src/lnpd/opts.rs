@@ -51,6 +51,7 @@ pub struct Opts {
     /// Optional argument specifying local or remote TCP port to use with the address
     /// given to `--listen` argument.
     #[clap(short, long, default_value = "9735")]
+    // TODO: Separate bifrost and bolt ports
     pub port: u16,
 
     /// Optional command to execute and exit
