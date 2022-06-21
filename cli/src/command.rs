@@ -20,15 +20,32 @@ use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
 use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
-use crate::opts::Command;
+use crate::{Command, Opts};
 
-impl Exec for Command {
+impl Command {
+    pub fn action_string(&self) -> String {
+        match self {
+            Command::Listen { .. } => s!("Binding to port"),
+            Command::Connect { .. } => s!("Connecting to remore peer"),
+            Command::Ping { .. } => s!("Pinging peer"),
+            Command::Info { .. } => s!("Getting info"),
+            Command::Funds => s!("Retrieving information about funds"),
+            Command::Peers => s!("Retrieving information about peers"),
+            Command::Channels => s!("Retrieving information about channels"),
+            Command::Open { .. } => s!("Opening channel"),
+            Command::Invoice { .. } => s!("Creating invoice"),
+            Command::Pay { .. } => s!("Paying invoice"),
+        }
+    }
+}
+
+impl Exec for Opts {
     type Client = Client;
     type Error = Error;
 
     fn exec(self, runtime: &mut Self::Client) -> Result<(), Self::Error> {
-        debug!("Performing {:?}: {}", self, self);
-        match self {
+        println!("{}...", self.command.action_string());
+        match self.command {
             Command::Info { subject } => {
                 if let Some(subj) = subject {
                     if let Ok(node_addr) = NodeAddr::from_str(&subj) {

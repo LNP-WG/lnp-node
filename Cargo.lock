@@ -1182,6 +1182,7 @@ dependencies = [
  "lnp_rpc",
  "log",
  "microservices",
+ "shellexpand",
 ]
 
 [[package]]

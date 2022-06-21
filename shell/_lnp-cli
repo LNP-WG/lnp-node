@@ -16,7 +16,7 @@ _lnp-cli() {
     local context curcontext="$curcontext" state line
     _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -39,7 +39,7 @@ _arguments "${_arguments_options[@]}" \
 '-p+[Port to use; defaults to the native LN port]:PORT: ' \
 '--port=[Port to use; defaults to the native LN port]:PORT: ' \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -49,7 +49,7 @@ _arguments "${_arguments_options[@]}" \
 (connect)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -60,7 +60,7 @@ _arguments "${_arguments_options[@]}" \
 (ping)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -71,7 +71,7 @@ _arguments "${_arguments_options[@]}" \
 (info)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -82,7 +82,7 @@ _arguments "${_arguments_options[@]}" \
 (funds)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -92,7 +92,7 @@ _arguments "${_arguments_options[@]}" \
 (peers)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -102,7 +102,7 @@ _arguments "${_arguments_options[@]}" \
 (channels)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -122,7 +122,7 @@ _arguments "${_arguments_options[@]}" \
 '--htlc-max-total-value=[The maximum inbound HTLC value in flight towards this node, in milli-satoshi]:HTLC_MAX_TOTAL_VALUE: ' \
 '--channel-reserve=[The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis]:CHANNEL_RESERVE: ' \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -134,7 +134,7 @@ _arguments "${_arguments_options[@]}" \
 (invoice)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -146,7 +146,7 @@ _arguments "${_arguments_options[@]}" \
 (pay)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
@@ -159,7 +159,7 @@ _arguments "${_arguments_options[@]}" \
 (help)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
-'--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
 '*::subcommand -- The subcommand whose help message to display:' \

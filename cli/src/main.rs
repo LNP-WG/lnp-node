@@ -32,6 +32,7 @@ compile_error!("either 'bolt' or 'bifrost' feature must be used");
 use clap::Parser;
 use internet2::addr::ServiceAddr;
 use lnp_rpc::Client;
+use microservices::cli::LogStyle;
 use microservices::shell::{Exec, LogLevel};
 
 pub use crate::opts::{Command, Opts};
@@ -42,7 +43,7 @@ fn main() {
     let opts = Opts::parse();
     LogLevel::from_verbosity_flag_count(opts.verbose).apply();
 
-    let connect = &mut opts.connect;
+    let mut connect = opts.connect.clone();
     if let ServiceAddr::Ipc(ref mut path) = connect {
         *path = shellexpand::tilde(path).to_string();
     }
@@ -52,5 +53,6 @@ fn main() {
     let mut client = Client::with(connect).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
-    opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err));
+    opts.exec(&mut client)
+        .unwrap_or_else(|err| eprintln!("{} {}\n", "Error:".err(), err.err_details()));
 }

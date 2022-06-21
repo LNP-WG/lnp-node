@@ -22,7 +22,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
     $completions = @(switch ($command) {
         'lnp-cli' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Print version information')
@@ -48,7 +48,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('-p', 'p', [CompletionResultType]::ParameterName, 'Port to use; defaults to the native LN port')
             [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'Port to use; defaults to the native LN port')
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -57,7 +57,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;connect' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -66,7 +66,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;ping' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -75,7 +75,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;info' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -84,7 +84,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;funds' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -93,7 +93,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;peers' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -102,7 +102,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;channels' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -121,7 +121,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
             [CompletionResult]::new('--htlc-max-total-value', 'htlc-max-total-value', [CompletionResultType]::ParameterName, 'The maximum inbound HTLC value in flight towards this node, in milli-satoshi')
             [CompletionResult]::new('--channel-reserve', 'channel-reserve', [CompletionResultType]::ParameterName, 'The minimum value unencumbered by HTLCs for the counterparty to keep in the channel, in satoshis')
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -130,7 +130,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;invoice' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -139,7 +139,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;pay' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
@@ -148,7 +148,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnp-cli' -ScriptBlock {
         }
         'lnp-cli;help' {
             [CompletionResult]::new('-R', 'R', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
-            [CompletionResult]::new('--connect', 'connect', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
+            [CompletionResult]::new('--rpc', 'rpc', [CompletionResultType]::ParameterName, 'ZMQ socket for connecting daemon RPC interface')
             [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
             break
