@@ -217,9 +217,9 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "1.2.1"
+version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
+checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "block-buffer"
@@ -444,9 +444,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5538cd660450ebeb4234cfecf8f2284b844ffc4c50531e66d584ad5b91293613"
+checksum = "87eba3c8c7f42ef17f6c659fc7416d0f4758cd3e58861ee63c5fa4a4dde649e4"
 dependencies = [
  "os_str_bytes",
 ]
@@ -1249,7 +1249,7 @@ dependencies = [
  "log",
  "microservices",
  "miniscript",
- "nix 0.24.1",
+ "nix",
  "rpassword",
  "shellexpand",
  "strict_encoding",
@@ -1358,17 +1358,18 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.8.0-rc.4"
-source = "git+https://github.com/Internet2-WG/rust-microservices#e1a5228e117ed2238fea12ab29be6f7fe3de1d72"
+version = "0.8.0-rc.6"
+source = "git+https://github.com/Internet2-WG/rust-microservices#ec0660832615b2f0afeeb6dc45be894d3bf291bf"
 dependencies = [
  "amplify",
  "clap",
+ "colored",
  "config",
  "env_logger",
  "internet2",
  "lightning_encoding",
  "log",
- "nix 0.19.1",
+ "nix",
  "once_cell",
  "secp256k1 0.22.1",
  "serde 1.0.137",
@@ -1385,18 +1386,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da39fc7a8adea97a677337b0091779dd86349226b869053af496584a9b9e5847"
 dependencies = [
  "bitcoin 0.28.1",
-]
-
-[[package]]
-name = "nix"
-version = "0.19.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2ccba0cfe4fdf15982d1674c69b1fd80bad427d293849982668dfe454bd61f2"
-dependencies = [
- "bitflags",
- "cc",
- "cfg-if",
- "libc",
 ]
 
 [[package]]
