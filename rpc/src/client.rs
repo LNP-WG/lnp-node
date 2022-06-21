@@ -41,15 +41,15 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn with(connect_addr: ServiceAddr) -> Result<Self, Error> {
+    pub fn with(connect: ServiceAddr) -> Result<Self, Error> {
         use bitcoin::secp256k1::rand;
 
-        debug!("RPC socket {}", connect_addr);
+        debug!("RPC socket {}", connect);
 
         debug!("Setting up RPC client...");
         let identity = rand::random();
         let bus_config = esb::BusConfig::with_addr(
-            connect_addr,
+            connect,
             ZmqSocketType::RouterConnect,
             Some(ServiceId::router()),
         );

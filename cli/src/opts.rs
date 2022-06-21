@@ -32,7 +32,7 @@ pub struct Opts {
     /// Defaults to `127.0.0.1:62962`.
     #[clap(
         short = 'R',
-        long,
+        long = "rpc",
         global = true,
         default_value = LNP_NODE_RPC_ENDPOINT,
         env = "LNP_NODE_RPC_ENDPOINT"

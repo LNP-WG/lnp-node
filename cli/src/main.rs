@@ -13,18 +13,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 #![recursion_limit = "256"]
-// Coding conventions
-#![deny(
-    non_upper_case_globals,
-    non_camel_case_types,
-    non_snake_case,
-    unused_mut,
-    unused_imports,
-    dead_code
-    // missing_docs,
-)]
 
-//! Command-line interface to LNP node
+//! Command-line interface to LNP Node
 
 #[macro_use]
 extern crate amplify;
@@ -40,6 +30,7 @@ mod opts;
 compile_error!("either 'bolt' or 'bifrost' feature must be used");
 
 use clap::Parser;
+use internet2::addr::ServiceAddr;
 use lnp_rpc::Client;
 use microservices::shell::{Exec, LogLevel};
 
@@ -51,9 +42,14 @@ fn main() {
     let opts = Opts::parse();
     LogLevel::from_verbosity_flag_count(opts.verbose).apply();
 
+    let connect = &mut opts.connect;
+    if let ServiceAddr::Ipc(ref mut path) = connect {
+        *path = shellexpand::tilde(path).to_string();
+    }
+    debug!("RPC socket {}", connect);
     trace!("Command-line arguments: {:?}", opts);
 
-    let mut client = Client::with(opts.connect).expect("Error initializing client");
+    let mut client = Client::with(connect).expect("Error initializing client");
 
     trace!("Executing command: {:?}", opts.command);
     opts.command.exec(&mut client).unwrap_or_else(|err| eprintln!("{}", err));
