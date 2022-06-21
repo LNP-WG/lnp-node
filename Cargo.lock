@@ -1249,7 +1249,7 @@ dependencies = [
  "log",
  "microservices",
  "miniscript",
- "nix 0.20.2",
+ "nix 0.24.1",
  "rpassword",
  "shellexpand",
  "strict_encoding",
@@ -1401,12 +1401,11 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.20.2"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5e06129fb611568ef4e868c14b326274959aa70ff7776e9d55323531c374945"
+checksum = "8f17df307904acd05aa8e32e97bb20f2a0df1728bbc2d771ae8f9a90463441e9"
 dependencies = [
  "bitflags",
- "cc",
  "cfg-if",
  "libc",
  "memoffset",
