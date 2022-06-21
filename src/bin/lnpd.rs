@@ -45,14 +45,15 @@ fn main() -> Result<(), Error> {
     println!("lnpd: lightning node management microservice");
 
     let mut opts = Opts::parse();
-    trace!("Command-line arguments: {:?}", &opts);
+    trace!("Command-line arguments: {:?}", opts);
     opts.process();
-    trace!("Processed arguments: {:?}", &opts);
+    trace!("Processed arguments: {:?}", opts);
 
     let config: Config = opts.clone().into();
-    trace!("Daemon configuration: {:?}", &config);
-    debug!("MSG RPC socket {}", &config.msg_endpoint);
-    debug!("CTL RPC socket {}", &config.ctl_endpoint);
+    trace!("Daemon configuration: {:?}", config);
+    debug!("MSG socket {}", config.msg_endpoint);
+    debug!("CTL socket {}", config.ctl_endpoint);
+    debug!("RPC socket {}", config.rpc_endpoint);
 
     /*
     use self::internal::ResultExt;

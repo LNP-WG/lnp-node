@@ -44,7 +44,7 @@ where
     /// ZMQ socket for internal service control bus
     pub ctl_endpoint: ServiceAddr,
 
-    /// ZMQ socket for daemon RCP interface
+    /// ZMQ socket for client-service RCP API.
     pub rpc_endpoint: ServiceAddr,
 
     /// URL for the electrum server connection
