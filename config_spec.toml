@@ -23,13 +23,19 @@ If the argument is provided in form of flag, without value, uses `127.0.0.1:9050
 default = "std::net::SocketAddr::from_str(\"127.0.0.1:9050\").unwrap()"
 
 [[param]]
-name = "msg_socket"
-type = "lnpbp::lnp::transport::zmq::SocketLocator"
+name = "msg_endpoint"
+type = "internet2::addr::ServiceAddr"
 abbr = "m"
 doc = "ZMQ socket name/address to forward all incoming lightning messages"
 
 [[param]]
-name = "ctl_socket"
-type = "lnpbp::lnp::transport::zmq::SocketLocator"
+name = "ctl_endpoint"
+type = "internet2::addr::ServiceAddr"
 abbr = "l"
+doc = "ZMQ socket name/address for RPC control protocol"
+
+[[param]]
+name = "rpc_endpoint"
+type = "internet2::addr::ServiceAddr"
+abbr = "R"
 doc = "ZMQ socket name/address for RPC control protocol"

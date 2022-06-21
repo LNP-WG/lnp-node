@@ -198,7 +198,7 @@ impl Opts {
             self.verbose,
             [&mut self.msg_endpoint, &mut self.ctl_endpoint, &mut self.rpc_endpoint],
             &mut self.data_dir,
-            &[("chain", self.chain.to_string())],
+            &[("{chain}", self.chain.to_string())],
         );
     }
 }
