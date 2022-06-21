@@ -21,6 +21,7 @@ use lnp::channel;
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelReestablish, Messages as LnMsg};
 use lnp_rpc::FailureCode;
+use microservices::cli::LogStyle;
 use microservices::esb;
 use microservices::esb::Handler;
 use strict_encoding::StrictEncode;
@@ -31,7 +32,6 @@ use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg};
 use crate::channeld::runtime::Runtime;
 use crate::rpc::{Failure, ServiceId};
-use crate::service::LogStyle;
 use crate::{Endpoints, Responder};
 
 /// Errors for channel proposal workflow

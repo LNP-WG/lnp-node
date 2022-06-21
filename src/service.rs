@@ -15,6 +15,7 @@
 use std::fmt::Debug;
 
 use internet2::zeromq::{self, ZmqSocketType};
+use lnp_rpc::{ClientId, RpcMsg};
 use microservices::esb;
 use microservices::node::TryService;
 
@@ -224,31 +225,3 @@ where
         )
     }
 }
-
-// TODO: Move to LNP/BP Services library
-use colored::Colorize;
-use lnp_rpc::{ClientId, RpcMsg};
-
-pub trait LogStyle: ToString {
-    fn promo(&self) -> colored::ColoredString { self.to_string().bold().bright_blue() }
-
-    fn promoter(&self) -> colored::ColoredString { self.to_string().italic().bright_blue() }
-
-    fn action(&self) -> colored::ColoredString { self.to_string().bold().yellow() }
-
-    fn progress(&self) -> colored::ColoredString { self.to_string().bold().green() }
-
-    fn ended(&self) -> colored::ColoredString { self.to_string().bold().bright_green() }
-
-    fn ender(&self) -> colored::ColoredString { self.to_string().italic().bright_green() }
-
-    fn amount(&self) -> colored::ColoredString { self.to_string().bold().bright_yellow() }
-
-    fn addr(&self) -> colored::ColoredString { self.to_string().bold().bright_yellow() }
-
-    fn err(&self) -> colored::ColoredString { self.to_string().bold().bright_red() }
-
-    fn err_details(&self) -> colored::ColoredString { self.to_string().bold().red() }
-}
-
-impl<T> LogStyle for T where T: ToString {}

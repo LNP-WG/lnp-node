@@ -51,7 +51,7 @@ lnpbp = "0.7.0"
 lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
 lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
 internet2 = { version = "0.8.0-beta.1", features = ["keygen"] }
-microservices = { version = "0.8.0-rc.4", default-features = false, features = ["node", "peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
+microservices = { version = "0.8.0-rc.6", default-features = false, features = ["node", "peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
@@ -83,7 +83,7 @@ lightning-invoice = "0.14.0"
 lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
 lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
 internet2 = "0.8.0-beta.1"
-microservices = { version = "0.8.0-rc.2", default-features = false, features = ["peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
+microservices = { version = "0.8.0-rc.6", default-features = false, features = ["peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
 clap = { version = "~3.1.18", features = ["env"] }
 clap_complete = "~3.1.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }

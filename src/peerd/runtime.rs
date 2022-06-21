@@ -25,6 +25,7 @@ use internet2::zeromq::ZmqSocketType;
 use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
 use lnp::p2p::{bifrost, bolt};
 use lnp_rpc::{ClientId, RpcMsg};
+use microservices::cli::LogStyle;
 use microservices::esb::{self, Handler};
 use microservices::node::TryService;
 use microservices::peer::supervisor::RuntimeParams;
@@ -33,7 +34,7 @@ use microservices::ZMQ_CONTEXT;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, P2pProtocol, Responder, Service};
+use crate::{Config, Endpoints, Error, P2pProtocol, Responder, Service};
 
 pub fn run(
     connection: PeerConnection,
@@ -215,7 +216,7 @@ impl esb::Handler<ServiceBus> for Runtime {
 
     fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {
-            info!("{} with the remote peer", "Initializing connection".promo());
+            info!("{} with the remote peer", "Initializing connection".announce());
 
             match self.config.protocol {
                 P2pProtocol::Bolt => {

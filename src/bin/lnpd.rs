@@ -37,7 +37,8 @@ use bitcoin::XpubIdentifier;
 use clap::Parser;
 use internet2::addr::LocalNode;
 use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
-use lnp_node::{Config, Error, LogStyle};
+use lnp_node::{Config, Error};
+use microservices::cli::LogStyle;
 use strict_encoding::{StrictDecode, StrictEncode};
 
 fn main() -> Result<(), Error> {
@@ -138,7 +139,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
             signing_account.derivation().to_string().trim_start_matches("m/"),
             signing_account.account_xpub(),
         )
-        .promo()
+        .announce()
     );
 
     let mut wallet_path = config.data_dir.clone();
@@ -170,7 +171,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
         println!("Funding wallet '{}' ... {}", LNP_NODE_FUNDING_WALLET, "found".progress());
         FundingWallet::with(&config.chain, wallet_path, &config.electrum_url)?
     };
-    println!("Funding wallet: {}", funding_wallet.descriptor().promo());
+    println!("Funding wallet: {}", funding_wallet.descriptor().announce());
 
     let node_key = if !key_path.exists() {
         println!("Node key file '{}' ... {}", key_path.display(), "creating".action());
@@ -191,7 +192,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
         println!("Node key file '{}' ... {}", key_path.display(), "found".action());
         read_node_key_file(key_path)
     };
-    println!("Node key: {}", node_key.node_id().promo());
+    println!("Node key: {}", node_key.node_id().announce());
 
     println!("{}", "Node initialization complete\n".ended());
 

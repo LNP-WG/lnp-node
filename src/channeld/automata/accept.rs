@@ -15,12 +15,12 @@
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, Messages};
 use lnp::Extension;
+use microservices::cli::LogStyle;
 
 use super::Error;
 use crate::automata::{Event, StateMachine};
 use crate::bus::{AcceptChannelFrom, BusMsg};
 use crate::channeld::runtime::Runtime;
-use crate::service::LogStyle;
 use crate::Endpoints;
 
 /// Channel proposal workflow
@@ -104,7 +104,7 @@ impl ChannelAccept {
             ChannelAccept::Accepted => format!(
                 "{} channel {:#} from a remote peer",
                 "Accepted".ended(),
-                channel_id.ender(),
+                channel_id.actor(),
             ),
             _ => todo!(),
         }

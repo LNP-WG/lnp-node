@@ -15,6 +15,7 @@
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
+use microservices::cli::LogStyle;
 use microservices::esb::Handler;
 use wallet::address::AddressCompat;
 
@@ -24,7 +25,6 @@ use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith};
 use crate::channeld::automata;
 use crate::channeld::runtime::Runtime;
 use crate::rpc::ServiceId;
-use crate::service::LogStyle;
 use crate::{Endpoints, Responder};
 
 /// Channel proposal workflow
@@ -132,31 +132,31 @@ impl ChannelPropose {
         match self {
             ChannelPropose::Proposed => format!(
                 "{} to remote peer (using temp id {:#})",
-                "Proposing channel".promo(),
-                channel_id.promoter()
+                "Proposing channel".announce(),
+                channel_id.announcer()
             ),
             ChannelPropose::Accepted => format!(
                 "Remote peer {} channel with temp id {:#}. Constructing refund transaction.",
-                "accepted".promo(),
-                channel_id.promoter()
+                "accepted".announce(),
+                channel_id.announcer()
             ),
             ChannelPropose::Signing => format!(
                 "{} refund transaction locally for channel {:#}",
-                "Signing".promoter(),
-                channel_id.promoter()
+                "Signing".announcer(),
+                channel_id.announcer()
             ),
             ChannelPropose::Funding => format!(
                 "{} for the remote peer to sign refund transaction for channel {:#}",
-                "Awaiting".promo(),
-                channel_id.promoter()
+                "Awaiting".announce(),
+                channel_id.announcer()
             ),
             ChannelPropose::Published => format!(
                 "{} fully signed funding transaction for channel {:#}",
-                "Publishing".promo(),
-                channel_id.promoter()
+                "Publishing".announce(),
+                channel_id.announcer()
             ),
             ChannelPropose::Locked => {
-                format!("{} channel {:#}", "Activating".promo(), channel_id.promoter())
+                format!("{} channel {:#}", "Activating".announce(), channel_id.announcer())
             }
         }
     }

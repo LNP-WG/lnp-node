@@ -25,6 +25,7 @@ use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
 use lnp_rpc::FailureCode;
+use microservices::cli::LogStyle;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
 use microservices::{DaemonHandle, LauncherError};
@@ -38,7 +39,7 @@ use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon};
 use crate::lnpd::funding::{self, FundingWallet};
 use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, OptionDetails, RpcMsg, ServiceId};
-use crate::{Config, Endpoints, Error, LogStyle, Responder, Service, LNP_NODE_FUNDING_WALLET};
+use crate::{Config, Endpoints, Error, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
     let node_id = read_node_key_file(&key_file).node_id();
@@ -284,7 +285,7 @@ impl Runtime {
                 self.listens.insert(addr.into());
                 info!(
                     "{} for incoming LN peer connections on {}",
-                    "Starting listener".promo(),
+                    "Starting listener".announce(),
                     addr_str
                 );
                 let resp = self.listen(NodeAddr::new(self.node_id, addr));
@@ -300,7 +301,7 @@ impl Runtime {
             }
 
             RpcMsg::ConnectPeer(addr) => {
-                info!("{} to remote peer {}", "Connecting".promo(), addr.promoter());
+                info!("{} to remote peer {}", "Connecting".announce(), addr.announcer());
                 let peerd = Daemon::PeerdBolt(
                     PeerSocket::Connect(addr.clone()),
                     self.node_key_path.clone(),

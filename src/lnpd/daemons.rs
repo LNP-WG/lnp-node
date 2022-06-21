@@ -25,11 +25,11 @@ use internet2::addr::LocalNode;
 use internet2::session::noise::FramingProtocol;
 use internet2::transport;
 use lnp::p2p::bolt::ActiveChannelId;
+use microservices::cli::LogStyle;
 use microservices::peer::{supervisor, PeerSocket};
 use microservices::{DaemonHandle, Launcher, LauncherError};
 
 use crate::lnpd::runtime::Runtime;
-use crate::service::LogStyle;
 use crate::{channeld, peerd, routed, signd, watchd, Config, Error, P2pProtocol};
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
