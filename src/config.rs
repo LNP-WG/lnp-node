@@ -57,6 +57,7 @@ where
     pub ext: Ext,
 }
 
+// TODO: Move to descriptor wallet
 fn default_electrum_port(chain: &Chain) -> u16 {
     match chain {
         Chain::Mainnet => 50001,
