@@ -38,8 +38,6 @@ _arguments "${_arguments_options[@]}" \
 '--ip=[IPv4 or IPv6 address to bind to]:IP_ADDR: ' \
 '-p+[Port to use; defaults to the native LN port]:PORT: ' \
 '--port=[Port to use; defaults to the native LN port]:PORT: ' \
-'-o+[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
-'--overlay=[Use overlay protocol (http, websocket etc)]:OVERLAY: ' \
 '-c+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--connect=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '-h[Print help information]' \

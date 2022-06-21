@@ -5,11 +5,12 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.8.0"
+version = "0.8.0-alpha.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.59.0"
 readme = "README.md"
 build = "build.rs"
 exclude = [".github", "Dockerfile", ".dockerignore", "contrib", "doc"]
@@ -47,8 +48,8 @@ amplify = "3.12.0"
 strict_encoding = { version = "1.8.1", features = ["miniscript"] }
 descriptor-wallet = { version = "0.7.1", features = ["keygen", "miniscript", "electrum"] }
 lnpbp = "0.7.0"
-lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core" }
-lnp_rpc = { version = "0.8.0", path = "./rpc" }
+lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
+lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
 internet2 = { version = "0.8.0-beta.1", features = ["keygen"] }
 microservices = { version = "0.8.0-rc.4", default-features = false, features = ["node", "peer"] }
 # Bitcoin
@@ -79,8 +80,8 @@ amplify = "3.12.0"
 lnpbp = "0.7.0"
 bitcoin = "0.28.1"
 lightning-invoice = "0.14.0"
-lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core" }
-lnp_rpc = { version = "0.8.0", path = "./rpc" }
+lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
+lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
 internet2 = "0.8.0-beta.1"
 microservices = { version = "0.8.0-rc.2", default-features = false, features = ["peer"] }
 clap = { version = "~3.1.18", features = ["env"] }

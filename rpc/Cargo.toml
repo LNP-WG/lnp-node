@@ -1,11 +1,13 @@
 [package]
 name = "lnp_rpc"
 description = "LNP node RPC API"
-version = "0.8.0"
+version = "0.8.0-alpha.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "node", "lightning-network", "smart-contracts", "rpc"]
-edition = "2018"
+categories = ["network-programming"]
+edition = "2021"
+rust-version = "1.59.0"
 readme = "../README.md"
 
 [lib]
@@ -14,7 +16,7 @@ name = "lnp_rpc"
 [dependencies]
 amplify = "3.12.0"
 strict_encoding = "1.8.1"
-lnp-core = { version = "0.8.0", git = "https://github.com/LNP-WG/lnp-core", default-features = false }
+lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core", default-features = false }
 lnpbp = "0.7.0"
 bitcoin = { version = "0.28.1", features = ["rand"] }
 lightning-invoice = { version = "0.14.0", optional = true }
