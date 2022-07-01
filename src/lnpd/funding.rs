@@ -30,14 +30,13 @@ use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::psbt::PsbtExt;
 use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
 use strict_encoding::{StrictDecode, StrictEncode};
-use wallet::descriptors::locks::{LockTime, SeqNo};
+use wallet::descriptors::locks::SeqNo;
 use wallet::descriptors::InputDescriptor;
 use wallet::hd::{
-    DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes, TrackingAccount,
+    DerivationAccount, DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes,
     UnhardenedIndex,
 };
 use wallet::onchain::ResolveUtxo;
-use wallet::psbt::construct::Construct;
 use wallet::psbt::Psbt;
 use wallet::scripts::PubkeyScript;
 
@@ -116,7 +115,7 @@ pub struct Funds {
 
 #[derive(Clone, Debug, StrictEncode, StrictDecode)]
 struct WalletData {
-    pub descriptor: Descriptor<TrackingAccount>,
+    pub descriptor: Descriptor<DerivationAccount>,
     pub last_normal_index: UnhardenedIndex,
     pub last_change_index: UnhardenedIndex,
     pub last_rgb_index: BTreeMap<Slice32, UnhardenedIndex>,
@@ -136,7 +135,7 @@ impl FundingWallet {
     pub fn new(
         chain: &Chain,
         wallet_path: impl AsRef<Path>,
-        descriptor: Descriptor<TrackingAccount>,
+        descriptor: Descriptor<DerivationAccount>,
         electrum_url: &str,
     ) -> Result<FundingWallet, Error> {
         info!("Creating funding wallet at '{}'", wallet_path.as_ref().display());
@@ -230,7 +229,7 @@ impl FundingWallet {
     pub fn network(&self) -> Network { self.network }
 
     #[inline]
-    pub fn descriptor(&self) -> &Descriptor<TrackingAccount> { &self.wallet_data.descriptor }
+    pub fn descriptor(&self) -> &Descriptor<DerivationAccount> { &self.wallet_data.descriptor }
 
     #[inline]
     pub fn feerate_per_kw(&self) -> u32 { self.feerate_per_kw }
@@ -336,7 +335,7 @@ impl FundingWallet {
             .map(|funds| InputDescriptor {
                 outpoint: funds.outpoint,
                 terminal: DerivationSubpath::from(funds.terminal.clone()),
-                seq_no: SeqNo::with_rbf(0),
+                seq_no: SeqNo::rbf(),
                 tweak: None,
                 sighash_type: EcdsaSighashType::All,
             })
@@ -365,9 +364,7 @@ impl FundingWallet {
         let psbt = loop {
             trace!("Constructing PSBT with fee {}", fee_upper_est);
             let mut psbt: Psbt = Psbt::construct(
-                &self.secp,
                 descriptor,
-                LockTime::default(),
                 &inputs,
                 &[(script_pubkey.clone().into(), amount)],
                 change_index,
@@ -389,7 +386,7 @@ impl FundingWallet {
                 }
             }
             psbt.set_channel_funding_output(0).expect("hardcoded funding output number");
-            let transaction = psbt.clone().into_transaction();
+            let transaction = psbt.to_unsigned_tx();
             // If we use non-standard descriptor we assume its witness will weight 256 bytes per
             // input
             let tx_weight = transaction.weight() as u64;

@@ -40,6 +40,7 @@ use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
 use lnp_node::{Config, Error};
 use microservices::cli::LogStyle;
 use strict_encoding::{StrictDecode, StrictEncode};
+use wallet::hd::DerivationAccount;
 
 fn main() -> Result<(), Error> {
     println!("lnpd: lightning node management microservice");
@@ -93,7 +94,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
     use lnp_node::lnpd::funding::FundingWallet;
     use lnp_node::{LNP_NODE_FUNDING_WALLET, LNP_NODE_MASTER_KEY_FILE};
     use miniscript::descriptor::{Descriptor, Wpkh};
-    use wallet::hd::{TerminalStep, TrackingAccount};
+    use wallet::hd::TerminalStep;
     use wallet::psbt::sign::MemorySigningAccount;
 
     let secp = Secp256k1::new();
@@ -159,7 +160,7 @@ fn init(config: &Config, key_path: &Path) -> Result<(), Error> {
                 .collect::<Result<Vec<_>, _>>()
                 .expect("hardcoded derivation indexes"),
         )?;
-        let account = TrackingAccount::with(
+        let account = DerivationAccount::with(
             &secp,
             *signing_account.master_id(),
             account_xpriv,

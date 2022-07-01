@@ -5,7 +5,7 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.8.0-alpha.1"
+version = "0.8.0-beta.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
@@ -44,19 +44,19 @@ required-features = ["server"]
 
 [dependencies]
 # LNP/BP crates
-amplify = "3.12.0"
-strict_encoding = { version = "1.8.1", features = ["miniscript"] }
-descriptor-wallet = { version = "0.7.1", features = ["keygen", "miniscript", "electrum"] }
-lnpbp = "0.7.0"
-lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
-lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
-internet2 = { version = "0.8.0-beta.1", features = ["keygen"] }
-microservices = { version = "0.8.0-rc.8", default-features = false, features = ["node", "peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
+amplify = "3.12.1"
+strict_encoding = { version = "0.8.0", features = ["miniscript"] }
+descriptor-wallet = { version = "0.8.0", features = ["keygen", "miniscript", "electrum"] }
+lnpbp = "0.8.0"
+lnp-core = "0.8.0-beta.1"
+lnp_rpc = { version = "0.8.0-beta.1", path = "./rpc" }
+internet2 = { version = "0.8.0", features = ["keygen"] }
+microservices = { version = "0.8.0", default-features = false, features = ["node", "peer"] }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
-electrum-client = "0.10.0"
-lightning-invoice = "0.14.0"
+electrum-client = "0.10.1"
+lightning-invoice = "0.16.0"
 # OS
 chrono = "0.4"
 nix = "0.24"
@@ -76,15 +76,15 @@ zmq = { package = "zmq2", version = "0.5.0" }
 strict_encoding_test = "1.7.4"
 
 [build-dependencies]
-amplify = "3.12.0"
-lnpbp = "0.7.0"
+amplify = "3.12.1"
+lnpbp = "0.8.0"
 bitcoin = "0.28.1"
-lightning-invoice = "0.14.0"
-lnp-core = { version = "0.8.0-alpha.1", git = "https://github.com/LNP-WG/lnp-core" }
-lnp_rpc = { version = "0.8.0-alpha.1", path = "./rpc" }
-internet2 = "0.8.0-beta.1"
-microservices = { version = "0.8.0-rc.8", default-features = false, features = ["peer"], git = "https://github.com/Internet2-WG/rust-microservices" }
-clap = { version = "~3.1.18", features = ["env"] }
+lightning-invoice = "0.16.0"
+lnp-core = "0.8.0-beta.1"
+lnp_rpc = { version = "0.8.0-beta.1", path = "./rpc" }
+internet2 = "0.8.0"
+microservices = { version = "0.8.0", default-features = false, features = ["peer"] }
+clap = { version = "~3.1.18", features = ["env", "derive"] }
 clap_complete = "~3.1.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 shellexpand = "2"
@@ -106,14 +106,13 @@ bifrost = ["lnp-core/bifrost", "lnp_rpc/bifrost"]
 # Server is a standalone application that runs daemons.
 # Required for all apps that can be launched from command-line shell as binaries
 # (i.e. both servers and cli)
-server = ["microservices/server", "dotenv", "clap", "settings", "configure_me",
+server = ["microservices/server", "microservices/cli", "dotenv", "clap", "settings", "configure_me",
           "amplify/parse_arg", "shellexpand", "rpassword"]
 # Embedded is an app that contains embedded node and that talks to it through
 # integration layer
 embedded = ["microservices/embedded"]
 
-# rgb = ["lnp-core/rgb", "rgb-core", "rgb_node"]
-tor = ["microservices/tor", "internet2/tor"] #, "rgb_node/tor"]
+tor = ["microservices/tor", "internet2/tor"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"
