@@ -369,6 +369,7 @@ impl FundingWallet {
                 &[(script_pubkey.clone().into(), amount)],
                 change_index,
                 fee_upper_est,
+                None,
                 &self.resolver,
             )
             .expect("funding PSBT construction is broken");
