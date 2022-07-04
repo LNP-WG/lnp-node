@@ -59,42 +59,50 @@ pub type ClientId = u64;
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Display, From, StrictEncode, StrictDecode)]
 pub enum ServiceId {
     #[display("loopback")]
+    #[strict_encoding(value = 0)]
     Loopback,
 
     #[display("lnpd")]
+    #[strict_encoding(value = 0x20)]
     LnpBroker,
 
     #[display("watchd")]
+    #[strict_encoding(value = 0x26)]
     Watch,
 
     #[display("routed")]
+    #[strict_encoding(value = 0x25)]
     Router,
 
     #[display("peerd<{0}>")]
     #[from]
+    #[strict_encoding(value = 0x21)]
     Peer(NodeAddr),
 
     #[display("channel<{0:#x}>")]
     #[from]
     #[from(TempChannelId)]
+    #[strict_encoding(value = 0x22)]
     Channel(ChannelId),
 
     #[display("client<{0}>")]
+    #[strict_encoding(value = 2)]
     Client(ClientId),
 
     #[display("signer")]
+    #[strict_encoding(value = 0x1F)]
     Signer,
 
     #[display("msgapp<{0}>")]
+    #[strict_encoding(value = 0x24)]
     MsgApp(BifrostApp),
 
     #[display("chapp<{0}>")]
+    #[strict_encoding(value = 0x23)]
     ChannelApp(BifrostApp),
 
-    #[display("<{0}>")]
-    Layer3App(u16),
-
     #[display("other<{0}>")]
+    #[strict_encoding(value = 0xFF)]
     Other(ServiceName),
 }
 
