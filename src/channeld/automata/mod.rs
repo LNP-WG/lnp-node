@@ -240,7 +240,7 @@ impl Runtime {
         if let BusMsg::Bolt(LnMsg::ChannelReestablish(ref remote_channel_reestablish)) =
             event.message
         {
-            self.state.state_machine = self.complete_reestalblish(
+            self.state.state_machine = self.complete_reestablish(
                 event.endpoints,
                 event.source,
                 remote_channel_reestablish,
@@ -267,7 +267,7 @@ impl Runtime {
         Ok(())
     }
 
-    fn complete_reestalblish(
+    fn complete_reestablish(
         &mut self,
         endpoints: &mut Endpoints,
         source: ServiceId,
