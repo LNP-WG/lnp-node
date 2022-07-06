@@ -65,7 +65,7 @@ pub enum BusMsg {
     #[api(type = 3)]
     #[display(inner)]
     #[from]
-    Birfost(p2p::bifrost::Messages),
+    Bifrost(p2p::bifrost::Messages),
 
     /// Wrapper for inner type of control messages to be transmitted over control bus
     #[api(type = 2)]

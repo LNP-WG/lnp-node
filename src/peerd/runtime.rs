@@ -252,7 +252,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Msg, BusMsg::Bolt(msg), source) => {
                 self.handle_bolt(endpoints, source, msg)
             }
-            (ServiceBus::Msg, BusMsg::Birfost(msg), source) => {
+            (ServiceBus::Msg, BusMsg::Bifrost(msg), source) => {
                 self.handle_bifrost(endpoints, source, msg)
             }
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
@@ -362,7 +362,7 @@ impl Runtime {
             BusMsg::Ctl(CtlMsg::PingPeer) => self.ping(),
 
             BusMsg::Bolt(msg) => self.handle_bridge_bolt(endpoints, msg),
-            BusMsg::Birfost(msg) => self.handle_bridge_bifrost(endpoints, msg),
+            BusMsg::Bifrost(msg) => self.handle_bridge_bifrost(endpoints, msg),
 
             wrong_msg => {
                 error!("Request is not supported by the BRIDGE interface");
@@ -465,7 +465,7 @@ impl Runtime {
                     ServiceBus::Msg,
                     self.identity(),
                     ServiceId::MsgApp(app),
-                    BusMsg::Birfost(msg),
+                    BusMsg::Bifrost(msg),
                 )?;
             }
 
