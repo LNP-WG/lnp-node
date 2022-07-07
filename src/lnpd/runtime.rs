@@ -20,10 +20,11 @@ use amplify::{DumbDefault, Wrapper};
 use bitcoin::Txid;
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
+use lnp::p2p;
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
-use lnp_rpc::FailureCode;
+use lnp_rpc::{ConnectReq, FailureCode};
 use microservices::cli::LogStyle;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
@@ -57,7 +58,8 @@ pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Res
         handles: vec![],
         funding_wallet: config.funding_wallet()?,
         channel_params: config.channel_params()?,
-        connections: none!(),
+        bolt_connections: none!(),
+        bifrost_connections: none!(),
         channels: none!(),
         spawning_peers: none!(),
         creating_channels: none!(),
@@ -94,7 +96,8 @@ pub struct Runtime {
     handles: Vec<DaemonHandle<Daemon>>,
     pub(super) funding_wallet: FundingWallet,
     pub(super) channel_params: (Policy, CommonParams, PeerParams),
-    connections: HashSet<NodeAddr>,
+    bolt_connections: HashSet<NodeAddr>,
+    bifrost_connections: HashSet<NodeAddr>,
     channels: HashSet<ChannelId>,
     spawning_peers: HashMap<ServiceId, ClientId>,
     creating_channels: HashMap<ServiceId, ChannelLauncher>,
@@ -132,7 +135,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::Peer(remote_peer)) => {
+            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::PeerBolt(remote_peer)) => {
                 self.handle_p2p(endpoints, remote_peer, msg)
             }
             (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
@@ -210,7 +213,7 @@ impl Runtime {
                 if let Some(channeld) = self.channels.get(&channel_id) {
                     endpoints.send_to(
                         ServiceBus::Msg,
-                        ServiceId::Peer(remote_peer),
+                        ServiceId::PeerBolt(remote_peer),
                         ServiceId::Channel(*channeld),
                         BusMsg::Bolt(LnMsg::ChannelReestablish(channel_reestablish)),
                     )?;
@@ -248,14 +251,14 @@ impl Runtime {
                         .duration_since(SystemTime::UNIX_EPOCH)
                         .unwrap_or_else(|_| Duration::from_secs(0))
                         .as_secs(),
-                    peers: self.connections.iter().cloned().collect(),
+                    peers: self.bolt_connections.iter().cloned().collect(),
                     channels: self.channels.iter().cloned().collect(),
                 });
                 self.send_rpc(endpoints, client_id, node_info)?;
             }
 
             RpcMsg::ListPeers => {
-                let peer_list = self.connections.iter().cloned().collect();
+                let peer_list = self.bolt_connections.iter().cloned().collect();
                 self.send_rpc(endpoints, client_id, RpcMsg::PeerList(peer_list))?;
             }
 
@@ -299,15 +302,35 @@ impl Runtime {
                 self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
             }
 
-            RpcMsg::ConnectPeer(addr) => {
-                info!("{} to remote peer {}", "Connecting".announce(), addr.announcer());
-                let peerd = Daemon::PeerdBolt(
-                    PeerSocket::Connect(addr.clone()),
-                    self.node_key_path.clone(),
+            RpcMsg::ConnectPeer(ConnectReq { addr, protocol }) => {
+                // Check if the peer is already connected
+                info!(
+                    "{} to remote peer {} over {}",
+                    "Connecting".announce(),
+                    addr.announcer(),
+                    protocol
                 );
+                if (protocol == p2p::Protocol::Bolt
+                    && (self.spawning_peers.contains_key(&ServiceId::PeerBolt(addr))
+                        || self.bolt_connections.contains(&addr)))
+                    || (protocol == p2p::Protocol::Bifrost
+                        && (self.spawning_peers.contains_key(&ServiceId::PeerBifrost(addr))
+                            || self.bifrost_connections.contains(&addr)))
+                {
+                    info!("Already connected to a peer {}", addr);
+                    self.send_rpc(endpoints, client_id, RpcMsg::success())?;
+                    return Ok(());
+                }
+                // Connect otherwise
+                let peer_socket = PeerSocket::Connect(addr.clone());
+                let node_key_path = self.node_key_path.clone();
+                let peerd = match protocol {
+                    p2p::Protocol::Bolt => Daemon::PeerdBolt(peer_socket, node_key_path),
+                    p2p::Protocol::Bifrost => Daemon::PeerdBifrost(peer_socket, node_key_path),
+                };
                 let resp = match self.launch_daemon(peerd, self.config.clone()) {
                     Ok(handle) => {
-                        self.spawning_peers.insert(ServiceId::Peer(addr.into()), client_id);
+                        self.spawning_peers.insert(ServiceId::PeerBolt(addr.into()), client_id);
                         Ok(format!("Launched new instance of {}", handle))
                     }
                     Err(err) => {
@@ -466,7 +489,7 @@ impl Runtime {
             );
             endpoints.send_to(
                 ServiceBus::Msg,
-                remote_peer.into(),
+                ServiceId::PeerBolt(remote_peer),
                 source.clone(),
                 BusMsg::Bolt(LnMsg::ChannelReestablish(channel_reestablish)),
             )?;
@@ -486,16 +509,35 @@ impl Runtime {
             ServiceId::LnpBroker => {
                 error!("{}", "Unexpected another lnpd instance connection".err());
             }
-            ServiceId::Peer(connection_id) if self.connections.insert(connection_id.clone()) => {
+            ServiceId::PeerBolt(connection_id)
+                if self.bolt_connections.insert(connection_id.clone()) =>
+            {
                 info!(
-                    "Connection {} is registered; total {} connections are known",
+                    "BOLT connection {} is registered; total {} connections are known",
                     connection_id,
-                    self.connections.len()
+                    self.bolt_connections.len()
                 );
             }
-            ServiceId::Peer(connection_id) => {
+            ServiceId::PeerBifrost(connection_id)
+                if self.bifrost_connections.insert(connection_id.clone()) =>
+            {
+                info!(
+                    "Bifrost connection {} is registered; total {} connections are known",
+                    connection_id,
+                    self.bifrost_connections.len()
+                );
+            }
+            ServiceId::PeerBolt(connection_id) => {
                 warn!(
-                    "Connection {} was already registered; the service probably was relaunched",
+                    "BOTL connection {} was already registered; the service probably was \
+                     relaunched",
+                    connection_id
+                );
+            }
+            ServiceId::PeerBifrost(connection_id) => {
+                warn!(
+                    "Bifrost connection {} was already registered; the service probably was \
+                     relaunched",
                     connection_id
                 );
             }

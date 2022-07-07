@@ -24,6 +24,7 @@ use bitcoin::Address;
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lightning_invoice::Invoice;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
+use lnp::p2p;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
 use microservices::rpc;
@@ -71,7 +72,7 @@ pub enum RpcMsg {
     // Node connectivity API
     // ---------------------
     #[display("connect({0})")]
-    ConnectPeer(NodeAddr),
+    ConnectPeer(ConnectReq),
 
     #[display("ping_peer()")]
     PingPeer,
@@ -126,6 +127,20 @@ pub enum RpcMsg {
     #[display("funds_info({0})", alt = "{0:#}")]
     #[from]
     FundsInfo(FundsInfo),
+}
+
+impl RpcMsg {
+    pub fn success() -> Self { RpcMsg::Success(OptionDetails::new()) }
+}
+
+/// Request for connecting remote peer
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display("{addr}, {protocol}")]
+pub struct ConnectReq {
+    /// Remote peer address for connecting to.
+    pub addr: NodeAddr,
+    /// Protocol used for connection.
+    pub protocol: p2p::Protocol,
 }
 
 /// Request to create channel originating from a client

@@ -66,6 +66,12 @@ pub enum Command {
 
     /// Connect to the remote lightning network peer
     Connect {
+        #[clap(long, required_unless_present = "bifrost")]
+        bolt: bool,
+
+        #[clap(long, required_unless_present = "bolt")]
+        bifrost: bool,
+
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
         peer: PartialNodeAddr,

@@ -66,22 +66,25 @@ pub enum ServiceId {
     LnpBroker,
 
     #[display("watchd")]
-    #[strict_encoding(value = 0x26)]
+    #[strict_encoding(value = 0x27)]
     Watch,
 
     #[display("routed")]
-    #[strict_encoding(value = 0x25)]
+    #[strict_encoding(value = 0x26)]
     Router,
 
-    #[display("peerd<{0}>")]
-    #[from]
+    #[display("peerd<bolt, {0}>")]
     #[strict_encoding(value = 0x21)]
-    Peer(NodeAddr),
+    PeerBolt(NodeAddr),
+
+    #[display("peerd<biffrost, {0}>")]
+    #[strict_encoding(value = 0x22)]
+    PeerBifrost(NodeAddr),
 
     #[display("channel<{0:#x}>")]
     #[from]
     #[from(TempChannelId)]
-    #[strict_encoding(value = 0x22)]
+    #[strict_encoding(value = 0x23)]
     Channel(ChannelId),
 
     #[display("client<{0}>")]
@@ -93,11 +96,11 @@ pub enum ServiceId {
     Signer,
 
     #[display("msgapp<{0}>")]
-    #[strict_encoding(value = 0x24)]
+    #[strict_encoding(value = 0x25)]
     MsgApp(BifrostApp),
 
     #[display("chapp<{0}>")]
-    #[strict_encoding(value = 0x23)]
+    #[strict_encoding(value = 0x24)]
     ChannelApp(BifrostApp),
 
     #[display("other<{0}>")]
@@ -115,7 +118,7 @@ impl ServiceId {
 
     pub fn to_remote_peer(&self) -> Option<NodeAddr> {
         match self {
-            ServiceId::Peer(node_addr) => Some(node_addr.clone()),
+            ServiceId::PeerBolt(node_addr) => Some(node_addr.clone()),
             _ => None,
         }
     }

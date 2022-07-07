@@ -38,7 +38,7 @@ pub(super) struct ChannelState {
 
 impl ChannelState {
     pub fn with(temp_channel_id: TempChannelId, chain: &Chain) -> ChannelState {
-        let chain_hash = chain.as_genesis_hash().as_inner();
+        let chain_hash = chain.as_genesis_hash().into_inner();
         let channel = Channel::with(
             temp_channel_id,
             Slice32::from(chain_hash),

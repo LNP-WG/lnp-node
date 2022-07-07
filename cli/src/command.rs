@@ -15,8 +15,10 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 use internet2::addr::NodeAddr;
+use lnp::p2p;
+use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
 use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
-use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
+use lnp_rpc::{self, Client, ConnectReq, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
 use crate::{Command, Opts};
@@ -48,7 +50,7 @@ impl Exec for Opts {
             Command::Info { subject } => {
                 if let Some(subj) = subject {
                     if let Ok(node_addr) = NodeAddr::from_str(&subj) {
-                        runtime.request(ServiceId::Peer(node_addr), RpcMsg::GetInfo)?;
+                        runtime.request(ServiceId::PeerBolt(node_addr), RpcMsg::GetInfo)?;
                     } else if let Ok(channel_id) = ChannelId::from_str(&subj) {
                         runtime.request(ServiceId::Channel(channel_id), RpcMsg::GetInfo)?;
                     } else {
@@ -92,17 +94,32 @@ impl Exec for Opts {
                 runtime.report_progress()?;
             }
 
-            Command::Connect { peer } => {
-                let peer = peer.node_addr(LNP2P_LEGACY_PORT);
+            Command::Connect { peer, bolt: true, bifrost: false } => {
+                let addr = peer.node_addr(LNP2P_LEGACY_PORT);
 
-                runtime.request(ServiceId::LnpBroker, RpcMsg::ConnectPeer(peer))?;
+                runtime.request(
+                    ServiceId::LnpBroker,
+                    RpcMsg::ConnectPeer(ConnectReq { addr, protocol: p2p::Protocol::Bolt }),
+                )?;
                 runtime.report_progress()?;
             }
+
+            Command::Connect { peer, bolt: false, bifrost: true } => {
+                let addr = peer.node_addr(LNP2P_BIFROST_PORT);
+
+                runtime.request(
+                    ServiceId::LnpBroker,
+                    RpcMsg::ConnectPeer(ConnectReq { addr, protocol: p2p::Protocol::Bifrost }),
+                )?;
+                runtime.report_progress()?;
+            }
+
+            Command::Connect { peer: _, bolt: _, bifrost: _ } => unreachable!(),
 
             Command::Ping { peer } => {
                 let node_addr = peer.node_addr(LNP2P_LEGACY_PORT);
 
-                runtime.request(ServiceId::Peer(node_addr), RpcMsg::PingPeer)?;
+                runtime.request(ServiceId::PeerBolt(node_addr), RpcMsg::PingPeer)?;
             }
 
             Command::Open {

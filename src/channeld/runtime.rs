@@ -108,7 +108,7 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::Peer(remote_peer)) => {
+            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::PeerBolt(remote_peer)) => {
                 self.handle_p2p(endpoints, remote_peer, msg)
             }
             (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
@@ -170,7 +170,7 @@ impl Runtime {
         endpoints.send_to(
             ServiceBus::Msg,
             self.identity(),
-            ServiceId::Peer(remote_peer),
+            ServiceId::PeerBolt(remote_peer),
             BusMsg::Bolt(message),
         )
     }
@@ -199,7 +199,7 @@ impl Runtime {
             | LnMsg::AcceptChannel(_)
             | LnMsg::FundingSigned(_)
             | LnMsg::FundingLocked(_) => {
-                self.process(endpoints, ServiceId::Peer(remote_peer), BusMsg::Bolt(message))?;
+                self.process(endpoints, ServiceId::PeerBolt(remote_peer), BusMsg::Bolt(message))?;
             }
 
             _ => {

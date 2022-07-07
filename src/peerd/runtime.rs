@@ -53,7 +53,7 @@ pub fn run(
         (Some(remote_id), _) => NodeAddr::new(remote_id, params.remote_socket),
         (None, None) => unreachable!(),
     };
-    let identity = ServiceId::Peer(remote_node);
+    let identity = ServiceId::PeerBolt(remote_node);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {

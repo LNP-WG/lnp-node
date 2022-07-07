@@ -176,7 +176,7 @@ impl Runtime {
     ) -> Result<bool, Error> {
         if let BusMsg::Ctl(CtlMsg::EsbError { destination, error: _ }) = &request {
             let (code, info) = match destination {
-                ServiceId::Peer(remote_peer) => (
+                ServiceId::PeerBolt(remote_peer) => (
                     FailureCode::Channel,
                     format!(
                         "There is no connection with the remote peer {}; you have to `connect` to \
