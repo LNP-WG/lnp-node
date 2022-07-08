@@ -75,9 +75,9 @@ pub enum ServiceId {
 
     #[display("peerd<bolt, {0}>")]
     #[strict_encoding(value = 0x21)]
-    PeerBolt(NodeAddr),
+    PeerBolt(NodeAddr), // TODO: Switch on just NodeId's
 
-    #[display("peerd<biffrost, {0}>")]
+    #[display("peerd<bifrost, {0}>")]
     #[strict_encoding(value = 0x22)]
     PeerBifrost(NodeAddr),
 

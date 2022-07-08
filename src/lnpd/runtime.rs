@@ -326,14 +326,19 @@ impl Runtime {
                 // Connect otherwise
                 let peer_socket = PeerSocket::Connect(node_addr.clone());
                 let node_key_path = self.node_key_path.clone();
-                let peerd = match protocol {
-                    p2p::Protocol::Bolt => Daemon::PeerdBolt(peer_socket, node_key_path),
-                    p2p::Protocol::Bifrost => Daemon::PeerdBifrost(peer_socket, node_key_path),
+                let (peerd, peer_service_id) = match protocol {
+                    p2p::Protocol::Bolt => (
+                        Daemon::PeerdBolt(peer_socket, node_key_path),
+                        ServiceId::PeerBolt(node_addr),
+                    ),
+                    p2p::Protocol::Bifrost => (
+                        Daemon::PeerdBifrost(peer_socket, node_key_path),
+                        ServiceId::PeerBifrost(node_addr),
+                    ),
                 };
                 let resp = match self.launch_daemon(peerd, self.config.clone()) {
                     Ok(handle) => {
-                        self.spawning_peers
-                            .insert(ServiceId::PeerBolt(node_addr.into()), client_id);
+                        self.spawning_peers.insert(peer_service_id, client_id);
                         Ok(format!("Launched new instance of {}", handle))
                     }
                     Err(err) => {
