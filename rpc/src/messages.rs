@@ -75,6 +75,9 @@ pub enum RpcMsg {
     #[display("connect({0})")]
     ConnectPeer(ConnectInfo),
 
+    #[display("disconnect({0})")]
+    DisconnectPeer(ConnectInfo),
+
     #[display("ping_peer()")]
     PingPeer,
 
