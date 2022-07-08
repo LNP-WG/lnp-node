@@ -122,7 +122,7 @@ pub enum RpcMsg {
 
     #[display("peer_list({0})", alt = "{0:#}")]
     #[from]
-    PeerList(List<NodeAddr>),
+    PeerList(List<NodeId>),
 
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
@@ -270,7 +270,7 @@ pub struct NodeInfo {
     pub uptime: Duration,
     pub since: u64,
     #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub peers: Vec<NodeAddr>,
+    pub peers: Vec<NodeId>,
     #[serde_as(as = "Vec<DisplayFromStr>")]
     pub channels: Vec<ChannelId>,
 }
@@ -305,7 +305,7 @@ pub type RemotePeerMap<T> = BTreeMap<NodeAddr, T>;
 #[display(ChannelInfo::to_yaml_string)]
 pub struct ChannelInfo {
     pub state: ChannelState,
-    pub remote_peer: Option<NodeAddr>,
+    pub remote_id: Option<NodeId>,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

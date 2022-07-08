@@ -16,7 +16,7 @@ use std::time::SystemTime;
 use std::{fs, io};
 
 use amplify::{DumbDefault, Wrapper};
-use internet2::addr::NodeAddr;
+use internet2::addr::NodeId;
 use lnp::channel::bolt;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use lnp::Extension;
@@ -108,8 +108,8 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
-            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::PeerBolt(remote_peer)) => {
-                self.handle_p2p(endpoints, remote_peer, msg)
+            (ServiceBus::Msg, BusMsg::Bolt(msg), ServiceId::PeerBolt(remote_id)) => {
+                self.handle_p2p(endpoints, remote_id, msg)
             }
             (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
                 unreachable!("channeld received peer message not from a peerd but from {}", service)
@@ -166,7 +166,7 @@ impl Runtime {
         endpoints: &mut Endpoints,
         message: LnMsg,
     ) -> Result<(), esb::Error<ServiceId>> {
-        let remote_peer = self.state.remote_peer.clone().expect("unset remote peer in channeld");
+        let remote_peer = self.state.remote_id.clone().expect("unset remote peer in channeld");
         endpoints.send_to(
             ServiceBus::Msg,
             self.identity(),
@@ -178,7 +178,7 @@ impl Runtime {
     fn handle_p2p(
         &mut self,
         endpoints: &mut Endpoints,
-        remote_peer: NodeAddr,
+        remote_id: NodeId,
         message: LnMsg,
     ) -> Result<(), Error> {
         match message {
@@ -191,7 +191,7 @@ impl Runtime {
                 warn!(
                     "Got `open_channel` P2P message from {}, which is unexpected: the channel \
                      creation was already requested before",
-                    remote_peer
+                    remote_id
                 );
             }
 
@@ -199,7 +199,7 @@ impl Runtime {
             | LnMsg::AcceptChannel(_)
             | LnMsg::FundingSigned(_)
             | LnMsg::FundingLocked(_) => {
-                self.process(endpoints, ServiceId::PeerBolt(remote_peer), BusMsg::Bolt(message))?;
+                self.process(endpoints, ServiceId::PeerBolt(remote_id), BusMsg::Bolt(message))?;
             }
 
             _ => {
@@ -223,17 +223,17 @@ impl Runtime {
                 let remote_peer = open_channel_with.remote_peer.clone();
                 self.enquirer = open_channel_with.report_to;
                 // Updating state only if the request was processed
-                self.state.remote_peer = Some(remote_peer);
+                self.state.remote_id = Some(remote_peer.id);
                 self.process(endpoints, source, BusMsg::Ctl(request))?;
             }
 
             // Processing remote request to open a channel
-            CtlMsg::AcceptChannelFrom(bus::AcceptChannelFrom { ref remote_peer, .. }) => {
+            CtlMsg::AcceptChannelFrom(bus::AcceptChannelFrom { remote_id, .. }) => {
                 self.enquirer = None;
-                let remote_peer = remote_peer.clone();
+                let remote_id = remote_id.clone();
                 if self.process(endpoints, source, BusMsg::Ctl(request))? {
                     // Updating state only if the request was processed
-                    self.state.remote_peer = Some(remote_peer);
+                    self.state.remote_id = Some(remote_id);
                 }
             }
 
@@ -280,8 +280,7 @@ impl Runtime {
             RpcMsg::GetInfo => {
                 let mut state = bolt::ChannelState::dumb_default();
                 self.state.channel.store_state(&mut state);
-                let channel_info =
-                    ChannelInfo { state, remote_peer: self.state.remote_peer.clone() };
+                let channel_info = ChannelInfo { state, remote_id: self.state.remote_id };
                 self.send_rpc(endpoints, client_id, channel_info)?;
             }
             RpcMsg::Send(_) => todo!("payments are not yet implemented"),

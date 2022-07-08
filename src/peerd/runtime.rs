@@ -19,7 +19,7 @@ use std::time::{Duration, SystemTime};
 
 use amplify::Bipolar;
 use bitcoin::secp256k1::rand::{self, Rng, RngCore};
-use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use internet2::addr::{InetSocketAddr, NodeId};
 use internet2::zeromq::ZmqSocketType;
 use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
 use lnp::p2p;
@@ -49,12 +49,8 @@ pub fn run(
     tx.connect("inproc://bridge")?;
     rx.bind("inproc://bridge")?;
 
-    let remote_node = match (params.remote_id, params.local_socket) {
-        (None, Some(local_socket)) => NodeAddr::new(params.local_id, local_socket),
-        (Some(remote_id), _) => NodeAddr::new(remote_id, params.remote_socket),
-        (None, None) => unreachable!(),
-    };
-    let identity = ServiceId::PeerBolt(remote_node);
+    let remote_id = params.remote_id.unwrap_or(params.local_id);
+    let identity = ServiceId::PeerBolt(remote_id);
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {

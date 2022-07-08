@@ -162,7 +162,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__info)
-            opts="-h -R -v --help --rpc --verbose <SUBJECT>"
+            opts="-h -R -v --bolt --bifrost --help --rpc --verbose <SUBJECT>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -350,7 +350,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__ping)
-            opts="-h -R -v --help --rpc --verbose <PEER>"
+            opts="-h -R -v --bolt --bifrost --help --rpc --verbose <PEER>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

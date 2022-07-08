@@ -14,7 +14,7 @@
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-use internet2::addr::NodeAddr;
+use internet2::addr::NodeId;
 use lnp::p2p::bolt::{ChannelId, LNP2P_BOLT_PORT};
 use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
@@ -45,11 +45,17 @@ impl Exec for Opts {
     fn exec(self, runtime: &mut Self::Client) -> Result<(), Self::Error> {
         println!("{}...", self.command.action_string());
         match self.command {
-            Command::Info { subject } => {
+            Command::Info { subject, bolt, bifrost } => {
                 if let Some(subj) = subject {
-                    if let Ok(node_addr) = NodeAddr::from_str(&subj) {
-                        runtime.request(ServiceId::PeerBolt(node_addr), RpcMsg::GetInfo)?;
+                    if let Ok(node_id) = NodeId::from_str(&subj) {
+                        let service_id = match (bolt, bifrost) {
+                            (true, false) => ServiceId::PeerBolt(node_id),
+                            (false, true) => ServiceId::PeerBifrost(node_id),
+                            _ => unreachable!(),
+                        };
+                        runtime.request(service_id, RpcMsg::GetInfo)?;
                     } else if let Ok(channel_id) = ChannelId::from_str(&subj) {
+                        // TODO: Support bifrost channels as above
                         runtime.request(ServiceId::Channel(channel_id), RpcMsg::GetInfo)?;
                     } else {
                         return Err(Error::Other(s!("Subject parameter must be either remote \
@@ -97,11 +103,13 @@ impl Exec for Opts {
                 runtime.report_progress()?;
             }
 
-            Command::Ping { peer } => {
-                // TODO: Change this to the use of LnpAddr
-                let node_addr = peer.node_addr(LNP2P_BOLT_PORT);
-
-                runtime.request(ServiceId::PeerBolt(node_addr), RpcMsg::PingPeer)?;
+            Command::Ping { peer, bolt, bifrost } => {
+                let service_id = match (bolt, bifrost) {
+                    (true, false) => ServiceId::PeerBolt(peer),
+                    (false, true) => ServiceId::PeerBifrost(peer),
+                    _ => unreachable!(),
+                };
+                runtime.request(service_id, RpcMsg::PingPeer)?;
             }
 
             Command::Open {

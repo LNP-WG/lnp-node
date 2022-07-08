@@ -13,7 +13,7 @@
 
 use amplify::{DumbDefault, Slice32};
 use bitcoin::hashes::Hash;
-use internet2::addr::{NodeAddr, NodeId};
+use internet2::addr::NodeId;
 use lnp::channel::bolt::{BoltExt, CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::bolt::TempChannelId;
 use lnp::Channel;
@@ -33,7 +33,7 @@ pub(super) struct ChannelState {
 
     /// Runtime-specific (but persistable) part of the channel state: remote peer which is a
     /// counterparty of this channel.
-    pub remote_peer: Option<NodeAddr>,
+    pub remote_id: Option<NodeId>,
 }
 
 impl ChannelState {
@@ -47,10 +47,10 @@ impl ChannelState {
             PeerParams::default(),
             LocalKeyset::dumb_default(), // we do not have keyset derived at this stage
         );
-        ChannelState { state_machine: Default::default(), channel, remote_peer: None }
+        ChannelState { state_machine: Default::default(), channel, remote_id: None }
     }
 
     pub fn remote_id(&self) -> NodeId {
-        self.remote_peer.expect("remote peer must be present at this stage").id
+        self.remote_id.expect("remote peer must be present at this stage")
     }
 }

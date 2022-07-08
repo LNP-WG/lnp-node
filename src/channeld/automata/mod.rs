@@ -274,10 +274,9 @@ impl Runtime {
     ) -> Result<ChannelStateMachine, Error> {
         let local_channel_reestablish =
             self.state.channel.compose_reestablish_channel(remote_channel_reestablish)?;
-        let remote_peer = source
-            .to_remote_peer()
-            .expect("channel reestablish BOLT message from non-remoter peer");
-        self.state.remote_peer = Some(remote_peer);
+        let remote_id =
+            source.to_remote_id().expect("channel reestablish BOLT message from non-remoter peer");
+        self.state.remote_id = Some(remote_id);
         self.send_p2p(endpoints, LnMsg::ChannelReestablish(local_channel_reestablish))?;
 
         // We swallow error since we do not want to fail the channel if we just can't add it to the

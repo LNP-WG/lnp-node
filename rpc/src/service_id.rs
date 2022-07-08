@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 use amplify::hex;
 use amplify::hex::ToHex;
-use internet2::addr::NodeAddr;
+use internet2::addr::NodeId;
 use lnp::p2p::bifrost::BifrostApp;
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb;
@@ -75,11 +75,11 @@ pub enum ServiceId {
 
     #[display("peerd<bolt, {0}>")]
     #[strict_encoding(value = 0x21)]
-    PeerBolt(NodeAddr), // TODO: Switch on just NodeId's
+    PeerBolt(NodeId), // TODO: Switch on just NodeId's
 
     #[display("peerd<bifrost, {0}>")]
     #[strict_encoding(value = 0x22)]
-    PeerBifrost(NodeAddr),
+    PeerBifrost(NodeId),
 
     #[display("channel<{0:#x}>")]
     #[from]
@@ -116,7 +116,7 @@ impl ServiceId {
         ServiceId::Client(rand::random())
     }
 
-    pub fn to_remote_peer(&self) -> Option<NodeAddr> {
+    pub fn to_remote_id(&self) -> Option<NodeId> {
         match self {
             ServiceId::PeerBolt(node_addr) => Some(node_addr.clone()),
             _ => None,

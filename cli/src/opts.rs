@@ -14,7 +14,7 @@
 use std::net::IpAddr;
 use std::str::FromStr;
 
-use internet2::addr::{PartialNodeAddr, ServiceAddr};
+use internet2::addr::{NodeId, PartialNodeAddr, ServiceAddr};
 use lightning_invoice::Invoice;
 use lnp::addr::LnpAddr;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
@@ -74,13 +74,28 @@ pub enum Command {
 
     /// Ping remote peer (must be already connected)
     Ping {
-        /// Address of the remote node, in
-        /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
-        peer: PartialNodeAddr,
+        /// Use BOLT lightning network protocol.
+        #[clap(long, conflicts_with = "bifrost")]
+        bolt: bool,
+
+        /// Use Bifrost lightning network protocol.
+        #[clap(long, required_unless_present = "bolt")]
+        bifrost: bool,
+
+        /// Public key (id) of the remote node
+        peer: NodeId,
     },
 
     /// General information about the running node
     Info {
+        /// Use BOLT lightning network protocol.
+        #[clap(long, conflicts_with = "bifrost")]
+        bolt: bool,
+
+        /// Use Bifrost lightning network protocol.
+        #[clap(long, required_unless_present = "bolt")]
+        bifrost: bool,
+
         /// Remote peer address or temporary/permanent/short channel id. If
         /// absent, returns information about the node itself
         subject: Option<String>,

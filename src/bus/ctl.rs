@@ -14,7 +14,7 @@
 use amplify::num::u24;
 use amplify::Slice32;
 use bitcoin::Txid;
-use internet2::addr::NodeAddr;
+use internet2::addr::{NodeAddr, NodeId};
 use internet2::presentation::sphinx::Hop;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion};
@@ -186,10 +186,10 @@ pub struct OpenChannelWith {
 
 /// Request configuring newly launched channeld instance
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
-#[display("{remote_peer}, {channel_req}, ...")]
+#[display("{remote_id}, {channel_req}, ...")]
 pub struct AcceptChannelFrom {
     /// Node to open a channel with
-    pub remote_peer: NodeAddr,
+    pub remote_id: NodeId,
 
     /// Client identifier to report about the progress
     pub report_to: Option<ServiceId>,

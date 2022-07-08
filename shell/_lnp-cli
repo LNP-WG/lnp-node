@@ -61,17 +61,21 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'(--bifrost)--bolt[Use BOLT lightning network protocol]' \
+'--bifrost[Use Bifrost lightning network protocol]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
-':peer -- Address of the remote node, in '\''<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>\[\:<port>\]'\'' format:' \
+':peer -- Public key (id) of the remote node:' \
 && ret=0
 ;;
 (info)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'(--bifrost)--bolt[Use BOLT lightning network protocol]' \
+'--bifrost[Use Bifrost lightning network protocol]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
