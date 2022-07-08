@@ -19,12 +19,13 @@ use std::time::{Duration, SystemTime};
 use amplify::{DumbDefault, Wrapper};
 use bitcoin::Txid;
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p;
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
-use lnp_rpc::{ConnectInfo, FailureCode};
+use lnp_rpc::FailureCode;
 use microservices::cli::LogStyle;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
@@ -303,27 +304,27 @@ impl Runtime {
                 self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
             }
 
-            RpcMsg::ConnectPeer(ConnectInfo { addr, protocol }) => {
+            RpcMsg::ConnectPeer(LnpAddr { node_addr, protocol }) => {
                 // Check if the peer is already connected
                 info!(
                     "{} to remote peer {} over {}",
                     "Connecting".announce(),
-                    addr.announcer(),
+                    node_addr.announcer(),
                     protocol
                 );
                 if (protocol == p2p::Protocol::Bolt
-                    && (self.spawning_peers.contains_key(&ServiceId::PeerBolt(addr))
-                        || self.bolt_connections.contains(&addr)))
+                    && (self.spawning_peers.contains_key(&ServiceId::PeerBolt(node_addr))
+                        || self.bolt_connections.contains(&node_addr)))
                     || (protocol == p2p::Protocol::Bifrost
-                        && (self.spawning_peers.contains_key(&ServiceId::PeerBifrost(addr))
-                            || self.bifrost_connections.contains(&addr)))
+                        && (self.spawning_peers.contains_key(&ServiceId::PeerBifrost(node_addr))
+                            || self.bifrost_connections.contains(&node_addr)))
                 {
-                    info!("Already connected to a peer {}", addr);
+                    info!("Already connected to a peer {}", node_addr);
                     self.send_rpc(endpoints, client_id, RpcMsg::success())?;
                     return Ok(());
                 }
                 // Connect otherwise
-                let peer_socket = PeerSocket::Connect(addr.clone());
+                let peer_socket = PeerSocket::Connect(node_addr.clone());
                 let node_key_path = self.node_key_path.clone();
                 let peerd = match protocol {
                     p2p::Protocol::Bolt => Daemon::PeerdBolt(peer_socket, node_key_path),
@@ -331,7 +332,8 @@ impl Runtime {
                 };
                 let resp = match self.launch_daemon(peerd, self.config.clone()) {
                     Ok(handle) => {
-                        self.spawning_peers.insert(ServiceId::PeerBolt(addr.into()), client_id);
+                        self.spawning_peers
+                            .insert(ServiceId::PeerBolt(node_addr.into()), client_id);
                         Ok(format!("Launched new instance of {}", handle))
                     }
                     Err(err) => {

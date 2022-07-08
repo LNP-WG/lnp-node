@@ -22,6 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use internet2::zeromq::ZmqSocketType;
 use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
+use lnp::p2p;
 use lnp::p2p::{bifrost, bolt};
 use lnp_rpc::{ClientId, RpcMsg};
 use microservices::cli::LogStyle;
@@ -33,7 +34,7 @@ use microservices::ZMQ_CONTEXT;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{Config, Endpoints, Error, P2pProtocol, Responder, Service};
+use crate::{Config, Endpoints, Error, Responder, Service};
 
 pub fn run(
     connection: PeerConnection,
@@ -71,7 +72,7 @@ pub fn run(
         )?,
     };
     match params.config.ext.protocol {
-        P2pProtocol::Bolt => {
+        p2p::Protocol::Bolt => {
             let listener = peer::Listener::with(
                 receiver,
                 bridge_handler,
@@ -79,7 +80,7 @@ pub fn run(
             );
             spawn(move || listener.run_or_panic("bolt-listener"));
         }
-        P2pProtocol::Bifrost => {
+        p2p::Protocol::Bifrost => {
             let listener = peer::Listener::with(
                 receiver,
                 bridge_handler,
@@ -218,7 +219,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             info!("{} with the remote peer", "Initializing connection".announce());
 
             match self.config.protocol {
-                P2pProtocol::Bolt => {
+                p2p::Protocol::Bolt => {
                     self.sender.send_message(bolt::Messages::Init(bolt::Init {
                         global_features: none!(),
                         local_features: none!(),
@@ -226,7 +227,7 @@ impl esb::Handler<ServiceBus> for Runtime {
                         unknown_tlvs: none!(),
                     }))?;
                 }
-                P2pProtocol::Bifrost => {
+                p2p::Protocol::Bifrost => {
                     self.sender.send_message(bifrost::Messages::Init(bifrost::Init {
                         protocols: empty!(),
                         assets: none!(),
@@ -539,13 +540,13 @@ impl Runtime {
         let pong_size = rng.gen_range(4, 32);
         self.messages_sent += 1;
         match self.config.protocol {
-            P2pProtocol::Bolt => {
+            p2p::Protocol::Bolt => {
                 self.sender.send_message(bolt::Messages::Ping(bolt::Ping {
                     ignored: noise.into(),
                     pong_size,
                 }))?;
             }
-            P2pProtocol::Bifrost => {
+            p2p::Protocol::Bifrost => {
                 self.sender.send_message(bifrost::Messages::Ping(bifrost::Ping {
                     ignored: noise.into(),
                     pong_size,
@@ -565,10 +566,10 @@ impl Runtime {
         }
         self.messages_sent += 1;
         match self.config.protocol {
-            P2pProtocol::Bolt => {
+            p2p::Protocol::Bolt => {
                 self.sender.send_message(bolt::Messages::Pong(noise.into()))?;
             }
-            P2pProtocol::Bifrost => {
+            p2p::Protocol::Bifrost => {
                 self.sender.send_message(bifrost::Messages::Pong(noise.into()))?;
             }
         }

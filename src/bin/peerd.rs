@@ -92,9 +92,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use internet2::session::noise::FramingProtocol;
+use lnp::p2p;
 use lnp_node::lnpd::read_node_key_file;
 use lnp_node::peerd::{self, Opts};
-use lnp_node::{Config, P2pProtocol};
+use lnp_node::Config;
 
 /*
 mod internal {
@@ -129,8 +130,8 @@ fn main() {
     let local_node = read_node_key_file(&key_file);
     let peer_socket = opts.peer_socket(local_node.node_id());
     let framing_protocol = match config.ext.protocol {
-        P2pProtocol::Bolt => FramingProtocol::Brontide,
-        P2pProtocol::Bifrost => FramingProtocol::Brontozaur,
+        p2p::Protocol::Bolt => FramingProtocol::Brontide,
+        p2p::Protocol::Bifrost => FramingProtocol::Brontozaur,
     };
 
     debug!("Starting runtime ...");

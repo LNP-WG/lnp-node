@@ -23,13 +23,14 @@ use bitcoin::secp256k1::{SecretKey, SECP256K1};
 use internet2::addr::LocalNode;
 use internet2::session::noise::FramingProtocol;
 use internet2::transport;
+use lnp::p2p;
 use lnp::p2p::bolt::ActiveChannelId;
 use microservices::cli::LogStyle;
 use microservices::peer::{supervisor, PeerSocket};
 use microservices::{DaemonHandle, Launcher, LauncherError};
 
 use crate::lnpd::runtime::Runtime;
-use crate::{channeld, peerd, routed, signd, watchd, Config, Error, P2pProtocol};
+use crate::{channeld, peerd, routed, signd, watchd, Config, Error};
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
     let mut file = fs::File::open(key_file).unwrap_or_else(|_| {
@@ -122,7 +123,7 @@ impl Launcher for Daemon {
             Daemon::PeerdBolt(socket, key_file) => {
                 let local_node = read_node_key_file(&key_file);
                 let threaded = config.threaded;
-                let config = Config::with(config, peerd::Config { protocol: P2pProtocol::Bolt });
+                let config = Config::with(config, peerd::Config { protocol: p2p::Protocol::Bolt });
                 supervisor::run(
                     config,
                     threaded,
@@ -135,7 +136,8 @@ impl Launcher for Daemon {
             Daemon::PeerdBifrost(socket, key_file) => {
                 let threaded = config.threaded;
                 let local_node = read_node_key_file(&key_file);
-                let config = Config::with(config, peerd::Config { protocol: P2pProtocol::Bifrost });
+                let config =
+                    Config::with(config, peerd::Config { protocol: p2p::Protocol::Bifrost });
                 supervisor::run(
                     config,
                     threaded,

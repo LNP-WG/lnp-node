@@ -16,6 +16,7 @@ use std::str::FromStr;
 
 use internet2::addr::{PartialNodeAddr, ServiceAddr};
 use lightning_invoice::Invoice;
+use lnp::addr::LnpAddr;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnp_rpc::LNP_NODE_RPC_ENDPOINT;
 
@@ -66,15 +67,9 @@ pub enum Command {
 
     /// Connect to the remote lightning network peer
     Connect {
-        #[clap(long, required_unless_present = "bifrost")]
-        bolt: bool,
-
-        #[clap(long, required_unless_present = "bolt")]
-        bifrost: bool,
-
         /// Address of the remote node, in
         /// '<public_key>@<ipv4>|<ipv6>|<onionv2>|<onionv3>[:<port>]' format
-        peer: PartialNodeAddr,
+        peer: LnpAddr,
     },
 
     /// Ping remote peer (must be already connected)

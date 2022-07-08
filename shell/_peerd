@@ -43,7 +43,7 @@ _peerd() {
 '--help[Print help information]' \
 '-V[Print version information]' \
 '--version[Print version information]' \
-'--bolt[Use BOLT lightning network protocol]' \
+'(--bifrost)--bolt[Use BOLT lightning network protocol]' \
 '--bifrost[Use Bifrost lightning network protocol]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \

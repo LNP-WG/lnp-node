@@ -11,13 +11,14 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use lnp::p2p;
+
 use crate::opts::Options;
 use crate::peerd::Opts;
-use crate::P2pProtocol;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug)]
 pub struct Config {
-    pub protocol: P2pProtocol,
+    pub protocol: p2p::Protocol,
 }
 
 impl Options for Opts {
@@ -25,14 +26,5 @@ impl Options for Opts {
 
     fn shared(&self) -> &crate::opts::Opts { &self.shared }
 
-    fn config(&self) -> Self::Conf {
-        let protocol = if self.bolt {
-            P2pProtocol::Bolt
-        } else if self.bifrost {
-            P2pProtocol::Bifrost
-        } else {
-            unreachable!()
-        };
-        Config { protocol }
-    }
+    fn config(&self) -> Self::Conf { Config { protocol: self.protocol() } }
 }

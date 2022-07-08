@@ -15,8 +15,10 @@ use std::net::{IpAddr, Ipv4Addr};
 
 use clap::{ArgGroup, ValueHint};
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use lnp::addr::LnpAddr;
+use lnp::p2p;
 use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
-use lnp::p2p::bolt::LNP2P_LEGACY_PORT;
+use lnp::p2p::bolt::LNP2P_BOLT_PORT;
 use microservices::peer::PeerSocket;
 use microservices::shell::shell_expand_dir;
 
@@ -60,7 +62,7 @@ pub struct Opts {
     /// IPv4, IPv6 or Onion address (v2 or v3); in the former case you will be also
     /// required to provide `--tor` argument.
     #[clap(short = 'C', long, group = "action")]
-    pub connect: Option<NodeAddr>,
+    pub connect: Option<LnpAddr>,
 
     /// Customize port used by lightning peer network.
     ///
@@ -70,11 +72,11 @@ pub struct Opts {
     pub port: Option<u16>,
 
     /// Use BOLT lightning network protocol.
-    #[clap(long, required_unless_present = "bifrost")]
+    #[clap(long, conflicts_with = "bifrost")]
     pub bolt: bool,
 
     /// Use Bifrost lightning network protocol.
-    #[clap(long)]
+    #[clap(long, required_unless_present_any = ["connect", "bolt"])]
     pub bifrost: bool,
 
     /// Node key configuration
@@ -105,17 +107,33 @@ pub struct KeyOpts {
 
 impl Opts {
     pub fn process(&mut self) {
+        if let Some(peer) = self.connect {
+            if self.bolt && peer.protocol == p2p::Protocol::Bifrost
+                || self.bifrost && peer.protocol == p2p::Protocol::Bolt
+            {
+                panic!("Provided connection address {} does not match P2P protocol flag", peer);
+            }
+        }
         self.shared.process();
         self.key_opts.process(&self.shared);
     }
 
-    pub fn port(&self) -> u16 {
+    pub fn protocol(&self) -> p2p::Protocol {
         if self.bolt {
-            LNP2P_LEGACY_PORT
+            p2p::Protocol::Bolt
         } else if self.bifrost {
-            LNP2P_BIFROST_PORT
+            p2p::Protocol::Bifrost
+        } else if let Some(peer) = self.connect {
+            peer.protocol
         } else {
             unreachable!()
+        }
+    }
+
+    pub fn port(&self) -> u16 {
+        match self.protocol() {
+            p2p::Protocol::Bifrost => LNP2P_BIFROST_PORT,
+            p2p::Protocol::Bolt => LNP2P_BOLT_PORT,
         }
     }
 }
@@ -129,7 +147,7 @@ impl KeyOpts {
 impl Opts {
     pub fn peer_socket(&self, node_id: NodeId) -> PeerSocket {
         if let Some(peer_addr) = self.connect {
-            PeerSocket::Connect(peer_addr)
+            PeerSocket::Connect(peer_addr.node_addr)
         } else if let Some(bind_addr) = self.listen {
             let addr = InetSocketAddr::socket(
                 bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),

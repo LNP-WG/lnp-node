@@ -15,10 +15,8 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 use internet2::addr::NodeAddr;
-use lnp::p2p;
-use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
-use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
-use lnp_rpc::{self, Client, ConnectInfo, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
+use lnp::p2p::bolt::{ChannelId, LNP2P_BOLT_PORT};
+use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
 use crate::{Command, Opts};
@@ -94,30 +92,14 @@ impl Exec for Opts {
                 runtime.report_progress()?;
             }
 
-            Command::Connect { peer, bolt: true, bifrost: false } => {
-                let addr = peer.node_addr(LNP2P_LEGACY_PORT);
-
-                runtime.request(
-                    ServiceId::LnpBroker,
-                    RpcMsg::ConnectPeer(ConnectInfo { addr, protocol: p2p::Protocol::Bolt }),
-                )?;
+            Command::Connect { peer } => {
+                runtime.request(ServiceId::LnpBroker, RpcMsg::ConnectPeer(peer))?;
                 runtime.report_progress()?;
             }
-
-            Command::Connect { peer, bolt: false, bifrost: true } => {
-                let addr = peer.node_addr(LNP2P_BIFROST_PORT);
-
-                runtime.request(
-                    ServiceId::LnpBroker,
-                    RpcMsg::ConnectPeer(ConnectInfo { addr, protocol: p2p::Protocol::Bifrost }),
-                )?;
-                runtime.report_progress()?;
-            }
-
-            Command::Connect { peer: _, bolt: _, bifrost: _ } => unreachable!(),
 
             Command::Ping { peer } => {
-                let node_addr = peer.node_addr(LNP2P_LEGACY_PORT);
+                // TODO: Change this to the use of LnpAddr
+                let node_addr = peer.node_addr(LNP2P_BOLT_PORT);
 
                 runtime.request(ServiceId::PeerBolt(node_addr), RpcMsg::PingPeer)?;
             }
@@ -136,7 +118,8 @@ impl Exec for Opts {
                 htlc_max_total_value,
                 channel_reserve,
             } => {
-                let node_addr = peer.node_addr(LNP2P_LEGACY_PORT);
+                // TODO: Change this to the use of LnpAddr
+                let node_addr = peer.node_addr(LNP2P_BOLT_PORT);
 
                 runtime.request(
                     ServiceId::LnpBroker,
