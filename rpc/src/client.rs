@@ -17,6 +17,7 @@ use std::time::Duration;
 use colored::Colorize;
 use internet2::addr::ServiceAddr;
 use internet2::ZmqSocketType;
+use lnp::addr::LnpAddr;
 use microservices::esb::{self, BusId};
 use microservices::util::OptionDetails;
 
@@ -130,6 +131,13 @@ impl Client {
             }
         }
         Ok(counter)
+    }
+}
+
+impl Client {
+    pub fn connect(&mut self, remote_peer: LnpAddr) -> Result<(), Error> {
+        self.request(ServiceId::LnpBroker, RpcMsg::ConnectPeer(remote_peer))?;
+        self.report_response()
     }
 }
 
