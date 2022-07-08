@@ -14,8 +14,8 @@
 use std::fmt::Debug;
 
 use internet2::zeromq::{self, ZmqSocketType};
-use lnp_rpc::{ClientId, RpcMsg};
-use microservices::esb;
+use lnp_rpc::RpcMsg;
+use microservices::esb::{self, ClientId};
 use microservices::node::TryService;
 
 use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};

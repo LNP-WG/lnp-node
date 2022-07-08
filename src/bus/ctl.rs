@@ -20,13 +20,14 @@ use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion};
 use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, PeerInfo};
+use microservices::esb::ClientId;
 use microservices::util::OptionDetails;
 use strict_encoding::{NetworkDecode, NetworkEncode};
 use wallet::hlc::HashLock;
 use wallet::psbt::Psbt;
 use wallet::scripts::PubkeyScript;
 
-use crate::rpc::{ClientId, ServiceId};
+use crate::rpc::ServiceId;
 
 /// RPC API requests over CTL message bus between LNP Node daemons and from/to clients.
 #[derive(Clone, Debug, Display, From)]

@@ -21,14 +21,14 @@ use lnp::channel::bolt;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, Messages as LnMsg};
 use lnp::Extension;
 use lnp_rpc::{ChannelInfo, RpcMsg};
-use microservices::esb::{self, Handler};
+use microservices::esb::{self, ClientId, Handler};
 use strict_encoding::{StrictDecode, StrictEncode};
 
 use super::storage::{self, Driver};
 use super::ChannelState;
 use crate::bus::{self, BusMsg, CtlMsg, ServiceBus};
 use crate::routed::PaymentError;
-use crate::rpc::{ClientId, ServiceId};
+use crate::rpc::ServiceId;
 use crate::{channeld, Config, Endpoints, Error, Responder, Service};
 
 pub fn run(config: Config, channel_id: ActiveChannelId) -> Result<(), Error> {

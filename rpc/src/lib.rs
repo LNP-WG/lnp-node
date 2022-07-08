@@ -41,6 +41,6 @@ mod service_id;
 pub use client::Client;
 pub use error::{Error, FailureCode};
 pub use messages::*;
-pub use service_id::{ClientId, ServiceId, ServiceName};
+pub use service_id::ServiceId;
 
 pub const LNP_NODE_RPC_ENDPOINT: &str = "0.0.0.0:62962";

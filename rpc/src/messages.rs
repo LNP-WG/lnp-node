@@ -27,6 +27,7 @@ use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
+use microservices::esb::ClientId;
 use microservices::rpc;
 use microservices::util::OptionDetails;
 #[cfg(feature = "serde")]
@@ -35,7 +36,7 @@ use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
 use crate::error::FailureCode;
-use crate::{ClientId, ServiceId};
+use crate::ServiceId;
 
 /// We need this wrapper type to be compatible with LNP Node having multiple message buses
 #[derive(Clone, Debug, Display, From, Api)]

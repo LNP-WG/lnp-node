@@ -18,10 +18,10 @@ use colored::Colorize;
 use internet2::addr::ServiceAddr;
 use internet2::ZmqSocketType;
 use lnp::addr::LnpAddr;
-use microservices::esb::{self, BusId};
+use microservices::esb::{self, BusId, ClientId};
 use microservices::util::OptionDetails;
 
-use crate::{BusMsg, ClientId, Error, RpcMsg, ServiceId};
+use crate::{BusMsg, Error, RpcMsg, ServiceId};
 
 // We have just a single service bus (RPC), so we can use any id
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Default, Display)]

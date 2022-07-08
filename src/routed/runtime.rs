@@ -21,8 +21,8 @@ use lnp::p2p::bolt::{Messages as LnMsg, PaymentOnion, PaymentRequest};
 use lnp::router::gossip::{GossipExt, UpdateMsg};
 use lnp::router::Router;
 use lnp::Extension;
-use lnp_rpc::{ClientId, PayInvoice, RpcMsg};
-use microservices::esb;
+use lnp_rpc::{PayInvoice, RpcMsg};
+use microservices::esb::{self, ClientId};
 use wallet::hlc::HashLock;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};

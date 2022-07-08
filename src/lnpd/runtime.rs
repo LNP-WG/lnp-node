@@ -27,7 +27,7 @@ use lnp::p2p::bolt::{
 };
 use lnp_rpc::FailureCode;
 use microservices::cli::LogStyle;
-use microservices::esb::{self, Handler};
+use microservices::esb::{self, ClientId, Handler};
 use microservices::peer::PeerSocket;
 use microservices::util::OptionDetails;
 use microservices::{DaemonHandle, LauncherError};
@@ -40,7 +40,7 @@ use crate::bus::{
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon};
 use crate::lnpd::funding::{self, FundingWallet};
-use crate::rpc::{ClientId, Failure, FundsInfo, NodeInfo, RpcMsg, ServiceId};
+use crate::rpc::{Failure, FundsInfo, NodeInfo, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
