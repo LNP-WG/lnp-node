@@ -11,7 +11,8 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use lnp_rpc::{Failure, FailureCode, OptionDetails, RpcMsg};
+use lnp_rpc::{Failure, FailureCode, RpcMsg};
+use microservices::util::OptionDetails;
 use microservices::LauncherError;
 
 use crate::lnpd::Daemon;

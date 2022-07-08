@@ -28,6 +28,7 @@ use lnp::p2p;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
 use lnpbp::chain::AssetId;
 use microservices::rpc;
+use microservices::util::OptionDetails;
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
@@ -392,33 +393,6 @@ impl Failure {
     pub fn into_microservice_failure(self) -> rpc::Failure<FailureCode> {
         rpc::Failure { code: self.code.into(), info: self.info }
     }
-}
-
-#[derive(Wrapper, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, From, Default)]
-#[derive(NetworkEncode, NetworkDecode)]
-pub struct OptionDetails(pub Option<String>);
-
-impl Display for OptionDetails {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self.as_inner() {
-            None => Ok(()),
-            Some(msg) => write!(f, "\"{}\"", msg),
-        }
-    }
-}
-
-impl OptionDetails {
-    pub fn with(s: impl ToString) -> Self { Self(Some(s.to_string())) }
-
-    pub fn new() -> Self { Self(None) }
-}
-
-impl From<String> for OptionDetails {
-    fn from(s: String) -> Self { OptionDetails(Some(s)) }
-}
-
-impl From<&str> for OptionDetails {
-    fn from(s: &str) -> Self { OptionDetails(Some(s.to_string())) }
 }
 
 impl From<&str> for RpcMsg {

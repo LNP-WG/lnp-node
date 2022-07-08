@@ -25,13 +25,14 @@ use lnp::channel::{FundingError, PsbtLnpFunding};
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use lnp_rpc::FailureCode;
 use microservices::esb::Handler;
+use microservices::util::OptionDetails;
 use microservices::{esb, LauncherError};
 
 use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding, Daemon};
-use crate::rpc::{ClientId, CreateChannel, Failure, OptionDetails, RpcMsg, ServiceId};
+use crate::rpc::{ClientId, CreateChannel, Failure, RpcMsg, ServiceId};
 use crate::{Endpoints, Responder};
 
 /// Errors for channel launching workflow
