@@ -73,7 +73,7 @@ pub enum RpcMsg {
     // Node connectivity API
     // ---------------------
     #[display("connect({0})")]
-    ConnectPeer(ConnectReq),
+    ConnectPeer(ConnectInfo),
 
     #[display("ping_peer()")]
     PingPeer,
@@ -137,7 +137,7 @@ impl RpcMsg {
 /// Request for connecting remote peer
 #[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
 #[display("{addr}, {protocol}")]
-pub struct ConnectReq {
+pub struct ConnectInfo {
     /// Remote peer address for connecting to.
     pub addr: NodeAddr,
     /// Protocol used for connection.

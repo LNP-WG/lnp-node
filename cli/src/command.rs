@@ -18,7 +18,7 @@ use internet2::addr::NodeAddr;
 use lnp::p2p;
 use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
 use lnp::p2p::bolt::{ChannelId, LNP2P_LEGACY_PORT};
-use lnp_rpc::{self, Client, ConnectReq, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
+use lnp_rpc::{self, Client, ConnectInfo, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
 use crate::{Command, Opts};
@@ -99,7 +99,7 @@ impl Exec for Opts {
 
                 runtime.request(
                     ServiceId::LnpBroker,
-                    RpcMsg::ConnectPeer(ConnectReq { addr, protocol: p2p::Protocol::Bolt }),
+                    RpcMsg::ConnectPeer(ConnectInfo { addr, protocol: p2p::Protocol::Bolt }),
                 )?;
                 runtime.report_progress()?;
             }
@@ -109,7 +109,7 @@ impl Exec for Opts {
 
                 runtime.request(
                     ServiceId::LnpBroker,
-                    RpcMsg::ConnectPeer(ConnectReq { addr, protocol: p2p::Protocol::Bifrost }),
+                    RpcMsg::ConnectPeer(ConnectInfo { addr, protocol: p2p::Protocol::Bifrost }),
                 )?;
                 runtime.report_progress()?;
             }

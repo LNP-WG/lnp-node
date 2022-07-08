@@ -24,7 +24,7 @@ use lnp::p2p;
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
-use lnp_rpc::{ConnectReq, FailureCode};
+use lnp_rpc::{ConnectInfo, FailureCode};
 use microservices::cli::LogStyle;
 use microservices::esb::{self, Handler};
 use microservices::peer::PeerSocket;
@@ -303,7 +303,7 @@ impl Runtime {
                 self.send_rpc(endpoints, client_id, resp.into_success_or_failure())?;
             }
 
-            RpcMsg::ConnectPeer(ConnectReq { addr, protocol }) => {
+            RpcMsg::ConnectPeer(ConnectInfo { addr, protocol }) => {
                 // Check if the peer is already connected
                 info!(
                     "{} to remote peer {} over {}",
