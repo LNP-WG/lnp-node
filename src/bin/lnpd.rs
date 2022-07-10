@@ -80,7 +80,9 @@ fn main() -> Result<(), Error> {
             list.push(ListenAddr::bolt(ip, port));
         }
         if list.is_empty() {
-            panic!("either --bolt or --bifrost option must be given with the empty --listen flag");
+            panic!(
+                "either --bolt or --bifrost option must be given with the empty --listen-all flag"
+            );
         }
         list
     });
