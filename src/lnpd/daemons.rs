@@ -122,9 +122,11 @@ impl Launcher for Daemon {
                 let port = node_addr.addr.port().ok_or(transport::Error::TorNotSupportedYet)?;
                 cmd.args(["--listen", &ip.to_string(), "--port", &port.to_string()]);
             }
-            Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _)
-            | Daemon::PeerdBifrost(PeerSocket::Connect(node_addr), _) => {
-                cmd.args(["--connect", &node_addr.to_string()]);
+            Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
+                cmd.args(["--connect", &format!("bolt://{}", node_addr)]);
+            }
+            Daemon::PeerdBifrost(PeerSocket::Connect(node_addr), _) => {
+                cmd.args(["--connect", &format!("bifrost://{}", node_addr)]);
             }
             Daemon::Channeld(channel_id, ..) => {
                 cmd.args(&[channel_id.as_slice32().to_hex()]);
