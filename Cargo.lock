@@ -1002,9 +1002,9 @@ dependencies = [
 
 [[package]]
 name = "inet2_derive"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb874254f14203128ee792ba57ee6c1d5bdc3965f835751e9414b0608ab8a85d"
+checksum = "3c4dcfebf43283584cac748eadbbd3a5fab257d7e9a8fab4cf6bd7fcc01f0d30"
 dependencies = [
  "amplify",
  "proc-macro2",
@@ -1182,7 +1182,7 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "lnp-cli"
-version = "0.8.0-beta.1"
+version = "0.8.0-rc.1"
 dependencies = [
  "amplify",
  "clap",
@@ -1218,9 +1218,9 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.8.0-beta.4"
+version = "0.8.0-beta.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf984190542b59e5bc1a63982db92ba6ef7369d72cf8f639765b9e1e76a83770"
+checksum = "ddd42c74043d3b457331cbc6d1cc98f17d25da8a9ef1961ffa439416426b2940"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_node"
-version = "0.8.0-beta.1"
+version = "0.8.0-rc.1"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1274,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_rpc"
-version = "0.8.0-beta.1"
+version = "0.8.0-rc.1"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1373,9 +1373,9 @@ dependencies = [
 
 [[package]]
 name = "microservices"
-version = "0.8.4"
+version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30cd2034338e982384e6375b6d44078c6112fdfabf22cc18a419d1b5043958b3"
+checksum = "2ef1223a0fa1b7ffb5be6b0d08c28e6bc41e98b261926b7a3d2cdb5b1f24247e"
 dependencies = [
  "amplify",
  "colored",

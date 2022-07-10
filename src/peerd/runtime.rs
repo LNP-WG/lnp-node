@@ -459,6 +459,10 @@ impl Runtime {
         self.messages_received += 1;
 
         match msg {
+            bifrost::Messages::Ping(bifrost::Ping { pong_size, .. }) => {
+                self.pong(pong_size)?;
+            }
+
             bifrost::Messages::Message(bifrost::Msg { app, .. }) => {
                 endpoints.send_to(
                     ServiceBus::Msg,
