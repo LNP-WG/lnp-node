@@ -55,8 +55,12 @@ pub struct Opts {
 pub enum Command {
     /// Bind to a socket and start listening for incoming LN peer connections
     Listen {
-        /// Use Bifrost protocol for listening for the incoming connections.
-        #[clap(long)]
+        /// Use BOLT lightning network protocol.
+        #[clap(long, conflicts_with = "bifrost")]
+        bolt: bool,
+
+        /// Use Bifrost lightning network protocol.
+        #[clap(long, required_unless_present = "bolt")]
         bifrost: bool,
 
         /// IPv4 or IPv6 address to bind to

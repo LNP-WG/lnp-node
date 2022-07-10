@@ -22,8 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use internet2::addr::{InetSocketAddr, NodeId};
 use internet2::zeromq::ZmqSocketType;
 use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
-use lnp::p2p;
-use lnp::p2p::{bifrost, bolt};
+use lnp::p2p::{self, bifrost, bolt};
 use lnp_rpc::RpcMsg;
 use microservices::cli::LogStyle;
 use microservices::esb::{self, ClientId, Handler};
@@ -50,7 +49,10 @@ pub fn run(
     rx.bind("inproc://bridge")?;
 
     let remote_id = params.remote_id.unwrap_or(params.local_id);
-    let identity = ServiceId::PeerBolt(remote_id);
+    let identity = match params.config.ext.protocol {
+        p2p::Protocol::Bolt => ServiceId::PeerBolt(remote_id),
+        p2p::Protocol::Bifrost => ServiceId::PeerBifrost(remote_id),
+    };
 
     debug!("Starting thread listening for messages from the remote peer");
     let bridge_handler = ListenerRuntime {
