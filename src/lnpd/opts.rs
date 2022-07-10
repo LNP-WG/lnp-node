@@ -11,9 +11,7 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::net::IpAddr;
-
-use clap::ValueHint;
+use lnp_rpc::ListenAddr;
 
 use crate::opts::Options;
 use crate::peerd::KeyOpts;
@@ -33,7 +31,7 @@ pub struct Opts {
     #[clap(flatten)]
     pub shared: crate::opts::Opts,
 
-    /// Start daemon in listening mode binding the provided local address.
+    /// Start daemon in listening mode binding the provided local address(es).
     ///
     /// Binds to the specified interface and listens for incoming connections, spawning
     /// a new thread / forking child process for each new incoming client connecting the
@@ -41,24 +39,17 @@ pub struct Opts {
     /// process determined by the presence of `--threaded-daemons` flag.
     ///
     /// If the argument is provided in form of flag, without value, uses `0.0.0.0` as
-    /// the bind address.
-    #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
-    pub listen: Option<Option<IpAddr>>,
+    /// the bind address and requires `--bifrost` and/or `--bolt` arguments.
+    #[clap(short = 'L', long, group = "action")]
+    pub listen: Option<Vec<ListenAddr>>,
 
     /// Use BOLT protocol for listening for the incoming connections.
-    #[clap(long, conflicts_with = "bifrost", requires = "listen")]
+    #[clap(long, requires = "listen")]
     pub bolt: bool,
 
     /// Use Bifrost protocol for listening for the incoming connections.
     #[clap(long, requires = "listen")]
     pub bifrost: bool,
-
-    /// Customize port used by BOLT or Bifrost lightning peer network.
-    ///
-    /// Optional argument specifying local or remote TCP port to use with the address
-    /// given to `--listen` argument.
-    #[clap(short, long)]
-    pub port: Option<u16>,
 
     /// Optional command to execute and exit
     #[clap(subcommand)]

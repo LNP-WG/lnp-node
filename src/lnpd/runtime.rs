@@ -43,13 +43,14 @@ use crate::lnpd::funding::{self, FundingWallet};
 use crate::rpc::{Failure, FundsInfo, NodeInfo, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
-pub fn run(config: Config, key_file: PathBuf, listen: Option<ListenAddr>) -> Result<(), Error> {
+pub fn run<'a>(
+    config: Config,
+    key_file: PathBuf,
+    listen: impl IntoIterator<Item = &'a ListenAddr>,
+) -> Result<(), Error> {
     let node_id = read_node_key_file(&key_file).node_id();
 
-    let mut listens = HashSet::with_capacity(1);
-    if let Some(addr) = listen {
-        listens.insert(addr);
-    }
+    let listens = listen.into_iter().copied().collect();
 
     let runtime = Runtime {
         config: config.clone(),

@@ -66,12 +66,19 @@ fn main() -> Result<(), Error> {
      */
 
     let key_file = PathBuf::from(opts.key_opts.key_file);
-    let listen_addr = opts.listen.map(|maybe_ip: Option<IpAddr>| {
-        let ip = maybe_ip.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
-        match opts.bifrost {
-            true => ListenAddr::bifrost(ip, opts.port),
-            false => ListenAddr::bolt(ip, opts.port),
+    let listen = opts.listen.unwrap_or_else(|| {
+        let ip = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
+        let mut list = Vec::with_capacity(2);
+        if opts.bifrost {
+            list.push(ListenAddr::bifrost(ip, None));
         }
+        if opts.bolt {
+            list.push(ListenAddr::bolt(ip, None));
+        }
+        if list.is_empty() {
+            panic!("either --bolt or --bifrost option must be given with the empty --listen flag")
+        }
+        list
     });
 
     if let Some(command) = opts.command {
@@ -81,7 +88,7 @@ fn main() -> Result<(), Error> {
     }
 
     debug!("Starting runtime ...");
-    lnpd::run(config, key_file, listen_addr).expect("running lnpd runtime");
+    lnpd::run(config, key_file, &listen).expect("running lnpd runtime");
 
     unreachable!()
 }
