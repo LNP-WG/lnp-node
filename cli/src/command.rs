@@ -11,12 +11,11 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::net::SocketAddr;
 use std::str::FromStr;
 
 use internet2::addr::NodeId;
 use lnp::p2p::bolt::{ChannelId, LNP2P_BOLT_PORT};
-use lnp_rpc::{self, Client, CreateChannel, Error, PayInvoice, RpcMsg, ServiceId};
+use lnp_rpc::{self, Client, CreateChannel, Error, ListenAddr, PayInvoice, RpcMsg, ServiceId};
 use microservices::shell::Exec;
 
 use crate::{Command, Opts};
@@ -92,9 +91,12 @@ impl Exec for Opts {
                 runtime.report_response()?;
             }
 
-            Command::Listen { ip_addr, port } => {
-                let socket = SocketAddr::new(ip_addr, port);
-                runtime.request(ServiceId::LnpBroker, RpcMsg::Listen(socket))?;
+            Command::Listen { ip_addr, port, bifrost } => {
+                let listen_addr = match bifrost {
+                    true => ListenAddr::bifrost(ip_addr, port),
+                    false => ListenAddr::bolt(ip_addr, port),
+                };
+                runtime.request(ServiceId::LnpBroker, RpcMsg::Listen(listen_addr))?;
                 runtime.report_progress()?;
             }
 

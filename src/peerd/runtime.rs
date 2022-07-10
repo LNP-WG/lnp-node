@@ -62,6 +62,7 @@ pub fn run(
                     carrier: zeromq::Carrier::Socket(tx),
                     router: None,
                     queued: true,
+                    topic: None,
                 }
             },
             BridgeHandler,

@@ -51,18 +51,21 @@ pub struct Opts {
 }
 
 /// Command-line commands:
-#[derive(Subcommand, Clone, PartialEq, Eq, Debug, Display)]
+#[derive(Subcommand, Clone, PartialEq, Eq, Debug)]
 pub enum Command {
     /// Bind to a socket and start listening for incoming LN peer connections
-    #[display("listen<{ip_addr}:{port}>")]
     Listen {
+        /// Use Bifrost protocol for listening for the incoming connections.
+        #[clap(long)]
+        bifrost: bool,
+
         /// IPv4 or IPv6 address to bind to
         #[clap(short, long = "ip", default_value = "0.0.0.0")]
         ip_addr: IpAddr,
 
         /// Port to use; defaults to the native LN port.
-        #[clap(short, long, default_value = "9735")]
-        port: u16,
+        #[clap(short, long)]
+        port: Option<u16>,
     },
 
     /// Connect to the remote lightning network peer

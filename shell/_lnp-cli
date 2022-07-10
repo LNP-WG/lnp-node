@@ -40,6 +40,7 @@ _arguments "${_arguments_options[@]}" \
 '--port=[Port to use; defaults to the native LN port]:PORT: ' \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--bifrost[Use Bifrost protocol for listening for the incoming connections]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \

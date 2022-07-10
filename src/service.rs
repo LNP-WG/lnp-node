@@ -94,6 +94,7 @@ where
             carrier: zeromq::Carrier::Socket(socket),
             router: None,
             queued: true,
+            topic: None,
         })
     }
 

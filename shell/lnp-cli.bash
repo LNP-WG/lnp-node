@@ -206,7 +206,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__listen)
-            opts="-i -p -h -R -v --ip --port --help --rpc --verbose"
+            opts="-i -p -h -R -v --bifrost --ip --port --help --rpc --verbose"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

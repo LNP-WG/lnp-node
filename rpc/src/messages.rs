@@ -15,7 +15,6 @@ use std::collections::{BTreeMap, HashSet};
 use std::fmt::{self, Debug, Display, Formatter};
 use std::io;
 use std::iter::FromIterator;
-use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
 
@@ -36,7 +35,7 @@ use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::address::AddressCompat;
 
 use crate::error::FailureCode;
-use crate::ServiceId;
+use crate::{ListenAddr, ServiceId};
 
 /// We need this wrapper type to be compatible with LNP Node having multiple message buses
 #[derive(Clone, Debug, Display, From, Api)]
@@ -69,7 +68,7 @@ pub enum RpcMsg {
     ListFunds,
 
     #[display("listen({0})")]
-    Listen(SocketAddr),
+    Listen(ListenAddr),
 
     // Node connectivity API
     // ---------------------
@@ -266,7 +265,8 @@ pub struct Send {
 #[display(NodeInfo::to_yaml_string)]
 pub struct NodeInfo {
     pub node_id: NodeId,
-    pub listens: Vec<InetSocketAddr>,
+    #[serde_as(as = "Vec<DisplayFromStr>")]
+    pub listens: Vec<ListenAddr>,
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: u64,

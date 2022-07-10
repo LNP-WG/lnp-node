@@ -29,7 +29,7 @@
 extern crate log;
 
 use std::io::Write;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 
 use bitcoin::XpubIdentifier;
@@ -37,6 +37,7 @@ use clap::Parser;
 use internet2::addr::LocalNode;
 use lnp_node::lnpd::{self, read_node_key_file, Command, Opts};
 use lnp_node::{Config, Error};
+use lnp_rpc::ListenAddr;
 use microservices::cli::LogStyle;
 use strict_encoding::{StrictDecode, StrictEncode};
 use wallet::hd::DerivationAccount;
@@ -65,10 +66,12 @@ fn main() -> Result<(), Error> {
      */
 
     let key_file = PathBuf::from(opts.key_opts.key_file);
-    let bind_port = opts.port;
-    let bind_socket = opts.listen.map(|maybe_ip: Option<IpAddr>| {
+    let listen_addr = opts.listen.map(|maybe_ip: Option<IpAddr>| {
         let ip = maybe_ip.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
-        SocketAddr::new(ip, bind_port)
+        match opts.bifrost {
+            true => ListenAddr::bifrost(ip, opts.port),
+            false => ListenAddr::bolt(ip, opts.port),
+        }
     });
 
     if let Some(command) = opts.command {
@@ -78,7 +81,7 @@ fn main() -> Result<(), Error> {
     }
 
     debug!("Starting runtime ...");
-    lnpd::run(config, key_file, bind_socket).expect("running lnpd runtime");
+    lnpd::run(config, key_file, listen_addr).expect("running lnpd runtime");
 
     unreachable!()
 }

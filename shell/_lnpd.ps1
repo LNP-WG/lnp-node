@@ -41,8 +41,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             [CompletionResult]::new('--electrum-port', 'electrum-port', [CompletionResultType]::ParameterName, 'Customize Electrum server port number. By default the wallet will use port matching the selected network')
             [CompletionResult]::new('-L', 'L', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address')
             [CompletionResult]::new('--listen', 'listen', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address')
-            [CompletionResult]::new('-p', 'p', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
-            [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'Customize port used by lightning peer network')
+            [CompletionResult]::new('-p', 'p', [CompletionResultType]::ParameterName, 'Customize port used by BOLT or Bifrost lightning peer network')
+            [CompletionResult]::new('--port', 'port', [CompletionResultType]::ParameterName, 'Customize port used by BOLT or Bifrost lightning peer network')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Print version information')
@@ -51,6 +51,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('-t', 't', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
             [CompletionResult]::new('--threaded', 'threaded', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
+            [CompletionResult]::new('--bifrost', 'bifrost', [CompletionResultType]::ParameterName, 'Use Bifrost protocol for listening for the incoming connections')
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize data directory')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break

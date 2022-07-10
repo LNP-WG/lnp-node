@@ -35,11 +35,13 @@ compile_error!("either 'bolt' or 'bifrost' feature must be used");
 
 mod client;
 mod error;
+mod listen_addr;
 mod messages;
 mod service_id;
 
 pub use client::Client;
 pub use error::{Error, FailureCode};
+pub use listen_addr::ListenAddr;
 pub use messages::*;
 pub use service_id::ServiceId;
 

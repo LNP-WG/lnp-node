@@ -45,13 +45,16 @@ pub struct Opts {
     #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
     pub listen: Option<Option<IpAddr>>,
 
-    /// Customize port used by lightning peer network.
+    /// Use Bifrost protocol for listening for the incoming connections.
+    #[clap(long, requires = "listen")]
+    pub bifrost: bool,
+
+    /// Customize port used by BOLT or Bifrost lightning peer network.
     ///
     /// Optional argument specifying local or remote TCP port to use with the address
     /// given to `--listen` argument.
-    #[clap(short, long, default_value = "9735")]
-    // TODO: Separate bifrost and bolt ports
-    pub port: u16,
+    #[clap(short, long)]
+    pub port: Option<u16>,
 
     /// Optional command to execute and exit
     #[clap(subcommand)]

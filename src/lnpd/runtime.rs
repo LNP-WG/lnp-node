@@ -12,20 +12,20 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use amplify::{DumbDefault, Wrapper};
 use bitcoin::Txid;
-use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use internet2::addr::{NodeAddr, NodeId};
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p;
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
-use lnp_rpc::FailureCode;
+use lnp::p2p::Protocol;
+use lnp_rpc::{FailureCode, ListenAddr};
 use microservices::cli::LogStyle;
 use microservices::esb::{self, ClientId, Handler};
 use microservices::peer::PeerSocket;
@@ -43,12 +43,12 @@ use crate::lnpd::funding::{self, FundingWallet};
 use crate::rpc::{Failure, FundsInfo, NodeInfo, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
-pub fn run(config: Config, key_file: PathBuf, listen: Option<SocketAddr>) -> Result<(), Error> {
+pub fn run(config: Config, key_file: PathBuf, listen: Option<ListenAddr>) -> Result<(), Error> {
     let node_id = read_node_key_file(&key_file).node_id();
 
     let mut listens = HashSet::with_capacity(1);
     if let Some(addr) = listen {
-        listens.insert(addr.into());
+        listens.insert(addr);
     }
 
     let runtime = Runtime {
@@ -93,7 +93,7 @@ pub struct Runtime {
     pub(super) config: Config,
     node_key_path: PathBuf,
     node_id: NodeId,
-    listens: HashSet<InetSocketAddr>,
+    listens: HashSet<ListenAddr>,
     started: SystemTime,
     handles: Vec<DaemonHandle<Daemon>>,
     pub(super) funding_wallet: FundingWallet,
@@ -123,8 +123,11 @@ impl esb::Handler<ServiceBus> for Runtime {
         self.launch_daemon(Daemon::Routed, self.config.clone())?;
         info!("Starting chain watch daemon...");
         self.launch_daemon(Daemon::Watchd, self.config.clone())?;
-        for addr in self.listens.clone() {
-            self.listen(NodeAddr::new(self.node_id, addr))?;
+        for listen_addr in self.listens.clone() {
+            self.listen(
+                NodeAddr::new(self.node_id, listen_addr.socket_addr),
+                listen_addr.protocol,
+            )?;
         }
         Ok(())
     }
@@ -284,15 +287,16 @@ impl Runtime {
                 warn!("{}", failure.info.err());
                 self.send_rpc(endpoints, client_id, RpcMsg::Failure(failure))?;
             }
-            RpcMsg::Listen(addr) => {
-                let addr_str = addr.addr();
-                self.listens.insert(addr.into());
+            RpcMsg::Listen(listen_addr) => {
+                let addr_str = listen_addr.addr();
+                self.listens.insert(listen_addr.into());
                 info!(
                     "{} for incoming LN peer connections on {}",
                     "Starting listener".announce(),
                     addr_str
                 );
-                let resp = self.listen(NodeAddr::new(self.node_id, addr));
+                let node_addr = NodeAddr::new(self.node_id, listen_addr.socket_addr);
+                let resp = self.listen(node_addr, listen_addr.protocol);
                 match resp {
                     Ok(_) => info!(
                         "Connection daemon is {} for incoming LN peer connections on {}",
@@ -568,12 +572,19 @@ impl Runtime {
         }
     }
 
-    fn listen(&mut self, addr: NodeAddr) -> Result<String, LauncherError<Daemon>> {
+    fn listen(
+        &mut self,
+        addr: NodeAddr,
+        protocol: p2p::Protocol,
+    ) -> Result<String, LauncherError<Daemon>> {
         info!("Starting peer connection listening daemon on {}...", addr);
-        let handle = self.launch_daemon(
-            Daemon::PeerdBolt(PeerSocket::Listen(addr), self.node_key_path.clone()),
-            self.config.clone(),
-        )?;
+        let socket = PeerSocket::Listen(addr);
+        let node_key_path = self.node_key_path.clone();
+        let daemon = match protocol {
+            Protocol::Bolt => Daemon::PeerdBolt(socket, node_key_path),
+            Protocol::Bifrost => Daemon::PeerdBifrost(socket, node_key_path),
+        };
+        let handle = self.launch_daemon(daemon, self.config.clone())?;
         Ok(format!("Launched new instance of {}", handle))
     }
 
