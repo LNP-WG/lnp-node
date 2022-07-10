@@ -35,6 +35,8 @@ _lnpd() {
 '--electrum-port=[Customize Electrum server port number. By default the wallet will use port matching the selected network]:ELECTRUM_PORT: ' \
 '*-L+[Start daemon in listening mode binding the provided local address(es)]:LISTEN: ' \
 '*--listen=[Start daemon in listening mode binding the provided local address(es)]:LISTEN: ' \
+'(-L --listen)--bolt=[Use BOLT protocol for listening for the incoming connections. Can optionally specify a custom port number]:BOLT: ' \
+'(-L --listen)--bifrost=[Use Bifrost protocol for listening for the incoming connections. Can optionally specify a custom port number]:BIFROST: ' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '-V[Print version information]' \
@@ -43,8 +45,7 @@ _lnpd() {
 '*--verbose[Set verbosity level]' \
 '-t[Spawn daemons as threads and not processes]' \
 '--threaded[Spawn daemons as threads and not processes]' \
-'--bolt[Use BOLT protocol for listening for the incoming connections]' \
-'--bifrost[Use Bifrost protocol for listening for the incoming connections]' \
+'(-L --listen)--listen-all[If the argument is provided, the node binds to all network addresses and requires `--bifrost` and/or `--bolt` arguments]' \
 ":: :_lnpd_commands" \
 "*::: :->lnpd" \
 && ret=0

@@ -41,6 +41,8 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             [CompletionResult]::new('--electrum-port', 'electrum-port', [CompletionResultType]::ParameterName, 'Customize Electrum server port number. By default the wallet will use port matching the selected network')
             [CompletionResult]::new('-L', 'L', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address(es)')
             [CompletionResult]::new('--listen', 'listen', [CompletionResultType]::ParameterName, 'Start daemon in listening mode binding the provided local address(es)')
+            [CompletionResult]::new('--bolt', 'bolt', [CompletionResultType]::ParameterName, 'Use BOLT protocol for listening for the incoming connections. Can optionally specify a custom port number')
+            [CompletionResult]::new('--bifrost', 'bifrost', [CompletionResultType]::ParameterName, 'Use Bifrost protocol for listening for the incoming connections. Can optionally specify a custom port number')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help information')
             [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Print version information')
@@ -49,8 +51,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('-t', 't', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
             [CompletionResult]::new('--threaded', 'threaded', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
-            [CompletionResult]::new('--bolt', 'bolt', [CompletionResultType]::ParameterName, 'Use BOLT protocol for listening for the incoming connections')
-            [CompletionResult]::new('--bifrost', 'bifrost', [CompletionResultType]::ParameterName, 'Use Bifrost protocol for listening for the incoming connections')
+            [CompletionResult]::new('--listen-all', 'listen-all', [CompletionResultType]::ParameterName, 'If the argument is provided, the node binds to all network addresses and requires `--bifrost` and/or `--bolt` arguments')
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize data directory')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break

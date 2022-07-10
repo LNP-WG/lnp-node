@@ -36,20 +36,24 @@ pub struct Opts {
     /// Binds to the specified interface and listens for incoming connections, spawning
     /// a new thread / forking child process for each new incoming client connecting the
     /// opened socket. Whether the child is spawned as a thread or forked as a child
-    /// process determined by the presence of `--threaded-daemons` flag.
-    ///
-    /// If the argument is provided in form of flag, without value, uses `0.0.0.0` as
-    /// the bind address and requires `--bifrost` and/or `--bolt` arguments.
-    #[clap(short = 'L', long, group = "action")]
+    /// process determined by the presence of `--threaded` flag.
+    #[clap(short = 'L', long)]
     pub listen: Option<Vec<ListenAddr>>,
 
-    /// Use BOLT protocol for listening for the incoming connections.
-    #[clap(long, requires = "listen")]
-    pub bolt: bool,
+    /// If the argument is provided, the node binds to all network addresses and requires
+    /// `--bifrost` and/or `--bolt` arguments.
+    #[clap(long, conflicts_with = "listen")]
+    pub listen_all: bool,
 
-    /// Use Bifrost protocol for listening for the incoming connections.
-    #[clap(long, requires = "listen")]
-    pub bifrost: bool,
+    /// Use BOLT protocol for listening for the incoming connections. Can optionally specify a
+    /// custom port number.
+    #[clap(long, conflicts_with = "listen", requires = "listen-all")]
+    pub bolt: Option<Option<u16>>,
+
+    /// Use Bifrost protocol for listening for the incoming connections. Can optionally specify a
+    /// custom port number.
+    #[clap(long, conflicts_with = "listen", requires = "listen-all")]
+    pub bifrost: Option<Option<u16>>,
 
     /// Optional command to execute and exit
     #[clap(subcommand)]

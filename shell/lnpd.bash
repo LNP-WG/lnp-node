@@ -25,7 +25,7 @@ _lnpd() {
 
     case "${cmd}" in
         lnpd)
-            opts="-h -V -k -v -d -c -T -M -X -R -n -t -L --help --version --key-file --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded --listen --bolt --bifrost init help"
+            opts="-h -V -k -v -d -c -T -M -X -R -n -t -L --help --version --key-file --verbose --data-dir --config --tor-proxy --msg --ctl --rpc --chain --electrum-server --electrum-port --threaded --listen --listen-all --bolt --bifrost init help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -108,6 +108,14 @@ _lnpd() {
                     return 0
                     ;;
                 -L)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --bolt)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --bifrost)
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;

@@ -32,6 +32,7 @@ use std::io::Write;
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 
+use amplify::empty;
 use bitcoin::XpubIdentifier;
 use clap::Parser;
 use internet2::addr::LocalNode;
@@ -67,16 +68,19 @@ fn main() -> Result<(), Error> {
 
     let key_file = PathBuf::from(opts.key_opts.key_file);
     let listen = opts.listen.unwrap_or_else(|| {
+        if !opts.listen_all {
+            return empty!();
+        }
         let ip = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
         let mut list = Vec::with_capacity(2);
-        if opts.bifrost {
-            list.push(ListenAddr::bifrost(ip, None));
+        if let Some(port) = opts.bifrost {
+            list.push(ListenAddr::bifrost(ip, port));
         }
-        if opts.bolt {
-            list.push(ListenAddr::bolt(ip, None));
+        if let Some(port) = opts.bolt {
+            list.push(ListenAddr::bolt(ip, port));
         }
         if list.is_empty() {
-            panic!("either --bolt or --bifrost option must be given with the empty --listen flag")
+            panic!("either --bolt or --bifrost option must be given with the empty --listen flag");
         }
         list
     });
