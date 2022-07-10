@@ -74,6 +74,17 @@ pub enum Daemon {
     Watchd,
 }
 
+impl Daemon {
+    pub fn protocol(&self) -> Option<p2p::Protocol> {
+        match self {
+            Daemon::PeerdBolt(..) => Some(p2p::Protocol::Bolt),
+            Daemon::PeerdBifrost(..) => Some(p2p::Protocol::Bifrost),
+            // TODO: Add support for bifrost channels
+            _ => None,
+        }
+    }
+}
+
 impl Launcher for Daemon {
     type RunError = Error;
     type Config = Config;
@@ -90,25 +101,35 @@ impl Launcher for Daemon {
     }
 
     fn cmd_args(&self, cmd: &mut Command) -> Result<(), LauncherError<Self>> {
-        cmd.args(std::env::args().skip(1).filter(|arg| !arg.starts_with("--listen")));
+        cmd.args(std::env::args().skip(1).filter(|arg| {
+            !["--listen", "--bolt", "--bifrost"].iter().any(|pat| arg.starts_with(pat))
+        }));
+
+        match self.protocol() {
+            Some(p2p::Protocol::Bolt) => cmd.args(["--bolt"]),
+            Some(p2p::Protocol::Bifrost) => cmd.args(["--bifrost"]),
+            None => cmd,
+        };
 
         match self {
-            Daemon::PeerdBolt(PeerSocket::Listen(node_addr), _) => {
+            Daemon::PeerdBolt(PeerSocket::Listen(node_addr), _)
+            | Daemon::PeerdBifrost(PeerSocket::Listen(node_addr), _) => {
                 let ip: IpAddr = node_addr
                     .addr
                     .address()
                     .try_into()
                     .map_err(|_| transport::Error::TorNotSupportedYet)?;
                 let port = node_addr.addr.port().ok_or(transport::Error::TorNotSupportedYet)?;
-                cmd.args(&["--bolt", "--listen", &ip.to_string(), "--port", &port.to_string()]);
+                cmd.args(["--listen", &ip.to_string(), "--port", &port.to_string()]);
             }
-            Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
-                cmd.args(&["--bolt", "--connect", &node_addr.to_string()]);
+            Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _)
+            | Daemon::PeerdBifrost(PeerSocket::Connect(node_addr), _) => {
+                cmd.args(["--connect", &node_addr.to_string()]);
             }
             Daemon::Channeld(channel_id, ..) => {
                 cmd.args(&[channel_id.as_slice32().to_hex()]);
                 if channel_id.channel_id().is_some() {
-                    cmd.args(&["--reestablish"]);
+                    cmd.args(["--reestablish"]);
                 }
             }
             _ => { /* No additional configuration is required here */ }

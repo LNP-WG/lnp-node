@@ -51,6 +51,7 @@ Register-ArgumentCompleter -Native -CommandName 'lnpd' -ScriptBlock {
             [CompletionResult]::new('--verbose', 'verbose', [CompletionResultType]::ParameterName, 'Set verbosity level')
             [CompletionResult]::new('-t', 't', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
             [CompletionResult]::new('--threaded', 'threaded', [CompletionResultType]::ParameterName, 'Spawn daemons as threads and not processes')
+            [CompletionResult]::new('--bolt', 'bolt', [CompletionResultType]::ParameterName, 'Use BOLT protocol for listening for the incoming connections')
             [CompletionResult]::new('--bifrost', 'bifrost', [CompletionResultType]::ParameterName, 'Use Bifrost protocol for listening for the incoming connections')
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize data directory')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')

@@ -45,6 +45,10 @@ pub struct Opts {
     #[clap(short = 'L', long, group = "action", value_hint = ValueHint::Hostname)]
     pub listen: Option<Option<IpAddr>>,
 
+    /// Use BOLT protocol for listening for the incoming connections.
+    #[clap(long, conflicts_with = "bifrost", requires = "listen")]
+    pub bolt: bool,
+
     /// Use Bifrost protocol for listening for the incoming connections.
     #[clap(long, requires = "listen")]
     pub bifrost: bool,

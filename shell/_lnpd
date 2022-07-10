@@ -45,6 +45,7 @@ _lnpd() {
 '*--verbose[Set verbosity level]' \
 '-t[Spawn daemons as threads and not processes]' \
 '--threaded[Spawn daemons as threads and not processes]' \
+'(--bifrost)--bolt[Use BOLT protocol for listening for the incoming connections]' \
 '--bifrost[Use Bifrost protocol for listening for the incoming connections]' \
 ":: :_lnpd_commands" \
 "*::: :->lnpd" \
