@@ -51,7 +51,7 @@ lnpbp = "0.8.0"
 lnp-core = "0.8.0-beta.1"
 lnp_rpc = { version = "0.8.0-beta.1", path = "./rpc" }
 internet2 = { version = "0.8.0", features = ["keygen"] }
-microservices = { version = "0.8.0", default-features = false, features = ["node", "peer"] }
+microservices = { version = "0.8.8", default-features = false, features = ["node", "peer"] }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
