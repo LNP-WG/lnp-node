@@ -383,14 +383,7 @@ impl Runtime {
             }
 
             bolt::Messages::Pong(noise) => {
-                match self.awaited_pong {
-                    None => warn!("Unexpected pong from the remote peer"),
-                    Some(len) if len as usize != noise.len() => {
-                        warn!("Pong data size does not match requested with ping")
-                    }
-                    _ => trace!("Got pong reply, exiting pong await mode"),
-                }
-                self.awaited_pong = None;
+                self.on_pong(noise);
             }
 
             bolt::Messages::ChannelReestablish(_) | bolt::Messages::OpenChannel(_) => {
@@ -463,7 +456,13 @@ impl Runtime {
                 self.pong(pong_size)?;
             }
 
+            bifrost::Messages::Pong(blob) => self.on_pong(blob.as_ref()),
+
             bifrost::Messages::Message(bifrost::Msg { app, .. }) => {
+                debug!(
+                    "Incoming bifrost message from the remote peer for {} app. Forwarding.",
+                    app
+                );
                 endpoints.send_to(
                     ServiceBus::Msg,
                     self.identity(),
@@ -476,7 +475,10 @@ impl Runtime {
                 // TODO:
                 //  1. Check permissions
                 //  2. Forward to the corresponding daemon
-                debug!("Got Bifrost P2P message {}", message);
+                warn!(
+                    "Got Bifrost P2P message which is not handled in this implementation yet {}",
+                    message
+                );
             }
         }
 
@@ -577,5 +579,16 @@ impl Runtime {
             }
         }
         Ok(())
+    }
+
+    fn on_pong(&mut self, noise: &[u8]) {
+        match self.awaited_pong {
+            None => warn!("Unexpected pong from the remote peer"),
+            Some(len) if len as usize != noise.len() => {
+                warn!("Pong data size does not match requested with ping")
+            }
+            _ => trace!("Got pong reply, exiting pong await mode"),
+        }
+        self.awaited_pong = None;
     }
 }
