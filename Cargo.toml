@@ -5,7 +5,7 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
@@ -44,14 +44,14 @@ required-features = ["server"]
 
 [dependencies]
 # LNP/BP crates
-amplify = "3.12.1"
+amplify = "3.13.0"
 strict_encoding = { version = "0.8.0", features = ["miniscript"] }
 descriptor-wallet = { version = "0.8.0", features = ["keygen", "miniscript", "electrum"] }
 lnpbp = "0.8.0"
-lnp-core = "0.8.0-beta.1"
-lnp_rpc = { version = "0.8.0-beta.1", path = "./rpc" }
-internet2 = { version = "0.8.0", features = ["keygen"] }
-microservices = { version = "0.8.8", default-features = false, features = ["node", "peer"] }
+lnp-core = "0.8.0"
+lnp_rpc = { version = "0.8.0", path = "./rpc" }
+internet2 = { version = "0.8.3", features = ["keygen"] }
+microservices = { version = "0.8.10", default-features = false, features = ["node", "peer"] }
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
@@ -73,17 +73,17 @@ rpassword = { version = "5.0.1", optional = true }
 zmq = { package = "zmq2", version = "0.5.0" }
 
 [dev-dependencies]
-strict_encoding_test = "1.7.4"
+strict_encoding_test = "1.8.0"
 
 [build-dependencies]
-amplify = "3.12.1"
+amplify = "3.13.0"
 lnpbp = "0.8.0"
 bitcoin = "0.28.1"
 lightning-invoice = "0.16.0"
-lnp-core = "0.8.0-beta.1"
-lnp_rpc = { version = "0.8.0-beta.1", path = "./rpc" }
-internet2 = "0.8.0"
-microservices = { version = "0.8.0", default-features = false, features = ["peer"] }
+lnp-core = "0.8.0"
+lnp_rpc = { version = "0.8.0", path = "./rpc" }
+internet2 = "0.8.3"
+microservices = { version = "0.8.10", default-features = false, features = ["peer"] }
 clap = { version = "~3.1.18", features = ["env", "derive"] }
 clap_complete = "~3.1.4"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }

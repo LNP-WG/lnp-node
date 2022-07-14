@@ -237,9 +237,9 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "bp-core"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b37606d0f9b2c13cc1ac5bf81dbe4dc57479edc86d891be62235ca415b21600b"
+checksum = "a21c38adb69d890aa90c175240e3f5b1784cf6626486e7fd5138e3e6f6168101"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -252,9 +252,9 @@ dependencies = [
 
 [[package]]
 name = "bp-dbc"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12cad35fd1f038ab75f078b3d51a005162905fe0f915b3efd14eb89a5c26dae5"
+checksum = "2b579033858923b066ad644f2628f20472694723e3aad6da1f678c9e9ff029db"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -266,9 +266,9 @@ dependencies = [
 
 [[package]]
 name = "bp-seals"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c06a238a7121b96522c327148e26d176e87ef0f10e5d9ad09945df9bb3c44d6"
+checksum = "014b7cddf7739a960b504db916041e7605ee60aa56c885673948c55b634bdc96"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1182,7 +1182,7 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "lnp-cli"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 dependencies = [
  "amplify",
  "clap",
@@ -1199,9 +1199,9 @@ dependencies = [
 
 [[package]]
 name = "lnp-core"
-version = "0.8.0-beta.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d3b7da4f3057b8e11a8464f4cf9ad601d48eb65a0c488c9e56c5e93fe7cc65b"
+checksum = "d8f1f4c14c6b4d0a2039a81dc558c96f9cbda040023e0ee6c6a275f68629358c"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1218,9 +1218,9 @@ dependencies = [
 
 [[package]]
 name = "lnp2p"
-version = "0.8.0-beta.6"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddd42c74043d3b457331cbc6d1cc98f17d25da8a9ef1961ffa439416426b2940"
+checksum = "314350443009c2257a51cb1890c3eaf00efb124cc6764eca70090be427f841d4"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_node"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1274,7 +1274,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_rpc"
-version = "0.8.0-rc.1"
+version = "0.8.0"
 dependencies = [
  "amplify",
  "bitcoin",
