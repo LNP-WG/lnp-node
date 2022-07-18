@@ -169,7 +169,7 @@ organization concept for module/file names:
 To compile the node, please install [cargo](https://doc.rust-lang.org/cargo/)
 
 ```bash
-sudo apt install -y build-essential cmake libsqlite3-dev libssl-dev libzmq3-dev pkg-config
+sudo apt install -y build-essential
 cargo install --path . --locked --all-features
 ```
 
