@@ -164,7 +164,31 @@ organization concept for module/file names:
 
 ## Build and usage
 
-### Local
+### Dependencies
+
+To compile the node, please install [cargo](https://doc.rust-lang.org/cargo/)
+
+```bash
+sudo apt install -y build-essential
+cargo install --path . --locked --all-features
+```
+
+### Generate funding wallet (First Time)
+
+Before running the node, it is necessary to set an _xpriv_ to create a funding wallet:
+
+```bash
+lnpd -vvv init
+
+# The prompt shows something like this:
+Initializing node data
+Data directory '/[DATA_DIR]/.lnp_node/signet' ... found
+Signing account 'master.key' ... creating
+Please enter your master xpriv:
+
+```
+
+### Running Local
 
 To compile the node, please install [cargo](https://doc.rust-lang.org/cargo/),
 then run the following commands:
@@ -175,7 +199,7 @@ cargo install --path . --locked --all-features
 lnpd -vvv
 ```
 
-### In docker
+### Running in docker
 
 ```bash
 docker build -t lnp-node .
