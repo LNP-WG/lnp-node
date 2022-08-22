@@ -33,7 +33,7 @@ use microservices::ZMQ_CONTEXT;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::{PeerInfo, ServiceId};
-use crate::{Config, Endpoints, Error, Responder, Service};
+use crate::{BridgeHandler, Config, Endpoints, Error, Responder, Service};
 
 pub fn run(
     connection: PeerConnection,
@@ -111,35 +111,6 @@ pub fn run(
     service.add_loopback(rx)?;
     service.run_loop()?;
     unreachable!()
-}
-
-pub struct BridgeHandler;
-
-impl esb::Handler<ServiceBus> for BridgeHandler {
-    type Request = BusMsg;
-    type Error = Error;
-
-    fn identity(&self) -> ServiceId { ServiceId::Loopback }
-
-    fn handle(
-        &mut self,
-        _: &mut Endpoints,
-        _: ServiceBus,
-        _: ServiceId,
-        _: BusMsg,
-    ) -> Result<(), Error> {
-        // Bridge does not receive replies for now
-        Ok(())
-    }
-
-    fn handle_err(
-        &mut self,
-        _: &mut Endpoints,
-        err: esb::Error<ServiceId>,
-    ) -> Result<(), Self::Error> {
-        // We simply propagate the error since it's already being reported
-        Err(err.into())
-    }
 }
 
 pub struct ListenerRuntime {

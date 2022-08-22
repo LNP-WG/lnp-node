@@ -55,9 +55,11 @@ microservices = { version = "0.8.10", default-features = false, features = ["nod
 # Bitcoin
 bitcoin = { version = "0.28.1", features = ["rand"] }
 miniscript = "7.0.0"
-electrum-client = "0.10.1"
+electrum-client = "0.10.2"
 lightning-invoice = "0.16.0"
 # OS
+serde = "1"
+serde_json = "1"
 chrono = "0.4"
 nix = "0.24"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }

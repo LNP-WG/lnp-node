@@ -12,28 +12,99 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use std::collections::HashMap;
+use std::sync::mpsc;
+use std::thread::spawn;
 
 use bitcoin::Txid;
-use electrum_client::Client as ElectrumClient;
+use internet2::zeromq;
 use lnp::p2p::bolt::Messages as LnMsg;
-use microservices::esb;
+use microservices::node::TryService;
+use microservices::{esb, ZMQ_CONTEXT};
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::rpc::ServiceId;
-use crate::{Config, Endpoints, Error, Service};
+use crate::watchd::{ElectrumUpdate, ElectrumWorker};
+use crate::{BridgeHandler, Config, Endpoints, Error, Service};
 
 pub fn run(config: Config) -> Result<(), Error> {
-    let electrum =
-        ElectrumClient::new(&config.electrum_url).map_err(|_| Error::ElectrumConnectivity)?;
+    debug!("Opening bridge between electrum watcher and main service threads");
+    let tx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
+    let rx = ZMQ_CONTEXT.socket(zmq::PAIR)?;
+    tx.connect("inproc://electrum-bridge")?;
+    rx.bind("inproc://electrum-bridge")?;
 
-    let runtime = Runtime { electrum, track_list: empty!() };
+    let (sender, receiver) = mpsc::channel::<ElectrumUpdate>();
+    let electrum_worker = ElectrumWorker::with(sender, &config.electrum_url, 5)?;
 
-    Service::run(config, runtime, false)
+    debug!("Starting electrum watcher thread");
+    let watcher_runtime = WatcherRuntime::with(receiver, tx)?;
+    spawn(move || watcher_runtime.run_or_panic("electrum watcher"));
+
+    let runtime = Runtime { electrum_worker, track_list: empty!() };
+    let mut service = Service::service(config, runtime)?;
+    service.add_loopback(rx)?;
+    service.run_loop()?;
+    unreachable!()
+}
+
+struct WatcherRuntime {
+    identity: ServiceId,
+    bridge: esb::Controller<ServiceBus, BusMsg, BridgeHandler>,
+    receiver: mpsc::Receiver<ElectrumUpdate>,
+}
+
+impl WatcherRuntime {
+    pub fn with(
+        receiver: mpsc::Receiver<ElectrumUpdate>,
+        tx: zmq::Socket,
+    ) -> Result<WatcherRuntime, Error> {
+        let bridge = esb::Controller::with(
+            map! {
+                ServiceBus::Bridge => esb::BusConfig {
+                    api_type: zeromq::ZmqSocketType::Rep,
+                    carrier: zeromq::Carrier::Socket(tx),
+                    router: None,
+                    queued: true,
+                    topic: None,
+                }
+            },
+            BridgeHandler,
+        )?;
+
+        Ok(Self { identity: ServiceId::Loopback, receiver, bridge })
+    }
+
+    pub(self) fn send_over_bridge(&mut self, req: BusMsg) -> Result<(), Error> {
+        debug!("Forwarding electrum update message over BRIDGE interface to the runtime");
+        self.bridge.send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
+        Ok(())
+    }
+
+    fn run(&mut self) -> Result<(), mpsc::RecvError> {
+        trace!("Awaiting for electrum update...");
+        let msg = self.receiver.recv()?;
+        debug!("Processing message {}", msg);
+        trace!("Message details: {:?}", msg);
+        // TODO: Forward electrum notifications over the bridge
+        // self.send_over_bridge(msg.into()).expect("watcher bridge is halted");
+        Ok(())
+    }
+}
+
+impl TryService for WatcherRuntime {
+    type ErrorType = mpsc::RecvError;
+
+    fn try_run_loop(mut self) -> Result<(), Self::ErrorType> {
+        trace!("Entering event loop of the watcher service");
+        loop {
+            self.run()?;
+            trace!("Electrum update processing complete");
+        }
+    }
 }
 
 pub struct Runtime {
-    electrum: ElectrumClient,
-
+    electrum_worker: ElectrumWorker,
     track_list: HashMap<Txid, (u32, ServiceId)>,
 }
 
@@ -51,6 +122,9 @@ impl esb::Handler<ServiceBus> for Runtime {
         message: BusMsg,
     ) -> Result<(), Self::Error> {
         match (bus, message, source) {
+            (ServiceBus::Bridge, BusMsg::Ctl(msg), ServiceId::Loopback) => {
+                self.handle_bridge(endpoints, msg)
+            }
             (ServiceBus::Msg, BusMsg::Bolt(msg), source) => self.handle_p2p(endpoints, source, msg),
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (bus, msg, _) => Err(Error::wrong_esb_msg(bus, &msg)),
@@ -70,6 +144,33 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
+    fn handle_bridge(&mut self, endpoints: &mut Endpoints, request: CtlMsg) -> Result<(), Error> {
+        debug!("BRIDGE RPC request: {}", request);
+
+        match request {
+            CtlMsg::TxFound(tx_status) => {
+                if let Some((required_height, service_id)) = self.track_list.get(&tx_status.txid) {
+                    if *required_height >= tx_status.block_pos.map(|b| b.pos).unwrap_or_default() {
+                        let service_id = service_id.clone();
+                        self.untrack(tx_status.txid);
+                        endpoints.send_to(
+                            ServiceBus::Ctl,
+                            ServiceId::Watch,
+                            service_id,
+                            BusMsg::Ctl(CtlMsg::TxFound(tx_status)),
+                        )?;
+                    }
+                }
+                Ok(())
+            }
+
+            wrong_msg => {
+                error!("Request is not supported by the BRIDGE interface");
+                Err(Error::wrong_esb_msg(ServiceBus::Bridge, &wrong_msg))
+            }
+        }
+    }
+
     fn handle_p2p(
         &mut self,
         _endpoints: &mut Endpoints,
@@ -95,13 +196,12 @@ impl Runtime {
             CtlMsg::Track { txid, depth } => {
                 debug!("Tracking status for tx {}", txid);
                 self.track_list.insert(txid, (depth, source));
+                // TODO: Request worker
             }
 
             CtlMsg::Untrack(txid) => {
-                debug!("Stopping tracking tx {}", txid);
-                if self.track_list.remove(&txid).is_none() {
-                    warn!("Transaction {} was not tracked before", txid);
-                }
+                // TODO: Request worker
+                self.untrack(txid);
             }
 
             wrong_msg => {
@@ -111,5 +211,12 @@ impl Runtime {
         }
 
         Ok(())
+    }
+
+    fn untrack(&mut self, txid: Txid) {
+        debug!("Stopping tracking tx {}", txid);
+        if self.track_list.remove(&txid).is_none() {
+            warn!("Transaction {} was not tracked before", txid);
+        }
     }
 }

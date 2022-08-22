@@ -57,7 +57,7 @@ pub mod watchd;
 
 pub use config::Config;
 pub use error::Error;
-pub use service::{Endpoints, Responder, Service, TryToServiceId};
+pub use service::{BridgeHandler, Endpoints, Responder, Service, TryToServiceId};
 
 pub const LNP_NODE_MASTER_KEY_FILE: &str = "master.key";
 pub const LNP_NODE_FUNDING_WALLET: &str = "funding.wallet";

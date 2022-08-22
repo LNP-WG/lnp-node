@@ -22,6 +22,36 @@ use crate::bus::{self, BusMsg, CtlMsg, Report, ServiceBus};
 use crate::rpc::{Failure, ServiceId};
 use crate::{Config, Error};
 
+/// An empty handler used for bridge interfaces in watcher and peer daemons
+pub struct BridgeHandler;
+
+impl esb::Handler<ServiceBus> for BridgeHandler {
+    type Request = BusMsg;
+    type Error = Error;
+
+    fn identity(&self) -> ServiceId { ServiceId::Loopback }
+
+    fn handle(
+        &mut self,
+        _: &mut Endpoints,
+        _: ServiceBus,
+        _: ServiceId,
+        _: BusMsg,
+    ) -> Result<(), Error> {
+        // Bridge does not receive replies for now
+        Ok(())
+    }
+
+    fn handle_err(
+        &mut self,
+        _: &mut Endpoints,
+        err: esb::Error<ServiceId>,
+    ) -> Result<(), Self::Error> {
+        // We simply propagate the error since it's already being reported
+        Err(err.into())
+    }
+}
+
 pub struct Service<Runtime>
 where
     Runtime: esb::Handler<ServiceBus, Request = BusMsg>,

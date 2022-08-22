@@ -11,7 +11,6 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use amplify::num::u24;
 use amplify::Slice32;
 use bitcoin::Txid;
 use internet2::addr::{NodeAddr, NodeId};
@@ -74,7 +73,9 @@ pub enum CtlMsg {
 
     // On-chain tracking API
     // ---------------------
-    /// Asks on-chain tracking service to send updates on the transaction mining status
+    /// Asks on-chain tracking service to send updates on the transaction mining status.
+    ///
+    /// Depth 0 indicates that a transaction must be tracked in a mempool.
     #[display("track({txid}, {depth})")]
     Track { txid: Txid, depth: u32 },
 
@@ -225,22 +226,33 @@ pub struct FundChannel {
     pub feerate_per_kw: Option<u32>,
 }
 
+/// TODO: Move to descriptor wallet
+/// Information about block position and transaction position in a block
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
+#[derive(NetworkEncode, NetworkDecode)]
+#[display("{depth}, {height}, {pos}")]
+pub struct BlockPos {
+    /// Depths from the chain tip; always greater than 0
+    pub depth: u32,
+
+    /// Height of the block containing transaction
+    pub height: u32,
+
+    /// Transaction position within the block
+    pub pos: u32,
+}
+
+/// TODO: Move to descriptor wallet
 /// Update on a transaction mining status
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
 #[derive(NetworkEncode, NetworkDecode)]
-#[display("{txid}, {depth}")]
+#[display("{txid}, ...")]
 pub struct TxStatus {
     /// Id of a transaction previously requested to be tracked
     pub txid: Txid,
 
-    /// Depths from the chain tip
-    pub depth: u24,
-
-    /// Height of the block containing transaction
-    pub height: u24,
-
-    /// Transaction position within the block
-    pub pos: u24,
+    /// Optional block position given only if the depth is greater than 0 zero
+    pub block_pos: Option<BlockPos>,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, NetworkEncode, NetworkDecode)]

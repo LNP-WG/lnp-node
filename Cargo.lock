@@ -817,9 +817,9 @@ checksum = "3f107b87b6afc2a64fd13cac55fe06d6c8859f12d4b14cbcdd2c67d0976781be"
 
 [[package]]
 name = "electrum-client"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ef9b40020912229e947b45d91f9ff96b10d543e0eddd75ff41b9eda24d9c051"
+checksum = "25ae36f27655f7705dd8e9105600a79e4f23d390649abbbc57aa87adbc57245d"
 dependencies = [
  "bitcoin",
  "log",
@@ -1266,6 +1266,8 @@ dependencies = [
  "miniscript",
  "nix",
  "rpassword",
+ "serde 1.0.139",
+ "serde_json",
  "shellexpand",
  "strict_encoding 0.8.1",
  "strict_encoding_test",
