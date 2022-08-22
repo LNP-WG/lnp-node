@@ -83,7 +83,7 @@ pub struct Runtime {
     pub(super) state: ChannelState,
     pub(super) file: fs::File,
     started: SystemTime,
-    /// Client which is made an equiry starting the current workflow run by the active state
+    /// Client which is made an enquiry starting the current workflow run by the active state
     /// machine. It is not a part of the state of the machine since it should not persist.
     enquirer: Option<ClientId>,
     storage: Box<dyn storage::Driver>,

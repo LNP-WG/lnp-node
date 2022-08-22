@@ -14,7 +14,9 @@
 #[cfg(feature = "server")]
 mod opts;
 mod runtime;
+mod worker;
 
 #[cfg(feature = "server")]
 pub use opts::Opts;
 pub use runtime::run;
+pub use worker::{ElectrumUpdate, ElectrumWorker, WatcherChannelFailure};
