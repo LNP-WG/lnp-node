@@ -93,8 +93,8 @@ impl Exec for Opts {
 
             Command::Listen { ip_addr, port, bolt, bifrost } => {
                 let listen_addr = match (bolt, bifrost) {
-                    (false, true) => ListenAddr::bolt(ip_addr, port),
-                    (true, false) => ListenAddr::bifrost(ip_addr, port),
+                    (true, false) => ListenAddr::bolt(ip_addr, port),
+                    (false, true) => ListenAddr::bifrost(ip_addr, port),
                     _ => unreachable!(),
                 };
                 runtime.request(ServiceId::LnpBroker, RpcMsg::Listen(listen_addr))?;
