@@ -151,7 +151,7 @@ impl Opts {
         } else if let Some(bind_addr) = self.listen {
             let addr = InetSocketAddr::socket(
                 bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
-                self.port(),
+                self.port.unwrap_or(self.port()),
             );
             PeerSocket::Listen(NodeAddr::new(node_id, addr))
         } else {
