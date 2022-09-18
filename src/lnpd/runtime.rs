@@ -40,7 +40,7 @@ use crate::bus::{
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon};
 use crate::lnpd::funding::{self, FundingWallet};
-use crate::rpc::{Failure, FundsInfo, NodeInfo, RpcMsg, ServiceId};
+use crate::rpc::{Failure, FundsInfo, ListPeerInfo, NodeInfo, RpcMsg, ServiceId};
 use crate::{Config, Endpoints, Error, Responder, Service, LNP_NODE_FUNDING_WALLET};
 
 pub fn run<'a>(
@@ -257,14 +257,20 @@ impl Runtime {
                         .duration_since(SystemTime::UNIX_EPOCH)
                         .unwrap_or_else(|_| Duration::from_secs(0))
                         .as_secs(),
-                    peers: self.bolt_connections.iter().copied().collect(),
+                    peers: ListPeerInfo {
+                        bolt: self.bolt_connections.iter().copied().collect(),
+                        bifrost: self.bifrost_connections.iter().copied().collect(),
+                    },
                     channels: self.channels.iter().cloned().collect(),
                 });
                 self.send_rpc(endpoints, client_id, node_info)?;
             }
 
             RpcMsg::ListPeers => {
-                let peer_list = self.bolt_connections.iter().copied().collect();
+                let peer_list = ListPeerInfo {
+                    bolt: self.bolt_connections.iter().copied().collect(),
+                    bifrost: self.bifrost_connections.iter().copied().collect(),
+                };
                 self.send_rpc(endpoints, client_id, RpcMsg::PeerList(peer_list))?;
             }
 
