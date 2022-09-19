@@ -122,7 +122,7 @@ pub enum RpcMsg {
 
     #[display("peer_list({0})", alt = "{0:#}")]
     #[from]
-    PeerList(List<NodeId>),
+    PeerList(ListPeerInfo),
 
     #[display("channel_list({0})", alt = "{0:#}")]
     #[from]
@@ -270,8 +270,7 @@ pub struct NodeInfo {
     #[serde_as(as = "DurationSeconds")]
     pub uptime: Duration,
     pub since: u64,
-    #[serde_as(as = "Vec<DisplayFromStr>")]
-    pub peers: Vec<NodeId>,
+    pub peers: ListPeerInfo,
     #[serde_as(as = "Vec<DisplayFromStr>")]
     pub channels: Vec<ChannelId>,
 }
@@ -320,6 +319,15 @@ pub struct FundsInfo {
     pub next_address: Address,
 }
 
+#[cfg_attr(feature = "serde", serde_as)]
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
+#[display(ListPeerInfo::to_yaml_string)]
+pub struct ListPeerInfo {
+    pub bolt: Vec<NodeId>,
+    pub bifrost: Vec<NodeId>,
+}
+
 #[cfg(feature = "serde")]
 impl ToYamlString for NodeInfo {}
 #[cfg(feature = "serde")]
@@ -328,6 +336,8 @@ impl ToYamlString for PeerInfo {}
 impl ToYamlString for ChannelInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for FundsInfo {}
+#[cfg(feature = "serde")]
+impl ToYamlString for ListPeerInfo {}
 
 #[derive(Wrapper, Clone, PartialEq, Eq, Debug, From, NetworkEncode, NetworkDecode)]
 #[wrapper(IndexRange)]
