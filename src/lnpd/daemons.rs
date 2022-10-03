@@ -36,7 +36,7 @@ pub fn read_node_key_file(key_file: &Path) -> LocalNode {
     let mut file = fs::File::open(key_file).unwrap_or_else(|_| {
         panic!(
             "Unable to open key file '{}';\nplease check that the file exists and the daemon has \
-             access rights to it",
+             access rights to it. If you have not created a key file before, run \"lnpd init\"",
             key_file.display()
         )
     });
