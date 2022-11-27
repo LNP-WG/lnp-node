@@ -16,7 +16,7 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use amplify::{DumbDefault, Wrapper};
-use bitcoin::Txid;
+use bitcoin::{Address, Txid};
 use internet2::addr::{NodeAddr, NodeId};
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
@@ -31,7 +31,6 @@ use microservices::esb::{self, ClientId, Handler};
 use microservices::peer::PeerSocket;
 use microservices::util::OptionDetails;
 use microservices::{DaemonHandle, LauncherError};
-use wallet::address::AddressCompat;
 
 use crate::automata::{Event, StateMachine};
 use crate::bus::{
@@ -595,15 +594,13 @@ impl Runtime {
         Ok(format!("Launched new instance of {}", handle))
     }
 
-    fn available_funding(&mut self) -> Result<BTreeMap<AddressCompat, u64>, Error> {
+    fn available_funding(&mut self) -> Result<BTreeMap<Address, u64>, Error> {
         self.funding_wallet.list_funds()?.into_iter().try_fold(
             bmap! {},
             |mut acc, f| -> Result<_, Error> {
-                *acc.entry(
-                    AddressCompat::from_script(&f.script_pubkey, self.funding_wallet.network())
-                        .ok_or(funding::Error::NoAddressRepresentation)?,
-                )
-                .or_insert(0) += f.amount;
+                let addr = Address::from_script(&f.script_pubkey, self.funding_wallet.network())
+                    .ok_or(funding::Error::NoAddressRepresentation)?;
+                *acc.entry(addr).or_insert(0) += f.amount;
                 Ok(acc)
             },
         )

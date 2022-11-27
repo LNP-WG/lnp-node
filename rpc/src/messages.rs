@@ -32,7 +32,6 @@ use microservices::util::OptionDetails;
 #[cfg(feature = "serde")]
 use serde_with::{DisplayFromStr, DurationSeconds, Same};
 use strict_encoding::{StrictDecode, StrictEncode};
-use wallet::address::AddressCompat;
 
 use crate::error::FailureCode;
 use crate::{ListenAddr, ServiceId};
@@ -314,7 +313,7 @@ pub struct ChannelInfo {
 #[display(FundsInfo::to_yaml_string)]
 pub struct FundsInfo {
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub bitcoin_funds: BTreeMap<AddressCompat, u64>,
+    pub bitcoin_funds: BTreeMap<Address, u64>,
     pub asset_funds: AssetsBalance,
     pub next_address: Address,
 }

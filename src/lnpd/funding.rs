@@ -296,11 +296,13 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let address = DescriptorExt::<bitcoin::PublicKey>::address(
+        let spk = DescriptorExt::<bitcoin::PublicKey>::script_pubkey(
             &self.wallet_data.descriptor,
             &self.secp,
             &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
         )?;
+        let address = Address::from_script(&spk, self.network)
+            .expect("Incorrect scriptPubkey to represents address");
         Ok(address)
     }
 
