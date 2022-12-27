@@ -11,10 +11,8 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::convert::TryInto;
 use std::fs;
 use std::io::Read;
-use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -22,7 +20,6 @@ use amplify::hex::ToHex;
 use bitcoin::secp256k1::{SecretKey, SECP256K1};
 use internet2::addr::LocalNode;
 use internet2::session::noise::FramingProtocol;
-use internet2::transport;
 use lnp::p2p;
 use lnp::p2p::bolt::ActiveChannelId;
 use microservices::cli::LogStyle;
@@ -113,15 +110,14 @@ impl Launcher for Daemon {
         };
 
         match self {
-            Daemon::PeerdBolt(PeerSocket::Listen(node_addr), _)
-            | Daemon::PeerdBifrost(PeerSocket::Listen(node_addr), _) => {
-                let ip: IpAddr = node_addr
-                    .addr
-                    .address()
-                    .try_into()
-                    .map_err(|_| transport::Error::TorNotSupportedYet)?;
-                let port = node_addr.addr.port().ok_or(transport::Error::TorNotSupportedYet)?;
-                cmd.args(["--listen", &ip.to_string(), "--port", &port.to_string()]);
+            Daemon::PeerdBolt(PeerSocket::Listen(socket_addr), _)
+            | Daemon::PeerdBifrost(PeerSocket::Listen(socket_addr), _) => {
+                cmd.args([
+                    "--listen",
+                    &socket_addr.ip().to_string(),
+                    "--port",
+                    &socket_addr.port().to_string(),
+                ]);
             }
             Daemon::PeerdBolt(PeerSocket::Connect(node_addr), _) => {
                 cmd.args(["--connect", &format!("bolt://{}", node_addr)]);

@@ -11,10 +11,10 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use clap::{ArgGroup, ValueHint};
-use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
+use internet2::addr::NodeId;
 use lnp::addr::LnpAddr;
 use lnp::p2p;
 use lnp::p2p::bifrost::LNP2P_BIFROST_PORT;
@@ -145,15 +145,15 @@ impl KeyOpts {
 }
 
 impl Opts {
-    pub fn peer_socket(&self, node_id: NodeId) -> PeerSocket {
+    pub fn peer_socket(&self, _node_id: NodeId) -> PeerSocket {
         if let Some(peer_addr) = self.connect {
             PeerSocket::Connect(peer_addr.node_addr)
         } else if let Some(bind_addr) = self.listen {
-            let addr = InetSocketAddr::socket(
+            let addr = SocketAddr::new(
                 bind_addr.unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED)).into(),
                 self.port.unwrap_or(self.port()),
             );
-            PeerSocket::Listen(NodeAddr::new(node_id, addr))
+            PeerSocket::Listen(addr)
         } else {
             unreachable!("Either `connect` or `listen` must be present due to Clap configuration")
         }

@@ -13,6 +13,8 @@
 
 use amplify::Slice32;
 use bitcoin::Txid;
+use bitcoin_scripts::hlc::HashLock;
+use bitcoin_scripts::PubkeyScript;
 use internet2::addr::{NodeAddr, NodeId};
 use internet2::presentation::sphinx::Hop;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
@@ -22,9 +24,7 @@ use lnp_rpc::{ChannelInfo, Failure, PeerInfo};
 use microservices::esb::ClientId;
 use microservices::util::OptionDetails;
 use strict_encoding::{NetworkDecode, NetworkEncode};
-use wallet::hlc::HashLock;
 use wallet::psbt::Psbt;
-use wallet::scripts::PubkeyScript;
 
 use crate::rpc::ServiceId;
 

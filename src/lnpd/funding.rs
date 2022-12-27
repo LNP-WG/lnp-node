@@ -22,22 +22,22 @@ use bitcoin::psbt::PartiallySignedTransaction;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
 use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
+use bitcoin_blockchain::locks::SeqNo;
+use bitcoin_scripts::PubkeyScript;
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::channel::PsbtLnpFunding;
 use lnp::p2p::bolt::TempChannelId;
 use lnpbp::chain::{Chain, ConversionImpossibleError};
 use miniscript::psbt::PsbtExt;
-use miniscript::{Descriptor, DescriptorTrait, ForEachKey};
+use miniscript::{Descriptor, ForEachKey};
 use strict_encoding::{StrictDecode, StrictEncode};
-use wallet::descriptors::locks::SeqNo;
+use wallet::descriptors::derive::{DeriveDescriptor, Descriptor as _};
 use wallet::descriptors::InputDescriptor;
 use wallet::hd::{
-    DerivationAccount, DerivationSubpath, DeriveError, Descriptor as DescriptorExt, SegmentIndexes,
-    UnhardenedIndex,
+    DerivationAccount, DerivationSubpath, DeriveError, SegmentIndexes, UnhardenedIndex,
 };
-use wallet::onchain::ResolveUtxo;
+use wallet::onchain::ResolveDescriptor;
 use wallet::psbt::Psbt;
-use wallet::scripts::PubkeyScript;
 
 // The default fee rate is 2 sats per kilo-vbyte
 const DEFAULT_FEERATE_PER_KW: u32 = 2u32 * 1000 * 4;
@@ -163,7 +163,7 @@ impl FundingWallet {
         let wallet_data = WalletData::strict_decode(&wallet_file)?;
 
         let target_network = chain.try_into()?;
-        let wallet_network = DescriptorExt::<bitcoin::PublicKey>::network(&wallet_data.descriptor)?;
+        let wallet_network = wallet_data.descriptor.network(matches!(chain, Chain::Regtest(_)))?;
 
         let is_correct_network = match (wallet_network, target_network) {
             (Network::Bitcoin, Network::Bitcoin) => true,
@@ -276,7 +276,7 @@ impl FundingWallet {
                             outpoint: *utxo.outpoint(),
                             terminal: vec![case, index],
                             script_pubkey: script_pubkey.clone(),
-                            amount: utxo.amount().as_sat(),
+                            amount: utxo.amount().to_sat(),
                         })
                     })
                     .collect())
@@ -296,11 +296,12 @@ impl FundingWallet {
     }
 
     pub fn next_funding_address(&self) -> Result<Address, Error> {
-        let spk = DescriptorExt::<bitcoin::PublicKey>::script_pubkey(
+        let descriptor = DeriveDescriptor::<bitcoin::PublicKey>::derive_descriptor(
             &self.wallet_data.descriptor,
             &self.secp,
             &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
         )?;
+        let spk = descriptor.script_pubkey();
         let address = Address::from_script(&spk, self.network)
             .expect("Incorrect scriptPubkey to represents address");
         Ok(address)
@@ -353,7 +354,6 @@ impl FundingWallet {
 
         let mut root_derivations = map![];
         descriptor.for_each_key(|account| {
-            let account = account.as_key();
             if let Some(fingerprint) = account.master_fingerprint() {
                 root_derivations
                     .insert(account.account_fingerprint(), (fingerprint, &account.account_path));

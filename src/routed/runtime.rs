@@ -14,6 +14,7 @@
 use amplify::{Slice32, Wrapper};
 use bitcoin::hashes::Hash;
 use bitcoin::secp256k1::PublicKey;
+use bitcoin_scripts::hlc::HashLock;
 use internet2::addr::NodeId;
 use internet2::presentation::sphinx::Hop;
 use lightning_invoice::Invoice;
@@ -23,7 +24,6 @@ use lnp::router::Router;
 use lnp::Extension;
 use lnp_rpc::{PayInvoice, RpcMsg};
 use microservices::esb::{self, ClientId};
-use wallet::hlc::HashLock;
 
 use crate::bus::{BusMsg, CtlMsg, ServiceBus};
 use crate::routed::PaymentError;

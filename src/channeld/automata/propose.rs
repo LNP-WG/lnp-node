@@ -11,12 +11,12 @@
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
 
+use bitcoin_scripts::address::AddressCompat;
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, FundingCreated, Messages as LnMsg};
 use lnp::Extension;
 use microservices::cli::LogStyle;
 use microservices::esb::Handler;
-use wallet::address::AddressCompat;
 
 use super::Error;
 use crate::automata::{Event, StateMachine};
@@ -183,7 +183,7 @@ fn complete_proposed(
 
     if let Some(address) = channel
         .network()
-        .and_then(|network| AddressCompat::from_script(&fund_channel.script_pubkey, network))
+        .and_then(|network| AddressCompat::from_script(&fund_channel.script_pubkey, network.into()))
     {
         debug!("Channel funding address is {}", address);
     }

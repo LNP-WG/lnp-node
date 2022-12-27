@@ -584,7 +584,7 @@ impl Runtime {
         protocol: p2p::Protocol,
     ) -> Result<String, LauncherError<Daemon>> {
         info!("Starting peer connection listening daemon on {}...", addr);
-        let socket = PeerSocket::Listen(addr);
+        let socket = PeerSocket::Listen(addr.addr.try_into().expect("tor is not supported"));
         let node_key_path = self.node_key_path.clone();
         let daemon = match protocol {
             Protocol::Bolt => Daemon::PeerdBolt(socket, node_key_path),
@@ -599,7 +599,7 @@ impl Runtime {
             bmap! {},
             |mut acc, f| -> Result<_, Error> {
                 let addr = Address::from_script(&f.script_pubkey, self.funding_wallet.network())
-                    .ok_or(funding::Error::NoAddressRepresentation)?;
+                    .map_err(|_| funding::Error::NoAddressRepresentation)?;
                 *acc.entry(addr).or_insert(0) += f.amount;
                 Ok(acc)
             },

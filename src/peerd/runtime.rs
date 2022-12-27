@@ -96,7 +96,7 @@ pub fn run(
         identity,
         local_id: params.local_id,
         remote_id: params.remote_id,
-        local_socket: params.local_socket,
+        local_socket: params.local_socket.map(InetSocketAddr::from),
         remote_socket: params.remote_socket,
         channels: empty!(),
         sender,
@@ -510,10 +510,10 @@ impl Runtime {
             );
         }
         let mut rng = rand::thread_rng();
-        let len: u16 = rng.gen_range(4, 32);
+        let len: u16 = rng.gen_range(4..=32);
         let mut noise = vec![0u8; len as usize];
         rng.fill_bytes(&mut noise);
-        let pong_size = rng.gen_range(4, 32);
+        let pong_size = rng.gen_range(4..=32);
         self.messages_sent += 1;
         match self.config.protocol {
             p2p::Protocol::Bolt => {
