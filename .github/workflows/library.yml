@@ -44,7 +44,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --lib --no-default-features --verbose
+          args: --lib --no-default-features --features bolt --verbose
   default-features:
     runs-on: ubuntu-latest
     steps:

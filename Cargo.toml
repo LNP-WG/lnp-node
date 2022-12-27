@@ -87,7 +87,7 @@ lightning-invoice = "0.21.0"
 lnp-core = "0.9.0-rc.1"
 lnp_rpc = { version = "0.9.0-rc.1", path = "./rpc" }
 internet2 = "0.9.0-rc.1"
-microservices = { version = "0.9.0-rc.1", default-features = false, features = ["peer"] }
+microservices = { version = "0.9.0-rc.1", default-features = false, features = ["peer", "shell"] }
 clap = { version = "~3.2.23", features = ["env", "derive"] }
 clap_complete = "~3.2.5"
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
