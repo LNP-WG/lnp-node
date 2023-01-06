@@ -16,7 +16,8 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
 use amplify::{DumbDefault, Wrapper};
-use bitcoin::{Address, Txid};
+use bitcoin::Txid;
+use bitcoin_scripts::address::AddressCompat;
 use internet2::addr::{NodeAddr, NodeId};
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
@@ -594,13 +595,18 @@ impl Runtime {
         Ok(format!("Launched new instance of {}", handle))
     }
 
-    fn available_funding(&mut self) -> Result<BTreeMap<Address, u64>, Error> {
+    fn available_funding(&mut self) -> Result<BTreeMap<AddressCompat, u64>, Error> {
         self.funding_wallet.list_funds()?.into_iter().try_fold(
             bmap! {},
             |mut acc, f| -> Result<_, Error> {
-                let addr = Address::from_script(&f.script_pubkey, self.funding_wallet.network())
-                    .map_err(|_| funding::Error::NoAddressRepresentation)?;
-                *acc.entry(addr).or_insert(0) += f.amount;
+                let addr = match AddressCompat::from_script(
+                    &f.script_pubkey,
+                    self.funding_wallet.network().into(),
+                ) {
+                    Some(address) => Ok(address),
+                    _ => Err(funding::Error::NoAddressRepresentation),
+                };
+                *acc.entry(addr?).or_insert(0) += f.amount;
                 Ok(acc)
             },
         )

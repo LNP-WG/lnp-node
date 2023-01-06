@@ -19,7 +19,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use amplify::{Slice32, ToYamlString, Wrapper};
-use bitcoin::Address;
+use bitcoin_scripts::address::AddressCompat;
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lightning_invoice::Invoice;
 use lnp::addr::LnpAddr;
@@ -313,9 +313,10 @@ pub struct ChannelInfo {
 #[display(FundsInfo::to_yaml_string)]
 pub struct FundsInfo {
     #[serde_as(as = "BTreeMap<DisplayFromStr, Same>")]
-    pub bitcoin_funds: BTreeMap<Address, u64>,
+    pub bitcoin_funds: BTreeMap<AddressCompat, u64>,
     pub asset_funds: AssetsBalance,
-    pub next_address: Address,
+    #[serde_as(as = "DisplayFromStr")]
+    pub next_address: AddressCompat,
 }
 
 #[cfg_attr(feature = "serde", serde_as)]

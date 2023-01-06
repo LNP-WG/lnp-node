@@ -21,8 +21,9 @@ use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::psbt::PartiallySignedTransaction;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
-use bitcoin::{Address, EcdsaSighashType, Network, OutPoint, Txid};
+use bitcoin::{EcdsaSighashType, Network, OutPoint, Txid};
 use bitcoin_blockchain::locks::SeqNo;
+use bitcoin_scripts::address::AddressCompat;
 use bitcoin_scripts::PubkeyScript;
 use electrum_client::{Client as ElectrumClient, ElectrumApi};
 use lnp::channel::PsbtLnpFunding;
@@ -295,14 +296,14 @@ impl FundingWallet {
         Ok(funds)
     }
 
-    pub fn next_funding_address(&self) -> Result<Address, Error> {
+    pub fn next_funding_address(&self) -> Result<AddressCompat, Error> {
         let descriptor = DeriveDescriptor::<bitcoin::PublicKey>::derive_descriptor(
             &self.wallet_data.descriptor,
             &self.secp,
             &[UnhardenedIndex::zero(), self.wallet_data.last_normal_index],
         )?;
         let spk = descriptor.script_pubkey();
-        let address = Address::from_script(&spk, self.network)
+        let address = AddressCompat::from_script(&spk.into(), self.network.into())
             .expect("Incorrect scriptPubkey to represents address");
         Ok(address)
     }

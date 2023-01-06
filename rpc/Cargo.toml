@@ -16,6 +16,7 @@ name = "lnp_rpc"
 [dependencies]
 amplify = "3.13.0"
 strict_encoding = "0.9.0-rc.2"
+bitcoin_scripts = "0.9.0-rc.1"
 lnp-core = { version = "0.9.0-rc.1", default-features = false }
 lnpbp = "0.9.0-rc.1"
 bitcoin = { version = "0.29.2", features = ["rand"] }
