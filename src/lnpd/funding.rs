@@ -167,8 +167,9 @@ impl FundingWallet {
 
         let is_correct_network = match (wallet_network, target_network) {
             (Network::Bitcoin, Network::Bitcoin) => true,
-            (Network::Testnet, Network::Testnet | Network::Regtest | Network::Signet) => true,
-            _ => false,
+            (Network::Bitcoin, _) => false,
+            (_, Network::Bitcoin) => false,
+            _ => true,
         };
 
         if !is_correct_network {
