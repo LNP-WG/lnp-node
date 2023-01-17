@@ -1182,7 +1182,7 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "lnp-cli"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "amplify",
  "clap",
@@ -1241,7 +1241,7 @@ dependencies = [
 
 [[package]]
 name = "lnp_node"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "amplify",
  "bitcoin",
