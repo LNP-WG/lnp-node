@@ -196,9 +196,6 @@ pub struct AcceptChannelFrom {
     /// Client identifier to report about the progress
     pub report_to: Option<ServiceId>,
 
-    /// Request received from a remote peer to open channel
-    pub channel_req: OpenChannel,
-
     /// Channel policies
     pub policy: Policy,
 
@@ -210,6 +207,9 @@ pub struct AcceptChannelFrom {
 
     /// Channel local keyset
     pub local_keys: LocalKeyset,
+
+    /// Request received from a remote peer to open channel
+    pub channel_req: OpenChannel,
 }
 
 /// Request information about constructing funding transaction
