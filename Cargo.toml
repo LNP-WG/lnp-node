@@ -5,7 +5,7 @@ members = [".", "rpc", "cli"]
 [package]
 name = "lnp_node"
 description = "LNP node"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Dr. Maxim Orlovsky <orlovsky@pandoracore.com>"]
 license = "MIT"
 keywords = ["bitcoin", "bifi", "lightning-network", "smart-contracts", "lnp"]
