@@ -24,8 +24,9 @@ use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
 use lightning_invoice::Invoice;
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
+use lnp::p2p::bifrost::SwapId;
 use lnp::p2p::bolt::{ChannelId, ChannelType};
-use lnpbp::chain::AssetId;
+use lnpbp::chain::{AssetId, Chain};
 use microservices::esb::ClientId;
 use microservices::rpc;
 use microservices::util::OptionDetails;
@@ -130,10 +131,48 @@ pub enum RpcMsg {
     #[display("funds_info({0})", alt = "{0:#}")]
     #[from]
     FundsInfo(FundsInfo),
+
+    #[display("swap_in({0})", alt = "{0:#}")]
+    #[from]
+    SwapIn(SwapIn),
+
+    #[display("swap_out({0})", alt = "{0:#}")]
+    #[from]
+    SwapOut(SwapOut),
+
+    #[display("swap_info({0})", alt = "{0:#}")]
+    #[from]
+    SwapInfo(SwapInfo),
 }
 
 impl RpcMsg {
     pub fn success() -> Self { RpcMsg::Success(OptionDetails::new()) }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display(Debug)]
+pub enum NodeOrChannelId {
+    NodeId(NodeId),
+    ChannelId(ChannelId),
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display(Debug)]
+pub struct SwapIn {
+    pub amount: u64,
+    pub asset: Option<AssetId>,
+    pub address: String,
+    pub node_or_chan_id: NodeOrChannelId,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display("swapout({amount}, {chain}, ...)")]
+pub struct SwapOut {
+    pub amount: u64,
+    pub asset: Option<AssetId>,
+    pub chain: Chain,
+    pub node_or_chan_id: NodeOrChannelId,
+    pub max_swap_fee: u64,
 }
 
 /// Request to create channel originating from a client
@@ -328,6 +367,17 @@ pub struct ListPeerInfo {
     pub bifrost: Vec<NodeId>,
 }
 
+#[cfg_attr(feature = "serde", serde_as)]
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
+#[display(SwapInfo::to_yaml_string)]
+pub struct SwapInfo {
+    pub id: SwapId,
+}
+
+
+#[cfg(feature = "serde")]
+impl ToYamlString for SwapInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for NodeInfo {}
 #[cfg(feature = "serde")]

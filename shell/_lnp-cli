@@ -162,6 +162,31 @@ _arguments "${_arguments_options[@]}" \
 '::amount-msat -- Amount of milli-satoshis to pay. Required for invoices lacking amount. Overrides amount provided by the invoice:' \
 && ret=0
 ;;
+(swap-in)
+_arguments "${_arguments_options[@]}" \
+'-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+':amount-asset:' \
+':address:' \
+&& ret=0
+;;
+(swap-out)
+_arguments "${_arguments_options[@]}" \
+'-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'-h[Print help information]' \
+'--help[Print help information]' \
+'*-v[Set verbosity level]' \
+'*--verbose[Set verbosity level]' \
+':node:' \
+':amount-asset:' \
+':max-swap-fee:' \
+&& ret=0
+;;
 (help)
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
@@ -189,6 +214,8 @@ _lnp-cli_commands() {
 'open:Opens a new channel with a remote peer, which must be already connected' \
 'invoice:Create an invoice' \
 'pay:Pay the invoice' \
+'swap-in:perform loop in swap' \
+'swap-out:perform loop out swap' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'lnp-cli commands' commands "$@"
@@ -247,6 +274,16 @@ _lnp-cli__peers_commands() {
 _lnp-cli__ping_commands() {
     local commands; commands=()
     _describe -t commands 'lnp-cli ping commands' commands "$@"
+}
+(( $+functions[_lnp-cli__swap-in_commands] )) ||
+_lnp-cli__swap-in_commands() {
+    local commands; commands=()
+    _describe -t commands 'lnp-cli swap-in commands' commands "$@"
+}
+(( $+functions[_lnp-cli__swap-out_commands] )) ||
+_lnp-cli__swap-out_commands() {
+    local commands; commands=()
+    _describe -t commands 'lnp-cli swap-out commands' commands "$@"
 }
 
 _lnp-cli "$@"

@@ -235,6 +235,11 @@ pub enum Command {
         /// amount. Overrides amount provided by the invoice.
         amount_msat: Option<u64>,
     },
+
+    /// perform loop in swap
+    SwapIn { amount_asset: AmountOfAsset, address: String },
+    /// perform loop out swap
+    SwapOut { node: NodeId, amount_asset: AmountOfAsset, max_swap_fee: u64 },
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, Error, From)]

@@ -22,7 +22,7 @@ use wallet::psbt::sign::SignError;
 
 use crate::bus::ServiceBus;
 use crate::channeld;
-use crate::lnpd::automata::launch;
+use crate::lnpd::automata::{launch, swap};
 use crate::lnpd::{funding, Daemon};
 use crate::routed::PaymentError;
 use crate::rpc::{self, ServiceId};
@@ -99,6 +99,9 @@ pub enum Error {
     /// unable to sign PSBT: {0}
     #[from]
     Signing(SignError),
+
+    #[from]
+    SwapLaunch(swap::Error),
 
     /// bridge interface failure: {0}
     #[from(zmq::Error)]

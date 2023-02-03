@@ -35,6 +35,9 @@ pub enum FailureCode {
     /// LNPD-related error
     Lnpd = 0x010,
 
+    /// SWAPD-related error
+    Swap = 0x40,
+
     /// Error coming from other ESB interface reported to a different sservice
     Nested = 0xFFE,
 }

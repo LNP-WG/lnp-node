@@ -312,12 +312,17 @@ impl Runtime {
 
     fn handle_ctl(
         &mut self,
-        _endpoints: &mut Endpoints,
-        _source: ServiceId,
+        endpoints: &mut Endpoints,
+        source: ServiceId,
         request: CtlMsg,
     ) -> Result<(), Error> {
         #[allow(clippy::match_single_binding)]
         match request {
+            CtlMsg::GetInfo => {
+                let info = BusMsg::Ctl(CtlMsg::PeerInfo(self.get_info()));
+                endpoints.send_to(ServiceBus::Ctl, self.identity(), source, info)?;
+                Ok(())
+            }
             _ => {
                 error!("Request is not supported by the CTL interface");
                 Err(Error::wrong_esb_msg(ServiceBus::Ctl, &request))
@@ -442,6 +447,17 @@ impl Runtime {
                 )?;
             }
 
+            message if message.is_swap_msg() => {
+                if let Some(swap_id) = message.swap_id() {
+                    endpoints.send_to(
+                        ServiceBus::Msg,
+                        self.identity(),
+                        ServiceId::Swapd(swap_id.clone()),
+                        BusMsg::Bifrost(message),
+                    )?;
+                }
+            }
+
             message => {
                 // TODO:
                 //  1. Check permissions
@@ -456,6 +472,33 @@ impl Runtime {
         Ok(())
     }
 
+    fn get_info(&self) -> PeerInfo {
+        PeerInfo {
+            local_id: self.local_id,
+            remote_id: self.remote_id.map(|id| vec![id]).unwrap_or_default(),
+            local_socket: self.local_socket,
+            remote_socket: vec![self.remote_socket],
+            uptime: SystemTime::now()
+                .duration_since(self.started)
+                .unwrap_or_else(|_| Duration::from_secs(0)),
+            since: self
+                .started
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_else(|_| Duration::from_secs(0))
+                .as_secs(),
+            messages_sent: self.messages_sent,
+            messages_received: self.messages_received,
+            channels: self
+                .channels
+                .iter()
+                .copied()
+                .map(bolt::ActiveChannelId::as_slice32)
+                .collect(),
+            connected: !self.connect,
+            awaits_pong: self.awaited_pong.is_some(),
+        }
+    }
+
     fn handle_rpc(
         &mut self,
         endpoints: &mut Endpoints,
@@ -464,30 +507,7 @@ impl Runtime {
     ) -> Result<(), Error> {
         match message {
             RpcMsg::GetInfo => {
-                let peer_info = PeerInfo {
-                    local_id: self.local_id,
-                    remote_id: self.remote_id.map(|id| vec![id]).unwrap_or_default(),
-                    local_socket: self.local_socket,
-                    remote_socket: vec![self.remote_socket],
-                    uptime: SystemTime::now()
-                        .duration_since(self.started)
-                        .unwrap_or_else(|_| Duration::from_secs(0)),
-                    since: self
-                        .started
-                        .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap_or_else(|_| Duration::from_secs(0))
-                        .as_secs(),
-                    messages_sent: self.messages_sent,
-                    messages_received: self.messages_received,
-                    channels: self
-                        .channels
-                        .iter()
-                        .copied()
-                        .map(bolt::ActiveChannelId::as_slice32)
-                        .collect(),
-                    connected: !self.connect,
-                    awaits_pong: self.awaited_pong.is_some(),
-                };
+                let peer_info = self.get_info();
                 self.send_rpc(endpoints, client_id, peer_info)?;
             }
 

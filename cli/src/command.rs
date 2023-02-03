@@ -33,6 +33,8 @@ impl Command {
             Command::Open { .. } => s!("Opening channel"),
             Command::Invoice { .. } => s!("Creating invoice"),
             Command::Pay { .. } => s!("Paying invoice"),
+            Command::SwapIn { .. } => s!("perform loop-in swap"),
+            Command::SwapOut { .. } => s!("perform loop-out swap"),
         }
     }
 }
@@ -160,6 +162,12 @@ impl Exec for Opts {
                     RpcMsg::PayInvoice(PayInvoice { invoice, channel_id, amount_msat }),
                 )?;
                 runtime.report_progress()?;
+            }
+            Command::SwapIn { amount_asset, address } => {
+                todo!()
+            }
+            Command::SwapOut { amount_asset, node, .. } => {
+                todo!()
             }
         }
         Ok(())

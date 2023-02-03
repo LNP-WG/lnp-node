@@ -38,7 +38,7 @@ pub enum CtlMsg {
 
     // Node connectivity API
     // ---------------------
-    // Sent from lnpd to peerd
+    // Sent from lnpd to peerd, swapd to peerd/channeld
     #[display("get_info()")]
     GetInfo,
 

@@ -21,12 +21,14 @@ use bitcoin_scripts::address::AddressCompat;
 use internet2::addr::{NodeAddr, NodeId};
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p;
+use lnp::p2p::{self, bifrost};
+use lnp::p2p::bifrost::SwapId;
 use lnp::p2p::bolt::{
     ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
 };
 use lnp::p2p::Protocol;
 use lnp_rpc::{FailureCode, ListenAddr};
+use lnpbp::chain::AssetId;
 use microservices::cli::LogStyle;
 use microservices::esb::{self, ClientId, Handler};
 use microservices::peer::PeerSocket;
@@ -37,6 +39,7 @@ use crate::automata::{Event, StateMachine};
 use crate::bus::{
     AcceptChannelFrom, BusMsg, CtlMsg, IntoSuccessOrFalure, ServiceBus, Status, ToProgressOrFalure,
 };
+use crate::lnpd::automata::swap::{SwapLauncher, SwapRequest};
 use crate::lnpd::automata::ChannelLauncher;
 use crate::lnpd::daemons::{read_node_key_file, Daemon};
 use crate::lnpd::funding::{self, FundingWallet};
@@ -69,6 +72,7 @@ pub fn run<'a>(
         funding_channels: none!(),
         accepting_channels: none!(),
         reestablishing_channels: none!(),
+        ongoing_swaps: none!(),
     };
 
     Service::run(config, runtime, true)
@@ -107,6 +111,7 @@ pub struct Runtime {
     funding_channels: HashMap<Txid, ChannelLauncher>,
     accepting_channels: HashMap<ServiceId, AcceptChannelFrom>,
     reestablishing_channels: HashMap<ServiceId, (NodeId, ChannelReestablish)>,
+    ongoing_swaps: HashMap<SwapId, SwapLauncher>,
 }
 
 impl Responder for Runtime {}
@@ -147,6 +152,12 @@ impl esb::Handler<ServiceBus> for Runtime {
             (ServiceBus::Msg, BusMsg::Bolt(_), service) => {
                 unreachable!("lnpd received peer message not from a peerd but from {}", service)
             }
+            (ServiceBus::Msg, BusMsg::Bifrost(msg), ServiceId::PeerBifrost(remote_id)) => {
+                self.handle_bifrost(endpoints, remote_id, msg)
+            },
+            (ServiceBus::Msg, BusMsg::Bifrost(_), service) => {
+                unreachable!("lnpd received bifrost peer message not from a peerd but from {}", service)
+            },
             (ServiceBus::Ctl, BusMsg::Ctl(msg), source) => self.handle_ctl(endpoints, source, msg),
             (ServiceBus::Rpc, BusMsg::Rpc(msg), ServiceId::Client(client_id)) => {
                 self.handle_rpc(endpoints, client_id, msg)
@@ -183,6 +194,9 @@ impl esb::Handler<ServiceBus> for Runtime {
 }
 
 impl Runtime {
+    fn handle_bifrost(&mut self, endpoints: &mut Endpoints, remote_id: NodeId, message: bifrost::Messages) -> Result<(), Error> {
+        todo!()
+    }
     fn handle_p2p(
         &mut self,
         endpoints: &mut Endpoints,
@@ -369,6 +383,23 @@ impl Runtime {
                 self.creating_channels.insert(channeld_id, launcher);
             }
 
+            RpcMsg::SwapIn(swap_in) => {
+                let asset = swap_in.asset.unwrap_or(AssetId::native(&self.config.chain));
+                info!("Creating Swapd for swap_in of {} {}", swap_in.amount, asset);
+                let launcher =
+                    SwapLauncher::with(endpoints, client_id, SwapRequest::In(swap_in), self)?;
+                let id = launcher.swap_id();
+                self.ongoing_swaps.insert(id, launcher);
+            }
+            RpcMsg::SwapOut(swap_out) => {
+                let asset = swap_out.asset.unwrap_or(AssetId::native(&self.config.chain));
+                info!("Creating Swapd for swap_out of {} {}", swap_out.amount, asset);
+                let launcher =
+                    SwapLauncher::with(endpoints, client_id, SwapRequest::Out(swap_out), self)?;
+                let id = launcher.swap_id();
+                self.ongoing_swaps.insert(id, launcher);
+            }
+
             wrong_msg => {
                 error!("Request is not supported by the RPC interface");
                 return Err(Error::wrong_esb_msg(ServiceBus::Rpc, &wrong_msg));
@@ -392,7 +423,7 @@ impl Runtime {
                 let launcher = self
                     .creating_channels
                     .remove(&service_id)
-                    .unwrap_or_else(|| panic!("unregistered channel launcher for {}", service_id));
+                    .unwrap_or_else(|| panic!("Unregistered channel launcher for {}", service_id));
                 let launcher = launcher
                     .next(Event::with(endpoints, self.identity(), source, message), self)?
                     .expect("channel launcher should not be complete");

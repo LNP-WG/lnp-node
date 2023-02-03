@@ -42,6 +42,10 @@ required-features = ["server"]
 name = "signd"
 required-features = ["server"]
 
+[[bin]]
+name = "swapd"
+required-features = ["server"]
+
 [dependencies]
 # LNP/BP crates
 amplify = "3.13.0"
@@ -120,3 +124,6 @@ tor = ["microservices/tor", "internet2/tor"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"
+
+[patch.crates-io]
+lnp-core = { git = "https://github.com/joemphilips/lnp-core", branch = "swap" }

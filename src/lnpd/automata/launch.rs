@@ -25,11 +25,12 @@ use lnp::channel::{FundingError, PsbtLnpFunding};
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use lnp_rpc::FailureCode;
 use microservices::esb::{self, ClientId, Handler};
-use microservices::util::OptionDetails;
 use microservices::LauncherError;
 
+use super::report::report_progress_or_failure;
 use crate::automata::{Event, StateMachine};
 use crate::bus::{BusMsg, CtlMsg, FundChannel, OpenChannelWith, ServiceBus};
+use crate::lnpd::automata::report::{report_failure, report_progress, report_success};
 use crate::lnpd::runtime::Runtime;
 use crate::lnpd::{funding, Daemon};
 use crate::rpc::{CreateChannel, Failure, RpcMsg, ServiceId};
@@ -500,62 +501,4 @@ fn complete_signatures(
     runtime.funding_wallet.publish(funding_psbt)?;
     report_success(enquirer, event.endpoints, "Channel created and active");
     Ok(())
-}
-
-fn report_failure(client_id: ClientId, endpoints: &mut Endpoints, err: Error) -> Result<(), Error> {
-    let enquirer = ServiceId::Client(client_id);
-    let report = RpcMsg::Failure(Failure::from(&err));
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
-        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
-    Err(err.into())
-}
-
-fn report_progress<T>(client_id: ClientId, endpoints: &mut Endpoints, msg: T)
-where
-    T: ToString,
-{
-    let enquirer = ServiceId::Client(client_id);
-    let report = RpcMsg::Progress(msg.to_string());
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
-        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
-}
-
-fn report_success<T>(client_id: ClientId, endpoints: &mut Endpoints, msg: T)
-where
-    T: Into<OptionDetails>,
-{
-    let enquirer = ServiceId::Client(client_id);
-    let report = RpcMsg::Success(msg.into());
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
-        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
-}
-
-fn report_progress_or_failure<T>(
-    client_id: ClientId,
-    endpoints: &mut Endpoints,
-    result: Result<T, Error>,
-) -> Result<(), Error>
-where
-    T: ToString,
-{
-    let enquirer = ServiceId::Client(client_id);
-    let report = match result {
-        Ok(ref val) => RpcMsg::Progress(val.to_string()),
-        Err(ref err) => RpcMsg::Failure(Failure::from(err)),
-    };
-    // Swallowing error since we do not want to break channel creation workflow just because of
-    // not able to report back to the client
-    let _ = endpoints
-        .send_to(ServiceBus::Rpc, ServiceId::LnpBroker, enquirer, BusMsg::Rpc(report))
-        .map_err(|err| error!("Can't report back to client #{}: {}", client_id, err));
-    result.map(|_| ()).map_err(Error::into)
 }

@@ -53,6 +53,7 @@ pub mod peerd;
 pub mod routed;
 mod service;
 pub mod signd;
+pub mod swapd;
 pub mod watchd;
 
 pub use config::Config;
@@ -61,6 +62,7 @@ pub use service::{BridgeHandler, Endpoints, Responder, Service, TryToServiceId};
 
 pub const LNP_NODE_MASTER_KEY_FILE: &str = "master.key";
 pub const LNP_NODE_FUNDING_WALLET: &str = "funding.wallet";
+pub const LNP_NODE_SWAP_KEY: &str = "swap.key";
 
 #[cfg(not(any(feature = "bolt", feature = "bifrost")))]
 compile_error!("either 'bolt' or 'bifrost' feature must be used");

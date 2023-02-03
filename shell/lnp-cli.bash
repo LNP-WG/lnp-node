@@ -45,6 +45,12 @@ _lnp-cli() {
             ping)
                 cmd+="__ping"
                 ;;
+            swap-in)
+                cmd+="__swap__in"
+                ;;
+            swap-out)
+                cmd+="__swap__out"
+                ;;
             *)
                 ;;
         esac
@@ -52,7 +58,7 @@ _lnp-cli() {
 
     case "${cmd}" in
         lnp__cli)
-            opts="-h -V -R -v --help --version --rpc --verbose listen connect ping info funds peers channels open invoice pay help"
+            opts="-h -V -R -v --help --version --rpc --verbose listen connect ping info funds peers channels open invoice pay swap-in swap-out help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -351,6 +357,50 @@ _lnp-cli() {
             ;;
         lnp__cli__ping)
             opts="-h -R -v --bolt --bifrost --help --rpc --verbose <PEER>"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --rpc)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -R)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        lnp__cli__swap__in)
+            opts="-h -R -v --help --rpc --verbose <AMOUNT_ASSET> <ADDRESS>"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --rpc)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -R)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        lnp__cli__swap__out)
+            opts="-h -R -v --help --rpc --verbose <NODE> <AMOUNT_ASSET> <MAX_SWAP_FEE>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

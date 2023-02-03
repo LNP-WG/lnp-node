@@ -21,13 +21,14 @@ use bitcoin::secp256k1::{SecretKey, SECP256K1};
 use internet2::addr::LocalNode;
 use internet2::session::noise::FramingProtocol;
 use lnp::p2p;
+use lnp::p2p::bifrost::SwapId;
 use lnp::p2p::bolt::ActiveChannelId;
 use microservices::cli::LogStyle;
 use microservices::peer::{supervisor, PeerSocket};
 use microservices::{DaemonHandle, Launcher, LauncherError};
 
 use crate::lnpd::runtime::Runtime;
-use crate::{channeld, peerd, routed, signd, watchd, Config, Error};
+use crate::{channeld, peerd, routed, signd, swapd, watchd, Config, Error};
 
 pub fn read_node_key_file(key_file: &Path) -> LocalNode {
     let mut file = fs::File::open(key_file).unwrap_or_else(|_| {
@@ -70,6 +71,9 @@ pub enum Daemon {
 
     #[display("watchd")]
     Watchd,
+
+    #[display("swapd")]
+    Swapd(SwapId),
 }
 
 impl Daemon {
@@ -95,6 +99,7 @@ impl Launcher for Daemon {
             Daemon::Channeld(..) => "channeld",
             Daemon::Routed => "routed",
             Daemon::Watchd => "watchd",
+            Daemon::Swapd(_) => "swapd",
         }
     }
 
@@ -170,6 +175,7 @@ impl Launcher for Daemon {
             Daemon::Channeld(channel_id) => channeld::run(config, channel_id),
             Daemon::Routed => routed::run(config),
             Daemon::Watchd => watchd::run(config),
+            Daemon::Swapd(id) => swapd::run(id, config),
         }
     }
 }

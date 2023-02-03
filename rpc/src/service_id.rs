@@ -14,7 +14,7 @@
 use std::str::FromStr;
 
 use internet2::addr::NodeId;
-use lnp::p2p::bifrost::BifrostApp;
+use lnp::p2p::bifrost::{BifrostApp, SwapId};
 use lnp::p2p::bolt::{ChannelId, TempChannelId};
 use microservices::esb::{self, ClientId, ServiceName};
 use strict_encoding::{strict_deserialize, strict_serialize};
@@ -67,6 +67,14 @@ pub enum ServiceId {
     #[display("chapp<{0}>")]
     #[strict_encoding(value = 0x24)]
     ChannelApp(BifrostApp),
+
+    #[display("swapd")]
+    #[strict_encoding(value = 0x28)]
+    Swapd(SwapId),
+
+    #[display("swapapp<{0}>")]
+    #[strict_encoding(value = 0x40)]
+    SwapApp(BifrostApp),
 
     #[display("other<{0}>")]
     #[strict_encoding(value = 0xFF)]
