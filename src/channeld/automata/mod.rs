@@ -295,6 +295,9 @@ impl Runtime {
             BusMsg::Ctl(CtlMsg::OpenChannelWith(open_channel_with)) => {
                 ChannelPropose::with(self, endpoints, open_channel_with)?.into()
             }
+            BusMsg::Ctl(CtlMsg::AcceptChannelFrom(accept_channel_from)) => {
+                ChannelAccept::with(self, endpoints, accept_channel_from)?.into()
+            }
             wrong_msg => {
                 return Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Initial, source))
             }

@@ -130,11 +130,15 @@ impl Runtime {
 
     fn handle_ctl(
         &mut self,
-        _: &mut Endpoints,
-        _: ServiceId,
+        endpoints: &mut Endpoints,
+        source: ServiceId,
         message: CtlMsg,
     ) -> Result<(), Error> {
         match message {
+            CtlMsg::Hello => {
+                self.send_ctl(endpoints, source, message)?;
+            }
+
             CtlMsg::ChannelCreated(channel_info) => {
                 debug!("Adding local channel {} to the routing table", channel_info.channel_id);
                 self.router.update_from_local(&UpdateMsg::DirectChannelAdd(channel_info))?;

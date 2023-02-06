@@ -17,7 +17,7 @@ use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use bitcoin::Transaction;
+use bitcoin::{Transaction, Txid};
 use electrum_client::{Client as ElectrumClient, ElectrumApi, HeaderNotification};
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display, Error, From)]
@@ -70,7 +70,7 @@ impl ElectrumWorker {
         let client = connect_electrum(electrum_url)?;
 
         let (tx, rx) = mpsc::channel::<ElectrumCmd>();
-        let processor = ElectrumProcessor { client, sender, rx };
+        let processor = ElectrumProcessor::with(client, sender, rx)?;
         let worker_thread = thread::Builder::new()
             .name(s!("electrum_watcher"))
             .spawn(move || processor.run())
@@ -81,6 +81,7 @@ impl ElectrumWorker {
             .name(s!("electrum_pacemaker"))
             .spawn(move || loop {
                 thread::sleep(Duration::from_secs(interval));
+                sender.send(ElectrumCmd::GetTrasactions).expect("Electrum thread is dead");
                 sender.send(ElectrumCmd::PopHeader).expect("Electrum thread is dead")
             })
             .expect("unable to start blockchain watcher pacemaker thread");
@@ -96,6 +97,16 @@ impl ElectrumWorker {
     pub fn reconnect(&self, electrum_url: String) -> Result<(), WatcherChannelFailure> {
         self.cmd(ElectrumCmd::Reconnect(electrum_url))
     }
+
+    #[inline]
+    pub fn track_transaction(&self, txid: Txid) -> Result<(), WatcherChannelFailure> {
+        self.cmd(ElectrumCmd::TrackTransaction(txid))
+    }
+
+    #[inline]
+    pub fn untrack_transaction(&self, txid: Txid) -> Result<(), WatcherChannelFailure> {
+        self.cmd(ElectrumCmd::UntrackTransaction(txid))
+    }
 }
 
 fn connect_electrum(electrum_url: &str) -> Result<ElectrumClient, electrum_client::Error> {
@@ -104,18 +115,31 @@ fn connect_electrum(electrum_url: &str) -> Result<ElectrumClient, electrum_clien
     ElectrumClient::from_config(electrum_url, config)
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 enum ElectrumCmd {
     Reconnect(String),
     PopHeader,
+    GetTrasactions,
+    TrackTransaction(Txid),
+    UntrackTransaction(Txid),
 }
 
 struct ElectrumProcessor {
     client: ElectrumClient,
     sender: mpsc::Sender<ElectrumUpdate>,
     rx: mpsc::Receiver<ElectrumCmd>,
+    tracks: Vec<Txid>,
 }
 
 impl ElectrumProcessor {
+    pub fn with(
+        client: ElectrumClient,
+        sender: mpsc::Sender<ElectrumUpdate>,
+        rx: mpsc::Receiver<ElectrumCmd>,
+    ) -> Result<Self, electrum_client::Error> {
+        Ok(ElectrumProcessor { client, sender, rx, tracks: vec![] })
+    }
+
     pub fn run(mut self) {
         loop {
             match self.rx.recv() {
@@ -133,6 +157,12 @@ impl ElectrumProcessor {
         let resp = match cmd {
             ElectrumCmd::Reconnect(electrum_url) => self.reconnect(&electrum_url).map(|_| None),
             ElectrumCmd::PopHeader => self.pop_header(),
+            ElectrumCmd::GetTrasactions => {
+                let txs = &self.tracks.clone();
+                self.get_transactions(txs)
+            }
+            ElectrumCmd::TrackTransaction(txid) => self.track_transaction(txid),
+            ElectrumCmd::UntrackTransaction(txid) => self.untrack_transaction(txid),
         };
         match resp {
             Ok(Some(msg)) => {
@@ -154,5 +184,36 @@ impl ElectrumProcessor {
 
     fn pop_header(&self) -> Result<Option<ElectrumUpdate>, electrum_client::Error> {
         self.client.block_headers_pop().map(|res| res.map(ElectrumUpdate::LastBlockUpdate))
+    }
+
+    fn get_transactions(
+        &mut self,
+        txids: &Vec<Txid>,
+    ) -> Result<Option<ElectrumUpdate>, electrum_client::Error> {
+        if self.tracks.is_empty() {
+            return Ok(None);
+        }
+        self.client.batch_transaction_get(txids).map(|res| Some(ElectrumUpdate::TxBatch(res, 0.0)))
+    }
+
+    fn track_transaction(
+        &mut self,
+        txid: Txid,
+    ) -> Result<Option<ElectrumUpdate>, electrum_client::Error> {
+        self.tracks.push(txid);
+        self.client
+            .transaction_get(&txid.clone())
+            .map(|res| Some(ElectrumUpdate::TxBatch([res].to_vec(), 0.0)))
+    }
+
+    fn untrack_transaction(
+        &mut self,
+        txid: Txid,
+    ) -> Result<Option<ElectrumUpdate>, electrum_client::Error> {
+        let index = self.tracks.iter().position(|x| *x == txid).unwrap();
+        self.tracks.remove(index);
+        self.client
+            .transaction_get(&txid.clone())
+            .map(|res| Some(ElectrumUpdate::TxBatch([res].to_vec(), 0.0)))
     }
 }

@@ -256,7 +256,9 @@ fn complete_signing(
 
     let channel_id = ChannelId::with(funding_txid, funding_output_index);
     debug!("Changing channel id from {} to {}", runtime.identity(), channel_id);
-    runtime.set_identity(event.endpoints, channel_id).expect("unrecoverable ZMQ failure");
+    runtime
+        .set_identity(event.endpoints, channel_id)
+        .expect("unable to change ZMQ channel identity");
     // needed to update ESB routing map
     runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::Hello)?;
 
@@ -282,8 +284,7 @@ fn complete_funding(
 
     let txid = runtime.state.channel.funding().txid();
     debug!("Waiting for funding transaction {} to be mined", txid);
-    // TODO: Uncomment once watching daemon will be running
-    // runtime.send_ctl(&mut event.endpoints, ServiceId::Watch, CtlMsg::Track(txid))?;
+    runtime.send_ctl(event.endpoints, ServiceId::Watch, CtlMsg::Track { txid, depth: 0 })?;
 
     Ok(ChannelPropose::Published)
 }
@@ -292,22 +293,16 @@ fn complete_published(
     event: Event<BusMsg>,
     runtime: &mut Runtime,
 ) -> Result<Option<ChannelPropose>, automata::Error> {
-    if !matches!(
-        event.message,
-        BusMsg::Ctl(CtlMsg::TxFound(_)) | BusMsg::Bolt(LnMsg::FundingLocked(_))
-    ) {
-        return Err(Error::UnexpectedMessage(event.message, Lifecycle::Signed, event.source));
-    }
-
-    debug!("Funding transaction mined, notifying remote peer");
-    let funding_locked = runtime.state.channel.compose_funding_locked();
-    runtime.send_p2p(event.endpoints, LnMsg::FundingLocked(funding_locked))?;
-
-    if let BusMsg::Bolt(LnMsg::FundingLocked(_)) = event.message {
-        complete_locked(event, runtime)?;
-    }
-
-    Ok(Some(ChannelPropose::Locked))
+    let published_event = match event.message {
+        BusMsg::Ctl(CtlMsg::TxFound(_)) => {
+            debug!("Funding transaction mined, notifying remote peer");
+            let funding_locked = runtime.state.channel.compose_funding_locked();
+            runtime.send_p2p(event.endpoints, LnMsg::FundingLocked(funding_locked))?;
+            Ok(Some(ChannelPropose::Locked))
+        }
+        wrong_msg => Err(Error::UnexpectedMessage(wrong_msg, Lifecycle::Funded, event.source)),
+    };
+    published_event
 }
 
 fn complete_locked(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<(), automata::Error> {
