@@ -18,7 +18,7 @@ use bitcoin_scripts::PubkeyScript;
 use internet2::addr::{NodeAddr, NodeId};
 use internet2::presentation::sphinx::Hop;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
-use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion};
+use lnp::p2p::bolt::{ChannelId, OpenChannel, PaymentOnion, TempChannelId};
 use lnp::router::gossip::LocalChannelInfo;
 use lnp_rpc::{ChannelInfo, Failure, PeerInfo};
 use microservices::esb::ClientId;
@@ -141,6 +141,11 @@ pub enum CtlMsg {
 
     #[display("channel_info({0})", alt = "{0:#}")]
     ChannelInfo(ChannelInfo),
+
+    // Channel tasks
+    // -----------------
+    #[display("channel_update({old_id}, {new_id})")]
+    ChannelUpdate { old_id: TempChannelId, new_id: ChannelId },
 }
 
 impl CtlMsg {

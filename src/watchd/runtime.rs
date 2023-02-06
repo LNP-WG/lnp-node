@@ -76,7 +76,7 @@ impl WatcherRuntime {
 
     pub(self) fn send_over_bridge(&mut self, req: BusMsg) -> Result<(), Error> {
         debug!("Forwarding electrum update message over BRIDGE interface to the runtime");
-        self.bridge.send_to(ServiceBus::Bridge, self.identity.clone(), req)?;
+        self.bridge.send_to(ServiceBus::Bridge, ServiceId::Watch, req)?;
         Ok(())
     }
 
@@ -85,8 +85,28 @@ impl WatcherRuntime {
         let msg = self.receiver.recv()?;
         debug!("Processing message {}", msg);
         trace!("Message details: {:?}", msg);
-        // TODO: Forward electrum notifications over the bridge
+        // TODO: Forward all electrum notifications over the bridge
         // self.send_over_bridge(msg.into()).expect("watcher bridge is halted");
+        match msg {
+            ElectrumUpdate::TxBatch(transactions, _) => {
+                for transaction in transactions {
+                    self.send_over_bridge(BusMsg::Ctl(CtlMsg::TxFound(crate::bus::TxStatus {
+                        txid: transaction.txid(),
+                        block_pos: None,
+                    })))
+                    .expect("unable forward electrum notifications over the bridge");
+                }
+            }
+            ElectrumUpdate::Connecting
+            | ElectrumUpdate::Connected
+            | ElectrumUpdate::Complete
+            | ElectrumUpdate::FeeEstimate(..)
+            | ElectrumUpdate::LastBlock(_)
+            | ElectrumUpdate::LastBlockUpdate(_)
+            | ElectrumUpdate::ChannelDisconnected
+            | ElectrumUpdate::Error(_) => { /* nothing to do here */ }
+        }
+
         Ok(())
     }
 }
@@ -153,6 +173,10 @@ impl Runtime {
                     if *required_height >= tx_status.block_pos.map(|b| b.pos).unwrap_or_default() {
                         let service_id = service_id.clone();
                         self.untrack(tx_status.txid);
+                        match self.electrum_worker.untrack_transaction(tx_status.txid) {
+                            Ok(_) => debug!("Untracking tx {}", tx_status.txid),
+                            _ => error!("Unable untrack transaction in electrum worker"),
+                        }
                         endpoints.send_to(
                             ServiceBus::Ctl,
                             ServiceId::Watch,
@@ -194,14 +218,19 @@ impl Runtime {
     ) -> Result<(), Error> {
         match message {
             CtlMsg::Track { txid, depth } => {
-                debug!("Tracking status for tx {}", txid);
+                debug!("Tracking status for tx {txid}");
                 self.track_list.insert(txid, (depth, source));
-                // TODO: Request worker
+                match self.electrum_worker.track_transaction(txid) {
+                    Ok(_) => debug!("Tracking status for tx {txid}"),
+                    _ => error!("Unable track transaction in electrum worker"),
+                }
             }
-
             CtlMsg::Untrack(txid) => {
-                // TODO: Request worker
                 self.untrack(txid);
+                match self.electrum_worker.untrack_transaction(txid) {
+                    Ok(_) => debug!("Untracking tx {txid}"),
+                    _ => error!("Unable untrack transaction in electrum worker"),
+                }
             }
 
             wrong_msg => {
@@ -214,7 +243,7 @@ impl Runtime {
     }
 
     fn untrack(&mut self, txid: Txid) {
-        debug!("Stopping tracking tx {}", txid);
+        debug!("Stopping tracking tx {txid}");
         if self.track_list.remove(&txid).is_none() {
             warn!("Transaction {} was not tracked before", txid);
         }
