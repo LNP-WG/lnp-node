@@ -211,7 +211,7 @@ fn complete_accepted(
     debug!("Funding transaction id is {}", funding_psbt.to_txid());
 
     let channel = &mut runtime.state.channel;
-    let refund_psbt = channel.refund_tx(funding_psbt, false)?;
+    let refund_psbt = channel.refund_tx(funding_psbt, true)?;
 
     trace!("Refund transaction: {:#?}", refund_psbt);
     trace!("Local keyset: {:#}", channel.constructor().local_keys());
@@ -261,7 +261,6 @@ fn complete_signing(
         .expect("unable to change ZMQ channel identity");
     // needed to update ESB routing map
     runtime.send_ctl(event.endpoints, ServiceId::LnpBroker, CtlMsg::Hello)?;
-
     runtime.send_p2p(event.endpoints, LnMsg::FundingCreated(funding_created))?;
     Ok(ChannelPropose::Funding)
 }
