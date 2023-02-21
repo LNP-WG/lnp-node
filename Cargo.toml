@@ -120,3 +120,12 @@ tor = ["microservices/tor", "internet2/tor"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"
+
+[patch.crates-io]
+# TODO: Remove after merge and release:
+#    - https://github.com/LNP-WG/lnp-core/pull/29
+#    - https://github.com/LNP-WG/lnp-core/pull/27
+lnp-core = { git = "https://github.com/crisdut/lnp-core", branch="exp/ln-interop" }
+# TODO: Remove after merge and release:
+#    - https://github.com/LNP-WG/lightning_encoding/pull/4
+lightning_encoding = { git = "https://github.com/crisdut/lightning_encoding", branch="fix/script-decode" }

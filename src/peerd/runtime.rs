@@ -188,12 +188,11 @@ impl esb::Handler<ServiceBus> for Runtime {
     fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".announce());
-
             match self.config.protocol {
                 p2p::Protocol::Bolt => {
                     self.sender.send_message(bolt::Messages::Init(bolt::Init {
-                        global_features: InitFeatures::default(),
-                        local_features: InitFeatures::default(),
+                        global_features: InitFeatures::new(),
+                        local_features: InitFeatures::new(),
                         assets: none!(),
                         unknown_tlvs: none!(),
                     }))?;

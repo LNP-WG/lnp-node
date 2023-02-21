@@ -411,6 +411,16 @@ impl Runtime {
                     .insert(ChannelId::from_inner(launcher.channel_id()).into(), launcher);
             }
 
+            CtlMsg::ConstructRefund(refund_params) => {
+                let (psbt, outpoint) = self.funding_wallet.construct_refund_psbt(refund_params)?;
+                endpoints.send_to(
+                    ServiceBus::Ctl,
+                    self.identity(),
+                    source,
+                    BusMsg::Ctl(CtlMsg::RefundConstructed(psbt, outpoint)),
+                )?;
+            }
+
             CtlMsg::PublishFunding => {
                 let launcher = self
                     .creating_channels

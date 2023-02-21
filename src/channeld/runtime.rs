@@ -243,6 +243,7 @@ impl Runtime {
             }
 
             CtlMsg::FundingConstructed(_)
+            | CtlMsg::RefundConstructed(..)
             | CtlMsg::TxFound(_)
             | CtlMsg::Signed(_)
             | CtlMsg::Keyset(..)

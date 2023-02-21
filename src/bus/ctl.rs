@@ -12,7 +12,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Slice32;
-use bitcoin::Txid;
+use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::{OutPoint, Txid};
 use bitcoin_scripts::hlc::HashLock;
 use bitcoin_scripts::PubkeyScript;
 use internet2::addr::{NodeAddr, NodeId};
@@ -65,6 +66,16 @@ pub enum CtlMsg {
     /// newly created channel. Sent from lnpd to channeld.
     #[display("funding_constructed(...)")]
     FundingConstructed(Psbt),
+
+    /// Constructs first commitment transaction PSBT (aka. refund transaction) for penalty transactions
+    /// to remotely-created new channel. Sent from peerd to lnpd.
+    #[display("construct_refund({0})")]
+    ConstructRefund(RefundParams),
+
+    /// Provides channeld with the information about funding transaction output used to penalty
+    /// transactions. Sent from lnpd to channeld.
+    #[display("construct_refund({0}, {1})")]
+    RefundConstructed(Psbt, OutPoint),
 
     /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
     /// from channeld to lnpd upon receival of `funding_signed` message from a remote peer.
@@ -229,6 +240,27 @@ pub struct FundChannel {
 
     /// Fee rate to use for the funding transaction, per kilo-weight unit
     pub feerate_per_kw: Option<u32>,
+}
+
+/// Request information about constructing funding transaction
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display("refund_params({funding_txid}:{funding_output_index}, ...signature)")]
+pub struct RefundParams {
+    /// The funding transaction ID
+    pub funding_txid: Txid,
+
+    /// The specific output index funding this channel
+    pub funding_output_index: u16,
+
+    /// The funding amount
+    pub funding_amount: u64,
+
+    /// The funding script pubkey
+    pub funding_script_pubkey: PubkeyScript,
+
+    /// The signature of the channel initiator (funder) on the funding
+    /// transaction
+    pub signature: Signature,
 }
 
 /// TODO: Move to descriptor wallet
