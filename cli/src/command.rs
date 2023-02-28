@@ -13,9 +13,12 @@
 
 use std::str::FromStr;
 
+use colored::Colorize;
 use internet2::addr::NodeId;
 use lnp::p2p::bolt::{ChannelId, LNP2P_BOLT_PORT};
-use lnp_rpc::{self, Client, CreateChannel, Error, ListenAddr, PayInvoice, RpcMsg, ServiceId};
+use lnp_rpc::{
+    self, Client, CreateChannel, CreateInvoice, Error, ListenAddr, PayInvoice, RpcMsg, ServiceId,
+};
 use microservices::shell::Exec;
 
 use crate::{Command, Opts};
@@ -152,7 +155,29 @@ impl Exec for Opts {
                 )?;
                 runtime.report_progress()?;
             }
-            Command::Invoice { .. } => todo!("Implement invoice generation"),
+            Command::Invoice { amount, description, bolt, .. } => {
+                if bolt {
+                    runtime.request(
+                        ServiceId::LnpBroker,
+                        RpcMsg::CreateInvoice(CreateInvoice {
+                            amount_msat: (amount * 1000),
+                            description,
+                        }),
+                    )?;
+                    runtime.report_response()?;
+                    eprintln!(
+                        "{} {}",
+                        "Warning:".bright_yellow(),
+                        "This is a experimental feature!".yellow()
+                    );
+                } else {
+                    eprintln!(
+                        "{} {}",
+                        "Error:".bright_red(),
+                        "Bifrost invoice does not implemented yet!".red()
+                    );
+                }
+            }
 
             Command::Pay { invoice, channel: channel_id, amount_msat } => {
                 runtime.request(

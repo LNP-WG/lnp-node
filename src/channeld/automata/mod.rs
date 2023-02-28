@@ -107,6 +107,9 @@ pub enum ChannelStateMachine {
     #[from]
     Accept(ChannelAccept),
 
+    // /// receving commitment sign by a remote peer
+    // #[display("COMMITMENT")]
+    // Commitment(ReceivedHtlc),
     /// active channel operations
     #[display("ACTIVE")]
     Active,
@@ -192,8 +195,8 @@ impl Runtime {
             self.report_failure(endpoints, Failure { code, info });
         }
 
-        let event = Event::with(endpoints, self.identity(), source, request);
         let channel_id = self.state.channel.active_channel_id();
+        let event = Event::with(endpoints, self.identity(), source, request);
         let updated_state = match self.process_event(event) {
             Ok(_) => {
                 // Ignoring possible reporting errors here and after: do not want to
@@ -246,6 +249,11 @@ impl Runtime {
             )?;
             return Ok(());
         }
+
+        // if let BusMsg::Bolt(LnMsg::UpdateAddHtlc(_)) = event.message {
+        //     self.state.state_machine = self.complete_commitment(event)?;
+        //     return Ok(());
+        // }
 
         self.state.state_machine = match self.state.state_machine {
             ChannelStateMachine::Launch => self.complete_launch(event),

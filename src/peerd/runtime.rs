@@ -402,6 +402,7 @@ impl Runtime {
 
             bolt::Messages::FundingSigned(bolt::FundingSigned { channel_id, .. })
             | bolt::Messages::FundingLocked(bolt::FundingLocked { channel_id, .. })
+            | bolt::Messages::CommitmentSigned(bolt::CommitmentSigned { channel_id, .. })
             | bolt::Messages::UpdateAddHtlc(bolt::UpdateAddHtlc { channel_id, .. })
             | bolt::Messages::UpdateFulfillHtlc(bolt::UpdateFulfillHtlc { channel_id, .. })
             | bolt::Messages::UpdateFailHtlc(bolt::UpdateFailHtlc { channel_id, .. })

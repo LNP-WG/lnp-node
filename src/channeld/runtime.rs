@@ -200,11 +200,12 @@ impl Runtime {
                 );
             }
 
-            LnMsg::ChannelReestablish(_)
-            | LnMsg::AcceptChannel(_)
+            LnMsg::AcceptChannel(_)
             | LnMsg::FundingCreated(_)
             | LnMsg::FundingSigned(_)
-            | LnMsg::FundingLocked(_) => {
+            | LnMsg::FundingLocked(_)
+            | LnMsg::ChannelReestablish(_)
+            | LnMsg::UpdateAddHtlc(_) => {
                 self.process(endpoints, ServiceId::PeerBolt(remote_id), BusMsg::Bolt(message))?;
             }
             _ => {

@@ -67,8 +67,8 @@ pub enum CtlMsg {
     #[display("funding_constructed(...)")]
     FundingConstructed(Psbt),
 
-    /// Constructs first commitment transaction PSBT (aka. refund transaction) for penalty transactions
-    /// to remotely-created new channel. Sent from peerd to lnpd.
+    /// Constructs first commitment transaction PSBT (aka. refund transaction) for penalty
+    /// transactions to remotely-created new channel. Sent from peerd to lnpd.
     #[display("construct_refund({0})")]
     ConstructRefund(RefundParams),
 
@@ -97,7 +97,7 @@ pub enum CtlMsg {
     /// Reports changes in the mining status for previously requested transaction tracked by an
     /// on-chain service
     #[display("tx_found({0})")]
-    TxFound(TxStatus),
+    TxFound(TxConfirmation),
 
     // Routing & payments
     /// Request to channel daemon to perform payment using provided route
@@ -290,6 +290,19 @@ pub struct TxStatus {
 
     /// Optional block position given only if the depth is greater than 0 zero
     pub block_pos: Option<BlockPos>,
+}
+
+/// TODO: Move to descriptor wallet
+/// Update on a transaction mining status
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
+#[derive(NetworkEncode, NetworkDecode)]
+#[display("{txid}, ...")]
+pub struct TxConfirmation {
+    /// Id of a transaction previously requested to be tracked
+    pub txid: Txid,
+
+    /// block confirmations
+    pub confirmations: u32,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, NetworkEncode, NetworkDecode)]

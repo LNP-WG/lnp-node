@@ -141,10 +141,13 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-R+[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
 '--rpc=[ZMQ socket for connecting daemon RPC interface]:CONNECT: ' \
+'(--bifrost)--bolt[Use BOLT lightning network protocol]' \
+'--bifrost[Use Bifrost lightning network protocol]' \
 '-h[Print help information]' \
 '--help[Print help information]' \
 '*-v[Set verbosity level]' \
 '*--verbose[Set verbosity level]' \
+':description -- Invoice Description and/or Propouse:' \
 ':amount -- Asset amount to invoice, in atomic unit (satoshis or smallest asset unit type):' \
 '::asset -- Asset ticker in which the invoice should be issued:' \
 && ret=0

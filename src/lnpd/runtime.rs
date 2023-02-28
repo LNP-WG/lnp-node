@@ -15,18 +15,23 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
-use amplify::{DumbDefault, Wrapper};
+use amplify::hex::ToHex;
+use amplify::{DumbDefault, Slice32, Wrapper};
+use bitcoin::secp256k1::SECP256K1;
 use bitcoin::Txid;
 use bitcoin_scripts::address::AddressCompat;
+use bitcoin_scripts::hlc::{HashLock, HashPreimage};
 use internet2::addr::{NodeAddr, NodeId};
+use invoice::{Invoice, LnAddress};
+use lightning_invoice::{Invoice as BoltInvoice, RawInvoice};
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{CommonParams, LocalKeyset, PeerParams, Policy};
 use lnp::p2p;
 use lnp::p2p::bolt::{
-    ActiveChannelId, ChannelId, ChannelReestablish, Messages as LnMsg, TempChannelId,
+    ActiveChannelId, ChannelId, ChannelReestablish, InitFeatures, Messages as LnMsg, TempChannelId,
 };
 use lnp::p2p::Protocol;
-use lnp_rpc::{FailureCode, ListenAddr};
+use lnp_rpc::{CreateInvoice, FailureCode, InvoiceRes, ListenAddr};
 use microservices::cli::LogStyle;
 use microservices::esb::{self, ClientId, Handler};
 use microservices::peer::PeerSocket;
@@ -61,14 +66,15 @@ pub fn run<'a>(
         handles: vec![],
         funding_wallet: config.funding_wallet()?,
         channel_params: config.channel_params()?,
+        features: config.initial_features()?,
         bolt_connections: none!(),
         bifrost_connections: none!(),
         channels: none!(),
         spawning_peers: none!(),
         creating_channels: none!(),
         funding_channels: none!(),
-        accepting_channels: none!(),
         reestablishing_channels: none!(),
+        accepting_channels: none!(),
     };
 
     Service::run(config, runtime, true)
@@ -88,6 +94,11 @@ impl Config {
         // TODO: Read params from config
         Ok((Policy::default(), CommonParams::default(), PeerParams::default()))
     }
+
+    fn initial_features(&self) -> Result<(InitFeatures, InitFeatures), Error> {
+        // TODO: Read params from config
+        Ok((InitFeatures::new(), InitFeatures::new()))
+    }
 }
 
 pub struct Runtime {
@@ -97,6 +108,7 @@ pub struct Runtime {
     listens: HashSet<ListenAddr>,
     started: SystemTime,
     handles: Vec<DaemonHandle<Daemon>>,
+    pub(super) features: (InitFeatures, InitFeatures),
     pub(super) funding_wallet: FundingWallet,
     pub(super) channel_params: (Policy, CommonParams, PeerParams),
     bolt_connections: HashSet<NodeId>,
@@ -367,6 +379,49 @@ impl Runtime {
                 let launcher = ChannelLauncher::with(endpoints, client_id, create_channel, self)?;
                 let channeld_id = ServiceId::Channel(launcher.channel_id().into());
                 self.creating_channels.insert(channeld_id, launcher);
+            }
+
+            RpcMsg::CreateInvoice(CreateInvoice { amount_msat, description }) => {
+                info!("Creating invoice with {amount_msat} msat and description '{description}'");
+
+                let key_file = self.node_key_path.clone();
+                let node_key = read_node_key_file(key_file.as_path());
+
+                let preimage = HashPreimage::from_inner(Slice32::random());
+                let invoice = Invoice::new(
+                    invoice::Beneficiary::Bolt(LnAddress {
+                        node_id: self.node_id,
+                        features: self.features.1.clone(),
+                        lock: HashLock::from(preimage),
+                        network: self.funding_wallet.network().into(),
+                        secret: None,
+                        min_final_cltv_expiry: Some(114),
+                        path_hints: vec![],
+                    }),
+                    Some(amount_msat),
+                    None,
+                );
+
+                let bolt11 = RawInvoice::try_from(invoice).unwrap();
+                let signed_invoice = bolt11
+                    .sign::<_, ()>(|hash| {
+                        let privkey = node_key.private_key();
+                        let secp_ctx = &SECP256K1;
+                        Ok(secp_ctx.sign_ecdsa_recoverable(hash, &privkey))
+                    })
+                    .unwrap();
+
+                let invoice = BoltInvoice::from_signed(signed_invoice).unwrap();
+                let secret = invoice.payment_secret();
+
+                let resp = InvoiceRes {
+                    description,
+                    amount_msat,
+                    payment_secret: secret.0.to_hex(),
+                    bolt11: invoice.to_string(),
+                };
+
+                self.send_rpc(endpoints, client_id, RpcMsg::InvoiceCreated(resp))?;
             }
 
             wrong_msg => {

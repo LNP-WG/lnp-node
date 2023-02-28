@@ -21,7 +21,7 @@ use std::time::Duration;
 use amplify::{Slice32, ToYamlString, Wrapper};
 use bitcoin_scripts::address::AddressCompat;
 use internet2::addr::{InetSocketAddr, NodeAddr, NodeId};
-use lightning_invoice::Invoice;
+use lightning_invoice::Invoice as BoltInvoice;
 use lnp::addr::LnpAddr;
 use lnp::channel::bolt::{AssetsBalance, ChannelState, CommonParams, PeerParams};
 use lnp::p2p::bolt::{ChannelId, ChannelType};
@@ -86,6 +86,10 @@ pub enum RpcMsg {
     #[display("create_channel({0})")]
     CreateChannel(CreateChannel),
 
+    /// Requests creation of a new invoice from a `cli` to `lnpd`
+    #[display("create_invoice({0})")]
+    CreateInvoice(CreateInvoice),
+
     // Can be issued from a `cli` to `routed`
     #[display("send({0})")]
     Send(Send),
@@ -130,6 +134,9 @@ pub enum RpcMsg {
     #[display("funds_info({0})", alt = "{0:#}")]
     #[from]
     FundsInfo(FundsInfo),
+
+    #[display("invoice_created({0})", alt = "{0:#}")]
+    InvoiceCreated(InvoiceRes),
 }
 
 impl RpcMsg {
@@ -221,11 +228,30 @@ impl CreateChannel {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display("{description}, {amount_msat}")]
+pub struct CreateInvoice {
+    pub description: String,
+    pub amount_msat: u64,
+}
+
+// #[derive(Clone, PartialEq, Eq, Debug, Display)]
+#[cfg_attr(feature = "serde", serde_as)]
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(crate = "serde_crate"))]
+#[display(InvoiceRes::to_yaml_string)]
+pub struct InvoiceRes {
+    pub description: String,
+    pub amount_msat: u64,
+    pub payment_secret: String,
+    pub bolt11: String,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug, Display)]
 #[display("{invoice}, {channel_id}")]
 pub struct PayInvoice {
     pub channel_id: ChannelId,
-    pub invoice: Invoice,
+    pub invoice: BoltInvoice,
     pub amount_msat: Option<u64>,
 }
 
@@ -239,7 +265,7 @@ impl StrictDecode for PayInvoice {
     fn strict_decode<D: io::Read>(mut d: D) -> Result<Self, strict_encoding::Error> {
         Ok(PayInvoice {
             channel_id: ChannelId::strict_decode(&mut d)?,
-            invoice: Invoice::from_str(&String::strict_decode(&mut d)?).map_err(|err| {
+            invoice: BoltInvoice::from_str(&String::strict_decode(&mut d)?).map_err(|err| {
                 strict_encoding::Error::DataIntegrityError(format!(
                     "invalid bech32 lightning invoice: {}",
                     err
@@ -338,6 +364,8 @@ impl ToYamlString for ChannelInfo {}
 impl ToYamlString for FundsInfo {}
 #[cfg(feature = "serde")]
 impl ToYamlString for ListPeerInfo {}
+#[cfg(feature = "serde")]
+impl ToYamlString for InvoiceRes {}
 
 #[derive(Wrapper, Clone, PartialEq, Eq, Debug, From, NetworkEncode, NetworkDecode)]
 #[wrapper(IndexRange)]

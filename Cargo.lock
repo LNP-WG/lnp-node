@@ -241,6 +241,8 @@ dependencies = [
  "bp-dbc",
  "bp-seals",
  "commit_verify",
+ "serde 1.0.139",
+ "serde_with",
  "single_use_seals",
  "strict_encoding",
 ]
@@ -256,6 +258,8 @@ dependencies = [
  "bitcoin_scripts",
  "commit_verify",
  "secp256k1",
+ "serde 1.0.139",
+ "serde_with",
  "strict_encoding",
 ]
 
@@ -271,6 +275,8 @@ dependencies = [
  "bp-dbc",
  "commit_verify",
  "lnpbp_bech32",
+ "serde 1.0.139",
+ "serde_with",
  "single_use_seals",
  "strict_encoding",
 ]
@@ -374,6 +380,7 @@ dependencies = [
  "js-sys",
  "num-integer",
  "num-traits 0.2.15",
+ "serde 1.0.139",
  "time",
  "wasm-bindgen",
  "winapi",
@@ -476,6 +483,8 @@ dependencies = [
  "amplify",
  "bitcoin_hashes",
  "rand 0.8.5",
+ "serde 1.0.139",
+ "serde_with",
  "strict_encoding",
 ]
 
@@ -917,6 +926,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
+name = "form_urlencoded"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
+dependencies = [
+ "percent-encoding",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1023,6 +1041,16 @@ name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+
+[[package]]
+name = "idna"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e14ddfc70884202db2244c223200c204c2bda1bc6e0998d11b5e024d657209e6"
+dependencies = [
+ "unicode-bidi",
+ "unicode-normalization",
+]
 
 [[package]]
 name = "indexmap"
@@ -1248,6 +1276,7 @@ dependencies = [
  "amplify",
  "clap",
  "clap_complete",
+ "colored",
  "configure_me_codegen",
  "internet2",
  "lightning-invoice",
@@ -1261,7 +1290,7 @@ dependencies = [
 [[package]]
 name = "lnp-core"
 version = "0.9.1"
-source = "git+https://github.com/crisdut/lnp-core?branch=exp/ln-interop#001086387a8882f65ce650df6732ab2fa6278ff9"
+source = "git+https://github.com/crisdut/lnp-core?branch=exp/ln-interop#5c7b275764f97da052e7e362b103957e7e2db71a"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1280,7 +1309,7 @@ dependencies = [
 [[package]]
 name = "lnp2p"
 version = "0.9.1"
-source = "git+https://github.com/crisdut/lnp-core?branch=exp/ln-interop#001086387a8882f65ce650df6732ab2fa6278ff9"
+source = "git+https://github.com/crisdut/lnp-core?branch=exp/ln-interop#5c7b275764f97da052e7e362b103957e7e2db71a"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1323,6 +1352,7 @@ dependencies = [
  "lnp-core",
  "lnp_rpc",
  "lnpbp",
+ "lnpbp-invoice",
  "log",
  "microservices",
  "miniscript",
@@ -1349,6 +1379,7 @@ dependencies = [
  "lightning-invoice",
  "lnp-core",
  "lnpbp",
+ "lnpbp-invoice",
  "log",
  "microservices",
  "serde 1.0.139",
@@ -1370,6 +1401,30 @@ dependencies = [
  "serde 1.0.139",
  "serde_with",
  "strict_encoding",
+]
+
+[[package]]
+name = "lnpbp-invoice"
+version = "0.9.0"
+source = "git+https://github.com/crisdut/invoices?branch=feat/bolt11#c3fc5d6e153729b584fd09cd8db6be64bb43165a"
+dependencies = [
+ "amplify",
+ "bitcoin",
+ "bitcoin_scripts",
+ "bp-core",
+ "chrono",
+ "commit_verify",
+ "descriptor-wallet",
+ "internet2",
+ "lightning",
+ "lightning-invoice",
+ "lnp-core",
+ "lnpbp",
+ "miniscript",
+ "serde 1.0.139",
+ "serde_with",
+ "strict_encoding",
+ "url",
 ]
 
 [[package]]
@@ -1467,6 +1522,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "123a10aae81d0712ecc09b780f6f0ae0b0f506a5c4c912974725760d59ba073e"
 dependencies = [
  "bitcoin",
+ "serde 1.0.139",
 ]
 
 [[package]]
@@ -1559,6 +1615,12 @@ name = "paste"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c520e05135d6e763148b6426a837e239041653ba7becd2e538c076c738025fc"
+
+[[package]]
+name = "percent-encoding"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
 name = "pin-project-lite"
@@ -2259,6 +2321,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tinyvec"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "87cc5ceb3875bb20c2890005a4e226a4651264a5c75edb2421b52861a0a0cb50"
+dependencies = [
+ "tinyvec_macros",
+]
+
+[[package]]
+name = "tinyvec_macros"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
 name = "tokio"
 version = "1.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2305,10 +2382,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
+name = "unicode-bidi"
+version = "0.3.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d54675592c1dbefd78cbd98db9bacd89886e1ca50692a0692baefffdeb92dd58"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5bd2fe26506023ed7b5e1e315add59d6f584c621d037f9368fea9cfb988f368c"
+
+[[package]]
+name = "unicode-normalization"
+version = "0.1.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c5713f0fc4b5db668a2ac63cdb7bb4469d8c9fed047b1d0292cc7b0ce2ba921"
+dependencies = [
+ "tinyvec",
+]
 
 [[package]]
 name = "unicode-segmentation"
@@ -2349,6 +2441,18 @@ name = "untrusted"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "url"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d68c799ae75762b8c3fe375feb6600ef5602c883c5d21eb51c09f22b83c4643"
+dependencies = [
+ "form_urlencoded",
+ "idna",
+ "percent-encoding",
+ "serde 1.0.139",
+]
 
 [[package]]
 name = "version-compare"
