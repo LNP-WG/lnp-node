@@ -149,8 +149,8 @@ impl Runtime {
                 self.router.update_from_local(&UpdateMsg::DirectChannelRemove(channel_id))?;
             }
 
-            CtlMsg::ChannelBalanceUpdate { .. } => {
-                // TODO: Handle balance updates
+            CtlMsg::ChannelBalanceUpdate { channel_id, local_amount_msat, remote_amount_msat } => {
+                self.router.update_from_local(&UpdateMsg::DirectChannelUpdate { channel_id, local_amount_msat, remote_amount_msat })?;
             }
 
             wrong_msg => {
