@@ -22,6 +22,7 @@ use bitcoin::secp256k1::rand::{self, Rng, RngCore};
 use internet2::addr::{InetSocketAddr, NodeId};
 use internet2::zeromq::ZmqSocketType;
 use internet2::{presentation, transport, zeromq, CreateUnmarshaller, TypedEnum};
+use lnp::p2p::bolt::{InitFeatures, Messages};
 use lnp::p2p::{self, bifrost, bolt};
 use lnp_rpc::RpcMsg;
 use microservices::cli::LogStyle;
@@ -187,12 +188,11 @@ impl esb::Handler<ServiceBus> for Runtime {
     fn on_ready(&mut self, _: &mut Endpoints) -> Result<(), Error> {
         if self.connect {
             info!("{} with the remote peer", "Initializing connection".announce());
-
             match self.config.protocol {
                 p2p::Protocol::Bolt => {
                     self.sender.send_message(bolt::Messages::Init(bolt::Init {
-                        global_features: none!(),
-                        local_features: none!(),
+                        global_features: InitFeatures::new(),
+                        local_features: InitFeatures::new(),
                         assets: none!(),
                         unknown_tlvs: none!(),
                     }))?;
@@ -207,6 +207,7 @@ impl esb::Handler<ServiceBus> for Runtime {
             }
 
             self.connect = false;
+            self.messages_sent += 1;
         }
         Ok(())
     }
@@ -349,6 +350,13 @@ impl Runtime {
         self.messages_received += 1;
 
         match &msg {
+            bolt::Messages::Init(_) => {
+                if self.messages_sent <= 0 {
+                    self.on_init(msg)?;
+                } else {
+                    self.ping()?;
+                }
+            }
             bolt::Messages::Ping(bolt::Ping { pong_size, .. }) => {
                 self.pong(*pong_size)?;
             }
@@ -394,6 +402,7 @@ impl Runtime {
 
             bolt::Messages::FundingSigned(bolt::FundingSigned { channel_id, .. })
             | bolt::Messages::FundingLocked(bolt::FundingLocked { channel_id, .. })
+            | bolt::Messages::CommitmentSigned(bolt::CommitmentSigned { channel_id, .. })
             | bolt::Messages::UpdateAddHtlc(bolt::UpdateAddHtlc { channel_id, .. })
             | bolt::Messages::UpdateFulfillHtlc(bolt::UpdateFulfillHtlc { channel_id, .. })
             | bolt::Messages::UpdateFailHtlc(bolt::UpdateFailHtlc { channel_id, .. })
@@ -497,6 +506,19 @@ impl Runtime {
             }
         }
 
+        Ok(())
+    }
+
+    fn on_init(&mut self, msg: Messages) -> Result<(), Error> {
+        trace!("Sending our features to the remote peer");
+        match self.config.protocol {
+            p2p::Protocol::Bolt => {
+                self.sender
+                    .send_message(msg)
+                    .expect("cannot be send LN message to the remote peer");
+            }
+            p2p::Protocol::Bifrost => {}
+        }
         Ok(())
     }
 

@@ -12,7 +12,8 @@
 // If not, see <https://opensource.org/licenses/MIT>.
 
 use amplify::Slice32;
-use bitcoin::Txid;
+use bitcoin::secp256k1::ecdsa::Signature;
+use bitcoin::{OutPoint, Txid};
 use bitcoin_scripts::hlc::HashLock;
 use bitcoin_scripts::PubkeyScript;
 use internet2::addr::{NodeAddr, NodeId};
@@ -66,6 +67,16 @@ pub enum CtlMsg {
     #[display("funding_constructed(...)")]
     FundingConstructed(Psbt),
 
+    /// Constructs first commitment transaction PSBT (aka. refund transaction) for penalty
+    /// transactions to remotely-created new channel. Sent from peerd to lnpd.
+    #[display("construct_refund({0})")]
+    ConstructRefund(RefundParams),
+
+    /// Provides channeld with the information about funding transaction output used to penalty
+    /// transactions. Sent from lnpd to channeld.
+    #[display("construct_refund({0}, {1})")]
+    RefundConstructed(Psbt, OutPoint),
+
     /// Signs previously prepared funding transaction and publishes it to bitcoin network. Sent
     /// from channeld to lnpd upon receival of `funding_signed` message from a remote peer.
     #[display("publish_funding({0})")]
@@ -86,7 +97,7 @@ pub enum CtlMsg {
     /// Reports changes in the mining status for previously requested transaction tracked by an
     /// on-chain service
     #[display("tx_found({0})")]
-    TxFound(TxStatus),
+    TxFound(TxConfirmation),
 
     // Routing & payments
     /// Request to channel daemon to perform payment using provided route
@@ -231,6 +242,27 @@ pub struct FundChannel {
     pub feerate_per_kw: Option<u32>,
 }
 
+/// Request information about constructing funding transaction
+#[derive(Clone, PartialEq, Eq, Debug, Display, NetworkEncode, NetworkDecode)]
+#[display("refund_params({funding_txid}:{funding_output_index}, ...signature)")]
+pub struct RefundParams {
+    /// The funding transaction ID
+    pub funding_txid: Txid,
+
+    /// The specific output index funding this channel
+    pub funding_output_index: u16,
+
+    /// The funding amount
+    pub funding_amount: u64,
+
+    /// The funding script pubkey
+    pub funding_script_pubkey: PubkeyScript,
+
+    /// The signature of the channel initiator (funder) on the funding
+    /// transaction
+    pub signature: Signature,
+}
+
 /// TODO: Move to descriptor wallet
 /// Information about block position and transaction position in a block
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
@@ -258,6 +290,19 @@ pub struct TxStatus {
 
     /// Optional block position given only if the depth is greater than 0 zero
     pub block_pos: Option<BlockPos>,
+}
+
+/// TODO: Move to descriptor wallet
+/// Update on a transaction mining status
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display)]
+#[derive(NetworkEncode, NetworkDecode)]
+#[display("{txid}, ...")]
+pub struct TxConfirmation {
+    /// Id of a transaction previously requested to be tracked
+    pub txid: Txid,
+
+    /// block confirmations
+    pub confirmations: u32,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Display, NetworkEncode, NetworkDecode)]

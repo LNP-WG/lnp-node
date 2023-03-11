@@ -184,7 +184,7 @@ _lnp-cli() {
             return 0
             ;;
         lnp__cli__invoice)
-            opts="-h -R -v --help --rpc --verbose <AMOUNT> <ASSET>"
+            opts="-h -R -v --bolt --bifrost --help --rpc --verbose <DESCRIPTION> <AMOUNT> <ASSET>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

@@ -13,12 +13,15 @@
 
 // TODO: Consider making it part of descriptor wallet onchain library
 
+use std::collections::BTreeMap;
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
-use bitcoin::{Transaction, Txid};
+use bitcoin::{Script, Transaction, Txid};
 use electrum_client::{Client as ElectrumClient, ElectrumApi, HeaderNotification};
+
+use crate::bus::TxConfirmation;
 
 #[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Debug, Display, Error, From)]
 #[display("failed electrum watcher channel")]
@@ -47,6 +50,9 @@ pub enum ElectrumUpdate {
 
     #[display("tx_batch(...)")]
     TxBatch(Vec<Transaction>, f32),
+
+    #[display("tx_confirmations(...)")]
+    TxConfirmations(Vec<TxConfirmation>, u32),
 
     #[display("channel_disconnected")]
     ChannelDisconnected,
@@ -193,7 +199,42 @@ impl ElectrumProcessor {
         if self.tracks.is_empty() {
             return Ok(None);
         }
-        self.client.batch_transaction_get(txids).map(|res| Some(ElectrumUpdate::TxBatch(res, 0.0)))
+        let transactions = self.client.batch_transaction_get(txids)?;
+        let scripts: Vec<Script> =
+            transactions.into_iter().map(|tx| tx.output[0].script_pubkey.clone()).collect();
+
+        let hist = self.client.batch_script_get_history(&scripts)?;
+
+        let mut items = vec![];
+        hist.into_iter().for_each(|mut item| items.append(&mut item));
+
+        if items.is_empty() {
+            return Ok(None);
+        }
+
+        let transactions: BTreeMap<Txid, i32> =
+            items.into_iter().map(|h| (h.tx_hash, h.height)).collect();
+
+        let min_height = transactions.clone().into_iter().map(|(_, h)| h).min();
+        let min_height = min_height.unwrap_or_default();
+
+        let block_headers = self.client.block_headers(min_height as usize, 50)?;
+        let block_total = block_headers.headers.len() as i32;
+
+        let confirmations: BTreeMap<Txid, i32> = transactions
+            .into_iter()
+            .filter(|(_, height)| min_height + block_total > height.to_owned())
+            .collect();
+
+        let confirmations: Vec<TxConfirmation> = confirmations
+            .into_iter()
+            .map(|(tx_id, height)| TxConfirmation {
+                txid: tx_id,
+                confirmations: (min_height + block_total - height) as u32,
+            })
+            .collect();
+
+        Ok(Some(ElectrumUpdate::TxConfirmations(confirmations.clone(), confirmations.len() as u32)))
     }
 
     fn track_transaction(

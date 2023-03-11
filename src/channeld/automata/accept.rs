@@ -10,7 +10,6 @@
 //
 // You should have received a copy of the MIT License along with this software.
 // If not, see <https://opensource.org/licenses/MIT>.
-
 use lnp::channel::bolt::Lifecycle;
 use lnp::p2p::bolt::{ActiveChannelId, ChannelId, FundingSigned, Messages as LnMsg};
 use lnp::Extension;
@@ -20,7 +19,7 @@ use microservices::esb::Handler;
 
 use super::Error;
 use crate::automata::{Event, StateMachine};
-use crate::bus::{AcceptChannelFrom, BusMsg, CtlMsg};
+use crate::bus::{AcceptChannelFrom, BusMsg, CtlMsg, RefundParams};
 use crate::channeld::runtime::Runtime;
 use crate::{Endpoints, Responder};
 
@@ -92,6 +91,7 @@ impl ChannelAccept {
         request: AcceptChannelFrom,
     ) -> Result<ChannelAccept, Error> {
         let open_channel = LnMsg::OpenChannel(request.channel_req.clone());
+
         runtime.state.channel.update_from_peer(&open_channel)?;
 
         let _ = runtime.send_ctl(
@@ -129,10 +129,10 @@ fn finish_accepted(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<Channe
             runtime.state.channel.constructor_mut().set_local_keys(keys);
 
             let accept_channel = runtime.state.channel.compose_accept_channel()?;
-            let accept_channel = LnMsg::AcceptChannel(accept_channel);
+            let accept_message = LnMsg::AcceptChannel(accept_channel);
 
             trace!("Notifying remote peer about channel creation");
-            runtime.send_p2p(event.endpoints, accept_channel)?;
+            runtime.send_p2p(event.endpoints, accept_message)?;
             Ok(ChannelAccept::Signed)
         }
         wrong_msg => {
@@ -163,9 +163,43 @@ fn finish_signed(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<ChannelA
                 new_id: channel_id,
             })?;
 
+            let params = RefundParams {
+                funding_txid: funding.funding_txid,
+                funding_output_index: funding.funding_output_index,
+                funding_script_pubkey: runtime.state.channel.funding_script_pubkey(),
+                funding_amount: runtime.state.channel.remote_amount_msat() / 1000,
+                signature: funding.signature,
+            };
+
+            runtime.send_ctl(
+                event.endpoints,
+                ServiceId::LnpBroker,
+                CtlMsg::ConstructRefund(params),
+            )?;
+            Ok(ChannelAccept::Signed)
+        }
+        BusMsg::Ctl(CtlMsg::RefundConstructed(refund_psbt, outpoint)) => {
+            let mut refund_psbt = runtime.state.channel.refund_tx(refund_psbt, true)?;
+            let prev_output = outpoint;
+
+            refund_psbt.inputs[0].previous_outpoint = prev_output;
+            runtime.send_ctl(event.endpoints, ServiceId::Signer, CtlMsg::Sign(refund_psbt))?;
+            Ok(ChannelAccept::Signed)
+        }
+        BusMsg::Ctl(CtlMsg::Signed(refund_psbt)) => {
+            let channel_id = runtime.state.channel.channel_id().unwrap();
+            let funding_pubkey = runtime.state.channel.funding_pubkey();
+            let funding_input =
+                refund_psbt.inputs.get(0).expect("BOLT commitment always has a single input");
+
+            let signature = funding_input
+                .partial_sigs
+                .get(&bitcoin::PublicKey::new(funding_pubkey))
+                .ok_or(Error::FundingPsbtUnsigned(funding_pubkey))?;
+
             runtime.send_p2p(
                 event.endpoints,
-                LnMsg::FundingSigned(FundingSigned { channel_id, signature: funding.signature }),
+                LnMsg::FundingSigned(FundingSigned { channel_id, signature: signature.sig }),
             )?;
             Ok(ChannelAccept::Funded)
         }

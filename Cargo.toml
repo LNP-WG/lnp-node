@@ -44,12 +44,13 @@ required-features = ["server"]
 
 [dependencies]
 # LNP/BP crates
-amplify = "3.14.1"
+amplify = "3.13.0"
 strict_encoding = { version = "0.9.0-rc.2", features = ["miniscript"] }
 bitcoin_scripts = "0.9.0"
 bitcoin_blockchain = "0.9.0"
 descriptor-wallet = { version = "0.9.0", features = ["keygen", "miniscript", "electrum", "sign", "construct"] }
 lnpbp = "0.9.0"
+lnpbp-invoice = { version = "0.9.0", features = ["serde", "bolt11"] }
 lnp-core = "0.9.1"
 lnp_rpc = { version = "0.9.1", path = "./rpc" }
 internet2 = { version = "0.9.0", features = ["keygen"] }
@@ -120,3 +121,15 @@ tor = ["microservices/tor", "internet2/tor"]
 
 [package.metadata.configure_me]
 spec = "config_spec.toml"
+
+[patch.crates-io]
+# TODO: Remove after merge and release:
+#    - https://github.com/LNP-WG/lnp-core/pull/29
+#    - https://github.com/LNP-WG/lnp-core/pull/27
+lnp-core = { git = "https://github.com/crisdut/lnp-core", branch="exp/ln-interop" }
+# TODO: Remove after merge and release:
+#    - https://github.com/LNP-WG/lightning_encoding/pull/4
+lightning_encoding = { git = "https://github.com/crisdut/lightning_encoding", branch="fix/script-decode" }
+# TODO: Remove after merge and release:
+#    - https://github.com/LNP-BP/invoices/pull/9
+lnpbp-invoice = { git = "https://github.com/crisdut/invoices", branch="feat/bolt11" }

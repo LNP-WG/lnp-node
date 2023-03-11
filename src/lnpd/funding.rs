@@ -15,13 +15,14 @@ use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::io::Seek;
 use std::path::Path;
+use std::str::FromStr;
 use std::{fs, io};
 
 use amplify::{IoError, Slice32, Wrapper};
 use bitcoin::psbt::PartiallySignedTransaction;
 use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::util::bip32::ChildNumber;
-use bitcoin::{EcdsaSighashType, Network, OutPoint, Txid};
+use bitcoin::{EcdsaSighashType, Network, OutPoint, Script, Transaction, TxOut, Txid};
 use bitcoin_blockchain::locks::SeqNo;
 use bitcoin_scripts::address::AddressCompat;
 use bitcoin_scripts::PubkeyScript;
@@ -38,7 +39,9 @@ use wallet::hd::{
     DerivationAccount, DerivationSubpath, DeriveError, SegmentIndexes, UnhardenedIndex,
 };
 use wallet::onchain::ResolveDescriptor;
-use wallet::psbt::Psbt;
+use wallet::psbt::{Psbt, PsbtVersion};
+
+use crate::bus::RefundParams;
 
 // The default fee rate is 2 sats per kilo-vbyte
 const DEFAULT_FEERATE_PER_KW: u32 = 2u32 * 1000 * 4;
@@ -417,6 +420,33 @@ impl FundingWallet {
         });
 
         Ok(psbt)
+    }
+
+    pub fn construct_refund_psbt(
+        &mut self,
+        params: &RefundParams,
+    ) -> Result<(Psbt, OutPoint), Error> {
+        let mut psbt = Psbt::with(
+            Transaction {
+                version: 2,
+                lock_time: bitcoin::PackedLockTime(0),
+                input: vec![],
+                output: vec![TxOut {
+                    value: params.funding_amount,
+                    script_pubkey: Script::from(params.funding_script_pubkey.clone()),
+                }],
+            },
+            PsbtVersion::V0,
+        )
+        .expect("dumb manual PSBT creation");
+        let _ = psbt.set_channel_funding_output(0);
+
+        let prev_output = OutPoint::from_str(
+            format!("{}:{}", params.funding_txid, params.funding_output_index).as_str(),
+        )
+        .expect("invalid outpoint parameters");
+
+        Ok((psbt, prev_output))
     }
 
     #[inline]

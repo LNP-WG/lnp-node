@@ -214,6 +214,9 @@ pub enum Command {
 
     /// Create an invoice
     Invoice {
+        /// Invoice Description and/or Propouse
+        description: String,
+
         /// Asset amount to invoice, in atomic unit (satoshis or smallest asset
         /// unit type)
         amount: u64,
@@ -221,6 +224,14 @@ pub enum Command {
         /// Asset ticker in which the invoice should be issued
         #[clap(default_value = "btc")]
         asset: String,
+
+        /// Use BOLT lightning network protocol.
+        #[clap(long, conflicts_with = "bifrost")]
+        bolt: bool,
+
+        /// Use Bifrost lightning network protocol.
+        #[clap(long, required_unless_present = "bolt")]
+        bifrost: bool,
     },
 
     /// Pay the invoice
