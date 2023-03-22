@@ -28,9 +28,9 @@ dependencies = [
 
 [[package]]
 name = "amplify"
-version = "3.14.1"
+version = "3.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af87bda25a5d87be1b9aedb1516eba82b4b4ad930a595916afc8bb39bf84a851"
+checksum = "ba2ec14f4fb838e9ddace42fa5944bb1ee4dff8477494ba48c5f874e16caf27a"
 dependencies = [
  "amplify_derive",
  "amplify_num",
@@ -892,6 +892,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "encoding_derive_helpers"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cd42b6eecc7f641b0ee59a341749769a5843d6b24b5bb1bfcacc56ece22b8c9"
+dependencies = [
+ "amplify",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1192,9 +1204,9 @@ dependencies = [
 
 [[package]]
 name = "lightning_encoding"
-version = "0.9.1"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a56f420c81ea9f113a2ccefffc55124394feddf19f5b10ebbad81edee4763d28"
+checksum = "763dd2be0ddf36406ea95454c0a20f3fcdd1343920f24e653a65069cca96c142"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -1207,12 +1219,12 @@ dependencies = [
 
 [[package]]
 name = "lightning_encoding_derive"
-version = "0.9.0"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d0f5261aacd87fa76a12ff80b5d0e6782ce969c0301ab7cfbabe20f4492881d"
+checksum = "c81810acde5616571d62928ccebef1e92b941d245e0d3cc830f884ec827c5ca6"
 dependencies = [
  "amplify_syn",
- "encoding_derive_helpers",
+ "encoding_derive_helpers 0.9.0",
  "proc-macro2",
  "quote",
  "syn",
@@ -1262,9 +1274,9 @@ dependencies = [
 
 [[package]]
 name = "lnp-core"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "238ce14de0c3ceccef8a31317d06964949881c6d8e4898df3076e86bae58ad67"
+checksum = "3d864be5193cc08bd64c0abafc67ccfff1839ccf2eae3aac7f35aee1366b8405"
 dependencies = [
  "amplify",
  "bitcoin",
@@ -2143,7 +2155,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34c9cabafb397fc1144463228ad4ba57c3c670a0117505fe59b15d8c74449716"
 dependencies = [
  "amplify_syn",
- "encoding_derive_helpers",
+ "encoding_derive_helpers 0.8.1",
  "proc-macro2",
  "syn",
 ]
