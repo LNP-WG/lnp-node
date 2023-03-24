@@ -284,7 +284,11 @@ fn complete_funding(
 
     let txid = runtime.state.channel.funding().txid();
     debug!("Waiting for funding transaction {} to be mined", txid);
-    runtime.send_ctl(event.endpoints, ServiceId::Watch, CtlMsg::Track { txid, depth: 0 })?;
+    let core = runtime.state.channel.constructor();
+    runtime.send_ctl(event.endpoints, ServiceId::Watch, CtlMsg::Track {
+        txid,
+        depth: core.common_params().minimum_depth,
+    })?;
 
     Ok(ChannelPropose::Published)
 }

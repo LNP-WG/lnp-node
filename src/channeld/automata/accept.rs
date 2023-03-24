@@ -167,6 +167,14 @@ fn finish_signed(event: Event<BusMsg>, runtime: &mut Runtime) -> Result<ChannelA
                 event.endpoints,
                 LnMsg::FundingSigned(FundingSigned { channel_id, signature: funding.signature }),
             )?;
+
+            debug!("Waiting for funding transaction {} to be mined", funding.funding_txid);
+            let core = runtime.state.channel.constructor();
+            runtime.send_ctl(event.endpoints, ServiceId::Watch, CtlMsg::Track {
+                txid: funding.funding_txid,
+                depth: core.common_params().minimum_depth,
+            })?;
+
             Ok(ChannelAccept::Funded)
         }
         wrong_msg => {

@@ -34,7 +34,7 @@ pub fn run(config: Config) -> Result<(), Error> {
     rx.bind("inproc://electrum-bridge")?;
 
     let (sender, receiver) = mpsc::channel::<ElectrumUpdate>();
-    let electrum_worker = ElectrumWorker::with(sender, &config.electrum_url, 5)?;
+    let electrum_worker = ElectrumWorker::with(sender, &config.electrum_url, 15)?;
 
     debug!("Starting electrum watcher thread");
     let watcher_runtime = WatcherRuntime::with(receiver, tx)?;
@@ -88,16 +88,14 @@ impl WatcherRuntime {
         // TODO: Forward all electrum notifications over the bridge
         // self.send_over_bridge(msg.into()).expect("watcher bridge is halted");
         match msg {
-            ElectrumUpdate::TxBatch(transactions, _) => {
+            ElectrumUpdate::TxConfirmations(transactions, _) => {
                 for transaction in transactions {
-                    self.send_over_bridge(BusMsg::Ctl(CtlMsg::TxFound(crate::bus::TxStatus {
-                        txid: transaction.txid(),
-                        block_pos: None,
-                    })))
-                    .expect("unable forward electrum notifications over the bridge");
+                    self.send_over_bridge(BusMsg::Ctl(CtlMsg::TxFound(transaction)))
+                        .expect("unable forward electrum notifications over the bridge");
                 }
             }
-            ElectrumUpdate::Connecting
+            ElectrumUpdate::TxBatch(..)
+            | ElectrumUpdate::Connecting
             | ElectrumUpdate::Connected
             | ElectrumUpdate::Complete
             | ElectrumUpdate::FeeEstimate(..)
@@ -170,7 +168,7 @@ impl Runtime {
         match request {
             CtlMsg::TxFound(tx_status) => {
                 if let Some((required_height, service_id)) = self.track_list.get(&tx_status.txid) {
-                    if *required_height >= tx_status.block_pos.map(|b| b.pos).unwrap_or_default() {
+                    if *required_height <= tx_status.confirmations {
                         let service_id = service_id.clone();
                         self.untrack(tx_status.txid);
                         match self.electrum_worker.untrack_transaction(tx_status.txid) {
