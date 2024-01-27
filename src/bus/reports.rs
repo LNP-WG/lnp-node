@@ -1,6 +1,6 @@
 // LNP Node: node running lightning network protocol and generalized lightning
 // channels.
-// Written in 2020-2022 by
+// Written in 2020-2024 by
 //     Dr. Maxim Orlovsky <orlovsky@lnp-bp.org>
 //
 // To the extent possible under law, the author(s) have dedicated all
